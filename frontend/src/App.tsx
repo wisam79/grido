@@ -1,7 +1,6 @@
 // استيرادات مباشرة بدل برميل @/components/editor: البرميل كان يُدخل كل
 // اللوحات والحوارات (ومنها print-dialog وprojects-dialog) في الحزمة الرئيسية
 // فيُلغي فائدة lazy() تماماً.
-import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
@@ -24,17 +23,8 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import { Spinner } from '@/components/ui/huge-icon';
-import {
-  SquaresFour,
-  Image,
-  Moon,
-  Sun,
-  Desktop,
-  SidebarSimple,
-  SlidersHorizontal,
-  User,
-} from '@/components/ui/icons';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { SquaresFour, Image, SidebarSimple } from '@/components/ui/icons';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
 import { flushAutoSave, useAutoSave } from '@/hooks/use-autosave';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -58,15 +48,11 @@ export default function App() {
   const { isInitializing, crashReport, handleRecoverCrash, handleDismissCrash } = useAppBootstrap();
 
   const panelsHook = useWorkspacePanels();
-  const isTemplatesOpen =
-    panelsHook.breakpoint !== 'compact'
-      ? panelsHook.isTemplatesDrawerOpen
-      : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'templates';
   const isPropertiesOpen =
     panelsHook.breakpoint !== 'compact'
       ? panelsHook.isInspectorPinned
       : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'properties';
-  const { theme, themeMode, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
   const isInlineAiOperation =
@@ -356,237 +342,13 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2 */}
-                <div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
-                  dir="rtl"
-                  onDoubleClick={(e) => e.stopPropagation()}
-                >
-                  <div
-                    role="tablist"
-                    aria-label="وضع العمل"
-                    className="relative inline-flex items-center p-0.5 rounded-md bg-muted/40 dark:bg-black/20 border border-border/50 select-none"
-                  >
-                    {/* خيار 1: كولاج */}
-                    <button
-                      type="button"
-                      role="tab"
-                      id="mode-tab-collage"
-                      aria-selected={mode === 'collage'}
-                      data-testid="mode-tab-collage"
-                      title="وضع الكولاج (Ctrl+Alt+1)"
-                      onClick={() => setMode('collage')}
-                      className={cn(
-                        'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                        mode === 'collage'
-                          ? 'text-foreground font-bold'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {mode === 'collage' && (
-                        <motion.span
-                          layoutId="titlebar-mode-indicator"
-                          className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                          transition={{ duration: 0.12, ease: 'easeOut' }}
-                        />
-                      )}
-
-                      <SquaresFour
-                        className={cn(
-                          'w-3.5 h-3.5 shrink-0 transition-colors',
-                          mode === 'collage' ? 'text-foreground' : 'text-muted-foreground',
-                        )}
-                        weight={mode === 'collage' ? 'fill' : 'regular'}
-                      />
-                      <span>كولاج</span>
-                    </button>
-
-                    {/* خيار 2: تعديل حر */}
-                    <button
-                      type="button"
-                      role="tab"
-                      id="mode-tab-single"
-                      aria-selected={mode === 'single'}
-                      data-testid="mode-tab-single"
-                      title="وضع التعديل الحر (Ctrl+Alt+2)"
-                      onClick={() => setMode('single')}
-                      className={cn(
-                        'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                        mode === 'single'
-                          ? 'text-foreground font-bold'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {mode === 'single' && (
-                        <motion.span
-                          layoutId="titlebar-mode-indicator"
-                          className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                          transition={{ duration: 0.12, ease: 'easeOut' }}
-                        />
-                      )}
-                      <Image
-                        className={cn(
-                          'w-3.5 h-3.5 shrink-0 transition-colors',
-                          mode === 'single' ? 'text-foreground' : 'text-muted-foreground',
-                        )}
-                        weight={mode === 'single' ? 'fill' : 'regular'}
-                      />
-                      <span>تعديل حر</span>
-                    </button>
-                  </div>
-                </div>
-
+                {/* 🧭 عناصر شريط العنوان — نظيفة تماماً وفق Fluent 2:
+                    انتقلت عناصر الثيم والحساب والألواح إلى قائمة الإعدادات الموحدة
+                    في أسفل الشريط الجانبي (RailSettingsMenu) لتحرير شريط العنوان */}
                 <div
                   className="flex items-center gap-1 h-full title-bar-controls"
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAccountModalOpen(true)}
-                        className="h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 relative rounded-md transition-colors cursor-pointer"
-                        aria-label="الحساب والتراخيص"
-                      >
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        {user?.plan === 'trial' ? (
-                          <span className="absolute top-1 left-1 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background" />
-                        ) : isLicenseActive ? (
-                          <span className="absolute top-1 left-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-background" />
-                        ) : null}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="font-cairo text-xs font-semibold py-1 px-2.5"
-                    >
-                      الحساب والتراخيص
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleTheme}
-                        className="h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
-                        aria-label={
-                          themeMode === 'system'
-                            ? 'مظهر النظام تلقائي'
-                            : themeMode === 'dark'
-                              ? 'الوضع الداكن'
-                              : 'الوضع المضيء'
-                        }
-                      >
-                        {themeMode === 'system' ? (
-                          <Desktop className="w-4 h-4" weight="duotone" />
-                        ) : themeMode === 'dark' ? (
-                          <Moon className="w-4 h-4" />
-                        ) : (
-                          <Sun className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="font-cairo text-xs font-semibold py-1 px-2.5"
-                    >
-                      {themeMode === 'system'
-                        ? `مظهر النظام تلقائي (${theme === 'dark' ? 'داكن' : 'مضيء'})`
-                        : themeMode === 'dark'
-                          ? 'الوضع الداكن (يدوي)'
-                          : 'الوضع المضيء (يدوي)'}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => panelsHook.togglePanel('templates')}
-                        className={cn(
-                          'hidden lg:flex h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
-                          isTemplatesOpen
-                            ? 'text-foreground bg-accent-active'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
-                        )}
-                        aria-label={
-                          isTemplatesOpen
-                            ? mode === 'collage'
-                              ? 'إخفاء لوحة القوالب'
-                              : 'إخفاء استوديو التصميم'
-                            : mode === 'collage'
-                              ? 'إظهار لوحة القوالب'
-                              : 'إظهار استوديو التصميم'
-                        }
-                      >
-                        <SidebarSimple
-                          className="w-4 h-4"
-                          weight={isTemplatesOpen ? 'fill' : 'regular'}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="font-cairo text-xs font-semibold py-1 px-2.5"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>
-                          {isTemplatesOpen
-                            ? mode === 'collage'
-                              ? 'إخفاء لوحة القوالب'
-                              : 'إخفاء استوديو التصميم'
-                            : mode === 'collage'
-                              ? 'إظهار لوحة القوالب'
-                              : 'إظهار استوديو التصميم'}
-                        </span>
-                        <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
-                          Ctrl+B
-                        </kbd>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => panelsHook.togglePanel('properties')}
-                        className={cn(
-                          'hidden lg:flex h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
-                          isPropertiesOpen
-                            ? 'text-foreground bg-accent-active'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
-                        )}
-                        aria-label={isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
-                      >
-                        <SlidersHorizontal
-                          className="w-4 h-4"
-                          weight={isPropertiesOpen ? 'fill' : 'regular'}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="font-cairo text-xs font-semibold py-1 px-2.5"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>
-                          {isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
-                        </span>
-                        <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
-                          Ctrl+Shift+B
-                        </kbd>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-
                   <Button
                     variant="ghost"
                     size="sm"
@@ -598,9 +360,6 @@ export default function App() {
                       {mode === 'collage' ? 'القوالب' : 'التصميم'}
                     </span>
                   </Button>
-
-                  {/* Separator */}
-                  <div className="w-px h-4 bg-border/60 mx-1" />
 
                   {/* Window Buttons */}
                   <WindowControls

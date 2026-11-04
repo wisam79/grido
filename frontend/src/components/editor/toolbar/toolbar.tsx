@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
+import { ModeSwitcher } from './mode-switcher';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
   TooltipBtn,
@@ -81,10 +82,15 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           </CommandGroup>
         </div>
 
-        {/* المجموعة النهائية: الحفظ والتصدير والطباعة في مجموعة أوامر متناسقة */}
-        <div className="flex items-center h-full shrink-0 gap-1">
+        {/* 🧭 مبدّل وضع العمل المتمركز في منتصف شريط الأدوات بالكامل */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center pointer-events-auto">
+          <ModeSwitcher />
+        </div>
+
+        {/* المجموعة النهائية: الحفظ والتصدير والطباعة في تسلسل بصري واضح ومريح وفق Fluent 2 */}
+        <div className="flex items-center h-full shrink-0 gap-1.5">
           <CommandGroup>
-            <div className="fluent-command-group">
+            <div className="flex items-center gap-1">
               {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
               <TooltipBtn content="حفظ المشروع (Ctrl + S)">
                 <Button
@@ -93,13 +99,13 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onSave}
                   data-testid="toolbar-save"
                   aria-label="حفظ المشروع"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
                   <FloppyDisk className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
 
-              {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
+              {/* تصدير (Ctrl+E) — زر هادئ متناسق مع زر إدراج */}
               <TooltipBtn content="تصدير صورة (Ctrl + E)">
                 <Button
                   variant="ghost"
@@ -107,13 +113,14 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onExport}
                   data-testid="toolbar-export"
                   aria-label="تصدير صورة"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 px-2.5 flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-muted/60 border border-border/60 bg-muted/30 rounded-md cursor-pointer transition-colors duration-150 text-xs font-semibold"
                 >
-                  <Export className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
+                  <Export className="w-4 h-4 text-foreground/80" />
+                  <span>تصدير</span>
                 </Button>
               </TooltipBtn>
 
-              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
+              {/* طباعة (Ctrl+P) — زر هادئ بنفس الخامة والوزن البصري المتناغم */}
               <TooltipBtn content="طباعة المستند (Ctrl + P)">
                 <Button
                   variant="ghost"
@@ -121,16 +128,17 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onPrint}
                   data-testid="toolbar-print"
                   aria-label="طباعة المستند"
-                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary border border-primary/25 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 px-2.5 flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-muted/60 border border-border/60 bg-muted/30 rounded-md cursor-pointer transition-colors duration-150 text-xs font-semibold"
                 >
-                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
+                  <Printer className="w-4 h-4 text-primary" weight="duotone" />
+                  <span>طباعة</span>
                 </Button>
               </TooltipBtn>
             </div>
 
             <Separator orientation="vertical" className="h-4 mx-1 bg-border/60 shrink-0" />
 
-            {/* قائمة المزيد: مسح مساحة العمل معزول في قائمة التأكيد (دون تكرار زر المشاريع الموجود يميناً) */}
+            {/* قائمة المزيد: مسح مساحة العمل معزول في قائمة التأكيد */}
             <DropdownMenu>
               <TooltipBtn content="المزيد من الخيارات">
                 <DropdownMenuTrigger asChild>

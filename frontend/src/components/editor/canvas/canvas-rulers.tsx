@@ -92,7 +92,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
 
   return (
     <div
-      className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none shadow-2xs"
+      className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none"
       dir="ltr"
     >
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
@@ -260,7 +260,7 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
 
   return (
     <div
-      className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none shadow-2xs"
+      className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none"
       dir="ltr"
     >
       <VerticalRuler

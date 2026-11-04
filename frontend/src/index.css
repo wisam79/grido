@@ -202,14 +202,18 @@
   --canvas-collage-selection-shadow: #0078d4;
   --canvas-collage-handle: #0078d4;
   --canvas-collage-handle-foreground: #ffffff;
-  --canvas-slot-placeholder-bg: rgba(241, 245, 249, 0.88);
+  /* 🖨️ خانة الكولاج الفارغة تُرسم *داخل الورقة*، والورقة مستند أبيض في الثيمين.
+     لذلك تتبع هذه الرموز الورقةَ لا الثيم (قيمة واحدة في الفاتح والداكن):
+     تعبئة محايدة قريبة من الورقة، والفراغ يُعلَن هندسياً (حد متقطع + أيقونة زائد)
+     لا بسطوع التعبئة — التعبئة الداكنة في الثيم الداكن كانت تُقرأ "خانة مملوءة". */
+  --canvas-slot-placeholder-bg: rgba(148, 163, 184, 0.16);
   --canvas-slot-placeholder-border: #94a3b8;
-  --canvas-slot-placeholder-border-hover: #0078d4;
+  --canvas-slot-placeholder-border-hover: #2563eb;
   --canvas-slot-placeholder-badge: #ffffff;
   --canvas-slot-placeholder-badge-border: #cbd5e1;
-  --canvas-slot-placeholder-icon: #475569;
-  --canvas-slot-placeholder-icon-hover: #0078d4;
-  --canvas-slot-placeholder-text: #475569;
+  --canvas-slot-placeholder-icon: #64748b;
+  --canvas-slot-placeholder-icon-hover: #2563eb;
+  --canvas-slot-placeholder-text: #64748b;
   --canvas-scanner-beam: #0ea5e9;
   --canvas-scanner-glow: #38bdf8;
   --canvas-scanner-particle-a: #e0e7ff;
@@ -225,15 +229,15 @@
   --canvas-preview-blue: #1d4ed8;
   --canvas-preview-checker: #80808033;
 
-  /* Ruler Semantic Surfaces (Light) — أسطح المساطر الدلالية الموحدة مع الثيم */
-  --ruler-surface: #f5f5f5;
-  --ruler-corner: #e5e5e5;
-  --ruler-corner-hover: #d4d4d4;
-  --ruler-track: #fafafa;
-  --ruler-border: #d4d4d4;
-  --ruler-tick: #d4d4d4;
-  --ruler-tick-major: #a3a3a3;
-  --ruler-tick-label-active: #404040;
+  /* Ruler Semantic Surfaces (Light) — أسطح المساطر الدلالية الموحدة مع مساحة العمل لتفادي التداخل البصري */
+  --ruler-surface: var(--workspace-bg);
+  --ruler-corner: #e2e8f0;
+  --ruler-corner-hover: #cbd5e1;
+  --ruler-track: var(--workspace-bg);
+  --ruler-border: rgba(148, 163, 184, 0.35);
+  --ruler-tick: #cbd5e1;
+  --ruler-tick-major: #94a3b8;
+  --ruler-tick-label-active: #334155;
 
   /* Workspace Backdrop (Light) — سطح مساحة العمل تحت الورقة وشبكة نقاطها
      (خُفِّض سطوعه درجةً ليرتفع فصل الورقة البيضاء عنه — تدقيق 2026-10-10 P2-6) */
@@ -338,14 +342,16 @@
   --canvas-collage-selection-shadow: #60a5fa;
   --canvas-collage-handle: #60a5fa;
   --canvas-collage-handle-foreground: #ffffff;
-  --canvas-slot-placeholder-bg: rgba(30, 41, 59, 0.72);
-  --canvas-slot-placeholder-border: #64748b;
-  --canvas-slot-placeholder-border-hover: #60a5fa;
-  --canvas-slot-placeholder-badge: #1e293b;
-  --canvas-slot-placeholder-badge-border: #475569;
-  --canvas-slot-placeholder-icon: #94a3b8;
-  --canvas-slot-placeholder-icon-hover: #60a5fa;
-  --canvas-slot-placeholder-text: #94a3b8;
+  /* 🌑 في الثيم الداكن تبقى خانة الكولاج الفارغة بيضاء كالورقة — نفس قيم الثيم الفاتح
+     حرفياً (الورقة مستند لا سطح واجهة). لا تُقلَب هنا: الانقلاب يجعل الفراغ يشبه صورة. */
+  --canvas-slot-placeholder-bg: rgba(148, 163, 184, 0.16);
+  --canvas-slot-placeholder-border: #94a3b8;
+  --canvas-slot-placeholder-border-hover: #2563eb;
+  --canvas-slot-placeholder-badge: #ffffff;
+  --canvas-slot-placeholder-badge-border: #cbd5e1;
+  --canvas-slot-placeholder-icon: #64748b;
+  --canvas-slot-placeholder-icon-hover: #2563eb;
+  --canvas-slot-placeholder-text: #64748b;
   --canvas-scanner-beam: #38bdf8;
   --canvas-scanner-glow: #7dd3fc;
   --canvas-scanner-particle-a: #c7d2fe;
@@ -361,15 +367,15 @@
   --canvas-preview-blue: #1d4ed8;
   --canvas-preview-checker: #80808033;
 
-  /* Ruler Semantic Surfaces (Dark) — أسطح المساطر الفحمية الموحدة مع الثيم */
-  --ruler-surface: #18181b;
-  --ruler-corner: #202024;
-  --ruler-corner-hover: #2a2a30;
-  --ruler-track: #141416;
-  --ruler-border: #262626;
-  --ruler-tick: #404040;
-  --ruler-tick-major: #525252;
-  --ruler-tick-label-active: #e5e5e5;
+  /* Ruler Semantic Surfaces (Dark) — أسطح المساطر الفحمية المندمجة مع مساحة العمل */
+  --ruler-surface: var(--workspace-bg);
+  --ruler-corner: #1c1c1f;
+  --ruler-corner-hover: #26262a;
+  --ruler-track: var(--workspace-bg);
+  --ruler-border: rgba(255, 255, 255, 0.08);
+  --ruler-tick: #2e2e33;
+  --ruler-tick-major: #47474f;
+  --ruler-tick-label-active: #d4d4d8;
 
   /* Workspace Backdrop (Dark) — الخلفية الفحمية المطابقة لهوية الثيم
      (البند 1 في تعريف الهوية أعلاه: مساحة العمل #141414 مخفّفة للميكا) */

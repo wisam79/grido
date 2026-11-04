@@ -32,6 +32,8 @@ import {
   toolShortcut,
 } from '@/lib/workspace-tools';
 
+import { RailSettingsMenu } from './rail-settings-menu';
+
 import type {
   CollageTab,
   CommandGroupView,
@@ -593,6 +595,9 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             </kbd>
           </TooltipContent>
         </Tooltip>
+
+        {/* ⚙️ قائمة الإعدادات والمظهر والحساب الموحدة في أسفل الشريط */}
+        <RailSettingsMenu />
       </div>
     </aside>
   );

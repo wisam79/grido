@@ -233,8 +233,8 @@ export function ToolbarFileOps() {
     <>
       {/* مجموعة الإدراج والمشاريع */}
       <div className="fluent-command-group gap-1">
-        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا */}
-        <div className="flex items-center rounded-md border border-border/70 bg-card/50 hover:bg-card/80 transition-colors overflow-hidden shadow-2xs">
+        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا بتنسيق متوازن متطابق مع أزرار الإخراج */}
+        <div className="flex items-center rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50 transition-colors overflow-hidden">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
               variant="ghost"
@@ -242,9 +242,9 @@ export function ToolbarFileOps() {
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-none hover:bg-muted/60 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/50"
+              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-foreground font-semibold rounded-none hover:bg-muted/60 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/50"
             >
-              <AddPhotoIcon className="w-4 h-4 text-foreground group-hover:text-primary transition-colors" />
+              <AddPhotoIcon className="w-4 h-4 text-foreground/80 group-hover:text-foreground transition-colors" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
