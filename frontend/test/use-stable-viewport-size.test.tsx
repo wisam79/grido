@@ -76,7 +76,7 @@ describe('useStableViewportSize', () => {
     expect(result.current).toEqual({ w: 1312, h: 768 });
   });
 
-  it('يبدأ حلقة المزامنة النشطة فور استدعاء notifyPanelTransition', async () => {
+  it('يؤجل التزام المقاس أثناء حركة الألواح ويلتزم به بعد انتهاء الحركة', () => {
     const containerRef = { current: mockElement };
     const { result } = renderHook(() => useStableViewportSize(containerRef));
 
@@ -98,11 +98,53 @@ describe('useStableViewportSize', () => {
       notifyPanelTransition();
     });
 
-    await act(async () => {
-      await new Promise((r) => requestAnimationFrame(r));
+    // أثناء الحركة: يظل المقاس ثابتاً لحماية مخازن الـ GPU من إعادة التخصيص
+    expect(result.current).toEqual({ w: 1024, h: 768 });
+
+    // عند وصول حدث انتهاء حركة اللوح الجانبي
+    act(() => {
+      const panel = document.createElement('aside');
+      panel.className = 'fluent-panel-motion';
+      const event = new TransitionEvent('transitionend');
+      Object.defineProperty(event, 'target', { value: panel });
+      window.dispatchEvent(event);
     });
 
     expect(result.current).toEqual({ w: 1150, h: 768 });
+  });
+
+  it('يلتزم بالمقاس تلقائياً عبر سقف الأمان الزمني إذا لم يرد حدث transitionend', () => {
+    vi.useFakeTimers();
+    try {
+      const containerRef = { current: mockElement };
+      const { result } = renderHook(() => useStableViewportSize(containerRef));
+
+      vi.spyOn(mockElement, 'getBoundingClientRect').mockReturnValue({
+        width: 1250,
+        height: 768,
+        top: 0,
+        left: 0,
+        right: 1250,
+        bottom: 768,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      });
+
+      act(() => {
+        notifyPanelTransition();
+      });
+
+      expect(result.current).toEqual({ w: 1024, h: 768 });
+
+      act(() => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(result.current).toEqual({ w: 1250, h: 768 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('يلتزم بالمقاس الحالي فوراً عند وقوع حدث transitionend', () => {

@@ -148,15 +148,15 @@ export function ColorField({
                       onChange(quick.hex);
                       onCommit?.(quick.hex);
                     }}
-                    className="group flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="group flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'h-4 w-4 rounded-full border shadow-2xs transition-transform group-hover:scale-110',
+                        'h-3.5 w-3.5 rounded-full border shadow-2xs transition-transform group-hover:scale-115',
                         isActive
-                          ? 'border-primary ring-2 ring-primary ring-offset-1 ring-offset-card'
-                          : 'border-black/20 dark:border-white/25',
+                          ? 'border-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-card'
+                          : 'border-border/60 hover:border-foreground/40',
                       )}
                       style={{ backgroundColor: quick.hex }}
                     />

@@ -250,6 +250,35 @@ func (r *projectRepositoryImpl) FindAll() ([]domain.Project, error) {
 	return projects, err
 }
 
+// FindAllSummaries يجلب بيانات المكتبة الخفيفة فقط (بلا أعمدة JSON الثقيلة:
+// العناصر/الخانات/القوالب/إعدادات الطباعة) لشاشة قائمة المشاريع. التحميل
+// الفعلي يمرّ بـ FindByID، فالنقل عبر IPC لا يدفع حجم كل مشروع في المكتبة.
+func (r *projectRepositoryImpl) FindAllSummaries() ([]domain.Project, error) {
+	var projects []domain.Project
+	err := r.db.
+		Select(
+			"ID",
+			"Name",
+			"Mode",
+			"CanvasWidth",
+			"CanvasHeight",
+			"BackgroundColor",
+			"BackgroundGradientColor2",
+			"BackgroundGradientAngle",
+			"CreatedAt",
+			"UpdatedAt",
+		).
+		Order("updated_at desc").
+		Find(&projects).Error
+	if err == nil {
+		for i := range projects {
+			projects[i].CreatedAtStr = projects[i].CreatedAt.Format(time.RFC3339)
+			projects[i].UpdatedAtStr = projects[i].UpdatedAt.Format(time.RFC3339)
+		}
+	}
+	return projects, err
+}
+
 func (r *projectRepositoryImpl) Count() (int64, error) {
 	var count int64
 	err := r.db.Model(&domain.Project{}).Count(&count).Error

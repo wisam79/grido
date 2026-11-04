@@ -66,6 +66,9 @@ describe('useWorkspacePanels — استقرار الألواح عند تغيّر
     setWindowWidth(1600);
     const { result } = renderHook(() => useWorkspacePanels());
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    act(() => {
+      result.current.setIsInspectorPinned(true);
+    });
     expect(result.current.isInspectorPinned).toBe(true);
 
     await resizeTo(1280);
@@ -133,6 +136,9 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
   it('يحفظ الدرج ولوحة الخصائص عند الدخول ويستعيدهما بدقة عند الخروج', () => {
     const { result } = renderHook(() => useWorkspacePanels());
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    act(() => {
+      result.current.setIsInspectorPinned(true);
+    });
     expect(result.current.isInspectorPinned).toBe(true);
     expect(result.current.isZenMode).toBe(false);
 

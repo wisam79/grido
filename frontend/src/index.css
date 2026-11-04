@@ -975,12 +975,7 @@
   border-radius: 12px !important; /* شكل بطاقة Fluent 2 الأنيقة */
   background: var(--card) !important;
   color: var(--foreground) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  box-shadow:
-    0 10px 30px -4px rgba(0, 0, 0, 0.25),
-    0 4px 10px -2px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  box-shadow: var(--fluent-shadow-8) !important;
   width: auto !important;
   max-width: 440px !important;
   gap: 10px !important;

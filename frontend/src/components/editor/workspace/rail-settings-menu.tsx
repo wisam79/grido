@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useTheme } from '@/hooks/use-theme';
+import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
   className,
 }: RailSettingsMenuProps) {
   const { theme, themeMode, toggleTheme } = useTheme();
+  const { zoomScale } = useUiZoom();
 
   const {
     user,
@@ -71,7 +73,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu dir="rtl">
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
@@ -109,7 +111,6 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
         side="right"
         align="end"
         sideOffset={10}
-        dir="rtl"
         className="w-60 p-1.5 rounded-lg border fluent-specular font-cairo shadow-fluent-16 z-(--z-menu)"
       >
         {/* قسم 1: الحساب والترخيص */}
@@ -166,6 +167,56 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
                 ? 'داكن'
                 : 'مضيء'}
           </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-in'))}
+          className="flex items-center justify-between cursor-pointer py-2 px-2 rounded-md group text-xs font-semibold"
+        >
+          <div className="flex items-center gap-2">
+            <span className="size-4 flex items-center justify-center font-bold text-sm text-primary font-mono">
+              +
+            </span>
+            <span>تكبير حجم الواجهة</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-3xs font-mono text-muted-foreground">
+              {Math.round(zoomScale * 100)}%
+            </span>
+            <kbd className="px-1 py-0.5 text-3xs font-mono bg-muted/80 rounded border border-border">
+              Ctrl+Shift++
+            </kbd>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-out'))}
+          className="flex items-center justify-between cursor-pointer py-2 px-2 rounded-md group text-xs font-semibold"
+        >
+          <div className="flex items-center gap-2">
+            <span className="size-4 flex items-center justify-center font-bold text-sm text-primary font-mono">
+              -
+            </span>
+            <span>تصغير حجم الواجهة</span>
+          </div>
+          <kbd className="px-1 py-0.5 text-3xs font-mono bg-muted/80 rounded border border-border">
+            Ctrl+Shift+-
+          </kbd>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-reset'))}
+          className="flex items-center justify-between cursor-pointer py-2 px-2 rounded-md group text-xs font-semibold"
+        >
+          <div className="flex items-center gap-2">
+            <span className="size-4 flex items-center justify-center font-bold text-3xs text-muted-foreground font-mono">
+              100%
+            </span>
+            <span>استعادة حجم الواجهة</span>
+          </div>
+          <kbd className="px-1 py-0.5 text-3xs font-mono bg-muted/80 rounded border border-border">
+            Ctrl+Shift+⌫
+          </kbd>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="my-1" />

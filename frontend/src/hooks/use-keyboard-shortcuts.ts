@@ -415,14 +415,16 @@ export function useKeyboardShortcuts() {
     setShowUserGuides(!showUserGuides);
   });
 
-  // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++
-  useHotkeys('mod+=, mod+plus, mod+numpad_add, mod+shift+=', (e) => {
+  // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++ (بدون Shift لمنع التداخل مع زوم الواجهة)
+  useHotkeys('mod+=, mod+plus, mod+numpad_add', (e) => {
+    if (e.shiftKey) return;
     e.preventDefault();
     zoomInStore();
   });
 
-  // Zoom Out: Ctrl+- or Ctrl+_ or Cmd+- / Cmd+_
-  useHotkeys('mod+-, mod+underscore, mod+numpad_subtract', (e) => {
+  // Zoom Out: Ctrl+- or Cmd+- (بدون Shift لمنع التداخل مع زوم الواجهة)
+  useHotkeys('mod+-, mod+numpad_subtract', (e) => {
+    if (e.shiftKey) return;
     e.preventDefault();
     zoomOutStore();
   });
@@ -450,6 +452,70 @@ export function useKeyboardShortcuts() {
     e.preventDefault();
     resetZoomStore();
   });
+
+  // 🧭 تكبير وتصغير واجهة التطبيق العامة (UI Scaling):
+  // يُلتقط في طور الـ Capture لضمان الأسبقية التامة وتفادي تداخل مفاتيح الكيبورد بمختلف اللغات
+  // يدعم كلاً من Ctrl+Shift أو Ctrl+Alt (لتفادي تداخل تبديل لغات ويندوز)، ولوحات الأرقام Numpad
+  useEffect(() => {
+    const handleUiZoomKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.ctrlKey || e.metaKey;
+      const isShift = e.shiftKey;
+      const isAlt = e.altKey;
+
+      // يجب ضغط Mod (Ctrl/Cmd) مع Shift أو Alt
+      if (!isMod || (!isShift && !isAlt)) return;
+
+      // تكبير الواجهة: Ctrl + Shift/Alt + (+) أو (=) أو NumpadAdd
+      const isPlusKey =
+        e.key === '+' ||
+        e.key === '=' ||
+        e.code === 'Equal' ||
+        e.code === 'NumpadAdd' ||
+        e.keyCode === 187 ||
+        e.keyCode === 107;
+
+      if (isPlusKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.dispatchEvent(new CustomEvent('grido:ui-zoom-in'));
+        return;
+      }
+
+      // تصغير الواجهة: Ctrl + Shift/Alt + (-) أو (_) أو التطويل العربي أو NumpadSubtract
+      const isMinusKey =
+        e.key === '-' ||
+        e.key === '_' ||
+        e.key === '\u0640' || // تطويل عربي الناتج عن Shift+- في اللوحة العربية
+        e.code === 'Minus' ||
+        e.code === 'NumpadSubtract' ||
+        e.keyCode === 189 ||
+        e.keyCode === 109;
+
+      if (isMinusKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.dispatchEvent(new CustomEvent('grido:ui-zoom-out'));
+        return;
+      }
+
+      // استعادة الواجهة 100%: Ctrl + Shift/Alt + Backspace أو 0
+      const isResetKey =
+        e.key === 'Backspace' ||
+        e.code === 'Backspace' ||
+        (isAlt && (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0'));
+
+      if (isResetKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.dispatchEvent(new CustomEvent('grido:ui-zoom-reset'));
+      }
+    };
+
+    window.addEventListener('keydown', handleUiZoomKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleUiZoomKeyDown, { capture: true });
+    };
+  }, []);
 
   // --- Arrows (Nudging) & Paste via native events ---
   useEffect(() => {

@@ -133,14 +133,10 @@ export const EditorCanvas = React.memo(
     const editingTextId = useEditorStore((s) => s.editingTextId);
     const canvasWidth = useEditorStore((s) => s.canvasWidth);
     const canvasHeight = useEditorStore((s) => s.canvasHeight);
-    const _backgroundColor = useEditorStore((s) => s.backgroundColor);
     const showRuler = useEditorStore((s) => s.showRuler);
     const template = useEditorStore((s) => s.template);
     const printSettings = useEditorStore((s) => s.printSettings);
-    const selectedIds = useEditorStore((s) => s.selectedIds);
     const collageMargin = useEditorStore((s) => s.collageMargin);
-    const _slots = useEditorStore((s) => s.slots);
-    const _canvasFitMode = useEditorStore((s) => s.canvasFitMode);
 
     // 🧭 محرك Viewport الكانفاس الحقيقي (Option B: Full-Viewport Konva Stage)
     const {
@@ -344,7 +340,8 @@ export const EditorCanvas = React.memo(
             if (id) {
               targetType = 'element';
               targetId = id;
-              if (!selectedIds.includes(id)) {
+              const currentSelectedIds = useEditorStore.getState().selectedIds;
+              if (!currentSelectedIds.includes(id)) {
                 selectElement(id);
               }
             }
@@ -366,7 +363,7 @@ export const EditorCanvas = React.memo(
           target: { type: targetType, id: targetId },
         });
       },
-      [printMode, mode, selectedIds, selectElement],
+      [printMode, mode, selectElement],
     );
 
     const sortedElements = useMemo(

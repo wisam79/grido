@@ -29,6 +29,7 @@ import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
 import { flushAutoSave, useAutoSave } from '@/hooks/use-autosave';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useTheme } from '@/hooks/use-theme';
+import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useWindowControls } from '@/hooks/use-window-controls';
 import {
   useWorkspacePanels,
@@ -53,6 +54,7 @@ export default function App() {
       ? panelsHook.isInspectorPinned
       : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'properties';
   const { theme, toggleTheme } = useTheme();
+  const { zoomIn: uiZoomIn, zoomOut: uiZoomOut, resetZoom: uiZoomReset } = useUiZoom();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
   const isInlineAiOperation =
@@ -196,14 +198,20 @@ export default function App() {
     window.addEventListener('grido:open-account', handleOpenAccount);
     window.addEventListener('grido:open-export-dialog', openExport);
     window.addEventListener('grido:open-print-dialog', openPrint);
+    window.addEventListener('grido:ui-zoom-in', uiZoomIn);
+    window.addEventListener('grido:ui-zoom-out', uiZoomOut);
+    window.addEventListener('grido:ui-zoom-reset', uiZoomReset);
 
     return () => {
       window.removeEventListener('grido:toggle-theme', handleToggleTheme);
       window.removeEventListener('grido:open-account', handleOpenAccount);
       window.removeEventListener('grido:open-export-dialog', openExport);
       window.removeEventListener('grido:open-print-dialog', openPrint);
+      window.removeEventListener('grido:ui-zoom-in', uiZoomIn);
+      window.removeEventListener('grido:ui-zoom-out', uiZoomOut);
+      window.removeEventListener('grido:ui-zoom-reset', uiZoomReset);
     };
-  }, [toggleTheme, setAccountModalOpen]);
+  }, [toggleTheme, setAccountModalOpen, uiZoomIn, uiZoomOut, uiZoomReset]);
 
   if (isInitializing) {
     return (
@@ -251,16 +259,16 @@ export default function App() {
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div
           className={cn(
-            'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background/90',
+            'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background',
           )}
           dir="rtl"
         >
           {!isMaximized && <WindowResizeHandles />}
-          {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
+          {/* الرأس الموحد للنافذة بتصميم Fluent 2 صلب وخفيف */}
           <ErrorBoundary>
             <header
               className={cn(
-                'border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs',
+                'border-b border-border bg-sidebar no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) shadow-2xs',
                 !isFocused && 'opacity-75',
               )}
               // شريط النافذة بنمط RTL العربي الأصيل (القوائم تبدأ يميناً وأزرار التحكم يساراً)
@@ -411,6 +419,8 @@ export default function App() {
                       ? undefined
                       : () => panelsHook.togglePanel('properties')
                   }
+                  isPinned={panelsHook.isInspectorPinned}
+                  onTogglePin={() => panelsHook.setIsInspectorPinned((prev) => !prev)}
                 />
               </ErrorBoundary>
             }
@@ -424,7 +434,7 @@ export default function App() {
             }
             floatingFeedback={
               activeOperation && (!isInlineAiOperation || panelsHook.isZenMode) ? (
-                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
+                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 pointer-events-auto">
                   <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
                   <span className="text-xs font-bold text-foreground truncate max-w-xs">
                     {activeOperation.title}

@@ -105,7 +105,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 </Button>
               </TooltipBtn>
 
-              {/* تصدير (Ctrl+E) — زر هادئ متناسق مع زر إدراج */}
+              {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
               <TooltipBtn content="تصدير صورة (Ctrl + E)">
                 <Button
                   variant="ghost"
@@ -113,14 +113,13 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onExport}
                   data-testid="toolbar-export"
                   aria-label="تصدير صورة"
-                  className="h-8 px-2.5 flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-muted/60 border border-border/60 bg-muted/30 rounded-md cursor-pointer transition-colors duration-150 text-xs font-semibold"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Export className="w-4 h-4 text-foreground/80" />
-                  <span>تصدير</span>
+                  <Export className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
 
-              {/* طباعة (Ctrl+P) — زر هادئ بنفس الخامة والوزن البصري المتناغم */}
+              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
               <TooltipBtn content="طباعة المستند (Ctrl + P)">
                 <Button
                   variant="ghost"
@@ -128,10 +127,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onPrint}
                   data-testid="toolbar-print"
                   aria-label="طباعة المستند"
-                  className="h-8 px-2.5 flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-muted/60 border border-border/60 bg-muted/30 rounded-md cursor-pointer transition-colors duration-150 text-xs font-semibold"
+                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary border border-primary/25 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Printer className="w-4 h-4 text-primary" weight="duotone" />
-                  <span>طباعة</span>
+                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
                 </Button>
               </TooltipBtn>
             </div>

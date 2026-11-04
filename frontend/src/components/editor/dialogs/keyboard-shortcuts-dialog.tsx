@@ -74,9 +74,12 @@ export function KeyboardShortcutsDialog() {
     {
       title: 'الرؤية واللوحات الجانبية',
       items: [
-        { label: 'تكبير', keys: ['Ctrl', '+'] },
-        { label: 'تصغير', keys: ['Ctrl', '-'] },
-        { label: 'الحجم الفعلي (100%)', keys: ['Ctrl', '1'] },
+        { label: 'تكبير الورقة (الكانفاس)', keys: ['Ctrl', '+'] },
+        { label: 'تصغير الورقة (الكانفاس)', keys: ['Ctrl', '-'] },
+        { label: 'تكبير واجهة البرنامج', keys: ['Ctrl', 'Shift', '+'] },
+        { label: 'تصغير واجهة البرنامج', keys: ['Ctrl', 'Shift', '-'] },
+        { label: 'استعادة حجم الواجهة (100%)', keys: ['Ctrl', 'Shift', 'Backspace'] },
+        { label: 'الحجم الفعلي للورقة (100%)', keys: ['Ctrl', '1'] },
         { label: 'ملاءمة الورقة كاملة', keys: ['Ctrl', '0'] },
         { label: 'ملاءمة عرض مساحة العمل', keys: ['Ctrl', 'Shift', '0'] },
         { label: 'ملاءمة تلقائية', keys: ['Ctrl', 'Alt', '0'] },

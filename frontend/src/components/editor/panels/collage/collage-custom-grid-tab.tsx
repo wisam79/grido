@@ -25,11 +25,6 @@ const loadCollapsePrefs = (): Partial<Record<CollapseKey, boolean>> => {
   }
 };
 
-const COUNTER_BTN = cn(
-  'size-8 shrink-0 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150',
-  'hover:bg-primary/10 hover:text-primary disabled:opacity-35 disabled:cursor-not-allowed',
-  FOCUS_RING,
-);
 const SECTION_CLASS = 'border-border/40 py-2.5';
 const ALIGNMENT_ORDER: GridAlignment[] = [
   'top-left',
@@ -228,8 +223,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           {PHOTO_TYPE_OPTIONS.map((option) => {
             const active = photoType === option.value;
             const dimensions = getPhotoDimensions(option.value);
-            // الأبعاد تُشتق من جدول المقاسات نفسه — كانت مكتوبة يدوياً فتخالف
-            // الوعد (فيزا 50×50 بينما الخلايا 35×45) وتضلّل عند أي تعديل.
             const dimLabel =
               option.value === 'stretch' ? 'ملء الحيز' : `${dimensions.wMM}×${dimensions.hMM}`;
             return (
@@ -262,14 +255,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     />
                   )}
                 </span>
-                <span className="text-xs font-medium text-foreground">{option.label}</span>
-                <span
-                  className="text-mini tabular-nums"
-                  dir={option.value === 'stretch' ? 'rtl' : 'ltr'}
-                >
-                  {dimLabel}
-                  {option.value !== 'stretch' && <span className="ms-1 font-cairo">مم</span>}
-                </span>
+                <span className="truncate text-xs font-semibold">{option.label}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">{dimLabel}</span>
               </button>
             );
           })}
@@ -297,10 +284,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             { label: 'الصفوف', value: rows, max: maxRows, change: onRowsChange, single: 'صف' },
             { label: 'الأعمدة', value: cols, max: maxCols, change: onColsChange, single: 'عمود' },
           ].map((counter) => (
-            <div key={counter.label} className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-xs text-foreground">{counter.label}</span>
+            <div key={counter.label} className="flex min-w-0 flex-col gap-1">
+              <span className="text-micro font-medium text-muted-foreground">{counter.label}</span>
               <div
-                className="flex items-center justify-between rounded-md border border-border/60 bg-muted/20"
+                className="flex items-center justify-between h-8 rounded-md border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors"
                 role="group"
                 aria-label={`عدد ${counter.label}`}
                 dir="ltr"
@@ -311,13 +298,13 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.max(1, counter.value - 1))}
                   title={`تقليل ${counter.single}`}
                   aria-label={`تقليل عدد ${counter.label}`}
-                  className={COUNTER_BTN}
+                  className="size-7 shrink-0 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Minus className="size-3.5" />
+                  <Minus className="size-3" />
                 </button>
                 <span
                   aria-live="polite"
-                  className="w-10 text-center text-sm font-semibold tabular-nums"
+                  className="w-8 text-center text-xs font-bold font-mono tabular-nums text-foreground"
                 >
                   {counter.value}
                 </span>
@@ -327,15 +314,15 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.min(counter.max, counter.value + 1))}
                   title={`إضافة ${counter.single}`}
                   aria-label={`زيادة عدد ${counter.label}`}
-                  className={COUNTER_BTN}
+                  className="size-7 shrink-0 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <Plus className="size-3.5" />
+                  <Plus className="size-3" />
                 </button>
               </div>
             </div>
           ))}
         </div>
-        {photoType === 'stretch' && quickLayouts}
+        {photoType === 'stretch' && <div className="mt-2">{quickLayouts}</div>}
       </FluentSection>
 
       {photoType !== 'stretch' && (
@@ -346,9 +333,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           open={collapsePrefs.align ?? true}
           onOpenChange={setCardOpen('align')}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">{quickLayouts}</div>
-            <div className="relative size-[72px] shrink-0 rounded-md border border-border/50 bg-muted/20 p-1 select-none">
+            <div className="relative size-[64px] shrink-0 rounded-md border border-border/40 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"
@@ -367,17 +354,17 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     onKeyDown={(event) => handleAlignKeyDown(event, align)}
                     title={ALIGNMENT_LABELS[align]}
                     className={cn(
-                      'relative flex items-center justify-center rounded-sm transition-colors cursor-pointer hover:bg-muted/70',
+                      'relative flex items-center justify-center rounded-xs transition-colors cursor-pointer hover:bg-muted/50',
                       FOCUS_RING,
                     )}
                   >
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'rounded-full transition-colors duration-150',
+                        'rounded-full transition-all duration-150',
                         gridAlign === align
-                          ? 'w-2.5 h-2.5 bg-primary ring-2 ring-primary/25'
-                          : 'w-2 h-2 bg-muted-foreground/70 border border-border/40',
+                          ? 'w-2 h-2 bg-primary ring-2 ring-primary/30'
+                          : 'w-1.5 h-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70',
                       )}
                     />
                   </button>

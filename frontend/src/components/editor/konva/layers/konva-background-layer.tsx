@@ -34,7 +34,7 @@ interface KonvaBackgroundLayerProps {
 export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
   canvasWidth,
   canvasHeight,
-  stageScale = 1,
+  stageScale: _stageScale = 1,
   checkerPattern,
   backgroundColor,
   backgroundGradientColor2,
@@ -80,10 +80,11 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
             ? (checkerPattern as unknown as HTMLImageElement)
             : undefined
         }
-        shadowColor="rgba(0, 0, 0, 0.28)"
-        shadowBlur={24 / Math.max(0.001, stageScale)}
-        shadowOffset={{ x: 0, y: 8 / Math.max(0.001, stageScale) }}
-        shadowOpacity={0.35}
+        shadowColor="rgba(0, 0, 0, 0.22)"
+        shadowBlur={12}
+        shadowOffset={{ x: 0, y: 3 }}
+        shadowOpacity={0.25}
+        shadowForStrokeEnabled={false}
         perfectDrawEnabled={false}
       />
 

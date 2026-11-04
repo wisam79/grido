@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
 import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
@@ -8,7 +8,6 @@ import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import { FreeformCollageModal } from '@/features/freeform-collage';
 import {
   notifyFreeformTemplateSaved,
   setFreeformDialogOpen,
@@ -26,6 +25,14 @@ const ExportDialog = lazy(() =>
 const PrintDialog = lazy(() =>
   import('@/components/editor/dialogs/print-dialog').then((module) => ({
     default: module.PrintDialog,
+  })),
+);
+
+// محرر الكولاج الحر ثقيل (أدوات/قص/معاينة) ولا يلزم عند الإقلاع: يُحمَّل عند
+// أول فتح فقط. يبقى مركّباً بعد ذلك حتى لا تُفقد حركة الإغلاق.
+const FreeformCollageModal = lazy(() =>
+  import('@/features/freeform-collage').then((module) => ({
+    default: module.FreeformCollageModal,
   })),
 );
 
@@ -70,16 +77,24 @@ export function AppDialogsHost({
   onDismissCrash,
 }: AppDialogsHostProps) {
   const freeformOpen = useFreeformDialogState((state) => state.open);
+  const [freeformMounted, setFreeformMounted] = useState(freeformOpen);
+  // ضبط حالة مشتقة أثناء التصيير (نمط React المعتمد) بدل setState داخل أثر:
+  // يبقى المكوّن مركّباً بعد أول فتح حتى تُحفظ حركة الإغلاق.
+  if (freeformOpen && !freeformMounted) setFreeformMounted(true);
 
   return (
     <>
-      <ErrorBoundary>
-        <FreeformCollageModal
-          open={freeformOpen}
-          onOpenChange={setFreeformDialogOpen}
-          onTemplateSaved={notifyFreeformTemplateSaved}
-        />
-      </ErrorBoundary>
+      {freeformMounted && (
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <FreeformCollageModal
+              open={freeformOpen}
+              onOpenChange={setFreeformDialogOpen}
+              onTemplateSaved={notifyFreeformTemplateSaved}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* نافذة التصدير */}
       <ErrorBoundary>

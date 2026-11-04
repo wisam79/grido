@@ -70,8 +70,14 @@ export function useWorkspacePanels() {
 
   const [isInspectorPinned, setIsInspectorPinnedState] = useState<boolean>(() => {
     const saved = getStoredPreferences().isInspectorPinned;
-    return saved !== undefined ? saved : true;
+    // 🧭 وضع الخصائص التفاعلي مع التحديد (Context-Aware Auto-Reveal):
+    // الافتراضي هو عدم التثبيت القسري (false) لتتنفس الشاشة ويتسع الكانفاس،
+    // فتفتح اللوحة تلقائياً عند تحديد عنصر وتنطوي عند إلغائه.
+    return saved !== undefined ? saved : false;
   });
+
+  const hasSelection = useEditorStore((s) => !!s.selectedId || s.selectedIds.length > 0);
+  const isInspectorOpen = isInspectorPinned || hasSelection;
 
   // Active studio tool — «الطبقات» افتراضياً لمعاينة وتنظيم عناصر الكانفاس
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
@@ -279,6 +285,7 @@ export function useWorkspacePanels() {
     breakpoint,
     activePanel,
     isInspectorPinned,
+    isInspectorOpen,
     isTemplatesDrawerOpen,
     isMobileSheetOpen,
     mobileActiveTab,

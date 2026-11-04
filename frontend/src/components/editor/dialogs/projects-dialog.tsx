@@ -61,6 +61,7 @@ import {
 import {
   SaveProject,
   GetAllProjects,
+  GetProject,
   DeleteProject,
 } from '../../../../wailsjs/go/handlers/ProjectHandler';
 import { SaveFileDialog } from '../../../../wailsjs/go/main/App';
@@ -218,9 +219,15 @@ export function ProjectsDialog({
     }
   };
 
-  const performLoad = (project: domain.Project) => {
+  const performLoad = async (project: domain.Project) => {
     try {
-      const projectData = domainProjectToProjectFile(project);
+      // قائمة المكتبة تُجلب الآن كملخّص خفيف (بلا عناصر/خانات) لتفادي نقل
+      // كل مشروع عبر IPC عند فتح النافذة — الجلب الكامل يحدث هنا فقط.
+      const fullProject = await GetProject(project.id);
+      if (!fullProject) {
+        throw new Error('تعذّر العثور على المشروع في المكتبة');
+      }
+      const projectData = domainProjectToProjectFile(fullProject);
 
       useEditorStore.getState().loadProject(projectData, project.id, project.name);
 
@@ -240,7 +247,7 @@ export function ProjectsDialog({
   // وغير ذلك يمر بتأكيد صريح أولاً.
   const handleLoad = (project: domain.Project) => {
     if (isPristineWorkspace()) {
-      performLoad(project);
+      void performLoad(project);
       return;
     }
     setPendingLoadProject(project);
@@ -734,7 +741,7 @@ export function ProjectsDialog({
                 onClick={() => {
                   const target = pendingLoadProject;
                   setPendingLoadProject(null);
-                  if (target) performLoad(target);
+                  if (target) void performLoad(target);
                 }}
                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
               >

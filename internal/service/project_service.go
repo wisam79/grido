@@ -84,6 +84,13 @@ func (s *ProjectService) GetProject(id string) (*domain.Project, error) {
 }
 
 func (s *ProjectService) GetAllProjects() ([]domain.Project, error) {
+	// قائمة المكتبة لا تحتاج أعمدة JSON الثقيلة؛ نستخدم الملخّص إن توفّر،
+	// ونبقى متوافقين مع أي تنفيذ للمستودع لا يوفّره (بما فيها بدائل الاختبار).
+	if summaries, ok := s.repo.(interface {
+		FindAllSummaries() ([]domain.Project, error)
+	}); ok {
+		return summaries.FindAllSummaries()
+	}
 	return s.repo.FindAll()
 }
 

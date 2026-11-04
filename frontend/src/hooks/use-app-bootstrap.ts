@@ -71,55 +71,62 @@ export function useAppBootstrap(): AppBootstrapState {
   };
 
   useEffect(() => {
-    const check = async () => {
+    let cancelled = false;
+
+    // فحص الترخيص نداء شبكي (حتى مع جلسة محلية). تشغيله في الخلفية يعني أن
+    // فتح التطبيق لا ينتظر الشبكة: المحرر يظهر من الجلسة المخزنة فوراً،
+    // وتُحدَّث حالة الترخيص عند وصول الرد (أو يفشل بصمت عند الانقطاع).
+    const checkLicenseInBackground = async () => {
       try {
         const profile = await checkLicenseStatus();
-        if (!profile || !profile.token) {
+        if (!cancelled && (!profile || !profile.token)) {
           setAccountModalOpen(true);
         }
-        // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
-        void useEditorStore.getState().hydrateAiUsageLogs();
-        // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
-        try {
-          if (typeof GetStartupFile === 'function') {
-            const startupUrl = await GetStartupFile();
-            if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
-          }
-        } catch (startupErr) {
-          // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج
-          // حتى لا يفشل فتح الملف بالنقر المزدوج بصمت تام.
-          if (typeof GetStartupFile === 'function') {
-            logger.error('Failed to open startup file:', startupErr);
-            toast.error(toErrorMessage(startupErr, 'تعذّر فتح الملف الممرر عند الإقلاع'));
-          }
-        }
-        // فحص وجود تقرير انهيار سابق من الرنتايم
-        try {
-          if (typeof CheckPendingCrashReport === 'function') {
-            const report = await CheckPendingCrashReport();
-            if (report) {
-              setCrashReport(report);
-            }
-          }
-        } catch (crashErr) {
-          // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج.
-          if (typeof CheckPendingCrashReport === 'function') {
-            logger.error('Failed to check pending crash report:', crashErr);
-          }
-        }
       } catch (err) {
-        // 🛡️ الجلسة الواحدة: الإقلاع قد يكشف طرداً — اعرض رسالة الطرد الصريحة
-        // (نافذة الحساب تُفتح أصلاً من license-slice عند الطرد).
         if (isSessionSupersededError(err)) {
           toast.error(sessionSupersededMessage(err), { duration: 8000 });
         } else {
           logger.error('Failed to check license status during init:', err);
         }
-      } finally {
-        setIsInitializing(false);
       }
     };
-    check();
+
+    const bootstrap = async () => {
+      void checkLicenseInBackground();
+      // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
+      void useEditorStore.getState().hydrateAiUsageLogs();
+      // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
+      try {
+        if (typeof GetStartupFile === 'function') {
+          const startupUrl = await GetStartupFile();
+          if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
+        }
+      } catch (startupErr) {
+        // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج
+        // حتى لا يفشل فتح الملف بالنقر المزدوج بصمت تام.
+        if (typeof GetStartupFile === 'function') {
+          logger.error('Failed to open startup file:', startupErr);
+          toast.error(toErrorMessage(startupErr, 'تعذّر فتح الملف الممرر عند الإقلاع'));
+        }
+      }
+      // فحص وجود تقرير انهيار سابق من الرنتايم
+      try {
+        if (typeof CheckPendingCrashReport === 'function') {
+          const report = await CheckPendingCrashReport();
+          if (report) {
+            setCrashReport(report);
+          }
+        }
+      } catch (crashErr) {
+        // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج.
+        if (typeof CheckPendingCrashReport === 'function') {
+          logger.error('Failed to check pending crash report:', crashErr);
+        }
+      }
+
+      if (!cancelled) setIsInitializing(false);
+    };
+    void bootstrap();
 
     // Check periodically every 5 minutes to ensure dynamic state updates
     const intervalId = setInterval(
@@ -135,7 +142,10 @@ export function useAppBootstrap(): AppBootstrapState {
       5 * 60 * 1000,
     );
 
-    return () => clearInterval(intervalId);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, [checkLicenseStatus, setAccountModalOpen]);
 
   /**

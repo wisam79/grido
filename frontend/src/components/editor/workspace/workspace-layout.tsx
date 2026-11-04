@@ -41,7 +41,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
   // Desktop sidebars (>= 1024px): Left tools drawer and Right inspector are independent and docked
   const isLeftDrawerOpen = !isCompact && isTemplatesDrawerOpen;
-  const isRightPanelOpen = !isCompact && panelsHook.isInspectorPinned;
+  const isRightPanelOpen = !isCompact && panelsHook.isInspectorOpen;
 
   // 🧭 تتبع تغير حالة ظهور الألواح الجانبية لبدء حلقة المزامنة النشطة للكانفاس فوراً بـ 60fps
   const isInitialMount = useRef(true);

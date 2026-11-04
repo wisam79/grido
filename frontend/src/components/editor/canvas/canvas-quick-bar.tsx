@@ -244,9 +244,9 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     }
   };
 
-  // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
+  // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي) — أرضية بطاقة صلبة ومحددة لمنع إجهاد الـ Compositor
   const barBody = (
-    <div className="bg-card/95 dark:bg-card/95 backdrop-blur-md border border-border/40 shadow-fluent-8 rounded-lg px-1 py-0.5 flex items-center gap-0.5 text-muted-foreground fluent-specular max-w-full overflow-x-auto">
+    <div className="bg-card border border-border/60 shadow-fluent-8 rounded-lg px-1 py-0.5 flex items-center gap-0.5 text-muted-foreground fluent-specular max-w-full overflow-x-auto">
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
         <QuickBarSlotSection

@@ -156,6 +156,8 @@ export function useCanvasViewport(
   const displayHRef = useRef(displayH);
   const stagePosRef = useRef(stagePos);
   const wheelCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // زوم العجلة يُطبَّق على المسرح فوراً ويُثبَّت في المتجر بعد هدوء الإيماءة.
+  const pendingZoomRef = useRef<number | null>(null);
   const initialPanPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -332,19 +334,49 @@ export function useCanvasViewport(
           vH,
         );
 
-        const newOrigin = computeDefaultStageOrigin(
-          nextMetrics.displayW,
-          nextMetrics.displayH,
-          vW,
-          vH,
-        );
-
         stagePosRef.current = clamped;
-        setPan({
-          x: clamped.x - newOrigin.x,
-          y: clamped.y - newOrigin.y,
-        });
-        setCanvasZoom(nextZ);
+        // حدّث مراجع الهندسة فوراً: الإطارات التالية في نفس الإيماءة تقرأ
+        // المقاس الجديد بدل مقاس ما قبل الزوم.
+        displayWRef.current = nextMetrics.displayW;
+        displayHRef.current = nextMetrics.displayH;
+        pendingZoomRef.current = nextZ;
+
+        // 🚀 مسار إجرائي: مقياس المسرح وموضعه يُطبَّقان مباشرة على Konva.
+        // كان setCanvasZoom + setPan في كل إطار يعيدان تصيير المحرر والمساطر
+        // والكانفاس كاملاً — الآن React لا يرى الزوم إلا عند نهاية الإيماءة.
+        const nextScale = state.canvasWidth > 0 ? nextMetrics.displayW / state.canvasWidth : 1;
+        if (stageRef.current) {
+          stageRef.current.scale({ x: nextScale, y: nextScale });
+          stageRef.current.position(clamped);
+          stageRef.current.batchDraw();
+        }
+        if (innerRef?.current) {
+          innerRef.current.style.transform = `translate3d(${clamped.x}px, ${clamped.y}px, 0)`;
+        }
+
+        // تثبيت الحالة بعد هدوء العجلة (100ms) — كتابة واحدة بدل كل إطار.
+        if (wheelCommitTimerRef.current !== null) {
+          clearTimeout(wheelCommitTimerRef.current);
+        }
+        wheelCommitTimerRef.current = setTimeout(() => {
+          wheelCommitTimerRef.current = null;
+          const pendingZoom = pendingZoomRef.current;
+          pendingZoomRef.current = null;
+          const curW = displayWRef.current;
+          const curH = displayHRef.current;
+          const curOrigin = computeDefaultStageOrigin(
+            curW,
+            curH,
+            viewportSizeRef.current.w,
+            viewportSizeRef.current.h,
+          );
+          resetRulerTransforms();
+          if (pendingZoom !== null) setCanvasZoom(pendingZoom);
+          setPan({
+            x: stagePosRef.current.x - curOrigin.x,
+            y: stagePosRef.current.y - curOrigin.y,
+          });
+        }, 100);
 
         // 🧭 تزامن مقاس وموضع عصي التمرير فلوينت فورياً عند التكبير/التصغير
         const { shell, hThumb, vThumb } = getShellDom();

@@ -14,12 +14,13 @@ export function notifyPanelTransition() {
 }
 
 const DEFAULT_VIEWPORT_SIZE: StableViewportSize = { w: 800, h: 600 };
+const PANEL_TRANSITION_SETTLE_MS = 220;
 
 /**
- * يحافظ على مقاس حاوية العرض متزامناً وسلساً أثناء انزلاق الألواح الجانبية.
- * القياس الأولي يُطبَّق فوراً، وتُشغَّل حلقة requestAnimationFrame نشطة بـ 60fps
- * أثناء حركة الألواح (عبر أحداث transitionrun/start و grido:panel-transition)
- * لتحديث موضع المسرح والمساطر بسلاسة فائقة دون ارتعاش أو تأخير زمني ميت.
+ * يحافظ على مقاس حاوية العرض ثابتاً أثناء حركة وانزلاق الألواح الجانبية.
+ * القياس الأولي يُطبَّق فوراً، وتُؤجَّل إعادة التخصيص حتى هدوء الحركة واستقرار
+ * الأبعاد (عبر transitionend أو مهلة أمان 220ms)، بدلاً من حلقة إطارات مستمرة
+ * تعيد تخصيص مخازن الـ GPU Textures للكانفاس مع كل بكسل وتسبب ثقلاً كبيراً.
  */
 export function useStableViewportSize(
   containerRef: RefObject<HTMLElement | null>,
@@ -33,8 +34,8 @@ export function useStableViewportSize(
     if (!node) return;
 
     let isTransitioning = false;
-    let transitionRafId: number | null = null;
-    let transitionStartTime = 0;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let resizeRafId: number | null = null;
 
     const commit = (w: number, h: number) => {
       if (w <= 0 || h <= 0) return;
@@ -52,25 +53,23 @@ export function useStableViewportSize(
       commit(rect.width, rect.height);
     };
 
-    const tickTransition = (now: number) => {
-      commitCurrentRect();
-      // سقف أمان 320ms لحركة ألواح الـ 200ms
-      if (isTransitioning && now - transitionStartTime < 320) {
-        transitionRafId = requestAnimationFrame(tickTransition);
-      } else {
-        isTransitioning = false;
-        transitionRafId = null;
-        commitCurrentRect();
+    const clearFallbackTimer = () => {
+      if (fallbackTimer !== null) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
       }
     };
 
-    const startTransitionLoop = () => {
+    const settleTransition = () => {
+      isTransitioning = false;
+      clearFallbackTimer();
+      commitCurrentRect();
+    };
+
+    const startTransition = () => {
       isTransitioning = true;
-      transitionStartTime = performance.now();
-      if (transitionRafId !== null) {
-        cancelAnimationFrame(transitionRafId);
-      }
-      transitionRafId = requestAnimationFrame(tickTransition);
+      clearFallbackTimer();
+      fallbackTimer = setTimeout(settleTransition, PANEL_TRANSITION_SETTLE_MS);
     };
 
     const handleTransitionEvent = (e: Event) => {
@@ -80,7 +79,7 @@ export function useStableViewportSize(
         target?.classList?.contains('fluent-panel-motion') ||
         target?.closest?.('.fluent-panel-motion')
       ) {
-        startTransitionLoop();
+        startTransition();
       }
     };
 
@@ -90,19 +89,18 @@ export function useStableViewportSize(
         target?.classList?.contains('fluent-panel-motion') ||
         target?.closest?.('.fluent-panel-motion')
       ) {
-        isTransitioning = false;
-        if (transitionRafId !== null) {
-          cancelAnimationFrame(transitionRafId);
-          transitionRafId = null;
-        }
-        commitCurrentRect();
+        settleTransition();
       }
     };
 
     const ro = new ResizeObserver(() => {
-      if (!isTransitioning) {
-        startTransitionLoop();
-      }
+      if (isTransitioning) return;
+
+      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
+      resizeRafId = requestAnimationFrame(() => {
+        resizeRafId = null;
+        commitCurrentRect();
+      });
     });
 
     ro.observe(node);
@@ -116,12 +114,13 @@ export function useStableViewportSize(
 
     return () => {
       ro.disconnect();
+      clearFallbackTimer();
+      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
       window.removeEventListener(PANEL_TRANSITION_EVENT, handleTransitionEvent);
       window.removeEventListener('transitionrun', handleTransitionEvent);
       window.removeEventListener('transitionstart', handleTransitionEvent);
       window.removeEventListener('transitionend', handleTransitionEnd);
       window.removeEventListener('transitioncancel', handleTransitionEnd);
-      if (transitionRafId !== null) cancelAnimationFrame(transitionRafId);
     };
   }, [containerRef]);
 

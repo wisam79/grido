@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { CaretRight } from '@/components/ui/icons';
+import { CaretRight, PushPin } from '@/components/ui/icons';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 
 import { PanelShell } from './panel-shell';
 import { CollageSettings } from '../properties/collage-settings';
@@ -17,10 +19,14 @@ import type { CanvasElement } from '@/lib/store/types';
 export interface PropertiesPanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 export const PropertiesPanel = React.memo(function PropertiesPanel({
   onCollapse,
+  isPinned,
+  onTogglePin,
 }: PropertiesPanelProps) {
   // scalars فقط: الوضع/التحديد/الإجراء. لا اشتراك على مصفوفتي elements/slots
   // الكاملتين — element-slice يستبدلهما في كل كتابة، فكان كل نبضة سحب أو شريط
@@ -136,9 +142,40 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
       title={panelTitle}
       subtitle={panelSubtitle}
       headerExtra={
-        selectedElement ? (
-          <ElementHeaderActions element={selectedElement} onUpdate={handleUpdateElement} />
-        ) : undefined
+        <div className="flex items-center gap-1">
+          {selectedElement && (
+            <ElementHeaderActions element={selectedElement} onUpdate={handleUpdateElement} />
+          )}
+          {onTogglePin && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onTogglePin}
+                  aria-label={
+                    isPinned
+                      ? 'اللوحة مثبتة دائماً (انقر للإخفاء التلقائي عند عدم التحديد)'
+                      : 'اللوحة تفاعلية مع التحديد (انقر للتثبيت الدائم)'
+                  }
+                  aria-pressed={isPinned}
+                  className={cn(
+                    'p-1.5 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                    isPinned
+                      ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
+                  )}
+                >
+                  <PushPin className="w-3.5 h-3.5" weight={isPinned ? 'fill' : 'regular'} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
+                {isPinned
+                  ? 'اللوحة مثبتة دائماً — انقر للإخفاء التلقائي عند عدم التحديد'
+                  : 'اللوحة تفاعلية — انقر لتثبيتها دائماً'}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
