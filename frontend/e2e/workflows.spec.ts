@@ -40,11 +40,19 @@ test.describe('Editor Core Workflows E2E', () => {
     // تبديل المظهر تفعل حقيقي: صنف .dark على الجذر ينقلب فعلاً
     const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'));
     const before = await isDark();
-    const themeToggle = page
-      .getByRole('button', { name: /مظهر النظام|الوضع المضيء|الوضع الداكن/ })
-      .first();
-    await expect(themeToggle).toBeVisible();
-    await themeToggle.click();
+    const railSettings = page.getByTestId('rail-settings-menu-trigger');
+    if (await railSettings.isVisible()) {
+      await railSettings.click();
+      const themeItem = page.getByTestId('rail-theme-toggle-item');
+      await expect(themeItem).toBeVisible();
+      await themeItem.click();
+    } else {
+      const themeToggle = page
+        .getByRole('button', { name: /مظهر النظام|الوضع المضيء|الوضع الداكن/ })
+        .first();
+      await expect(themeToggle).toBeVisible();
+      await themeToggle.click();
+    }
     await expect.poll(isDark, { timeout: 5000 }).toBe(!before);
   });
 

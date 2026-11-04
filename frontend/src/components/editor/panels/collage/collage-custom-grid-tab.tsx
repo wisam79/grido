@@ -256,7 +256,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   )}
                 </span>
                 <span className="truncate text-xs font-semibold">{option.label}</span>
-                <span className="font-mono text-[10px] text-muted-foreground">{dimLabel}</span>
+                <span className="font-mono text-mini text-muted-foreground">{dimLabel}</span>
               </button>
             );
           })}

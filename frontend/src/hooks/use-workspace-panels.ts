@@ -70,10 +70,9 @@ export function useWorkspacePanels() {
 
   const [isInspectorPinned, setIsInspectorPinnedState] = useState<boolean>(() => {
     const saved = getStoredPreferences().isInspectorPinned;
-    // 🧭 وضع الخصائص التفاعلي مع التحديد (Context-Aware Auto-Reveal):
-    // الافتراضي هو عدم التثبيت القسري (false) لتتنفس الشاشة ويتسع الكانفاس،
-    // فتفتح اللوحة تلقائياً عند تحديد عنصر وتنطوي عند إلغائه.
-    return saved !== undefined ? saved : false;
+    // 🧭 وضع الخصائص الافتراضي مثبت (true) كاستوديو تصميم مكتبي،
+    // وعند إلغاء تثبيته يدوياً يعمل بنمط الكشف التفاعلي عند التحديد.
+    return saved !== undefined ? saved : true;
   });
 
   const hasSelection = useEditorStore((s) => !!s.selectedId || s.selectedIds.length > 0);

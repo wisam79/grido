@@ -147,6 +147,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
           المظهر والعرض
         </DropdownMenuLabel>
         <DropdownMenuItem
+          data-testid="rail-theme-toggle-item"
           onClick={toggleTheme}
           className="flex items-center justify-between cursor-pointer py-2 px-2 rounded-md group text-xs font-semibold"
         >
