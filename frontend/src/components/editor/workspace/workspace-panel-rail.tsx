@@ -138,7 +138,6 @@ const RailToolButton = React.memo(function RailToolButton({
   index,
   isActive,
   badgeCount,
-  isInUse,
   pillLayoutId,
   onSelectSection,
 }: {
@@ -147,8 +146,6 @@ const RailToolButton = React.memo(function RailToolButton({
   isActive: boolean;
   /** شارة رقمية (عدد الطبقات) */
   badgeCount?: number;
-  /** نقطة نبض تعني «هذه الميزة مطبّقة على الكانفاس فعلاً» */
-  isInUse?: boolean;
   /** معرّف مشترك بين أزرار الشريط نفسه لتحريك الإطار بينها بلا تسرّب لشريط آخر */
   pillLayoutId: string;
   onSelectSection: (section: WorkspaceModeSection) => void;
@@ -198,14 +195,6 @@ const RailToolButton = React.memo(function RailToolButton({
             >
               {badgeCount > 99 ? '99+' : badgeCount}
             </span>
-          )}
-
-          {/* نقطة «مطبَّق على الكانفاس» — أعلى يسار الزر */}
-          {isInUse && (
-            <span
-              className="absolute top-1.5 start-1.5 w-1.5 h-1.5 rounded-full bg-success ring-2 ring-sidebar pointer-events-none z-20"
-              aria-hidden="true"
-            />
           )}
         </Button>
       </TooltipTrigger>
@@ -379,12 +368,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   isLauncherOpen,
   onLauncherOpenChange,
 }: WorkspacePanelRailProps) {
-  const { mode, workflow, elementsCount, collageTemplate } = useEditorStore(
+  const { mode, workflow, elementsCount } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
       workflow: state.workflow,
       elementsCount: state.elements.length,
-      collageTemplate: state.collageTemplate,
     })),
   );
 
@@ -411,9 +399,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       ),
     [sections],
   );
-
-  const isSectionInUse = (section: WorkspaceModeSection) =>
-    section.inUse === 'collage-template' ? collageTemplate != null : undefined;
 
   // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
   const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
@@ -491,7 +476,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             section={section}
             index={index}
             isActive={activeSectionId === section.id}
-            isInUse={isSectionInUse(section)}
             badgeCount={section.badge === 'elements' ? elementsCount : undefined}
             pillLayoutId={pillLayoutId}
             onSelectSection={selectSection}

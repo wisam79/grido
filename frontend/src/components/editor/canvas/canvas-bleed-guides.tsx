@@ -52,6 +52,7 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
       <svg
         width={displayW}
         height={displayH}
+        viewBox={`0 0 ${displayW} ${displayH}`}
         className="w-full h-full"
         style={{ overflow: 'visible' }}
         xmlns="http://www.w3.org/2000/svg"

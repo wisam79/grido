@@ -523,7 +523,7 @@ export const EditorCanvas = React.memo(
                       }}
                     >
                       <div
-                        className={`transition-all ${
+                        className={`transition-colors ${
                           lockUserGuides ? 'bg-amber-500/70' : 'bg-primary'
                         } ${
                           isH

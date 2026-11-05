@@ -358,6 +358,8 @@ export function useCanvasViewport(
         }
         if (innerRef?.current) {
           innerRef.current.style.transform = `translate3d(${clamped.x}px, ${clamped.y}px, 0)`;
+          innerRef.current.style.width = `${nextMetrics.displayW}px`;
+          innerRef.current.style.height = `${nextMetrics.displayH}px`;
         }
 
         // تثبيت الحالة بعد هدوء العجلة (100ms) — كتابة واحدة بدل كل إطار.

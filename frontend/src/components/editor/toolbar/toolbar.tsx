@@ -100,7 +100,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               onClick={onSave}
               data-testid="toolbar-save"
               aria-label="حفظ المشروع"
-              className="text-foreground/80 cursor-pointer"
+              className="h-8 w-8 p-0 text-foreground/80 cursor-pointer"
             >
               <FloppyDisk className="w-4 h-4" />
             </Button>
@@ -114,7 +114,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               onClick={onExport}
               data-testid="toolbar-export"
               aria-label="تصدير صورة"
-              className="cursor-pointer"
+              className="h-8 w-8 p-0 cursor-pointer"
             >
               <Export className="w-4 h-4" />
             </Button>
@@ -127,7 +127,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               onClick={onPrint}
               data-testid="toolbar-print"
               aria-label="طباعة المستند"
-              className="cursor-pointer"
+              className="h-8 w-8 p-0 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
             </Button>

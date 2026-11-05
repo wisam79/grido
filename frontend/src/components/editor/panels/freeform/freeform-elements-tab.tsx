@@ -272,7 +272,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                   aria-busy={isBusy}
                   aria-label={stickerLabel}
                   onClick={() => handleInsertSticker(tmpl)}
-                  title={stickerLabel}
+                  title={tmpl.name}
                   className="group relative bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border focus-visible:border-border rounded-md p-1 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* سطح محايد ومعاينة أكبر بلا إطار داخلي يزاحم تفاصيل الملصق */}

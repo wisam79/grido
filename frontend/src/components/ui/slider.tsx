@@ -58,15 +58,16 @@ const Slider = React.forwardRef<
         <SliderPrimitive.Track
           data-slot="slider-track"
           className={cn(
-            // مسار ناعم وأنيق يتبع نظام Fluent 2 الهادئ
-            'relative grow overflow-hidden rounded-full bg-muted border border-border/40 h-1 data-[orientation=vertical]:w-1 transition-colors',
+            // مسار مرئي في الوضعين: تعبئة foreground شفافة تتبع لون النص
+            // (أسود في الفاتح/أبيض في الداكن) بدل bg-muted الباهت.
+            'relative grow overflow-hidden rounded-full bg-foreground/10 border border-foreground/20 h-1.5 data-[orientation=vertical]:w-1.5 transition-colors',
           )}
         >
           <SliderPrimitive.Range
             data-slot="slider-range"
             className={cn(
-              // المسار المعبأ بلون أزرق خفيف أو محايد أنيق
-              'bg-primary/80 absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
+              // المسار المعبأ محايد أبيض في الداكن — القيمة ليست أمراً تعبوياً
+              'bg-foreground/80 absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
             )}
           />
         </SliderPrimitive.Track>
@@ -75,7 +76,7 @@ const Slider = React.forwardRef<
             data-slot="slider-thumb"
             key={index}
             {...thumbAriaProps}
-            className="block size-3.5 shrink-0 rounded-full bg-background border border-border shadow-xs hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform"
+            className="block size-3.5 shrink-0 rounded-full bg-background border-2 border-foreground/80 shadow-xs hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform"
           />
         ))}
       </SliderPrimitive.Root>

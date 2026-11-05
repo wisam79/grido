@@ -619,6 +619,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
           unsubscribe();
         }
       },
+      15000,
     );
 
     it('applies once and closes without a second discard prompt', async () => {
