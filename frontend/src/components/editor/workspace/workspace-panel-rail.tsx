@@ -13,6 +13,7 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
+import { Faders } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
@@ -482,6 +483,7 @@ interface CompactToolLauncherProps {
   onSelectCollageTab?: (tab: CollageTab) => void;
   isLauncherOpen: boolean;
   onLauncherOpenChange: (open: boolean) => void;
+  isCompact?: boolean;
 }
 
 export function CompactToolLauncher({
@@ -491,6 +493,7 @@ export function CompactToolLauncher({
   onSelectCollageTab,
   isLauncherOpen,
   onLauncherOpenChange,
+  isCompact = false,
 }: CompactToolLauncherProps) {
   const { mode, workflow } = useEditorStore(
     useShallow((state) => ({
@@ -554,54 +557,92 @@ export function CompactToolLauncher({
   );
 
   return (
-    <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant="default"
-              size="icon"
-              data-testid="compact-tool-launcher"
-              aria-label="لوحة الأدوات"
-              className={cn(
-                'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
-                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                'transition-colors duration-100',
-              )}
+    <>
+      {isCompact && (
+        <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="default"
+                  size="icon"
+                  data-testid="compact-tool-launcher"
+                  aria-label="لوحة الأدوات"
+                  className={cn(
+                    'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
+                    'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                    'transition-colors duration-100',
+                  )}
+                >
+                  <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
             >
-              <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
-        >
-          <span>لوحة الأدوات</span>
-          <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
-            Ctrl+K
-          </kbd>
-        </TooltipContent>
-      </Tooltip>
+              <span>لوحة الأدوات</span>
+              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
+                Ctrl+K
+              </kbd>
+            </TooltipContent>
+          </Tooltip>
 
-      <PopoverContent
-        side="top"
-        align="start"
-        sideOffset={10}
-        dir="rtl"
-        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
-      >
-        <ToolLauncherContent
-          sections={sections}
-          activeSectionId={activeSectionId}
-          toolsHeading={toolsHeading}
-          getShortcut={getShortcut}
-          onSelectSection={selectSection}
-          onAfterRun={closeLauncher}
-          onRunCommand={runGlobalCommand}
-          commandGroups={commandGroups}
-        />
-      </PopoverContent>
-    </Popover>
+          <PopoverContent
+            side="top"
+            align="start"
+            sideOffset={10}
+            dir="rtl"
+            className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
+          >
+            <ToolLauncherContent
+              sections={sections}
+              activeSectionId={activeSectionId}
+              toolsHeading={toolsHeading}
+              getShortcut={getShortcut}
+              onSelectSection={selectSection}
+              onAfterRun={closeLauncher}
+              onRunCommand={runGlobalCommand}
+              commandGroups={commandGroups}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {/* لوحة الأوامر كـ Modal عائم مباشر عند الضغط على Ctrl+K أو زر اللوحة في سطح المكتب */}
+      {!isCompact && isLauncherOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="لوحة الأوامر والأدوات"
+          className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/40 backdrop-blur-xs animate-in fade-in-0 duration-100"
+        >
+          {/* خلفية للإغلاق عند النقر بالخارج */}
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="إغلاق لوحة الأوامر"
+            className="fixed inset-0 h-full w-full bg-transparent cursor-default border-0 outline-none"
+            onClick={() => onLauncherOpenChange(false)}
+          />
+          <div
+            className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-border bg-popover shadow-fluent-16 fluent-specular overflow-hidden animate-in zoom-in-95 duration-100"
+            dir="rtl"
+          >
+            <ToolLauncherContent
+              sections={sections}
+              activeSectionId={activeSectionId}
+              toolsHeading={toolsHeading}
+              getShortcut={getShortcut}
+              onSelectSection={selectSection}
+              onAfterRun={closeLauncher}
+              onRunCommand={runGlobalCommand}
+              commandGroups={commandGroups}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

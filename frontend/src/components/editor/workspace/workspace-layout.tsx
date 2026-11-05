@@ -114,10 +114,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
             {canvasContent}
             {floatingFeedback}
           </CanvasOverlayHost>
-          {/* زر لوحة الأوامر للشاشات المدمجة — نفس اللوحة الوحيدة بنفس الحالة؛
-              مخفي في وضع التركيز (كروم إضافي) */}
-          {isCompact && !isZenMode && (
-            <div className="absolute bottom-4 start-4 z-(--z-quick-bar) no-print">
+          {/* لوحة الأوامر (Command Palette) المركزية على سطح المكتب أو زر الجوال */}
+          {(!isCompact || (!isZenMode && isCompact)) && (
+            <div
+              className={
+                isCompact ? 'absolute bottom-4 start-4 z-(--z-quick-bar) no-print' : 'no-print'
+              }
+            >
               <CompactToolLauncher
                 activeStudioTab={panelsHook.activeStudioTab}
                 activeCollageTab={panelsHook.activeCollageTab}
@@ -125,6 +128,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
                 onSelectCollageTab={panelsHook.selectCollageTab}
                 isLauncherOpen={panelsHook.isLauncherOpen}
                 onLauncherOpenChange={panelsHook.setIsLauncherOpen}
+                isCompact={isCompact}
               />
             </div>
           )}

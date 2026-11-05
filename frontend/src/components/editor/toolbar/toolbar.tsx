@@ -113,6 +113,20 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             </Button>
           </TooltipBtn>
 
+          {/* زر لوحة الأدوات والأوامر المباشر (Ctrl+K) */}
+          <TooltipBtn content="لوحة الأدوات والأوامر (Ctrl + K)">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="toolbar-tool-launcher"
+              aria-label="لوحة الأدوات والأوامر"
+              onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
+              className="h-8 w-8 p-0 cursor-pointer"
+            >
+              <Faders className="w-4 h-4" />
+            </Button>
+          </TooltipBtn>
+
           {/* تصدير (Ctrl+E) — إطار خفيف يميّز الإجراء الثانوي */}
           <TooltipBtn content="تصدير صورة (Ctrl + E)">
             <Button
@@ -158,24 +172,11 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               </TooltipBtn>
               <DropdownMenuContent
                 align="end"
-                className="w-52 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5"
+                className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5"
               >
                 <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
-                  الأدوات ومساحة العمل
+                  خيارات المستند
                 </div>
-                <DropdownMenuItem
-                  onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
-                  className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer hover:bg-muted/60 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Faders className="w-4 h-4 text-primary" weight="duotone" />
-                    <span className="font-semibold">لوحة الأدوات والأوامر…</span>
-                  </div>
-                  <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border text-muted-foreground">
-                    Ctrl+K
-                  </kbd>
-                </DropdownMenuItem>
-                <div className="my-1 border-t border-border/50" />
                 <DropdownMenuItem
                   onClick={() =>
                     window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
