@@ -44,6 +44,19 @@ function main() {
         return;
       }
 
+      // 2b. Prohibit heavy full-suite tests execution (allow targeted single file tests)
+      const fullSuiteRegex =
+        /\b(?:npm\s+run\s+test(?::coverage)?|npm\s+test|vitest\s+run|vitest)(?:\s+--coverage)?\s*$/i;
+      if (fullSuiteRegex.test(cmd.trim())) {
+        const response = {
+          decision: 'deny',
+          reason:
+            '❌ حظر إجهاد الجهاز المحلي بحزمة الاختبارات الكاملة: يُمنع تشغيل حزمة الـ 1700+ اختبار بالكامل أو أوامر التغطية محلياً. شغّل فقط الاختبار المستهدف الفردي للملف المتأثر: npx vitest run path/to/file.test.ts',
+        };
+        process.stdout.write(JSON.stringify(response));
+        return;
+      }
+
       // 3. Prohibit bypassing git hooks (--no-verify / -n)
       const noVerifyRegex = /\bgit\s+(?:commit|push)\b.*(?:\s--no-verify|\s-n\b)/i;
       if (noVerifyRegex.test(cmd)) {
