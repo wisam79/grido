@@ -284,10 +284,12 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             { label: 'الصفوف', value: rows, max: maxRows, change: onRowsChange, single: 'صف' },
             { label: 'الأعمدة', value: cols, max: maxCols, change: onColsChange, single: 'عمود' },
           ].map((counter) => (
-            <div key={counter.label} className="flex min-w-0 flex-col gap-1">
-              <span className="text-micro font-medium text-muted-foreground">{counter.label}</span>
+            <div key={counter.label} className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-semibold text-foreground/85 px-0.5">
+                {counter.label}
+              </span>
               <div
-                className="flex items-center justify-between h-8 rounded-md border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors"
+                className="flex items-center justify-between h-10 rounded-lg border border-border/70 bg-muted/30 hover:bg-muted/40 transition-colors px-1"
                 role="group"
                 aria-label={`عدد ${counter.label}`}
                 dir="ltr"
@@ -298,13 +300,13 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.max(1, counter.value - 1))}
                   title={`تقليل ${counter.single}`}
                   aria-label={`تقليل عدد ${counter.label}`}
-                  className="size-7 shrink-0 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="size-8 shrink-0 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed"
                 >
-                  <Minus className="size-3" />
+                  <Minus className="size-4" weight="bold" />
                 </button>
                 <span
                   aria-live="polite"
-                  className="w-8 text-center text-xs font-bold font-mono tabular-nums text-foreground"
+                  className="flex-1 text-center text-sm font-bold font-mono tabular-nums text-foreground select-none"
                 >
                   {counter.value}
                 </span>
@@ -314,9 +316,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.min(counter.max, counter.value + 1))}
                   title={`إضافة ${counter.single}`}
                   aria-label={`زيادة عدد ${counter.label}`}
-                  className="size-7 shrink-0 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="size-8 shrink-0 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed"
                 >
-                  <Plus className="size-3" />
+                  <Plus className="size-4" weight="bold" />
                 </button>
               </div>
             </div>
