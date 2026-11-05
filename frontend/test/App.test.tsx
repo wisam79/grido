@@ -1,16 +1,30 @@
-import { render, screen, cleanup, act, waitFor } from '@testing-library/react';
+import {
+  render,
+  renderHook,
+  screen,
+  cleanup,
+  act,
+  waitFor,
+  within,
+  fireEvent,
+} from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { CheckPendingCrashReport, GetStartupFile } from '@bindings/grido/app';
+
 import App from '../src/App';
 import { TemplatePanel } from '../src/components/editor/panels/template-panel';
+import { StartupSplash } from '../src/components/editor/system/startup-splash';
 import { AppDialogsHost } from '../src/components/editor/workspace/app-dialogs-host';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import {
   notifyFreeformTemplateSaved,
   setFreeformDialogOpen,
 } from '../src/features/freeform-collage/lib/freeform-dialog-state';
+import { useAppBootstrap } from '../src/hooks/use-app-bootstrap';
 import { useEditorStore } from '../src/lib/editor-store';
+import { GetLicenseStatus, LoginAccount } from '../wailsjs/go/handlers/LicenseHandler';
 import { GetCustomTemplates } from '../wailsjs/go/main/App';
 
 // Mock Wails v3 generated bindings — هوية الوحدات التي تستوردها App وحقاخها
@@ -432,4 +446,388 @@ describe('Component Testing: UI Rendering', () => {
     expect(await screen.findByText('أبعاد الشبكة')).toBeInTheDocument();
     expect(screen.queryByText('شبكة الكولاج')).toBeNull();
   }, 15000);
+});
+
+describe('Startup splash regressions', () => {
+  const activeProfile: NonNullable<Awaited<ReturnType<typeof GetLicenseStatus>>> = {
+    id: 'startup-user',
+    name: 'Startup User',
+    email: 'startup@example.com',
+    plan: 'pro',
+    status: 'active',
+    token: 'startup-session-token',
+    refreshToken: '',
+    createdAt: '',
+    updatedAt: '',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    licenseKey: '',
+  };
+
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<T>((complete, fail) => {
+      resolve = complete;
+      reject = fail;
+    });
+    return { promise, resolve, reject };
+  }
+
+  function expectSplashOnly(message = 'جاري التهيئة ...') {
+    const splash = screen.getByRole('main', { name: 'Grido Studio' });
+    expect(within(splash).getByRole('status')).toHaveTextContent(message);
+    expect(screen.queryByText('GRIDO')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('إدراج صورة جديدة')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('dialog', { hidden: true })).toHaveLength(0);
+    return splash;
+  }
+
+  function expectEditorReady() {
+    expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
+    expect(screen.queryByText('جاري التهيئة ...')).not.toBeInTheDocument();
+    expect(screen.getByText('GRIDO')).toBeInTheDocument();
+    expect(screen.getByLabelText('إدراج صورة جديدة')).toBeInTheDocument();
+    expect(screen.queryAllByRole('dialog', { name: 'الحساب والترخيص' })).toHaveLength(0);
+  }
+
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState({ user: null, accountModalOpen: false, licenseLoading: false });
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    useEditorStore.setState({ user: null, accountModalOpen: false, licenseLoading: false });
+  });
+
+  it('labels one main and one polite status, with the real logo and geometry decorative', () => {
+    const { unmount } = render(<StartupSplash />);
+    const splash = expectSplashOnly();
+    const title = screen.getByRole('heading', { level: 1, name: 'Grido Studio' });
+    const status = screen.getByRole('status');
+
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(splash.tagName).toBe('MAIN');
+    expect(screen.getAllByRole('heading', { level: 1 })).toEqual([title]);
+    expect(title.id).not.toBe('');
+    expect(splash).toHaveAttribute('aria-labelledby', title.id);
+    expect(screen.getAllByRole('status')).toEqual([status]);
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status).toHaveAttribute('aria-atomic', 'true');
+    expect(status).toHaveTextContent(/^جاري التهيئة \.\.\.$/);
+
+    const logo = splash.querySelector('svg[viewBox="0 0 1000 1000"]');
+    expect(logo).toHaveAttribute('width', '96');
+    expect(logo).toHaveAttribute('height', '96');
+    expect(logo).toHaveAttribute('aria-hidden', 'true');
+    expect(logo).toHaveAttribute('focusable', 'false');
+    expect(logo?.querySelector('path')).not.toBeNull();
+    const logoParts = logo!.querySelectorAll('use');
+    expect(logoParts.length).toBeGreaterThan(0);
+    for (const part of logoParts) {
+      const reference = part.getAttribute('href');
+      expect(reference).toMatch(/^#/);
+      expect(logo!.contains(document.getElementById(reference!.slice(1)))).toBe(true);
+    }
+    expect(logo!.querySelector('image, script, foreignObject')).toBeNull();
+    for (const geometry of splash.querySelectorAll('svg')) {
+      expect(geometry.closest('[aria-hidden="true"]')).not.toBeNull();
+    }
+    expect(splash.querySelector('img')).toBeNull();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(status.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('keeps the editor and account modal out while license is pending, then enters immediately', async () => {
+    const license = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+    // Existing Wails mocks use ordinary promises; bootstrap never calls cancellation methods.
+    vi.mocked(GetLicenseStatus).mockReturnValueOnce(
+      license.promise as ReturnType<typeof GetLicenseStatus>,
+    );
+    const startedAt = Date.now();
+
+    try {
+      render(<App />);
+      expectSplashOnly();
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+
+      await act(async () => {
+        license.resolve(activeProfile);
+      });
+
+      // No clock advance, image load or animation-end event may be needed to dismiss the splash.
+      expectEditorReady();
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+      expect(Date.now()).toBe(startedAt);
+    } finally {
+      // A failed assertion must not leave the store's single-flight license request pending.
+      await act(async () => license.resolve(activeProfile));
+    }
+  }, 15000);
+
+  it('waits for startup-file and crash-report reads, with no extra display delay afterward', async () => {
+    const startupFile = deferred<Awaited<ReturnType<typeof GetStartupFile>>>();
+    const crashReport = deferred<Awaited<ReturnType<typeof CheckPendingCrashReport>>>();
+    vi.mocked(GetLicenseStatus).mockResolvedValueOnce(activeProfile);
+    vi.mocked(GetStartupFile).mockReturnValueOnce(
+      startupFile.promise as ReturnType<typeof GetStartupFile>,
+    );
+    vi.mocked(CheckPendingCrashReport).mockReturnValueOnce(
+      crashReport.promise as ReturnType<typeof CheckPendingCrashReport>,
+    );
+    const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+    const crashCallsBefore = vi.mocked(CheckPendingCrashReport).mock.calls.length;
+    const startedAt = Date.now();
+
+    try {
+      render(<App />);
+      await act(async () => {});
+      expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore + 1);
+      expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore);
+      expectSplashOnly();
+
+      await act(async () => startupFile.resolve(''));
+      expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore + 1);
+      expectSplashOnly();
+
+      await act(async () => crashReport.resolve(null));
+      expectEditorReady();
+      expect(Date.now()).toBe(startedAt);
+    } finally {
+      await act(async () => {
+        startupFile.resolve('');
+        crashReport.resolve(null);
+      });
+    }
+  }, 15000);
+
+  it('keeps a slow license check behind the splash even with a previously active user', async () => {
+    const license = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+    vi.mocked(GetLicenseStatus).mockReturnValueOnce(
+      license.promise as ReturnType<typeof GetLicenseStatus>,
+    );
+    const licenseCallsBefore = vi.mocked(GetLicenseStatus).mock.calls.length;
+    const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+    useEditorStore.setState({ user: activeProfile });
+
+    try {
+      render(<App />);
+      await act(async () => vi.advanceTimersByTimeAsync(3999));
+      expectSplashOnly();
+      await act(async () => vi.advanceTimersByTimeAsync(1));
+      expectSplashOnly('التهيئة تستغرق وقتًا أطول. يرجى الانتظار.');
+      expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'إغلاق التطبيق' })).toBeEnabled();
+      await act(async () => vi.advanceTimersByTimeAsync(300000));
+      expectSplashOnly('التهيئة تستغرق وقتًا أطول. يرجى الانتظار.');
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+      expect(GetLicenseStatus).toHaveBeenCalledTimes(licenseCallsBefore + 1);
+      expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore);
+
+      // A resolved native result may be its validated offline fallback, not only an online fetch.
+      await act(async () => license.resolve(activeProfile));
+      expectEditorReady();
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+    } finally {
+      await act(async () => license.resolve(activeProfile));
+    }
+  }, 15000);
+
+  it('keeps a technical failure visible and retries once without using the old active profile', async () => {
+    const retry = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+    vi.mocked(GetLicenseStatus)
+      .mockRejectedValueOnce(new Error('IPC temporarily unavailable'))
+      .mockReturnValueOnce(retry.promise as ReturnType<typeof GetLicenseStatus>);
+    const licenseCallsBefore = vi.mocked(GetLicenseStatus).mock.calls.length;
+    const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+    const crashCallsBefore = vi.mocked(CheckPendingCrashReport).mock.calls.length;
+    useEditorStore.setState({ user: activeProfile });
+
+    try {
+      render(<App />);
+      await act(async () => {});
+      const splash = expectSplashOnly('تعذّر التحقق من الجلسة. أعد المحاولة.');
+      const logo = splash.querySelector('svg[viewBox="0 0 1000 1000"]');
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+      expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore);
+      expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore);
+      await act(async () => vi.advanceTimersByTimeAsync(5000));
+      expectSplashOnly('تعذّر التحقق من الجلسة. أعد المحاولة.');
+
+      const retryButton = screen.getByRole('button', { name: 'إعادة المحاولة' });
+      act(() => {
+        fireEvent.click(retryButton);
+        fireEvent.click(retryButton);
+      });
+      await act(async () => {});
+      expectSplashOnly();
+      expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument();
+      expect(GetLicenseStatus).toHaveBeenCalledTimes(licenseCallsBefore + 2);
+      expect(splash.querySelector('svg[viewBox="0 0 1000 1000"]')).toBe(logo);
+      await act(async () => retry.resolve(activeProfile));
+      expectEditorReady();
+      expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore + 1);
+      expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore + 1);
+    } finally {
+      await act(async () => retry.resolve(activeProfile));
+    }
+  }, 15000);
+
+  it('shows genuine session supersession as a lock result, not a retryable network error', async () => {
+    useEditorStore.setState({ user: activeProfile });
+    vi.mocked(GetLicenseStatus).mockRejectedValueOnce(
+      new Error('ERR_SESSION_SUPERSEDED: تم تسجيل الدخول من جهاز آخر'),
+    );
+    render(<App />);
+    await act(async () => {});
+
+    expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'النسخة مقفلة', hidden: true })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument();
+    expect(useEditorStore.getState().user).toBeNull();
+  }, 15000);
+
+  it('cleans the slow timer and ignores bootstrap side effects after unmount', async () => {
+    const license = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+    vi.mocked(GetLicenseStatus).mockReturnValueOnce(
+      license.promise as ReturnType<typeof GetLicenseStatus>,
+    );
+    const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+    const crashCallsBefore = vi.mocked(CheckPendingCrashReport).mock.calls.length;
+    const timersBefore = vi.getTimerCount();
+    const view = renderHook(() => useAppBootstrap());
+    view.unmount();
+    expect(vi.getTimerCount()).toBe(timersBefore);
+
+    await act(async () => license.resolve(null));
+    expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore);
+    expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore);
+    expect(useEditorStore.getState().accountModalOpen).toBe(false);
+  });
+
+  it('shares a StrictMode license flight and performs post-license startup once', async () => {
+    const license = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+    vi.mocked(GetLicenseStatus).mockReturnValueOnce(
+      license.promise as ReturnType<typeof GetLicenseStatus>,
+    );
+    const licenseCallsBefore = vi.mocked(GetLicenseStatus).mock.calls.length;
+    const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+    const crashCallsBefore = vi.mocked(CheckPendingCrashReport).mock.calls.length;
+    const view = renderHook(() => useAppBootstrap(), {
+      wrapper: ({ children }) => <React.StrictMode>{children}</React.StrictMode>,
+    });
+
+    try {
+      await act(async () => {});
+      expect(GetLicenseStatus).toHaveBeenCalledTimes(licenseCallsBefore + 1);
+      await act(async () => vi.advanceTimersByTimeAsync(4000));
+      expect(view.result.current.initializationStatus).toBe('slow');
+      await act(async () => license.resolve(activeProfile));
+      expect(view.result.current.isInitializing).toBe(false);
+      expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore + 1);
+      expect(CheckPendingCrashReport).toHaveBeenCalledTimes(crashCallsBefore + 1);
+    } finally {
+      view.unmount();
+      await act(async () => license.resolve(activeProfile));
+    }
+  });
+
+  it.each(['empty profile', 'superseded error'])(
+    'rechecks after authentication invalidates a late startup %s',
+    async (outcome) => {
+      const oldLicense = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+      const currentLicense = deferred<Awaited<ReturnType<typeof GetLicenseStatus>>>();
+      vi.mocked(GetLicenseStatus)
+        .mockReturnValueOnce(oldLicense.promise as ReturnType<typeof GetLicenseStatus>)
+        .mockReturnValueOnce(currentLicense.promise as ReturnType<typeof GetLicenseStatus>);
+      vi.mocked(LoginAccount).mockResolvedValueOnce(activeProfile);
+      const licenseCallsBefore = vi.mocked(GetLicenseStatus).mock.calls.length;
+      const startupCallsBefore = vi.mocked(GetStartupFile).mock.calls.length;
+      const view = renderHook(() => useAppBootstrap());
+
+      try {
+        await act(async () => {
+          await useEditorStore.getState().loginAccount('startup@example.com', 'test-password');
+        });
+        expect(GetLicenseStatus).toHaveBeenCalledTimes(licenseCallsBefore + 1);
+        await act(async () => {
+          if (outcome === 'superseded error') {
+            oldLicense.reject(new Error('ERR_SESSION_SUPERSEDED: old session'));
+          } else {
+            oldLicense.resolve(null);
+          }
+        });
+        expect(view.result.current.isInitializing).toBe(true);
+        expect(GetLicenseStatus).toHaveBeenCalledTimes(licenseCallsBefore + 2);
+        expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore);
+        expect(useEditorStore.getState().accountModalOpen).toBe(false);
+        await act(async () => currentLicense.resolve(activeProfile));
+        expect(view.result.current.isInitializing).toBe(false);
+        expect(GetStartupFile).toHaveBeenCalledTimes(startupCallsBefore + 1);
+      } finally {
+        view.unmount();
+        await act(async () => {
+          oldLicense.resolve(null);
+          currentLicense.resolve(activeProfile);
+        });
+      }
+    },
+  );
+
+  it('exposes retry only on an error and keeps a slow request non-retryable', () => {
+    const onRetry = vi.fn();
+    const onClose = vi.fn();
+    const view = render(<StartupSplash status="slow" onRetry={onRetry} onClose={onClose} />);
+    expectSplashOnly('التهيئة تستغرق وقتًا أطول. يرجى الانتظار.');
+    expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'إغلاق التطبيق' }));
+    expect(onClose).toHaveBeenCalledOnce();
+    view.rerender(<StartupSplash status="error" onRetry={onRetry} onClose={onClose} />);
+    const splash = expectSplashOnly('تعذّر التحقق من الجلسة. أعد المحاولة.');
+    expect(within(splash).getByRole('status').querySelector('[aria-hidden="true"]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    {
+      session: 'an inactive profile without a token',
+      profile: { ...activeProfile, status: 'expired', token: '' },
+    },
+    { session: 'no stored session', profile: null },
+  ])(
+    'routes $session to the existing lock/account screen, not the editor',
+    async ({ profile }) => {
+      vi.mocked(GetLicenseStatus).mockResolvedValueOnce(profile);
+      const startedAt = Date.now();
+      render(<App />);
+      expectSplashOnly();
+
+      await act(async () => {});
+
+      expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
+      expect(screen.queryByText('جاري التهيئة ...')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'النسخة مقفلة', hidden: true }),
+      ).toBeInTheDocument();
+      // Existing duplicate Radix hosts can aria-hide one another; only verify route ownership.
+      const accountDialogs = screen.getAllByRole('dialog', { hidden: true });
+      expect(accountDialogs.some((dialog) => dialog.textContent?.includes('الحساب والترخيص'))).toBe(
+        true,
+      );
+      expect(useEditorStore.getState().accountModalOpen).toBe(true);
+      expect(screen.queryByText('GRIDO')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('إدراج صورة جديدة')).not.toBeInTheDocument();
+      expect(Date.now()).toBe(startedAt);
+    },
+    15000,
+  );
 });

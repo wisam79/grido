@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useEditorStore } from '../src/lib/editor-store';
+import {
+  isLicenseCheckInvalidatedError,
+  isSessionSupersededError,
+  sessionSupersededMessage,
+} from '../src/lib/store/slices/license-slice';
 import * as LicenseHandler from '../wailsjs/go/handlers/LicenseHandler';
+
+import type { UserProfile } from '../src/lib/store/slices/license-slice';
 
 vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
   GetLicenseStatus: vi.fn(),
@@ -21,10 +28,56 @@ vi.mock('../wailsjs/go/main/App', () => ({
   LoadAiUsageLogs: vi.fn(() => Promise.resolve('[]')),
 }));
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((complete, fail) => {
+    resolve = complete;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
+
+function deferLicenseCheck() {
+  const pending = deferred<UserProfile | null>();
+  const cancel = vi.fn();
+  // Test-only bridge adaptation: this ordinary deferred promise deliberately
+  // omits Wails' cancelOn/cancellable chaining; cancellation must not be used.
+  vi.mocked(LicenseHandler.GetLicenseStatus).mockReturnValueOnce(
+    Object.assign(pending.promise, { cancel }) as unknown as ReturnType<
+      typeof LicenseHandler.GetLicenseStatus
+    >,
+  );
+  return { ...pending, cancel };
+}
+
+function makeUser(overrides: Partial<UserProfile> = {}): UserProfile {
+  return {
+    id: 'cached-user',
+    name: 'Cached User',
+    email: 'cached@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    token: 'cached-token',
+    refreshToken: '',
+    createdAt: '',
+    updatedAt: '',
+    licenseKey: '',
+    ...overrides,
+  };
+}
+
 describe('LicenseSlice Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useEditorStore.getState().reset();
+    useEditorStore.setState({
+      user: null,
+      licenseLoading: false,
+      accountModalOpen: false,
+      aiUsageLogs: [],
+    });
     localStorage.clear();
   });
 
@@ -113,6 +166,334 @@ describe('LicenseSlice Tests', () => {
     expect(useEditorStore.getState().user).toBeNull();
     expect(useEditorStore.getState().accountModalOpen).toBe(true);
     expect(useEditorStore.getState().licenseLoading).toBe(false);
+  });
+
+  it.each(['default', 'strict'] as const)(
+    'shares a successful native check when the %s caller starts first',
+    async (firstMode) => {
+      const pending = deferLicenseCheck();
+      const profile = makeUser({ id: 'backend-offline-profile' });
+      const check = useEditorStore.getState().checkLicenseStatus;
+      const first = check(firstMode === 'strict' ? { throwOnError: true } : undefined);
+      const second = check(firstMode === 'default' ? { throwOnError: true } : undefined);
+      const third = check({ throwOnError: true });
+
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().licenseLoading).toBe(true);
+      pending.resolve(profile);
+
+      const results = await Promise.all([first, second, third]);
+      results.forEach((result) => expect(result).toBe(profile));
+      expect(useEditorStore.getState().user).toBe(profile);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+      expect(pending.cancel).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['validated cached profile', makeUser({ id: 'offline-cache' })],
+    ['expired profile', makeUser({ status: 'expired', expiresAt: '2000-01-01T00:00:00Z' })],
+    ['no-session profile', makeUser({ id: '', plan: 'free', status: 'none', expiresAt: '' })],
+    ['null', null],
+  ] as const)(
+    'strict checks preserve a resolved %s without new policy',
+    async (_label, profile) => {
+      useEditorStore.setState({ user: makeUser() });
+      const pending = deferLicenseCheck();
+      const check = useEditorStore.getState().checkLicenseStatus({ throwOnError: true });
+      pending.resolve(profile);
+
+      await expect(check).resolves.toBe(profile);
+      expect(useEditorStore.getState().user).toBe(profile);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+    },
+  );
+
+  it.each(['default', 'strict'] as const)(
+    'keeps error modes independent when the %s caller starts first and allows retry',
+    async (firstMode) => {
+      const cached = makeUser();
+      useEditorStore.setState({ user: cached });
+      const pending = deferLicenseCheck();
+      const check = useEditorStore.getState().checkLicenseStatus;
+      const first = check(firstMode === 'strict' ? { throwOnError: true } : undefined);
+      const second = check(firstMode === 'default' ? { throwOnError: true } : undefined);
+      const strict = firstMode === 'strict' ? first : second;
+      const legacy = firstMode === 'default' ? first : second;
+      const bridgeError = new Error('Native bridge unavailable');
+      const strictResult = expect(strict).rejects.toBe(bridgeError);
+      const legacyResult = expect(legacy).resolves.toBe(cached);
+
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+      pending.reject(bridgeError);
+      await Promise.all([strictResult, legacyResult]);
+      expect(useEditorStore.getState().user).toBe(cached);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+
+      const retry = deferLicenseCheck();
+      const fresh = makeUser({ id: 'retried-user' });
+      const retryCheck = check({ throwOnError: true });
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2);
+      retry.resolve(fresh);
+      await expect(retryCheck).resolves.toBe(fresh);
+      expect(useEditorStore.getState().user).toBe(fresh);
+      expect(pending.cancel).not.toHaveBeenCalled();
+      expect(retry.cancel).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['Error', new Error('Native bridge failed')],
+    ['string', 'Native bridge failed'],
+    ['object', { message: 'Native bridge failed', code: 'IPC_FAILURE' }],
+  ])(
+    'strict checks reject the actual %s bridge error without an in-memory fallback',
+    async (_label, error) => {
+      const cached = makeUser();
+      useEditorStore.setState({ user: cached });
+      const pending = deferLicenseCheck();
+      const result = expect(
+        useEditorStore.getState().checkLicenseStatus({ throwOnError: true }),
+      ).rejects.toBe(error);
+      pending.reject(error);
+
+      await result;
+      expect(useEditorStore.getState().user).toBe(cached);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+      expect(isLicenseCheckInvalidatedError(error)).toBe(false);
+    },
+  );
+
+  it('default checks still resolve null on generic failure without a cached user', async () => {
+    const pending = deferLicenseCheck();
+    const check = useEditorStore.getState().checkLicenseStatus({ throwOnError: false });
+    pending.reject(new Error('Bridge disconnected'));
+
+    await expect(check).resolves.toBeNull();
+    expect(useEditorStore.getState().licenseLoading).toBe(false);
+  });
+
+  it.each([
+    new Error('ERR_SESSION_SUPERSEDED: تم تسجيل الدخول من جهاز آخر'),
+    'ERR_SESSION_SUPERSEDED: تم تسجيل الدخول من جهاز آخر',
+  ])(
+    'retains supersession for both error modes and clears the matching session once (%s)',
+    async (error) => {
+      useEditorStore.setState({ user: makeUser() });
+      const pending = deferLicenseCheck();
+      const onLogout = vi.fn();
+      window.addEventListener('grido:auth-logout', onLogout);
+      try {
+        const check = useEditorStore.getState().checkLicenseStatus;
+        const legacy = check();
+        const strict = check({ throwOnError: true });
+        const results = Promise.all([
+          expect(legacy).rejects.toBe(error),
+          expect(strict).rejects.toBe(error),
+        ]);
+        pending.reject(error);
+        await results;
+
+        expect(isSessionSupersededError(error)).toBe(true);
+        expect(sessionSupersededMessage(error)).toBe('تم تسجيل الدخول من جهاز آخر');
+        expect(useEditorStore.getState().user).toBeNull();
+        expect(useEditorStore.getState().aiUsageLogs).toEqual([]);
+        expect(useEditorStore.getState().accountModalOpen).toBe(true);
+        expect(useEditorStore.getState().licenseLoading).toBe(false);
+        expect(onLogout).toHaveBeenCalledTimes(1);
+        expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+      } finally {
+        window.removeEventListener('grido:auth-logout', onLogout);
+      }
+    },
+  );
+
+  it.each(['profile', 'null', 'error'] as const)(
+    'rejects an invalidated strict result after login without applying a stale %s',
+    async (outcome) => {
+      const stale = deferLicenseCheck();
+      const fresh = makeUser({ id: 'new-login' });
+      const check = useEditorStore.getState().checkLicenseStatus;
+      const strict = check({ throwOnError: true });
+      const legacy = check();
+      const strictResult = expect(strict).rejects.toSatisfy(isLicenseCheckInvalidatedError);
+      let settled = false;
+      void strict.then(
+        () => {
+          settled = true;
+        },
+        () => {
+          settled = true;
+        },
+      );
+      vi.mocked(LicenseHandler.LoginAccount).mockResolvedValueOnce(fresh);
+      await useEditorStore.getState().loginAccount('new@example.com', 'password');
+      expect(useEditorStore.getState().user).toBe(fresh);
+      expect(settled).toBe(false);
+      expect(stale.cancel).not.toHaveBeenCalled();
+
+      if (outcome === 'error') stale.reject(new Error('Old native failure'));
+      else stale.resolve(outcome === 'null' ? null : makeUser({ id: 'stale-profile' }));
+      await strictResult;
+      await expect(legacy).resolves.toBe(fresh);
+      expect(useEditorStore.getState().user).toBe(fresh);
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+    },
+  );
+
+  it.each(['profile', 'error'] as const)(
+    'waits for an invalidated native %s before starting one fresh check and joining a third caller',
+    async (outcome) => {
+      const stale = deferLicenseCheck();
+      const fresh = deferLicenseCheck();
+      const signedIn = makeUser({ id: 'new-login' });
+      const verified = makeUser({ id: 'verified-new-login' });
+      const check = useEditorStore.getState().checkLicenseStatus;
+      const original = check({ throwOnError: true });
+      const originalResult = expect(original).rejects.toSatisfy(isLicenseCheckInvalidatedError);
+      vi.mocked(LicenseHandler.LoginAccount).mockResolvedValueOnce(signedIn);
+      await useEditorStore.getState().loginAccount('new@example.com', 'password');
+
+      const waiting = check({ throwOnError: true });
+      const alsoWaiting = check();
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().licenseLoading).toBe(true);
+      expect(stale.cancel).not.toHaveBeenCalled();
+
+      if (outcome === 'error') stale.reject(new Error('Old native failure'));
+      else stale.resolve(makeUser({ id: 'stale-profile' }));
+      await originalResult;
+      await vi.waitFor(() => expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2));
+      expect(useEditorStore.getState().user).toBe(signedIn);
+      expect(useEditorStore.getState().licenseLoading).toBe(true);
+
+      // A caller arriving after the old finally must still join the fresh flight.
+      const third = check({ throwOnError: true });
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2);
+      expect(useEditorStore.getState().licenseLoading).toBe(true);
+      fresh.resolve(verified);
+      const profiles = await Promise.all([waiting, alsoWaiting, third]);
+      profiles.forEach((profile) => expect(profile).toBe(verified));
+      expect(useEditorStore.getState().user).toBe(verified);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+      expect(fresh.cancel).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not restore a logged-out profile and makes post-logout checks wait for native settlement', async () => {
+    const stale = deferLicenseCheck();
+    const fresh = deferLicenseCheck();
+    useEditorStore.setState({ user: makeUser() });
+    const check = useEditorStore.getState().checkLicenseStatus;
+    const original = check({ throwOnError: true });
+    const legacy = check();
+    const originalResult = expect(original).rejects.toSatisfy(isLicenseCheckInvalidatedError);
+    vi.mocked(LicenseHandler.Logout).mockResolvedValueOnce('Logged out');
+    await useEditorStore.getState().logoutAccount();
+
+    const waiting = check({ throwOnError: true });
+    await Promise.resolve();
+    expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+    stale.resolve(makeUser({ id: 'logged-out-profile' }));
+    await originalResult;
+    await expect(legacy).resolves.toBeNull();
+    await vi.waitFor(() => expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2));
+    expect(useEditorStore.getState().user).toBeNull();
+    expect(useEditorStore.getState().licenseLoading).toBe(true);
+
+    const third = check();
+    await Promise.resolve();
+    expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2);
+    fresh.resolve(null);
+    await expect(waiting).resolves.toBeNull();
+    await expect(third).resolves.toBeNull();
+    expect(useEditorStore.getState().licenseLoading).toBe(false);
+    expect(stale.cancel).not.toHaveBeenCalled();
+  });
+
+  it('invalidates stale strict supersession while preserving the legacy error and newer login', async () => {
+    const stale = deferLicenseCheck();
+    const fresh = deferLicenseCheck();
+    const check = useEditorStore.getState().checkLicenseStatus;
+    const legacy = check();
+    const strict = check({ throwOnError: true });
+    const error = new Error('ERR_SESSION_SUPERSEDED: old session');
+    const oldResults = Promise.all([
+      expect(legacy).rejects.toBe(error),
+      expect(strict).rejects.toSatisfy(isLicenseCheckInvalidatedError),
+    ]);
+    const signedIn = makeUser({ id: 'new-login' });
+    vi.mocked(LicenseHandler.LoginAccount).mockResolvedValueOnce(signedIn);
+    await useEditorStore.getState().loginAccount('new@example.com', 'password');
+    const waiting = check({ throwOnError: true });
+    const onLogout = vi.fn();
+    window.addEventListener('grido:auth-logout', onLogout);
+    try {
+      stale.reject(error);
+      await oldResults;
+      await vi.waitFor(() => expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2));
+      expect(useEditorStore.getState().user).toBe(signedIn);
+      expect(useEditorStore.getState().accountModalOpen).toBe(false);
+      expect(useEditorStore.getState().licenseLoading).toBe(true);
+      expect(onLogout).not.toHaveBeenCalled();
+
+      const third = check();
+      await Promise.resolve();
+      expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2);
+      fresh.resolve(signedIn);
+      await expect(waiting).resolves.toBe(signedIn);
+      await expect(third).resolves.toBe(signedIn);
+      expect(useEditorStore.getState().licenseLoading).toBe(false);
+    } finally {
+      window.removeEventListener('grido:auth-logout', onLogout);
+    }
+  });
+
+  it('rechecks the new login after an old strict request rejects with supersession', async () => {
+    const stale = deferLicenseCheck();
+    const fresh = deferLicenseCheck();
+    const check = useEditorStore.getState().checkLicenseStatus;
+    const original = check({ throwOnError: true });
+    const originalResult = expect(original).rejects.toSatisfy((error: unknown) => {
+      return isLicenseCheckInvalidatedError(error) && !isSessionSupersededError(error);
+    });
+    await Promise.resolve();
+    expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+
+    const signedIn = makeUser({ id: 'new-login' });
+    vi.mocked(LicenseHandler.LoginAccount).mockResolvedValueOnce(signedIn);
+    await useEditorStore.getState().loginAccount('new@example.com', 'password');
+    stale.reject(new Error('ERR_SESSION_SUPERSEDED: old session'));
+    await originalResult;
+
+    expect(useEditorStore.getState().user).toBe(signedIn);
+    expect(useEditorStore.getState().accountModalOpen).toBe(false);
+    expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(1);
+    expect(stale.cancel).not.toHaveBeenCalled();
+
+    // Bootstrap starts this only after observing the settled invalidated request.
+    const retry = check({ throwOnError: true });
+    await Promise.resolve();
+    expect(LicenseHandler.GetLicenseStatus).toHaveBeenCalledTimes(2);
+    expect(useEditorStore.getState().licenseLoading).toBe(true);
+    const verified = makeUser({ id: 'verified-new-login' });
+    fresh.resolve(verified);
+    await expect(retry).resolves.toBe(verified);
+    expect(useEditorStore.getState().user).toBe(verified);
+    expect(useEditorStore.getState().licenseLoading).toBe(false);
+  });
+
+  it('does not mistake unrelated errors for local license-check invalidation', () => {
+    expect(isLicenseCheckInvalidatedError(null)).toBe(false);
+    expect(isLicenseCheckInvalidatedError(new Error('ERR_LICENSE_CHECK_INVALIDATED'))).toBe(false);
+    expect(isLicenseCheckInvalidatedError({ code: 'ERR_LICENSE_CHECK_INVALIDATED' })).toBe(false);
   });
 
   it('registerAccount succeeds and sets user', async () => {

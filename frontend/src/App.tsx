@@ -12,6 +12,7 @@ import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
 import { TemplatePanel } from '@/components/editor/panels/template-panel';
 import { DesktopMenuBar } from '@/components/editor/system/desktop-menu-bar';
 import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
+import { StartupSplash } from '@/components/editor/system/startup-splash';
 import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
 import { WindowControls } from '@/components/editor/system/window-controls';
@@ -22,7 +23,6 @@ import { WorkspaceLayout } from '@/components/editor/workspace/workspace-layout'
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
-import { Spinner } from '@/components/ui/huge-icon';
 import { SquaresFour, Image, SidebarSimple } from '@/components/ui/icons';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
@@ -46,7 +46,14 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
 
-  const { isInitializing, crashReport, handleRecoverCrash, handleDismissCrash } = useAppBootstrap();
+  const {
+    isInitializing,
+    initializationStatus,
+    retryInitialization,
+    crashReport,
+    handleRecoverCrash,
+    handleDismissCrash,
+  } = useAppBootstrap();
 
   const panelsHook = useWorkspacePanels();
   const isPropertiesOpen =
@@ -215,18 +222,11 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <div
-        className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none"
-        dir="rtl"
-      >
-        <div className="relative flex flex-col items-center max-w-xs text-center px-4">
-          <div className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10">
-            <Spinner className="w-8 h-8 text-primary" size={32} />
-          </div>
-          <h1 className="text-xl font-extrabold tracking-tight">Grido Studio</h1>
-          <p className="text-xs text-muted-foreground mt-1.5 font-medium">جاري التهيئة ...</p>
-        </div>
-      </div>
+      <StartupSplash
+        status={initializationStatus}
+        onRetry={retryInitialization}
+        onClose={handleClose}
+      />
     );
   }
 

@@ -36,7 +36,7 @@ export interface LicenseSlice {
   aiUsageLogs: AiUsageRecord[];
 
   setAccountModalOpen: (open: boolean) => void;
-  checkLicenseStatus: () => Promise<UserProfile | null>;
+  checkLicenseStatus: (options?: { throwOnError?: boolean }) => Promise<UserProfile | null>;
   registerAccount: (name: string, email: string, password: string) => Promise<UserProfile>;
   loginAccount: (email: string, password: string) => Promise<UserProfile>;
   verifyOTP: (email: string, otp: string) => Promise<UserProfile>;
@@ -128,13 +128,29 @@ export function sessionSupersededMessage(err: unknown): string {
   return msg || SESSION_SUPERSEDED_FALLBACK;
 }
 
+class LicenseCheckInvalidatedError extends Error {
+  readonly code = 'ERR_LICENSE_CHECK_INVALIDATED';
+
+  constructor() {
+    super('License check invalidated by an authentication change');
+    this.name = 'LicenseCheckInvalidatedError';
+  }
+}
+
+export function isLicenseCheckInvalidatedError(err: unknown): boolean {
+  return err instanceof LicenseCheckInvalidatedError;
+}
+
 // جيل الطلبات: يمنع نداء checkLicenseStatus قديماً (in-flight) من استعادة
 // جلسة بعد تسجيل الخروج (إصلاح Bug#4 — race guard)
 let licenseCheckEpoch = 0;
-// 🛡️ Single-flight: نداءان متزامنان عند الإقلاع (StrictMode يستدعي التأثير
-// مرتين) يتشاركان نفس الوعد — بدلاً من أن يعيد النداء الأقدم get().user
-// وهي null قبل اكتمال الأحدث، فيفتح نافذة الحساب زوراً رغم وجود جلسة صالحة.
-let inFlightCheck: Promise<UserProfile | null> | null = null;
+// Share the backend outcome, not a caller's fallback/error policy. Keep ownership
+// of an invalidated native request until it settles before starting another one.
+interface LicenseCheckFlight {
+  epoch: number;
+  promise: Promise<UserProfile | null>;
+}
+let inFlightCheck: LicenseCheckFlight | null = null;
 
 // 🛡️ Single-flight لتحميل السجلات: StrictMode يستدعي تأثير الإقلاع مرتين —
 // نداءان متزامنان يتشاركان نفس الوعد بدل تحميل الملف مرتين
@@ -145,12 +161,11 @@ let inFlightAiLogsLoad: Promise<AiUsageRecord[]> | null = null;
  * 🛡️ تسابق زمني: كان فحص `checkLicenseStatus` بدأه الإقلاع/شاشة الترخيص قبل
  * الدخول يُكمل بعد نجاح الدخول فيكتب `set({ user })` من جلسة قديمة (أو null
  * قبل وجود الجلسة) — فيطمس جلسة سجّل المستخدم للتو فيرتدّ لواجهة الترخيص.
- * رفع الجيل يُلغي نتيجة الفحص القديم (حارس `epoch !== licenseCheckEpoch`)،
- * وتصفير inFlight يمنع مشاركة وعده القديم مع نداء جديد.
+ * رفع الجيل يُلغي نتيجة الفحص القديم (حارس `epoch !== licenseCheckEpoch`).
+ * يبقى الطلب الأصلي مملوكاً حتى يستقر؛ الفحص الجديد ينتظره ثم يبدأ/يشارك جيلاً جديداً.
  */
 function invalidateInFlightLicenseCheck(): void {
   licenseCheckEpoch++;
-  inFlightCheck = null;
 }
 
 /** مُضيّق نوع معيّن الحالة لغلاف الإجراءات — يستقبل partial فقط */
@@ -233,44 +248,76 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     void persistAiLogs(updated);
   },
 
-  checkLicenseStatus: async () => {
-    // 🛡️ Single-flight: أعد نفس الوعد إن كان فحص جارٍ بالفعل
-    if (inFlightCheck) return inFlightCheck;
+  checkLicenseStatus: async ({ throwOnError = false } = {}) => {
+    // Authentication invalidates the outcome, not the native request. Wait for
+    // that request to settle, then re-read ownership so all waiters join one flight.
+    while (inFlightCheck && inFlightCheck.epoch !== licenseCheckEpoch) {
+      set({ licenseLoading: true });
+      await inFlightCheck.promise.catch(() => undefined);
+    }
 
-    const epoch = ++licenseCheckEpoch;
-    set({ licenseLoading: true });
-
-    inFlightCheck = (async () => {
-      try {
-        const profile = await LicenseHandler.GetLicenseStatus();
-        // تجاهل نتيجة قديمة إذا بدأ نداء أحدث أو سجّل المستخدم الخروج أثناء الانتظار
-        if (epoch !== licenseCheckEpoch) return get().user;
-        set({ user: profile, licenseLoading: false });
-        return profile;
-      } catch (err) {
-        // 🛡️ الجلسة الواحدة النشطة: الخادم أثبت شبكياً أن جلسة أحدث حُجزت من
-        // جهاز آخر — طرد صريح: صفّر الجلسة وافتح نافذة الحساب مع رسالة الطرد.
-        if (isSessionSupersededError(err)) {
-          if (epoch === licenseCheckEpoch) {
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+    let flight = inFlightCheck;
+    if (!flight) {
+      const epoch = licenseCheckEpoch;
+      const currentFlight: LicenseCheckFlight = {
+        epoch,
+        // Defer invocation until ownership is assigned, including synchronous
+        // bridge throws. Never cancel/reset this work on a UI timeout.
+        promise: Promise.resolve()
+          .then(() => LicenseHandler.GetLicenseStatus())
+          .then(
+            (profile) => {
+              // Go owns offline validation; keep every resolved value unchanged.
+              if (epoch === licenseCheckEpoch) set({ user: profile });
+              return profile;
+            },
+            (err: unknown) => {
+              if (isSessionSupersededError(err)) {
+                if (epoch === licenseCheckEpoch) {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+                  }
+                  set({ user: null, aiUsageLogs: [], accountModalOpen: true });
+                }
+              } else if (epoch === licenseCheckEpoch) {
+                logger.error('Failed to check license status:', err);
+              }
+              // Preserve the raw bridge rejection, including the superseded marker.
+              throw err;
+            },
+          )
+          .finally(() => {
+            if (inFlightCheck === currentFlight) {
+              inFlightCheck = null;
+              if (epoch === licenseCheckEpoch) set({ licenseLoading: false });
             }
-            set({ user: null, licenseLoading: false, aiUsageLogs: [], accountModalOpen: true });
-          }
-          throw new Error(sessionSupersededMessage(err));
-        }
-        // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
-        // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
-        // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
-        logger.error('Failed to check license status (network error, keeping session):', err);
-        if (epoch === licenseCheckEpoch) set({ licenseLoading: false });
-        return get().user;
-      } finally {
-        inFlightCheck = null;
-      }
-    })();
+          }),
+      };
+      inFlightCheck = currentFlight;
+      flight = currentFlight;
+      set({ licenseLoading: true });
+    }
 
-    return inFlightCheck;
+    let profile: UserProfile | null;
+    try {
+      profile = await flight.promise;
+    } catch (err) {
+      // Strict startup callers must recheck after any auth change, even when
+      // the old session's rejection says it was superseded.
+      if (throwOnError) {
+        if (flight.epoch !== licenseCheckEpoch) throw new LicenseCheckInvalidatedError();
+        throw err;
+      }
+      // Legacy callers still receive the original explicit supersession marker.
+      if (isSessionSupersededError(err)) throw err;
+      return get().user;
+    }
+
+    if (flight.epoch !== licenseCheckEpoch) {
+      if (throwOnError) throw new LicenseCheckInvalidatedError();
+      return get().user;
+    }
+    return profile;
   },
 
   registerAccount: (name, email, password) =>

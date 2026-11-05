@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -15,6 +15,7 @@ import { addImageFromSrc } from '@/lib/canvas/load-image';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import {
+  isLicenseCheckInvalidatedError,
   isSessionSupersededError,
   sessionSupersededMessage,
 } from '@/lib/store/slices/license-slice';
@@ -25,20 +26,36 @@ import { EventsOn } from '../../wailsjs/runtime/runtime';
 import type { CrashReport } from '@bindings/grido/internal/service/models';
 
 const logger = createLogger('useAppBootstrap');
+const SLOW_INITIALIZATION_MS = 4000;
+
+export type AppInitializationStatus = 'checking' | 'slow' | 'error' | 'ready';
 
 export interface AppBootstrapState {
   isInitializing: boolean;
+  initializationStatus: AppInitializationStatus;
+  retryInitialization: () => void;
   crashReport: CrashReport | null;
   handleRecoverCrash: () => Promise<void>;
   handleDismissCrash: () => Promise<void>;
 }
 
 export function useAppBootstrap(): AppBootstrapState {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [initializationStatus, setInitializationStatus] =
+    useState<AppInitializationStatus>('checking');
+  const [initializationAttempt, setInitializationAttempt] = useState(0);
   const [crashReport, setCrashReport] = useState<CrashReport | null>(null);
+  const retryAvailableRef = useRef(false);
+  const isInitializing = initializationStatus !== 'ready';
 
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
+
+  const retryInitialization = useCallback(() => {
+    if (!retryAvailableRef.current) return;
+    retryAvailableRef.current = false;
+    setInitializationStatus('checking');
+    setInitializationAttempt((attempt) => attempt + 1);
+  }, []);
 
   const handleRecoverCrash = async () => {
     try {
@@ -72,28 +89,39 @@ export function useAppBootstrap(): AppBootstrapState {
 
   useEffect(() => {
     let cancelled = false;
+    retryAvailableRef.current = false;
+    // المهلة تنبيه عرض فقط؛ لا تُنتج ملف ترخيص فارغاً ولا تنهي التهيئة.
+    const slowTimer = setTimeout(() => {
+      if (!cancelled) setInitializationStatus('slow');
+    }, SLOW_INITIALIZATION_MS);
 
     const bootstrap = async () => {
-      // 🛡️ فحص الترخيص واستعادة الجلسة تحت حماية شاشة التهيئة (Splash Screen):
-      // ننتظر التحقق من الترخيص والجلسة المخزنة محلياً وشبكياً قبل إخفاء
-      // شاشة التهيئة، لمنع الوميض البصري وظهور نافذة إدارة الحساب خطأً أمام مستخدم مرخص.
-      // نضع مهلة أمان قصوى (4 ثوانٍ) لمنع تعليق شاشة البداية في حال انقطاع الشبكة التام.
-      try {
-        const licensePromise = checkLicenseStatus();
-        const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 4000),
-        );
-        const profile = await Promise.race([licensePromise, timeoutPromise]);
-        if (!cancelled && (!profile || !profile.token)) {
-          setAccountModalOpen(true);
-        }
-      } catch (err) {
-        if (isSessionSupersededError(err)) {
-          toast.error(sessionSupersededMessage(err), { duration: 8000 });
-        } else {
-          logger.error('Failed to check license status during init:', err);
+      let licenseResolved = false;
+      while (!cancelled && !licenseResolved) {
+        try {
+          // الخلفية قد تعيد ترخيصاً محلياً متحققاً وفق سياسة عدم الاتصال.
+          // خطأ IPC ليس نتيجة ترخيص، فلا نستبدله بحالة قديمة من الواجهة.
+          const profile = await checkLicenseStatus({ throwOnError: true });
+          if (cancelled) return;
+          if (!profile || !profile.token) setAccountModalOpen(true);
+          licenseResolved = true;
+        } catch (err) {
+          if (cancelled) return;
+          // تغيرت الجلسة أثناء الطلب: انتظر فحص جيلها الحالي، لا نتيجة الطلب القديم.
+          if (isLicenseCheckInvalidatedError(err)) continue;
+          if (isSessionSupersededError(err)) {
+            toast.error(sessionSupersededMessage(err), { duration: 8000 });
+            licenseResolved = true;
+          } else {
+            clearTimeout(slowTimer);
+            logger.error('Failed to check license status during init:', err);
+            retryAvailableRef.current = true;
+            setInitializationStatus('error');
+            return;
+          }
         }
       }
+      if (cancelled) return;
 
       // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
       void useEditorStore.getState().hydrateAiUsageLogs();
@@ -101,9 +129,11 @@ export function useAppBootstrap(): AppBootstrapState {
       try {
         if (typeof GetStartupFile === 'function') {
           const startupUrl = await GetStartupFile();
+          if (cancelled) return;
           if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
         }
       } catch (startupErr) {
+        if (cancelled) return;
         // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج
         // حتى لا يفشل فتح الملف بالنقر المزدوج بصمت تام.
         if (typeof GetStartupFile === 'function') {
@@ -111,30 +141,39 @@ export function useAppBootstrap(): AppBootstrapState {
           toast.error(toErrorMessage(startupErr, 'تعذّر فتح الملف الممرر عند الإقلاع'));
         }
       }
+      if (cancelled) return;
       // فحص وجود تقرير انهيار سابق من الرنتايم
       try {
         if (typeof CheckPendingCrashReport === 'function') {
           const report = await CheckPendingCrashReport();
-          if (report) {
-            setCrashReport(report);
-          }
+          if (cancelled) return;
+          if (report) setCrashReport(report);
         }
       } catch (crashErr) {
+        if (cancelled) return;
         // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج.
         if (typeof CheckPendingCrashReport === 'function') {
           logger.error('Failed to check pending crash report:', crashErr);
         }
       }
 
-      if (!cancelled) setIsInitializing(false);
+      clearTimeout(slowTimer);
+      if (!cancelled) setInitializationStatus('ready');
     };
     void bootstrap();
 
-    // Check periodically every 5 minutes to ensure dynamic state updates
+    return () => {
+      cancelled = true;
+      retryAvailableRef.current = false;
+      clearTimeout(slowTimer);
+    };
+  }, [checkLicenseStatus, setAccountModalOpen, initializationAttempt]);
+
+  useEffect(() => {
+    // لا يبدأ الفحص الدوري قبل اكتمال الإقلاع أو أثناء انتظار إعادة المحاولة.
+    if (isInitializing) return;
     const intervalId = setInterval(
       () => {
-        // 🛡️ الجلسة الواحدة: الفحص الدوري قد يطرد الجلسة — اعرض رسالة الطرد
-        // الصريحة بدل ابتلاع الخطأ بصمت.
         checkLicenseStatus().catch((sessErr: unknown) => {
           if (isSessionSupersededError(sessErr)) {
             toast.error(sessionSupersededMessage(sessErr), { duration: 8000 });
@@ -144,11 +183,8 @@ export function useAppBootstrap(): AppBootstrapState {
       5 * 60 * 1000,
     );
 
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [checkLicenseStatus, setAccountModalOpen]);
+    return () => clearInterval(intervalId);
+  }, [checkLicenseStatus, isInitializing]);
 
   /**
    * ⚡ محرك العزل الأصلي (ONNX) لا يُهيَّأ عند الإقلاع: التهيئة الفعلية تحدث
@@ -234,6 +270,8 @@ export function useAppBootstrap(): AppBootstrapState {
 
   return {
     isInitializing,
+    initializationStatus,
+    retryInitialization,
     crashReport,
     handleRecoverCrash,
     handleDismissCrash,

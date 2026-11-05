@@ -151,6 +151,14 @@ The global store is structured into **8 domain-specific slices** under `frontend
 7. **`print-slice.ts`**: Print configuration, margins, bleed area, cut lines, copy distribution, paper dimensions, and smart N-up sheet imposition (`calculateOptimalSheetImposition`).
 8. **`workflow-slice.ts`**: Quick vs. Studio workflow mode (`quick` hides the freeform-elements tabs for photography studios; persisted to `localStorage` under `grido_workflow_mode`).
 
+### Startup Readiness & License Checks — 5 November 2026
+
+- `frontend/src/hooks/use-app-bootstrap.ts` owns startup status (`checking`, `slow`, `error`, `ready`). Its four-second timer only announces a slow initialization; it never supplies a profile, opens account UI, or completes startup. The animation is presentation-only and adds no minimum display time.
+- Startup awaits `checkLicenseStatus({ throwOnError: true })` from `frontend/src/lib/store/slices/license-slice.ts`. Resolved native profiles, including the existing validated offline fallback, retain their semantics. A technical bridge rejection keeps startup in `error`; only then is manual retry available. Ordinary callers retain their existing cached-user fallback on generic errors.
+- The store shares a raw native flight independently of each caller's error policy. Authentication invalidates its epoch but does not cancel the native request or release ownership early. Waiting checks start/join a new flight after settlement; identity-guarded cleanup cannot erase a newer flight. Strict callers receive `isLicenseCheckInvalidatedError` for an obsolete outcome, including old supersession, so bootstrap rechecks rather than routing from stale data. Current explicit supersession retains `ERR_SESSION_SUPERSEDED` and the existing lock/account route.
+- Startup-file/crash-report reads follow the resolved license decision and use cancellation guards. Retry cannot repeat these steps after a failed license call. The five-minute periodic check begins only after startup completes; file/drop/resume subscriptions remain owned by the long-lived hook.
+- `StartupSplash` receives status/retry/close callbacks from `App`; it has no timers or backend imports at runtime. Slow/error states allow safe close via `useWindowControls.handleClose`; a pending request has no misleading retry button. A permanently stuck native request has no frontend cancellation guarantee: the screen remains guarded until it settles or the user closes the app. No Go/IPC or offline-license policy change was made.
+
 ### State History Queue (Undo & Redo)
 Grido manages a history queue of states to allow stepping backwards and forwards:
 
