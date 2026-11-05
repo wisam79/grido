@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import React, { useCallback, useId, useMemo } from 'react';
+import React, { useCallback, useEffect, useId, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
