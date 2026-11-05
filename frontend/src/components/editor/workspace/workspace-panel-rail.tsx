@@ -13,7 +13,6 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
-import { Eye, EyeSlash, Faders } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
@@ -45,14 +44,14 @@ import type {
 interface WorkspacePanelRailProps {
   activeStudioTab?: FreeformTab;
   activeCollageTab?: CollageTab;
-  isZenMode: boolean;
+  isZenMode?: boolean;
   onSelectStudioTab?: (tab: FreeformTab) => void;
   onSelectCollageTab?: (tab: CollageTab) => void;
-  onToggleZenMode: () => void;
+  onToggleZenMode?: () => void;
   className?: string;
   /** حالة اللوحة مرفوعة لـ useWorkspacePanels (مشتركة مع زر الجوال) */
-  isLauncherOpen: boolean;
-  onLauncherOpenChange: (open: boolean) => void;
+  isLauncherOpen?: boolean;
+  onLauncherOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -360,12 +359,12 @@ const PaletteGlobalCommandItem = React.memo(function PaletteGlobalCommandItem({
 export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   activeStudioTab = 'stickers',
   activeCollageTab = 'custom',
-  isZenMode,
+  isZenMode: _isZenMode,
   onSelectStudioTab,
   onSelectCollageTab,
-  onToggleZenMode,
+  onToggleZenMode: _onToggleZenMode,
   className,
-  isLauncherOpen,
+  isLauncherOpen: _isLauncherOpen,
   onLauncherOpenChange,
 }: WorkspacePanelRailProps) {
   const { mode, workflow, elementsCount } = useEditorStore(
@@ -390,26 +389,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     ? getCollageSectionForTab(activeCollageTab).id
     : getStudioSectionForTab(activeStudioTab, workflow).id;
   const toolsHeading = isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر';
-  const commandGroups = useMemo(() => groupCommands(WORKSPACE_COMMANDS), []);
-  // ترتيب الوجهة في قائمتها الظاهرة — هو نفسه المستخدم في Alt+الرقم في الشريط واللوحة معاً
-  const sectionIndexById = useMemo(
-    () =>
-      new Map<string, number>(
-        sections.map((section, index): [string, number] => [section.id, index]),
-      ),
-    [sections],
-  );
-
-  // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
-  const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
-  const runGlobalCommand = useCallback(
-    (command: WorkspaceCommand) => {
-      dispatchWorkspaceCommand(command);
-      onLauncherOpenChange(false);
-    },
-    [onLauncherOpenChange],
-  );
-
   const selectSection = useCallback(
     (section: WorkspaceModeSection) => {
       if (isCollage) {
@@ -426,7 +405,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             : section.defaultTab;
         if (isStudioTab(target)) onSelectStudioTab?.(target);
       }
-      onLauncherOpenChange(false);
+      onLauncherOpenChange?.(false);
     },
     [
       activeCollageTab,
@@ -437,12 +416,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       onLauncherOpenChange,
       workflow,
     ],
-  );
-  // 🛡️ يقرأ الخريطة مباشرة من التبعية — تمرير sectionIndex (غير مذكّرة) كان
-  // سيغلق على خريطة قديمة بعد تغيّر مسار العمل.
-  const getShortcut = useCallback(
-    (section: WorkspaceModeSection) => toolShortcut(sectionIndexById.get(section.id) ?? 0),
-    [sectionIndexById],
   );
 
   return (
@@ -483,7 +456,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
         ))}
       </nav>
 
-      {/* أسفل الشريط: لوحة كل الأدوات + وضع التركيز (لا تمرّ هاتان أبداً) */}
+      {/* أسفل الشريط: قائمة الإعدادات والمظهر والحساب (بمظهر أنيق وخالٍ من الازدحام) */}
       <div className="flex flex-col items-center gap-1 w-full px-1 shrink-0">
         <div
           role="separator"
@@ -491,96 +464,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
           className="w-6 h-px my-1 bg-gradient-to-l from-transparent via-border to-transparent"
         />
 
-        <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  data-testid="rail-tool-launcher"
-                  aria-label="لوحة الأدوات"
-                  className={cn(
-                    'h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer',
-                    'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                    isLauncherOpen
-                      ? 'text-foreground bg-accent-active border border-border/80'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
-                  )}
-                >
-                  {/* لوحة التحكم الكاملة (أدوات + أوامر) — شرائح تحكم بدل مربعات منقّشة
-                      كي لا تتكرر أيقونة «قوالب الكولاج» في نفس الشريط */}
-                  <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent
-              side="right"
-              className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
-            >
-              <span>لوحة الأدوات</span>
-              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
-                Ctrl+K
-              </kbd>
-            </TooltipContent>
-          </Tooltip>
-
-          <PopoverContent
-            side="right"
-            align="end"
-            sideOffset={10}
-            dir="rtl"
-            className="w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
-          >
-            <ToolLauncherContent
-              sections={sections}
-              activeSectionId={activeSectionId}
-              toolsHeading={toolsHeading}
-              getShortcut={getShortcut}
-              onSelectSection={selectSection}
-              onAfterRun={closeLauncher}
-              onRunCommand={runGlobalCommand}
-              commandGroups={commandGroups}
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleZenMode}
-              data-testid="rail-zen-mode"
-              aria-label={isZenMode ? 'استعادة الألواح' : 'وضع التركيز'}
-              className={cn(
-                'h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer',
-                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                isZenMode
-                  ? 'text-foreground bg-accent-active border border-border/80'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
-              )}
-            >
-              {/* زر «وضع التركيز» الحصري: عين مفتوحة/مغلقة لإخفاء أو استعادة الألواح الجانبية (Ctrl+.) */}
-              {isZenMode ? (
-                <EyeSlash className="size-5" weight="fill" />
-              ) : (
-                <Eye className="size-5" weight="regular" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent
-            side="right"
-            className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
-          >
-            <span>{isZenMode ? 'استعادة الألواح' : 'وضع التركيز'}</span>
-            <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
-              Ctrl+.
-            </kbd>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* ⚙️ قائمة الإعدادات والمظهر والحساب الموحدة في أسفل الشريط */}
         <RailSettingsMenu />
       </div>
     </aside>

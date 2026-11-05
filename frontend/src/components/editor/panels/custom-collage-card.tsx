@@ -19,7 +19,6 @@ import {
   buildStretchGridCells,
 } from './collage/collage-grid-math';
 import { CollagePaperToolsTab } from './collage/collage-paper-tools-tab';
-import { STUDIO_COMBO_PRESETS, STUDIO_KEEPSAKE_PRESETS } from './collage/collage-preset-data';
 import { CollagePresetsTab } from './collage/collage-presets-tab';
 import type { PhotoGridType, GridAlignment, NormalizedCell } from './collage/collage-grid-math';
 import type { CollagePresetCategory } from './collage/collage-preset-data';
@@ -73,7 +72,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   );
 
   // تصنيف النماذج السريعة
-  const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>('all');
+  const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>('saved');
 
   const [rows, setRows] = useState(1);
   const [cols, setCols] = useState(4);
@@ -110,14 +109,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         setLocalActiveTab('presets');
         onActiveTabChange?.('presets');
         setPresetCategory('saved');
-      } else if (STUDIO_COMBO_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setLocalActiveTab('presets');
-        onActiveTabChange?.('presets');
-        setPresetCategory('combo');
-      } else if (STUDIO_KEEPSAKE_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setLocalActiveTab('presets');
-        onActiveTabChange?.('presets');
-        setPresetCategory('keepsake');
       }
     }
   }

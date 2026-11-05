@@ -72,7 +72,7 @@ describe('سجل تبويبات الشريط الجانبي', () => {
 describe('سجل وجهات الشريط الجانبي', () => {
   it('يعرّف وجهات دائمة بمعرّفات فريدة لكل وضع', () => {
     expect(STUDIO_SECTIONS).toHaveLength(4);
-    expect(COLLAGE_SECTIONS).toHaveLength(3);
+    expect(COLLAGE_SECTIONS).toHaveLength(4);
     for (const sections of [COLLAGE_SECTIONS, STUDIO_SECTIONS]) {
       const ids = sections.map((section) => section.id);
       expect(new Set(ids).size).toBe(sections.length);
@@ -121,15 +121,17 @@ describe('سجل وجهات الشريط الجانبي', () => {
     }
   });
 
-  it('يرتّب وجهات الكولاج: الشبكة ← الخانات ← القص', () => {
-    expect(COLLAGE_SECTIONS.map((section) => section.id)).toEqual(['grid', 'slots', 'paper']);
-    expect(COLLAGE_SECTIONS[0].tabs.map((tab) => tab.id)).toEqual([
-      'custom',
-      'presets',
+  it('يرتّب وجهات الكولاج: الشبكة ← الكولاج الحر ← الخانات ← القص', () => {
+    expect(COLLAGE_SECTIONS.map((section) => section.id)).toEqual([
+      'grid',
       'freeform',
+      'slots',
+      'paper',
     ]);
-    expect(COLLAGE_SECTIONS[1].tabs.map((tab) => tab.id)).toEqual(['autofill', 'arrange']);
-    expect(COLLAGE_SECTIONS[2].tabs.map((tab) => tab.id)).toEqual(['paper']);
+    expect(COLLAGE_SECTIONS[0].tabs.map((tab) => tab.id)).toEqual(['custom', 'presets']);
+    expect(COLLAGE_SECTIONS[1].tabs.map((tab) => tab.id)).toEqual(['freeform']);
+    expect(COLLAGE_SECTIONS[2].tabs.map((tab) => tab.id)).toEqual(['autofill', 'arrange']);
+    expect(COLLAGE_SECTIONS[3].tabs.map((tab) => tab.id)).toEqual(['paper']);
   });
 
   it('يُبقي زر الوجهة مضاءً حسب التبويب النشط', () => {
@@ -137,7 +139,7 @@ describe('سجل وجهات الشريط الجانبي', () => {
     expect(getStudioSectionForTab('stickers').id).toBe('stickers');
     expect(getStudioSectionForTab('shapes').id).toBe('shapes');
     expect(getStudioSectionForTab('text').id).toBe('text');
-    expect(getCollageSectionForTab('freeform').id).toBe('grid');
+    expect(getCollageSectionForTab('freeform').id).toBe('freeform');
     expect(getCollageSectionForTab('arrange').id).toBe('slots');
     expect(getCollageSectionForTab('paper').id).toBe('paper');
   });

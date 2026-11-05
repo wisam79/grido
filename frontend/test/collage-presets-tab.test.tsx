@@ -6,8 +6,6 @@ import { CollagePresetsTab } from '../src/components/editor/panels/collage/colla
 
 describe('CollagePresetsTab Component Suite', () => {
   const defaultProps = {
-    presetCategory: 'all' as const,
-    onPresetCategoryChange: vi.fn(),
     activeTemplateId: undefined,
     onSelect: vi.fn(),
     savedTemplates: [],
@@ -16,48 +14,46 @@ describe('CollagePresetsTab Component Suite', () => {
     onExportAllClick: vi.fn(),
   };
 
-  it('renders search input and category selector', () => {
+  it('renders search input for saved templates', () => {
     render(<CollagePresetsTab {...defaultProps} />);
 
-    expect(screen.getByPlaceholderText(/بحث في القوالب/)).toBeInTheDocument();
-    expect(screen.getByText(/كل القوالب/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/بحث في قوالبي المحفوظة/)).toBeInTheDocument();
   });
 
-  it('filters templates when searching', () => {
-    render(<CollagePresetsTab {...defaultProps} />);
+  it('renders empty state when list is empty', () => {
+    render(<CollagePresetsTab {...defaultProps} savedTemplates={[]} />);
 
-    const searchInput = screen.getByPlaceholderText(/بحث في القوالب/);
-    fireEvent.change(searchInput, { target: { value: 'جواز' } });
-
-    expect(screen.getByText(/نتائج البحث/)).toBeInTheDocument();
-    // At least one template matching "جواز"
-    expect(screen.getAllByText(/جواز/).length).toBeGreaterThan(0);
-  });
-
-  it('keeps full specifications accessible and applies the chosen template', () => {
-    const onSelect = vi.fn();
-    render(<CollagePresetsTab {...defaultProps} onSelect={onSelect} />);
-
-    const card = screen.getByRole('button', { name: /^طقم تقديم -/ });
-    expect(card).toHaveAttribute('title', expect.stringContaining('30×40 مم'));
-    fireEvent.click(card);
-    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'collage-combo-student' }));
-  });
-
-  it('displays the selected category in select trigger', () => {
-    render(<CollagePresetsTab {...defaultProps} presetCategory="combo" />);
-
-    expect(screen.getByText(/أطقم رسمية/)).toBeInTheDocument();
-  });
-
-  it('renders empty state for saved templates when list is empty', () => {
-    render(<CollagePresetsTab {...defaultProps} presetCategory="saved" savedTemplates={[]} />);
-
-    expect(screen.getByText('لا قوالب محفوظة')).toBeInTheDocument();
+    expect(screen.getByText('لا توجد قوالب محفوظة')).toBeInTheDocument();
     expect(screen.getByText('استيراد قالب JSON')).toBeInTheDocument();
   });
 
-  it('renders saved templates list and handles export all', () => {
+  it('filters saved templates when searching', () => {
+    const savedTemplates = [
+      {
+        id: 'collage-user-1',
+        name: 'قالب جواز مخصص',
+        slots: 4,
+        cells: [{ x: 0, y: 0, w: 0.5, h: 0.5 }],
+      },
+      {
+        id: 'collage-user-2',
+        name: 'شبكة هوية وطنية',
+        slots: 8,
+        cells: [{ x: 0, y: 0, w: 0.25, h: 0.5 }],
+      },
+    ];
+
+    render(<CollagePresetsTab {...defaultProps} savedTemplates={savedTemplates} />);
+
+    const searchInput = screen.getByPlaceholderText(/بحث في قوالبي المحفوظة/);
+    fireEvent.change(searchInput, { target: { value: 'جواز' } });
+
+    expect(screen.getByText('قالب جواز مخصص')).toBeInTheDocument();
+    expect(screen.queryByText('شبكة هوية وطنية')).not.toBeInTheDocument();
+  });
+
+  it('renders saved templates list and handles select and export all', () => {
+    const onSelect = vi.fn();
     const onExportAllClick = vi.fn();
     const savedTemplates = [
       {
@@ -71,7 +67,7 @@ describe('CollagePresetsTab Component Suite', () => {
     render(
       <CollagePresetsTab
         {...defaultProps}
-        presetCategory="saved"
+        onSelect={onSelect}
         savedTemplates={savedTemplates}
         onExportAllClick={onExportAllClick}
       />,
@@ -79,6 +75,9 @@ describe('CollagePresetsTab Component Suite', () => {
 
     expect(screen.getByText('قالب الجواز الخاص بي')).toBeInTheDocument();
     expect(screen.getByText('تصدير الكل')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('قالب الجواز الخاص بي'));
+    expect(onSelect).toHaveBeenCalledWith(savedTemplates[0]);
 
     fireEvent.click(screen.getByText('تصدير الكل'));
     expect(onExportAllClick).toHaveBeenCalled();

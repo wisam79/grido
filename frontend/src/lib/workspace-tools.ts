@@ -38,7 +38,7 @@ export type CollageTab = 'custom' | 'presets' | 'freeform' | 'paper' | 'autofill
 export type FreeformTab = 'stickers' | 'shapes' | 'text' | 'layers';
 
 /** وجهات الشريط الجانبي — كل وجهة سطح واحد يضم تبويبات مترابطة، لا زر لكل تبويب */
-export type CollageSection = 'grid' | 'slots' | 'paper';
+export type CollageSection = 'grid' | 'freeform' | 'slots' | 'paper';
 /** أدوات الإدراج الأربع أزرار مستقلة في الشريط كما طلب المالك */
 export type StudioSection = 'stickers' | 'shapes' | 'text' | 'layers';
 
@@ -98,9 +98,9 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
   },
   {
     id: 'presets',
-    label: 'قوالب',
-    title: 'قوالب جاهزة',
-    subtitle: 'تشكيلات جاهزة',
+    label: 'قوالبي',
+    title: 'قوالبي المحفوظة',
+    subtitle: 'قوالب وشبكات محفوظة',
     icon: SquaresFour,
     testId: 'tab-collage-presets',
   },
@@ -196,11 +196,22 @@ export const COLLAGE_SECTIONS: WorkspaceSection<CollageSection, CollageTab>[] = 
     id: 'grid',
     label: 'الشبكة',
     title: 'شبكة الكولاج',
-    subtitle: 'مخصصة أو قالب جاهز أو حرة',
+    subtitle: 'مخصصة أو قوالب محفوظة',
     icon: GridFour,
     testId: 'rail-collage-grid',
     defaultTab: 'custom',
-    tabs: pickTools(COLLAGE_TOOLS, ['custom', 'presets', 'freeform']),
+    tabs: pickTools(COLLAGE_TOOLS, ['custom', 'presets']),
+    inUse: 'collage-template',
+  },
+  {
+    id: 'freeform',
+    label: 'حر',
+    title: 'الكولاج الحر بالملم',
+    subtitle: 'شبكة حرة ومخصصة بالملم',
+    icon: DotsSixVertical,
+    testId: 'rail-collage-freeform',
+    defaultTab: 'freeform',
+    tabs: pickTools(COLLAGE_TOOLS, ['freeform']),
     inUse: 'collage-template',
   },
   {

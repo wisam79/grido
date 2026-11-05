@@ -9,55 +9,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FluentEmptyState, FluentSegmentedControl } from '@/components/ui/blocks';
+import { FluentEmptyState } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
   Check,
   UploadSimple,
   DownloadSimple,
   Trash,
-  SquaresFour,
-  List,
   MagnifyingGlass,
   X,
 } from '@/components/ui/icons';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { COLLAGE_TEMPLATES } from '@/lib/templates';
 import { cn } from '@/lib/utils';
-import {
-  ALL_STUDIO_PRESETS,
-  STUDIO_COMBO_PRESETS,
-  STUDIO_KEEPSAKE_PRESETS,
-} from './collage-preset-data';
-import type { CollagePresetCategory, StudioPreset } from './collage-preset-data';
+import type { CollagePresetCategory } from './collage-preset-data';
 import type { CollageTemplate } from '@/lib/templates';
 
 const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
-const SPEC_NUMBER_PATTERN = /(\d+(?:[.,]\d+)?(?:\s*×\s*\d+(?:[.,]\d+)?)?)/g;
-
-function SpecText({ spec, compact }: { spec: string; compact: boolean }) {
-  return (
-    <span
-      className={cn(
-        'text-mini text-muted-foreground leading-relaxed',
-        compact && 'line-clamp-2 min-h-8',
-      )}
-      dir="rtl"
-      title={spec}
-    >
-      {spec.split(SPEC_NUMBER_PATTERN).map((part, index) =>
-        /^\d/.test(part) ? (
-          <bdi key={index} dir="ltr">
-            {part}
-          </bdi>
-        ) : (
-          <React.Fragment key={index}>{part}</React.Fragment>
-        ),
-      )}
-    </span>
-  );
-}
 
 const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
   cells,
@@ -104,8 +71,8 @@ const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
 });
 
 export interface CollagePresetsTabProps {
-  presetCategory: CollagePresetCategory;
-  onPresetCategoryChange: (category: CollagePresetCategory) => void;
+  presetCategory?: CollagePresetCategory;
+  onPresetCategoryChange?: (category: CollagePresetCategory) => void;
   activeTemplateId: string | undefined;
   onSelect: (template: CollageTemplate) => void;
   savedTemplates?: CollageTemplate[];
@@ -115,8 +82,6 @@ export interface CollagePresetsTabProps {
 }
 
 export function CollagePresetsTab({
-  presetCategory,
-  onPresetCategoryChange,
   activeTemplateId,
   onSelect,
   savedTemplates = [],
@@ -125,84 +90,19 @@ export function CollagePresetsTab({
   onExportAllClick,
 }: CollagePresetsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [pendingDelete, setPendingDelete] = useState<CollageTemplate | null>(null);
-  const categories: { id: CollagePresetCategory; label: string }[] = [
-    { id: 'all', label: 'كل القوالب' },
-    { id: 'combo', label: 'أطقم رسمية' },
-    { id: 'keepsake', label: 'تذكار وكروت' },
-    { id: 'saved', label: 'قوالب محفوظة' },
-  ];
+
   const query = searchQuery.trim().toLowerCase();
-  const searchResults = useMemo(
+  const filteredTemplates = useMemo(
     () =>
       query
-        ? {
-            official: ALL_STUDIO_PRESETS.filter((preset) =>
-              [preset.title, preset.spec, preset.tag, preset.badge].some((text) =>
-                text?.toLowerCase().includes(query),
-              ),
-            ),
-            saved: savedTemplates.filter(
-              (template) =>
-                template.name.toLowerCase().includes(query) || `${template.slots}`.includes(query),
-            ),
-          }
-        : null,
+        ? savedTemplates.filter(
+            (template) =>
+              template.name.toLowerCase().includes(query) || `${template.slots}`.includes(query),
+          )
+        : savedTemplates,
     [query, savedTemplates],
   );
-  const groups =
-    presetCategory === 'combo'
-      ? [{ title: '', presets: STUDIO_COMBO_PRESETS }]
-      : presetCategory === 'keepsake'
-        ? [{ title: '', presets: STUDIO_KEEPSAKE_PRESETS }]
-        : [
-            { title: 'أطقم رسمية', presets: STUDIO_COMBO_PRESETS },
-            { title: 'تذكار وكروت', presets: STUDIO_KEEPSAKE_PRESETS },
-          ];
-  const cardLayout = viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2';
-
-  const renderPreset = (preset: StudioPreset) => {
-    const template = COLLAGE_TEMPLATES.find((item) => item.id === preset.id);
-    if (!template) return null;
-    const active = activeTemplateId === preset.id;
-    return (
-      <button
-        key={preset.id}
-        type="button"
-        aria-pressed={active}
-        aria-label={`${preset.title} - ${preset.spec}`}
-        title={`${preset.title} — ${preset.spec}`}
-        onClick={() => onSelect(template)}
-        className={cn(
-          'group relative flex min-w-0 rounded-md border p-1.5 text-start transition-colors duration-150 cursor-pointer',
-          viewMode === 'grid' ? 'flex-col gap-2' : 'items-center gap-3',
-          active
-            ? 'border-primary/70 bg-primary/10'
-            : 'border-transparent hover:border-border hover:bg-muted/40',
-          FOCUS_RING,
-        )}
-      >
-        <span
-          className={cn(
-            'flex items-center justify-center rounded-md bg-muted/60',
-            viewMode === 'grid' ? 'h-32 w-full p-2' : 'h-20 w-16 shrink-0 p-1.5',
-          )}
-        >
-          <StudioPaperThumbnail cells={template.cells} active={active} />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1 px-0.5">
-          <span className="truncate text-control font-semibold">{preset.title}</span>
-          <SpecText spec={preset.spec} compact={viewMode === 'grid'} />
-        </span>
-        {active && (
-          <span className="absolute end-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <Check className="size-3" weight="bold" />
-          </span>
-        )}
-      </button>
-    );
-  };
 
   const renderSaved = (template: CollageTemplate) => {
     const active = activeTemplateId === template.id;
@@ -210,8 +110,8 @@ export function CollagePresetsTab({
       <div
         key={template.id}
         className={cn(
-          'flex items-center rounded-md border',
-          active ? 'border-primary/60 bg-primary/5' : 'border-border/50',
+          'flex items-center rounded-md border transition-colors',
+          active ? 'border-primary/60 bg-primary/5' : 'border-border/50 hover:border-border',
         )}
       >
         <button
@@ -223,7 +123,7 @@ export function CollagePresetsTab({
             FOCUS_RING,
           )}
         >
-          <span className="flex h-20 w-16 shrink-0 justify-center rounded-md bg-muted/60 p-1.5">
+          <span className="flex h-16 w-14 shrink-0 justify-center rounded-md bg-muted/60 p-1.5">
             <StudioPaperThumbnail cells={template.cells} active={active} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -263,8 +163,8 @@ export function CollagePresetsTab({
             type="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="بحث في القوالب…"
-            aria-label="بحث في القوالب"
+            placeholder="بحث في قوالبي المحفوظة…"
+            aria-label="بحث في قوالبي المحفوظة"
             className={cn(
               'h-8 w-full rounded-md border border-border/50 bg-muted/20 ps-9 pe-9 text-xs placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none',
               FOCUS_RING,
@@ -285,109 +185,50 @@ export function CollagePresetsTab({
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Select
-            value={presetCategory}
-            onValueChange={(value) => {
-              onPresetCategoryChange(value as CollagePresetCategory);
-              setSearchQuery('');
-            }}
-          >
-            <SelectTrigger
-              aria-label="فئة قوالب الكولاج"
-              className="min-w-0 flex-1 bg-transparent text-xs"
-            >
-              {categories.find((category) => category.id === presetCategory)?.label}
-            </SelectTrigger>
-            <SelectContent align="start" className="font-cairo">
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id} className="text-xs">
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FluentSegmentedControl<'list' | 'grid'>
-            layoutId="presets-view-mode-pill"
-            variant="field"
-            value={viewMode}
-            onChange={setViewMode}
-            size="sm"
-            fullWidth={false}
-            className="shrink-0"
-            options={[
-              { id: 'grid', icon: <SquaresFour className="size-4" />, tooltip: 'عرض شبكي' },
-              { id: 'list', icon: <List className="size-4" />, tooltip: 'قائمة مفصلة' },
-            ]}
-          />
-        </div>
       </div>
 
-      {searchResults ? (
-        <div className="space-y-3">
-          <p className="text-mini text-muted-foreground" aria-live="polite">
-            نتائج البحث: {searchResults.official.length + searchResults.saved.length}
-          </p>
-          {searchResults.official.length + searchResults.saved.length === 0 ? (
-            <FluentEmptyState
-              icon={<MagnifyingGlass className="size-6" />}
-              title="لا توجد نتائج"
-              description="جرّب جواز أو وطنية"
-            />
-          ) : (
-            <>
-              <div className={cardLayout}>{searchResults.official.map(renderPreset)}</div>
-              {searchResults.saved.length > 0 && (
-                <div className="space-y-2">{searchResults.saved.map(renderSaved)}</div>
-              )}
-            </>
-          )}
-        </div>
-      ) : presetCategory === 'saved' ? (
-        <div className="space-y-3">
-          {savedTemplates.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border/60 px-4 py-8 text-center">
-              <p className="text-sm font-semibold">لا قوالب محفوظة</p>
-              <p className="text-xs text-muted-foreground">خصّص شبكتك ثم اختر «حفظ كقالب».</p>
+      <div className="space-y-3">
+        {savedTemplates.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border/60 px-4 py-8 text-center">
+            <p className="text-sm font-semibold">لا توجد قوالب محفوظة</p>
+            <p className="text-xs text-muted-foreground">
+              خصّص شبكتك في تبويب «مخصص» ثم اختر «حفظ كقالب» لتظهر هنا.
+            </p>
+            {onImportClick && (
+              <Button variant="outline" onClick={onImportClick}>
+                <UploadSimple className="size-4" />
+                <span>استيراد قالب JSON</span>
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
               {onImportClick && (
-                <Button variant="outline" onClick={onImportClick}>
-                  <UploadSimple className="size-4" />
-                  <span>استيراد قالب JSON</span>
+                <Button variant="outline" className="flex-1" onClick={onImportClick}>
+                  <UploadSimple className="size-3.5" />
+                  استيراد
+                </Button>
+              )}
+              {onExportAllClick && (
+                <Button variant="outline" className="flex-1" onClick={onExportAllClick}>
+                  <DownloadSimple className="size-3.5" />
+                  تصدير الكل
                 </Button>
               )}
             </div>
-          ) : (
-            <>
-              <div className="flex gap-2">
-                {onImportClick && (
-                  <Button variant="outline" className="flex-1" onClick={onImportClick}>
-                    <UploadSimple className="size-3.5" />
-                    استيراد
-                  </Button>
-                )}
-                {onExportAllClick && (
-                  <Button variant="outline" className="flex-1" onClick={onExportAllClick}>
-                    <DownloadSimple className="size-3.5" />
-                    تصدير الكل
-                  </Button>
-                )}
-              </div>
-              <div className="space-y-2">{savedTemplates.map(renderSaved)}</div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {groups.map((group, index) => (
-            <section key={group.title || index} className="space-y-2">
-              {group.title && (
-                <h3 className="text-xs font-semibold text-muted-foreground">{group.title}</h3>
-              )}
-              <div className={cardLayout}>{group.presets.map(renderPreset)}</div>
-            </section>
-          ))}
-        </div>
-      )}
+            {filteredTemplates.length === 0 ? (
+              <FluentEmptyState
+                icon={<MagnifyingGlass className="size-6" />}
+                title="لا توجد نتائج"
+                description="لم يتم العثور على قالب بهذا الاسم"
+              />
+            ) : (
+              <div className="space-y-2">{filteredTemplates.map(renderSaved)}</div>
+            )}
+          </>
+        )}
+      </div>
 
       <AlertDialog
         open={pendingDelete !== null}

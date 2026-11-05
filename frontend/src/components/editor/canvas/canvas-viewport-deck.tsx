@@ -26,6 +26,7 @@ import {
   ArrowsHorizontal,
   FrameCorners,
   Sparkle,
+  Eye,
 } from '@/components/ui/icons';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { Separator } from '@/components/ui/separator';
@@ -363,6 +364,16 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             onClick={() => setCollageShowCutLines(!collageShowCutLines)}
           />
         )}
+
+        {/* زر وضع التركيز / إخفاء الألواح */}
+        <FluentCapsuleButton
+          icon={<Eye className="w-4 h-4" weight="regular" />}
+          label="وضع التركيز (Ctrl + .)"
+          tooltip="إخفاء أو استعادة الألواح الجانبية لمساحة رؤية كاملة"
+          shortcut="Ctrl+."
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'))}
+          testId="canvas-zen-mode-toggle"
+        />
       </div>
 
       {/* 3. الجانب الأيسر: كبسولة الزوم واختصارات المفاتيح المدمجة بالكامل */}
