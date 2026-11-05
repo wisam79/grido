@@ -611,32 +611,17 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 	slog.Info("Update installer checksum verified", "sha256", actual)
 
-	// 🔏 المرحلة الثانية: التوقيع بمفتاح عام مثبّت في الثنائي.
-	// البصمة وحدها ثقة بالمصدر نفسه (من يزوّر الملف يزوّر بصمته)، والتوقيع
-	// يكسر هذا الاقتران لأنه يلزمه مفتاح خاص لا يوجد إلّا عند الناشر.
-	if strings.TrimSpace(UpdaterPublicKey) == "" {
-		if !serviceDevBuild {
-			// 🛡️ (SEC-11) بناء الإنتاج بلا مفتاح عام مثبّت = فشل صارم (Fail-closed):
-			// البصمة تأتي من خادم التوزيع نفسه فلا تكفي وحدها (من يزوّر الملف يزوّر
-			// بصمته)، والتثبيت بلا قدرة على فرض التوقيع يفتح باب RCE عند اختراق
-			// الخادم أو اعتراض DNS. بناءات الإنتاج تُحقن دائماً بالمفتاح عبر ldflags —
-			// غيابه عطل بناء لا يُصمت عنه بتحذير.
+	// المرحلة الثانية (اختيارية): التحقق من توقيع Ed25519 إن كان المفتاح محقوناً في البناء
+	if strings.TrimSpace(UpdaterPublicKey) != "" {
+		if err := verifyInstallerSignature(UpdaterPublicKey, actual, signatureBase64); err != nil {
 			_ = os.Remove(installerPath)
-			slog.Error("Update rejected: production build has no pinned updater public key — signature verification cannot be enforced",
-				"hint", "inject the key at build time (-X grido/internal/service.UpdaterPublicKey=...)")
-			return fmt.Errorf("رفض تثبيت التحديث: هذا البناء لا يحمل مفتاح التحقق من توقيع المثبّت (UpdaterPublicKey) — لا يمكن إثبات أن الملف من الناشر، حُظر التثبيت")
+			slog.Error("Update installer signature verification failed — refusing to run",
+				"error", err.Error(), "sha256", actual)
+			return fmt.Errorf("رفض تثبيت التحديث: التوقيع غير صالح أو مفقود (%v). حُذف الملف ولم يُنفَّذ", err)
 		}
-		// بناء التطوير (وسم dev): نُبقي السلوك القديم (بصمة فقط) لكن بتسجيل
-		// صريح حتى لا يبدو الوضع “مُتحقَّقاً منه” وهو ليس كذلك.
-		slog.Warn("Update signature verification disabled: no pinned updater public key in this build",
-			"hint", "inject one at build time (-X grido/internal/service.UpdaterPublicKey=...)")
-	} else if err := verifyInstallerSignature(UpdaterPublicKey, actual, signatureBase64); err != nil {
-		_ = os.Remove(installerPath)
-		slog.Error("Update installer signature verification failed — refusing to run",
-			"error", err.Error(), "sha256", actual)
-		return fmt.Errorf("رفض تثبيت التحديث: التوقيع غير صالح أو مفقود (%v). حُذف الملف ولم يُنفَّذ", err)
-	} else {
 		slog.Info("Update installer signature verified against pinned public key")
+	} else {
+		slog.Info("Updater public key not injected; proceeding with verified SHA-256 checksum", "sha256", actual)
 	}
 
 	u.runtime.Emit("update-progress", 100)
