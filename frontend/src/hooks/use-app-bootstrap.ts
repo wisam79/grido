@@ -73,12 +73,17 @@ export function useAppBootstrap(): AppBootstrapState {
   useEffect(() => {
     let cancelled = false;
 
-    // فحص الترخيص نداء شبكي (حتى مع جلسة محلية). تشغيله في الخلفية يعني أن
-    // فتح التطبيق لا ينتظر الشبكة: المحرر يظهر من الجلسة المخزنة فوراً،
-    // وتُحدَّث حالة الترخيص عند وصول الرد (أو يفشل بصمت عند الانقطاع).
-    const checkLicenseInBackground = async () => {
+    const bootstrap = async () => {
+      // 🛡️ فحص الترخيص واستعادة الجلسة تحت حماية شاشة التهيئة (Splash Screen):
+      // ننتظر التحقق من الترخيص والجلسة المخزنة محلياً وشبكياً قبل إخفاء
+      // شاشة التهيئة، لمنع الوميض البصري وظهور نافذة إدارة الحساب خطأً أمام مستخدم مرخص.
+      // نضع مهلة أمان قصوى (4 ثوانٍ) لمنع تعليق شاشة البداية في حال انقطاع الشبكة التام.
       try {
-        const profile = await checkLicenseStatus();
+        const licensePromise = checkLicenseStatus();
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 4000),
+        );
+        const profile = await Promise.race([licensePromise, timeoutPromise]);
         if (!cancelled && (!profile || !profile.token)) {
           setAccountModalOpen(true);
         }
@@ -89,10 +94,7 @@ export function useAppBootstrap(): AppBootstrapState {
           logger.error('Failed to check license status during init:', err);
         }
       }
-    };
 
-    const bootstrap = async () => {
-      void checkLicenseInBackground();
       // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
       void useEditorStore.getState().hydrateAiUsageLogs();
       // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
