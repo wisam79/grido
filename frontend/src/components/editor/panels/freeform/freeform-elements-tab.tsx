@@ -341,7 +341,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                       onClick={() => handleAddShape(shape)}
                       title={shape.label}
                       aria-label={shape.label}
-                      className="group flex items-center justify-center h-11 bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border focus-visible:border-border rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none"
+                      className="group flex items-center justify-center h-10 bg-muted/15 hover:bg-muted/30 border border-border/40 hover:border-border rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none"
                     >
                       <ShapeGlyph
                         kind={shape.kind}
@@ -349,7 +349,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                         sides={shape.defaults?.sides}
                         starPoints={shape.defaults?.starPoints}
                         doubleArrow={shape.defaults?.pointerAtBeginning === true}
-                        className="w-8 h-8 shrink-0 text-foreground/80 group-hover:text-foreground group-focus-visible:text-foreground"
+                        className="w-5 h-5 shrink-0 text-muted-foreground/75 group-hover:text-foreground transition-colors duration-150"
                       />
                     </button>
                   ))}
