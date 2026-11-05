@@ -13,18 +13,18 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
   const redo = useEditorStore((state) => state.redo);
 
   return (
-    <div className="fluent-command-group">
+    <div className="flex items-center gap-1.5">
       {/* 🛡️ الزر المعطّل لا يُظهر Tooltip مخصصاً — title الأصلي يشرح السبب */}
       <TooltipBtn content={canUndo ? 'تراجع' : 'لا شيء للتراجع عنه'}>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={undo}
           disabled={!canUndo}
           data-testid="toolbar-undo"
           aria-label="تراجع"
           title={!canUndo ? 'لا شيء للتراجع عنه' : undefined}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+          className="text-foreground/80 cursor-pointer"
         >
           <ArrowUUpLeft className="w-4 h-4" />
         </Button>
@@ -32,13 +32,13 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
       <TooltipBtn content={canRedo ? 'إعادة' : 'لا شيء لإعادته'}>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={redo}
           disabled={!canRedo}
           data-testid="toolbar-redo"
           aria-label="إعادة"
           title={!canRedo ? 'لا شيء لإعادته' : undefined}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+          className="text-foreground/80 cursor-pointer"
         >
           <ArrowUUpRight className="w-4 h-4" />
         </Button>

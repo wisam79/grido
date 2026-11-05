@@ -147,6 +147,12 @@ description: دليل ونظام تصميم Microsoft Fluent 2 الشامل لت
 | `h-10` (40px) | **Large Primary Actions** | الأزرار الرئيسية الكبرى وأزرار الحفظ في أسفل النوافذ والمودالات |
 | `h-12` (48px) | **Command / App Bars** | شريط التنقل العلوي، أشرطة الأوامر الرئيسية، والأدوات العائمة الكبرى |
 
+### توكنز الصقل البصري — 5 نوفمبر 2026
+- `text-control` = **12px / 18px** للتسميات والحقول المشتركة؛ يبقى سلم `xs/mini/micro` للشارات والسياقات المتخصصة، بلا تكبير عام للواجهة. مسجّل في `frontend/src/lib/utils.ts` كحجم خط لـ`tailwind-merge`.
+- `bg-primary-action` و`hover:bg-primary-action-hover` للأزرار التعبوية: `#2563eb` / `#1d4ed8` مع نص أبيض في الثيمين؛ يبقى `text-primary` و`border-primary` على لون التمييز الأصلي.
+- `border-control-border` لحدود الحقول: `#cbd5e1` فاتح / `#454545` داكن؛ فواصل الأقسام تبقى على `border-border` الهادئ، دون ظلال داخلية جديدة.
+- `bg-preview-surface` لمعاينات المكتبات: `#e6e9ed` فاتح / `#2a2b2f` داكن؛ لا يُطبَّق على المستند أو SVG المصدر.
+
 ### سلم سماكة الخطوط ومؤشر التركيز (Strokes & Dual Focus Ring):
 - `Thin (1px)`: الحدود الافتراضية والفواصل.
 - `Dual Focus Ring (2px + 2px offset)`: حلقة التركيز المزدوجة لإمكانية الوصول:

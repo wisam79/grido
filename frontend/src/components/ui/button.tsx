@@ -5,16 +5,16 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "font-sans inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-xs font-semibold select-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  "font-sans inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-control font-semibold select-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow-2xs enabled:hover:bg-primary/90 enabled:active:bg-primary/95',
+          'bg-primary-action text-primary-foreground enabled:hover:bg-primary-action-hover enabled:active:bg-primary-action-hover',
         destructive:
           'bg-destructive text-destructive-foreground shadow-2xs enabled:hover:bg-destructive/90 focus-visible:ring-destructive',
         outline:
-          'border border-border/80 bg-background/60 enabled:hover:bg-accent enabled:hover:text-foreground dark:bg-card/40 dark:border-border/60 dark:enabled:hover:bg-accent/60 shadow-2xs',
+          'border border-control-border bg-card enabled:hover:bg-accent enabled:hover:text-foreground dark:enabled:hover:bg-accent/60',
         secondary:
           'bg-secondary text-secondary-foreground shadow-2xs enabled:hover:bg-secondary/80',
         ghost:
@@ -25,8 +25,8 @@ const buttonVariants = cva(
       },
       size: {
         default: 'h-8 px-3 py-1.5 has-[>svg]:px-2.5',
-        sm: 'h-7 rounded-md gap-1 px-2.5 text-xs has-[>svg]:px-2',
-        lg: 'h-9 rounded-md px-4 text-xs font-semibold has-[>svg]:px-3',
+        sm: 'h-7 rounded-md gap-1 px-2.5 text-control has-[>svg]:px-2',
+        lg: 'h-9 rounded-md px-4 text-control font-semibold has-[>svg]:px-3',
         xl: 'h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-3.5',
         '2xl': 'h-12 rounded-lg px-6 text-sm font-bold has-[>svg]:px-4',
         icon: 'size-8 p-0',

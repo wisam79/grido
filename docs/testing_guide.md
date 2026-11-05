@@ -4,6 +4,12 @@
 
 ---
 
+## خطاف فحص الملفات المجهّزة — 5 نوفمبر 2026
+
+يُشغّل `.husky/pre-commit` بوابة التوثيق ثم `node frontend/node_modules/lint-staged/bin/lint-staged.js --cwd frontend --max-arg-length 4000`، دون أمر تنقّل بين المجلدات. تبقى قواعد ESLint وPrettier في `frontend/package.json` والخطافات مفعّلة؛ لا تجاوز للفحوص.
+
+---
+
 ## دفعة عمق E2E: قتل التخطي الصامت ورفع الدخان إلى سلوك فعلي — 1 نوفمبر 2026
 
 - **قاعدة المواصفات الحاكمة الجديدة:** يُمنع في `frontend/e2e/*.spec.ts` نمط `if (await x.isVisible()) { click }` — العنصر متوقع الظهور يُؤكَّد بـ`await expect(locator).toBeVisible()` ثم يُنقَر إلزامياً فيفشل الاختبار صريحاً عند غيابه بدل نجاح زائف يخفي تعفّن المحدد (الدليل: المحدد القديم `[data-tab="presets"]` صفر مطابقات في المصدر وكان يمرّ متخفياً خلف الغارد الشرطي). الاستثناء المشروع الوحيد: منطق «الفتح بنقرتين» القائم على قراءة الحالة في المساعدات (`openStudioElementsCategory` و`openCollageGridSection`) — وهو ينتهي بتأكيد `toBeVisible` دائماً وليس تخطياً.

@@ -30,6 +30,8 @@
   --color-sidebar: var(--sidebar);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-control-border: var(--control-border);
+  --color-preview-surface: var(--preview-surface);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
@@ -42,6 +44,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-action: var(--primary-action);
+  --color-primary-action-hover: var(--primary-action-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -104,6 +108,8 @@
      `leading-tight` اليدوي المتناثر (تدقيق 2026-10-10، البند P0-1). */
   --text-xs: 11.5px;
   --text-xs--line-height: 18px;
+  --text-control: 12px;
+  --text-control--line-height: 18px;
   --text-sm: 13.5px;
   --text-sm--line-height: 21px;
   --text-base: 15px;
@@ -143,6 +149,10 @@
   --popover-foreground: #0f172a;
   --primary: #2563eb; /* Modern vibrant Royal Blue #2563eb */
   --primary-foreground: #ffffff;
+  --primary-action: #2563eb;
+  --primary-action-hover: #1d4ed8;
+  --control-border: #cbd5e1;
+  --preview-surface: #e6e9ed;
   --secondary: rgba(239, 246, 255, 0.85); /* Soft blue secondary tint */
   --secondary-foreground: #1e40af;
   --muted: rgba(241, 245, 249, 0.8); /* Recessed control track */
@@ -285,6 +295,10 @@
   --popover-foreground: #f5f5f5;
   --primary: #3b82f6; /* Vibrant modern Electric Blue */
   --primary-foreground: #ffffff;
+  --primary-action: #2563eb;
+  --primary-action-hover: #1d4ed8;
+  --control-border: #454545;
+  --preview-surface: #2a2b2f;
   --secondary: rgba(31, 31, 31, 0.85); /* الأسطح التفاعلية الثانوية */
   --secondary-foreground: #f5f5f5;
   --muted: rgba(23, 23, 23, 0.8); /* الحقول والممرات الغائرة */

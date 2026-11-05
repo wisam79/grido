@@ -324,7 +324,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       <span
         dir="ltr"
         title={editable ? `من ${min} إلى ${max}${unit ? ` ${unit}` : ''}` : undefined}
-        className="flex min-w-14 items-center justify-between gap-1 font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 ps-1.5 pe-1 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
+        className="flex min-w-14 items-center justify-between gap-1 font-mono text-control tabular-nums bg-input ps-1.5 pe-1 py-0.5 rounded-md border border-control-border text-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
       >
         {editable ? (
           <input
@@ -340,7 +340,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
             onKeyDown={handleNumericKeyDown}
             onKeyUp={handleNumericKeyUp}
             disabled={disabled}
-            className="w-9 bg-transparent text-center outline-none font-mono text-mini tabular-nums text-inherit"
+            className="w-9 bg-transparent text-center outline-none font-mono text-control tabular-nums text-inherit"
           />
         ) : (
           <span className="text-center px-0.5">{displayVal}</span>
@@ -362,7 +362,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         <div
           id={labelId}
           className={cn(
-            'flex items-center gap-1.5 text-xs font-normal text-foreground/80 shrink-0 select-none',
+            'flex items-center gap-1.5 text-control font-normal text-foreground/80 shrink-0 select-none',
             // 80px بدل 64px: تسعة أحرف عربية كاملة بلا بتر في عمود 296px،
             // بعد حذف أيقونة الصف التي كانت تلتهم 18px من العرض.
             labelWidth || 'w-20',
@@ -401,7 +401,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         className,
       )}
     >
-      <div className="flex justify-between items-center text-xs">
+      <div className="flex justify-between items-center text-control">
         <div id={labelId} className="flex items-center gap-1.5 font-normal text-foreground/85">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span>{label}</span>

@@ -116,20 +116,23 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
 
   return (
     <>
-      <Separator orientation="vertical" className="h-4 mx-1 bg-border/60" />
+      <Separator
+        orientation="vertical"
+        className="mx-2 bg-border/60 data-[orientation=vertical]:h-4"
+      />
       <div className="fluent-command-group">
         <TooltipBtn
           content={elementsCount === 0 ? 'الكانفس فارغ — أضف عناصر أولاً' : 'تكرار في الكولاج'}
         >
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleTransfer}
             disabled={isTransferring || elementsCount === 0}
             data-testid="toolbar-transfer-to-collage"
             aria-label="تكرار في الكولاج"
             title={elementsCount === 0 ? 'الكانفس فارغ — أضف عناصر أولاً' : undefined}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer flex items-center justify-center disabled:opacity-40"
+            className="text-foreground/80 cursor-pointer"
           >
             {isTransferring ? (
               <Spinner className="w-4 h-4 animate-spin" />

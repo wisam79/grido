@@ -56,7 +56,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
       dir="rtl"
       className="relative h-10 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
-      <div className="h-full flex items-center justify-between gap-1.5 px-2.5">
+      <div className="h-full flex items-center justify-between gap-1.5 ps-2.5">
         {/* المجموعات الرئيسية (ملف، تحرير، كولاج، تحديد)
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
@@ -65,7 +65,10 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             <ToolbarFileOps />
           </CommandGroup>
 
-          <Separator orientation="vertical" className="h-4 mx-1.5 bg-border/60 shrink-0" />
+          <Separator
+            orientation="vertical"
+            className="mx-2 bg-border/60 data-[orientation=vertical]:h-4"
+          />
 
           <CommandGroup>
             <ToolbarHistoryTools />
@@ -87,56 +90,51 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           <ModeSwitcher />
         </div>
 
-        {/* المجموعة النهائية: الحفظ والتصدير والطباعة في تسلسل بصري واضح ومريح وفق Fluent 2 */}
-        <div className="flex items-center h-full shrink-0 gap-1.5">
-          <CommandGroup>
-            <div className="flex items-center gap-1">
-              {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
-              <TooltipBtn content="حفظ المشروع (Ctrl + S)">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onSave}
-                  data-testid="toolbar-save"
-                  aria-label="حفظ المشروع"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md cursor-pointer transition-colors duration-150 group"
-                >
-                  <FloppyDisk className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
-                </Button>
-              </TooltipBtn>
+        {/* المجموعة النهائية: حفظ محايد، تصدير بإطار، وطباعة بارزة على سطح واحد */}
+        <CommandGroup className="gap-1.5">
+          {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
+          <TooltipBtn content="حفظ المشروع (Ctrl + S)">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onSave}
+              data-testid="toolbar-save"
+              aria-label="حفظ المشروع"
+              className="text-foreground/80 cursor-pointer"
+            >
+              <FloppyDisk className="w-4 h-4" />
+            </Button>
+          </TooltipBtn>
 
-              {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
-              <TooltipBtn content="تصدير صورة (Ctrl + E)">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onExport}
-                  data-testid="toolbar-export"
-                  aria-label="تصدير صورة"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
-                >
-                  <Export className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
-                </Button>
-              </TooltipBtn>
+          {/* تصدير (Ctrl+E) — إطار خفيف يميّز الإجراء الثانوي */}
+          <TooltipBtn content="تصدير صورة (Ctrl + E)">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onExport}
+              data-testid="toolbar-export"
+              aria-label="تصدير صورة"
+              className="cursor-pointer"
+            >
+              <Export className="w-4 h-4" />
+            </Button>
+          </TooltipBtn>
 
-              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
-              <TooltipBtn content="طباعة المستند (Ctrl + P)">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onPrint}
-                  data-testid="toolbar-print"
-                  aria-label="طباعة المستند"
-                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary border border-primary/25 rounded-md cursor-pointer transition-colors duration-150 group"
-                >
-                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
-                </Button>
-              </TooltipBtn>
-            </div>
+          {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
+          <TooltipBtn content="طباعة المستند (Ctrl + P)">
+            <Button
+              size="icon"
+              onClick={onPrint}
+              data-testid="toolbar-print"
+              aria-label="طباعة المستند"
+              className="cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+            </Button>
+          </TooltipBtn>
 
-            <Separator orientation="vertical" className="h-4 mx-1 bg-border/60 shrink-0" />
-
-            {/* قائمة المزيد: مسح مساحة العمل معزول في قائمة التأكيد */}
+          {/* خانة المزيد تطابق عرض شريط الألواح (w-11) وحدّه العمودي */}
+          <div className="h-full w-11 shrink-0 flex items-center justify-center border-s border-border/80">
             <DropdownMenu>
               <TooltipBtn content="المزيد من الخيارات">
                 <DropdownMenuTrigger asChild>
@@ -145,7 +143,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                     size="icon"
                     data-testid="toolbar-more"
                     aria-label="المزيد من الخيارات"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+                    className="cursor-pointer data-[state=open]:bg-accent data-[state=open]:text-foreground"
                   >
                     <DotsThreeVertical className="w-4 h-4" weight="bold" />
                   </Button>
@@ -171,8 +169,8 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </CommandGroup>
-        </div>
+          </div>
+        </CommandGroup>
       </div>
     </div>
   );

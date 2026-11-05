@@ -143,7 +143,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
         data-testid="element-add-text-plain"
         onClick={handleAddPlain}
         className={cn(
-          'flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-xs font-bold text-primary-foreground shadow-2xs transition-colors duration-150 hover:bg-primary/90 cursor-pointer select-none',
+          'flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-primary-action px-3 text-control font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
           focusRing,
         )}
       >
@@ -159,7 +159,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
         >
           <h3
             id={`text-preset-group-${group.id}`}
-            className="px-1 text-mini font-bold text-muted-foreground"
+            className="px-1 text-control font-semibold text-muted-foreground"
           >
             {group.label}
           </h3>

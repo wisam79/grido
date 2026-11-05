@@ -25,7 +25,7 @@ export const FluentSettingRow = React.memo(
         <div ref={ref} className={cn('space-y-1.5', className)} {...props}>
           {/* الوصف يتبع العنوان مباشرةً (لا يُدفع إلى الطرف المقابل) — فالوصف
               بيانات ثانوية كتأحتها لا قيمة حقل. */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-control">
             <div className="flex items-center gap-1.5 font-normal text-foreground/85">
               <span>{label}</span>
               {tooltip && (
@@ -39,13 +39,13 @@ export const FluentSettingRow = React.memo(
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs font-cairo">
+                  <TooltipContent side="top" className="text-control font-cairo">
                     {tooltip}
                   </TooltipContent>
                 </Tooltip>
               )}
             </div>
-            {description && <span className="text-micro text-muted-foreground">{description}</span>}
+            {description && <span className="text-mini text-muted-foreground">{description}</span>}
           </div>
           {actionElement}
         </div>
@@ -56,7 +56,7 @@ export const FluentSettingRow = React.memo(
       <div
         ref={ref}
         className={cn(
-          'flex items-center justify-between gap-3 py-1 text-xs select-none',
+          'flex items-center justify-between gap-3 py-1 text-control select-none',
           className,
         )}
         {...props}
@@ -76,14 +76,14 @@ export const FluentSettingRow = React.memo(
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs font-cairo">
+                  <TooltipContent side="top" className="text-control font-cairo">
                     {tooltip}
                   </TooltipContent>
                 </Tooltip>
               )}
             </div>
             {description && (
-              <p className="text-micro text-muted-foreground truncate mt-0.5">{description}</p>
+              <p className="text-mini text-muted-foreground truncate mt-0.5">{description}</p>
             )}
           </div>
         </div>

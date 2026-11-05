@@ -76,7 +76,7 @@ function FormatOptionButton({
       disabled={disabled}
       title={hint}
       onClick={onClick}
-      className={`flex items-center gap-2 p-2 rounded-md border transition-colors select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
+      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md border transition-colors select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
         disabled
           ? 'opacity-50 cursor-not-allowed border-border bg-muted/20 text-muted-foreground'
           : `cursor-pointer ${
@@ -86,12 +86,14 @@ function FormatOptionButton({
             }`
       }`}
     >
-      <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center shrink-0">
+      <div
+        className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selected ? 'border-primary' : 'border-control-border'}`}
+      >
         {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
       </div>
       <div className="text-start min-w-0">
-        <div className="font-bold text-xs">{title}</div>
-        <div className="text-micro text-muted-foreground">{subtitle}</div>
+        <div className="font-semibold text-control">{title}</div>
+        <div className="text-mini text-muted-foreground">{subtitle}</div>
       </div>
     </button>
   );
@@ -454,7 +456,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="max-w-md font-cairo rounded-md border border-border bg-card fluent-specular p-4 sm:p-5"
+        className="w-[calc(100%-2rem)] sm:max-w-lg font-cairo rounded-xl border border-border bg-card p-4 sm:p-5"
         dir="rtl"
       >
         <DialogHeader className="border-b border-border/40 pb-3">
@@ -468,11 +470,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
         </DialogHeader>
 
-        <div className="space-y-3 py-1">
+        <div className="space-y-4 py-1">
           <div>
             <Label
               id="export-colorspace-label"
-              className="text-xs mb-2 block font-bold text-foreground/90"
+              className="text-control mb-2 block font-semibold text-foreground"
             >
               فضاء الألوان
             </Label>
@@ -505,7 +507,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <div>
             <Label
               id="export-format-label"
-              className="text-xs mb-2 block font-bold text-foreground/90"
+              className="text-control mb-2 block font-semibold text-foreground"
             >
               صيغة الملف
             </Label>
@@ -554,20 +556,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           {colorSpace === 'cmyk' && (
-            <div className="rounded-md border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
-              <div className="font-bold text-foreground/90">تحويل CMYK في الخلفية</div>
-              <p className="text-micro text-muted-foreground leading-relaxed">
-                يُلتقط التصميم كاملاً (بنفس دقة التصدير) ثم يحوّله محرك الطباعة إلى CMYK ويُنتج ملف
-                TIFF يغطّي حدود التصميم بالضبط (بلا نزيف أو علامات قص). TIFF هو الحامل الحقيقي لفصل
-                أحبار CMYK — خيار JPEG معطّل لأن مُرمِّز JPEG لا يدعم كتابة فصل الأحبار.
-              </p>
-            </div>
+            <p className="text-control text-muted-foreground">
+              ملف TIFF بفصل أحبار CMYK، بنفس دقة التصميم ودون نزيف أو علامات قص.
+            </p>
           )}
 
           {/* 🖨️ RV-Print-27: شريط الجودة لصيغ JPEG/RGB فقط — مسار CMYK أصبح TIFF
               حصراً (فصل أحبار بلا فقد) فلا معنى لضبط جودة الضغط عنده. */}
           {colorSpace === 'rgb' && format === 'jpg' && (
-            <div className="bg-card p-3 rounded-md border border-border/80 space-y-2 fluent-specular">
+            <div className="py-1">
               <FluentSliderField
                 label="جودة الصورة"
                 value={quality}
@@ -580,10 +577,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </div>
           )}
 
-          <div className="rounded-md border border-border/80 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
+          <div className="border-y border-border/60 py-3 text-control space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground font-semibold">الأبعاد:</span>
-              <span className="font-mono font-bold">
+              <span dir="ltr" className="font-mono font-semibold tabular-nums">
                 {canvasWidth}×{canvasHeight}px
               </span>
             </div>
@@ -591,33 +588,37 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
-                  <span className="font-bold">
+                  <span dir="ltr" className="font-semibold tabular-nums">
                     {template.widthMM}×{template.heightMM} مم
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الدقة:</span>
-                  <span className="font-mono">{template.dpi} DPI</span>
+                  <span dir="ltr" className="font-mono tabular-nums">
+                    {template.dpi} DPI
+                  </span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
-                  <span className="font-bold">
+                  <span dir="ltr" className="font-semibold tabular-nums">
                     {Math.round(pxToMm(canvasWidth, printSettings.dpi))}×
                     {Math.round(pxToMm(canvasHeight, printSettings.dpi))} مم
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الدقة:</span>
-                  <span className="font-mono">{printSettings.dpi} DPI</span>
+                  <span dir="ltr" className="font-mono tabular-nums">
+                    {printSettings.dpi} DPI
+                  </span>
                 </div>
               </>
             )}
             <div className="flex justify-between pt-1.5 border-t border-border/50 mt-1">
               <span className="text-muted-foreground font-semibold">الحجم التقريبي:</span>
-              <span className="font-mono text-primary font-bold">
+              <span dir="ltr" className="font-mono font-semibold tabular-nums">
                 {colorSpace === 'cmyk'
                   ? cmykFormat === 'tiff'
                     ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 1.0).toFixed(1)
@@ -634,12 +635,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                         (quality / 100)
                       ).toFixed(1)}{' '}
                 MB
-                <span className="text-micro text-muted-foreground font-normal"> (تقريبي)</span>
               </span>
             </div>
           </div>
 
-          <div className="border-t border-border/40 pt-3 space-y-2.5">
+          <div className="space-y-3">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
@@ -661,32 +661,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
             {colorSpace === 'rgb' && (
               <>
-                <div className="p-3 border border-border/80 rounded-md bg-card hover:bg-muted/30 transition-colors fluent-specular">
-                  <FluentSettingRow
-                    label="علامات القص الإرشادية"
-                    description={
-                      cropMarksEnabled ? 'خطوط حول منطقة النزيف' : 'تتطلب هامش نزيف أولاً'
-                    }
-                    control={
-                      <Switch
-                        checked={showCropMarks && cropMarksEnabled}
-                        onCheckedChange={setShowCropMarks}
-                        disabled={!cropMarksEnabled}
-                        aria-label="علامات القص الإرشادية"
-                      />
-                    }
-                  />
-                  {/* ✂️ علامات القص تُرسم داخل منطقة النزيف حصراً، فبلا نزيف لا
-                      تُرسم شيئاً — المفتاح يُعطَّل مع سبب صريح بدل لا-فعل صامت. */}
-                  {!cropMarksEnabled && (
-                    <p className="text-micro text-amber-600 dark:text-amber-400 mt-1.5 font-semibold">
-                      حدّد هامش النزيف أكبر من 0 مم — تُرسم العلامات داخل منطقة النزيف، فتظهر للقاصّ
-                      حول حدود التصميم.
-                    </p>
-                  )}
-                </div>
-
-                <div className="p-3 border border-border/80 rounded-md bg-card space-y-2.5 fluent-specular">
+                <div className="space-y-3">
                   <FluentSliderField
                     label="هامش النزيف والقص"
                     value={bleedMM}
@@ -696,13 +671,27 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                     unit="mm"
                     onChange={setBleedMM}
                   />
-                  <p className="text-micro text-muted-foreground">يمنع ظهور حواف بيضاء بعد القص.</p>
+                  <FluentSettingRow
+                    label="علامات القص الإرشادية"
+                    description={
+                      cropMarksEnabled ? 'خطوط حول منطقة النزيف' : 'تتطلب هامش نزيف أكبر من 0 مم'
+                    }
+                    tooltip="تُرسم العلامات داخل منطقة النزيف حول حدود التصميم؛ يمنع النزيف ظهور حواف بيضاء بعد القص."
+                    control={
+                      <Switch
+                        checked={showCropMarks && cropMarksEnabled}
+                        onCheckedChange={setShowCropMarks}
+                        disabled={!cropMarksEnabled}
+                        aria-label="علامات القص الإرشادية"
+                      />
+                    }
+                  />
                 </div>
               </>
             )}
 
             {mode === 'collage' && colorSpace === 'rgb' && (
-              <div className="p-3 border border-border/80 rounded-md bg-card hover:bg-muted/30 transition-colors fluent-specular">
+              <div className="border-t border-border/50 pt-3">
                 <FluentSettingRow
                   label="تصدير الصور كملفات منفصلة"
                   description="حفظ كل صورة كملف مستقل"
@@ -729,18 +718,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
         )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 border-t border-border/60 pt-3">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
+            className="h-8 px-4 text-control font-semibold rounded-md cursor-pointer"
           >
             {loading ? 'إيقاف التصدير' : 'إلغاء'}
           </Button>
           <Button
             onClick={handleExport}
             disabled={loading}
-            className="h-8 px-5 text-xs font-semibold rounded-md gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+            className="h-8 px-5 text-control font-semibold rounded-md gap-1.5 cursor-pointer"
           >
             {loading ? (
               <>

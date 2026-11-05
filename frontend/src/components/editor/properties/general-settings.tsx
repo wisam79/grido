@@ -35,10 +35,13 @@ export function GeneralSettings() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="space-y-0 font-cairo" dir="rtl">
-        <CanvasDimensionsPanel />
+        <div className="border-b border-border/40 pb-3">
+          <CanvasDimensionsPanel />
+        </div>
 
         <FluentSection
           title="خلفية الورقة"
+          headerClassName="min-h-7"
           collapsible
           open={paperOpen}
           onOpenChange={setPaperOpen}

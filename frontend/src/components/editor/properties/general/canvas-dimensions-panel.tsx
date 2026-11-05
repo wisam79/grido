@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks/fluent-segmented-control';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { CaretDown, Check, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
+import { CaretDown, Check, Link, LinkBreak } from '@/components/ui/icons';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
@@ -29,9 +30,9 @@ import { cn } from '@/lib/utils';
 //   - سلم الارتفاعات: كل عناصر التحكم h-8 (32px) — لا ارتفاع شاذ.
 //   - هرمية الاستدارة: عناصر التحكم rounded-md، مجموعات التحكم rounded-md.
 //   - حلقة التركيز المزدوجة الموحّدة: ring-2 + ring-offset-2 (للفأرة ولوحة المفاتيح).
-//   - قابلية القراءة: لا نصوص 8px؛ التسميات text-mini والقيم text-xs بخط monospace.
+//   - قابلية القراءة: تسميات عربية text-control وقيم باتجاه LTR وخط monospace.
 //   - لا ترويسة داخلية مكررة: عنوان العمود «إعدادات الورقة» يكفي، والمقاس
-//     والأبعاد ظاهرة في المحدد وحقلي W/H فلا تُعاد في شارة أو وصف.
+//     والأبعاد ظاهرة في المحدد وحقلي العرض والارتفاع فلا تُعاد في شارة أو وصف.
 //
 // إزالة التكرار الوظيفي: كان باللوحة عنصران يؤديان نفس العملية تماماً
 // (زر "تبديل الأبعاد" + محدد "الاتجاه" — كلاهما يستبدل العرض بالارتفاع).
@@ -43,7 +44,7 @@ const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 const FIELD_SHELL =
-  'flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-foreground/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors';
+  'flex min-w-0 items-center bg-input border border-control-border hover:border-foreground/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2.5 h-8 transition-colors duration-150';
 
 // البحث والعرض في كل المقاسات، فيظهر «Letter» كمقاس قياسي لا «مخصص».
 const PRESET_MATCH_TOLERANCE_MM = 1.5;
@@ -288,30 +289,22 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       : `${widthMM}×${heightMM} مم`;
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-200 font-cairo">
+    <div className="space-y-3 animate-in fade-in duration-100 font-cairo">
       {/* 1. المقاس: قائمة الأوراق والكروت القياسية + الاتجاه */}
-      <div className="flex w-full min-w-0 flex-col gap-1.5" dir="rtl">
+      <div className="flex w-full min-w-0 flex-col gap-2" dir="rtl">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="outline"
               aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
-              className={cn(
-                'w-full flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-card hover:bg-muted/60 border border-border/80 hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
-                FOCUS_RING,
-              )}
+              className="w-full min-w-0 justify-between cursor-pointer"
             >
-              <span className="flex items-center gap-1.5 min-w-0">
-                <FrameCorners
-                  className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-                  weight="duotone"
-                />
-                <span className="truncate text-xs font-semibold">
-                  {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
-                </span>
+              <span className="truncate">
+                {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
               </span>
-              <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
-            </button>
+              <CaretDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-64 font-cairo rounded-lg border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
@@ -412,89 +405,81 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           variant="field"
           iconInline
           size="sm"
-          className="w-full"
+          className="w-full h-8 p-px border-control-border bg-input"
           ariaLabel="اتجاه اللوحة"
           options={[
             {
               id: 'portrait',
               label: 'عمودي',
-              icon: <PageOrientationIcon isLandscape={false} className="w-3.5 h-3.5" />,
+              icon: <PageOrientationIcon isLandscape={false} className="w-4 h-4" />,
+              className: 'text-control shadow-none',
             },
             {
               id: 'landscape',
               label: 'أفقي',
-              icon: <PageOrientationIcon isLandscape className="w-3.5 h-3.5" />,
+              icon: <PageOrientationIcon isLandscape className="w-4 h-4" />,
+              className: 'text-control shadow-none',
             },
           ]}
         />
       </div>
 
-      {/* 3. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
-        {/* العرض — بلا لاحقة الوحدة: مبدّل الوحدة (px/mm) أعلى الصف
-                  يحدّدها، وتكرارها داخل كل حقل كان يقتطع القيمة. */}
-        <div className={FIELD_SHELL} dir="ltr">
-          <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
-            W
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            aria-label="العرض"
-            value={widthVal}
-            onChange={(e) => handleWidthChange(e.target.value)}
-            onBlur={handleWidthCommit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleWidthCommit();
-              revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
-            }}
-            className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
-            dir="ltr"
-          />
-        </div>
+      {/* 2. الأبعاد: تسميات عربية وحقول متساوية، وقفل النسبة بمحاذاة القيم */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+        {/* الوحدة تتبع المسطرة، فلا تتكرر داخل الحقول. */}
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-control font-medium text-muted-foreground">العرض</span>
+          <div className={FIELD_SHELL} dir="ltr">
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="العرض"
+              value={widthVal}
+              onChange={(e) => handleWidthChange(e.target.value)}
+              onBlur={handleWidthCommit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleWidthCommit();
+                revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
+              }}
+              className="w-full min-w-0 bg-transparent border-0 p-0 text-center font-mono text-control tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none select-all"
+              dir="ltr"
+            />
+          </div>
+        </label>
 
         {/* قفل نسبة الأبعاد — يحفظ التناسب عند تعديل أي بُعد */}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon"
           onClick={() => setLockAspect((prev) => !prev)}
           aria-pressed={lockAspect}
           aria-label={lockAspect ? 'إلغاء قفل نسبة الأبعاد' : 'قفل نسبة الأبعاد'}
           title={lockAspect ? 'نسبة الأبعاد مقفلة' : 'قفل نسبة الأبعاد'}
-          className={cn(
-            'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
-            lockAspect
-              ? 'bg-accent-active text-foreground border-border/80 font-bold'
-              : 'bg-card border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-border',
-            FOCUS_RING,
-          )}
+          className="cursor-pointer aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
         >
-          {lockAspect ? (
-            <Link className="w-3.5 h-3.5" weight="bold" />
-          ) : (
-            <LinkBreak className="w-3.5 h-3.5" weight="bold" />
-          )}
-        </button>
+          {lockAspect ? <Link className="w-4 h-4" /> : <LinkBreak className="w-4 h-4" />}
+        </Button>
 
-        {/* الارتفاع */}
-        <div className={FIELD_SHELL} dir="ltr">
-          <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
-            H
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            aria-label="الارتفاع"
-            value={heightVal}
-            onChange={(e) => handleHeightChange(e.target.value)}
-            onBlur={handleHeightCommit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleHeightCommit();
-              revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
-            }}
-            className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
-            dir="ltr"
-          />
-        </div>
+        <label className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-control font-medium text-muted-foreground">الارتفاع</span>
+          <div className={FIELD_SHELL} dir="ltr">
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="الارتفاع"
+              value={heightVal}
+              onChange={(e) => handleHeightChange(e.target.value)}
+              onBlur={handleHeightCommit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleHeightCommit();
+                revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
+              }}
+              className="w-full min-w-0 bg-transparent border-0 p-0 text-center font-mono text-control tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none select-all"
+              dir="ltr"
+            />
+          </div>
+        </label>
       </div>
     </div>
   );

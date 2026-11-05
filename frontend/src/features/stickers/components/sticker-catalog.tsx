@@ -143,21 +143,21 @@ const GalleryCard = React.memo(function GalleryCard({
       aria-pressed={isSelected}
       aria-label={`${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
-        'group relative flex flex-col p-2.5 rounded-md transition-colors cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'group relative flex flex-col p-2 rounded-md transition-colors cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_205px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isSelected
-          ? 'bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50'
-          : 'bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2',
+          ? 'bg-primary/10 border-primary ring-1 ring-primary/30'
+          : 'bg-card/60 hover:bg-card border-border/60 hover:border-primary/50',
       )}
     >
       {/* Selection Check Badge */}
       {isSelected && (
-        <div className="absolute top-2 end-2 z-10 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+        <div className="absolute top-2 end-2 z-10 w-4 h-4 rounded-full bg-primary-action text-primary-foreground flex items-center justify-center">
           <Check className="w-3 h-3 font-bold" />
         </div>
       )}
 
       {/* SVG Preview Stage */}
-      <div className="w-full h-26 rounded-lg bg-background/60 border border-border/25 flex items-center justify-center p-2 overflow-hidden transition-colors duration-150 group-hover:bg-background">
+      <div className="w-full h-30 rounded-md bg-preview-surface flex items-center justify-center p-1 overflow-hidden">
         {miniSvg ? (
           <div
             className="w-full h-full flex items-center justify-center pointer-events-none drop-shadow-2xs [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
@@ -175,18 +175,18 @@ const GalleryCard = React.memo(function GalleryCard({
       <div className="mt-2 px-0.5 flex flex-col flex-1 justify-between gap-1 w-full">
         <span
           className={cn(
-            'text-xs font-bold truncate transition-colors',
+            'text-control font-semibold min-h-9 line-clamp-2 transition-colors',
             isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary',
           )}
           title={template.name}
         >
           {template.name}
         </span>
-        <div className="flex items-center justify-between text-micro text-muted-foreground/80 font-mono pt-1 border-t border-border/20">
-          <span>
+        <div className="flex items-center justify-between gap-2 text-mini text-muted-foreground font-mono pt-1">
+          <span dir="ltr" className="tabular-nums">
             {mm.width}×{mm.height} مم
           </span>
-          <span className="text-2xs px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-sans">
+          <span className="text-mini text-muted-foreground font-sans shrink-0">
             {shapeLabel(template)}
           </span>
         </div>

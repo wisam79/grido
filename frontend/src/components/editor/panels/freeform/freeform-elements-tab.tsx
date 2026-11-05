@@ -226,7 +226,8 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             type="button"
             data-testid="element-open-sticker-studio"
             onClick={handleOpenFullStickerStudio}
-            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 transition-colors flex items-center justify-between shadow-2xs cursor-pointer select-none"
+            variant="outline"
+            className="w-full h-8 px-2.5 rounded-md text-control font-semibold transition-colors flex items-center justify-between cursor-pointer select-none"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Stamp className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
@@ -269,10 +270,10 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={tmpl.name}
-                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg p-1.5 transition-colors duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-md p-1 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
-                  {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
-                  <div className="w-full h-18 rounded-md bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-1.5 relative overflow-hidden transition-colors">
+                  {/* سطح محايد ومعاينة أكبر بلا إطار داخلي يزاحم تفاصيل الملصق */}
+                  <div className="w-full h-22 rounded-md bg-preview-surface flex items-center justify-center p-1 relative overflow-hidden">
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto duration-200 pointer-events-none drop-shadow-2xs"
@@ -300,16 +301,17 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                   {/* اسم القالب: سطران كحد أقصى — سطر واحد كان يقتطع أسماء
                       حقيقية مثل «صُنع في العراق (منتج وطني)» في شبكة عمودين */}
                   <span
-                    className="text-xs font-semibold text-foreground/90 mt-1 w-full text-center leading-tight line-clamp-2 group-hover:text-foreground transition-colors"
+                    className="text-control font-semibold text-foreground mt-1 min-h-9 w-full text-center line-clamp-2"
                     title={tmpl.name}
                   >
                     {tmpl.name}
                   </span>
 
-                  {/* شارة التصنيف الدلالية المجهرية */}
-                  <span className="text-mini text-muted-foreground/75 mt-0.5 truncate w-full text-center leading-none">
-                    {getCategoryBadgeLabel(tmpl.category)}
-                  </span>
+                  {(selectedStickerFilter === 'all' || selectedStickerFilter === 'retail') && (
+                    <span className="text-mini text-muted-foreground mt-0.5 truncate w-full text-center">
+                      {getCategoryBadgeLabel(tmpl.category)}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -327,7 +329,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             return (
               <div key={group.id} className="space-y-1.5">
                 <div className="px-1 flex items-center justify-between">
-                  <span className="text-mini font-bold text-muted-foreground/70">
+                  <span className="text-control font-semibold text-muted-foreground">
                     {group.label}
                   </span>
                   <span className="text-mini font-mono text-muted-foreground/60 font-semibold">
@@ -338,7 +340,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                 {/* رموز الأشكال وحدها: المستخدم يعرف المربع من الدائرة، فالاسم
                     تكرار بصري. ثلاثة أعمدة برموز كبيرة توازن الوضوح مع الكثافة،
                     والاسم يبقى تلميحاً ووصفاً وصولياً. */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   {shapes.map((shape) => (
                     <button
                       key={shape.id}
@@ -347,7 +349,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                       onClick={() => handleAddShape(shape)}
                       title={shape.label}
                       aria-label={shape.label}
-                      className="group flex items-center justify-center h-12 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none shadow-2xs"
+                      className="group flex items-center justify-center h-11 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none"
                     >
                       <ShapeGlyph
                         kind={shape.kind}
@@ -355,7 +357,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                         sides={shape.defaults?.sides}
                         starPoints={shape.defaults?.starPoints}
                         doubleArrow={shape.defaults?.pointerAtBeginning === true}
-                        className="w-6 h-6 shrink-0 text-muted-foreground group-hover:text-foreground"
+                        className="w-8 h-8 shrink-0 text-muted-foreground group-hover:text-foreground"
                       />
                     </button>
                   ))}

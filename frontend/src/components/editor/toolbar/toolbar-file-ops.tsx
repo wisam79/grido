@@ -232,19 +232,19 @@ export function ToolbarFileOps() {
   return (
     <>
       {/* مجموعة الإدراج والمشاريع */}
-      <div className="fluent-command-group gap-1">
-        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا بتنسيق متوازن متطابق مع أزرار الإخراج */}
-        <div className="flex items-center rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50 transition-colors overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        {/* زر الإدراج المنقسم: ارتفاع موحّد وحد مشترك بين الإدراج وقائمة الخيارات */}
+        <div className="flex items-center">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="default"
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-foreground font-semibold rounded-none hover:bg-muted/60 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/50"
+              className="rounded-e-none border-e-0 cursor-pointer focus-visible:relative"
             >
-              <AddPhotoIcon className="w-4 h-4 text-foreground/80 group-hover:text-foreground transition-colors" />
+              <AddPhotoIcon className="w-4 h-4" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -253,12 +253,12 @@ export function ToolbarFileOps() {
             <TooltipBtn content="خيارات الإدراج">
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="outline"
+                  size="icon"
                   aria-label="خيارات الإدراج"
-                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-none hover:bg-muted/60 transition-colors cursor-pointer"
+                  className="rounded-s-none cursor-pointer focus-visible:relative data-[state=open]:bg-accent data-[state=open]:text-foreground"
                 >
-                  <CaretDown className="w-3.5 h-3.5 opacity-70" />
+                  <CaretDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipBtn>
@@ -344,12 +344,9 @@ export function ToolbarFileOps() {
             }}
             data-testid="toolbar-projects"
             aria-label="مكتبة المشاريع"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer group"
+            className="text-foreground/80 cursor-pointer"
           >
-            <Folders
-              className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors"
-              weight="duotone"
-            />
+            <Folders className="w-4 h-4" />
           </Button>
         </TooltipBtn>
         {projectsMounted && (
