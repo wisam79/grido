@@ -63,6 +63,41 @@ beforeEach(() => {
 });
 
 describe('CollageAutofillTab — خريطة النتيجة', () => {
+  it('marks real empty slots without presenting missing matrix positions as slots', () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      slots: [slot(0, 0, 0), slot(1, 0.5, 0), slot(2, 0, 0.5)],
+      autofillImages: [],
+    });
+    renderTab();
+
+    const preview = screen.getByTestId('autofill-grid-preview');
+    expect(preview.children).toHaveLength(4);
+    expect(preview.querySelectorAll('[role="img"]')).toHaveLength(3);
+    const emptyCell = screen.getByTestId('autofill-cell-s0');
+    expect(emptyCell).toHaveAttribute('aria-label', 'خانة 1 — فارغة');
+    expect(emptyCell).toHaveAttribute('title', 'خانة 1 — فارغة');
+    expect(emptyCell.querySelector('svg')).toBeInTheDocument();
+    expect(preview.children[3]).toHaveAttribute('aria-hidden', 'true');
+    expect(preview.children[3]).not.toHaveAttribute('title');
+    expect(preview.children[3]).toBeEmptyDOMElement();
+    expect(screen.getByText('فارغة')).toBeInTheDocument();
+    expect(screen.queryByText('يبقى')).not.toBeInTheDocument();
+    expect(screen.getByText('تكرار عند النقص')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'تكرار الصور' })).toBeInTheDocument();
+  });
+
+  it('shows only applicable preview legend entries', () => {
+    setupGrid([undefined, undefined, undefined, undefined]);
+    useEditorStore.setState({ autofillImages: ['X'] });
+    renderTab();
+
+    expect(screen.queryByText('يبقى')).not.toBeInTheDocument();
+    expect(screen.queryByText('بلا صورة')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('switch', { name: 'تكرار الصور' }));
+    expect(screen.getByText('بلا صورة')).toBeInTheDocument();
+  });
+
   it('تعرض ترتيب التعبئة على الخانات المستهدفة وتبقي الممتلئة باهتة', () => {
     setupGrid();
     useEditorStore.setState({ autofillImages: ['X', 'Y'] });

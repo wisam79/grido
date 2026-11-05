@@ -36,9 +36,16 @@ const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 const SPEC_NUMBER_PATTERN = /(\d+(?:[.,]\d+)?(?:\s*×\s*\d+(?:[.,]\d+)?)?)/g;
 
-function SpecText({ spec }: { spec: string }) {
+function SpecText({ spec, compact }: { spec: string; compact: boolean }) {
   return (
-    <span className="text-mini text-muted-foreground leading-relaxed" dir="rtl" title={spec}>
+    <span
+      className={cn(
+        'text-mini text-muted-foreground leading-relaxed',
+        compact && 'line-clamp-2 min-h-8',
+      )}
+      dir="rtl"
+      title={spec}
+    >
       {spec.split(SPEC_NUMBER_PATTERN).map((part, index) =>
         /^\d/.test(part) ? (
           <bdi key={index} dir="ltr">
@@ -61,7 +68,14 @@ const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
 }) {
   return (
     <svg viewBox="0 0 100 142" className="h-full max-w-full" aria-hidden="true">
-      <rect x="0.5" y="0.5" width="99" height="141" rx="2" className="fill-card stroke-border" />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="99"
+        height="141"
+        rx="2"
+        className="fill-background stroke-muted-foreground/60"
+      />
       {cells.map((cell, index) => {
         const x = 5 + cell.x * 90;
         const y = 5 + cell.y * 132;
@@ -78,10 +92,10 @@ const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
             className={cn(
               'transition-colors duration-150',
               active
-                ? 'fill-primary/20 stroke-primary/60'
-                : 'fill-muted-foreground/10 stroke-muted-foreground/35',
+                ? 'fill-primary/25 stroke-primary'
+                : 'fill-muted-foreground/25 stroke-muted-foreground',
             )}
-            strokeWidth="0.7"
+            strokeWidth="1"
           />
         );
       })}
@@ -158,27 +172,28 @@ export function CollagePresetsTab({
         type="button"
         aria-pressed={active}
         aria-label={`${preset.title} - ${preset.spec}`}
+        title={`${preset.title} — ${preset.spec}`}
         onClick={() => onSelect(template)}
         className={cn(
-          'group relative flex min-w-0 rounded-md border p-2 text-start transition-colors duration-150 cursor-pointer',
+          'group relative flex min-w-0 rounded-md border p-1.5 text-start transition-colors duration-150 cursor-pointer',
           viewMode === 'grid' ? 'flex-col gap-2' : 'items-center gap-3',
           active
-            ? 'border-primary/60 bg-primary/5'
-            : 'border-border/40 hover:border-border/70 hover:bg-muted/30',
+            ? 'border-primary/70 bg-primary/10'
+            : 'border-transparent hover:border-border hover:bg-muted/40',
           FOCUS_RING,
         )}
       >
         <span
           className={cn(
-            'flex items-center justify-center rounded-sm bg-muted/30',
-            viewMode === 'grid' ? 'h-24 w-full py-2' : 'h-16 w-12 shrink-0 p-1',
+            'flex items-center justify-center rounded-md bg-muted/60',
+            viewMode === 'grid' ? 'h-32 w-full p-2' : 'h-20 w-16 shrink-0 p-1.5',
           )}
         >
           <StudioPaperThumbnail cells={template.cells} active={active} />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-xs font-semibold leading-relaxed">{preset.title}</span>
-          <SpecText spec={preset.spec} />
+        <span className="flex min-w-0 flex-1 flex-col gap-1 px-0.5">
+          <span className="truncate text-control font-semibold">{preset.title}</span>
+          <SpecText spec={preset.spec} compact={viewMode === 'grid'} />
         </span>
         {active && (
           <span className="absolute end-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -208,11 +223,13 @@ export function CollagePresetsTab({
             FOCUS_RING,
           )}
         >
-          <span className="flex h-16 w-12 shrink-0 justify-center rounded-sm bg-muted/30 p-1">
+          <span className="flex h-20 w-16 shrink-0 justify-center rounded-md bg-muted/60 p-1.5">
             <StudioPaperThumbnail cells={template.cells} active={active} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="truncate text-xs font-semibold">{template.name}</span>
+            <span className="truncate text-control font-semibold" title={template.name}>
+              {template.name}
+            </span>
             <span className="text-mini text-muted-foreground">{template.slots} صور</span>
           </span>
           {active && <Check className="size-3.5 shrink-0 text-primary" />}

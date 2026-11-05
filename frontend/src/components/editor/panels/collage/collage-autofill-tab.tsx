@@ -244,9 +244,11 @@ export function CollageAutofillTab() {
   };
 
   const renderMapCell = (cell: (typeof grid.matrix)[number][number], row: number, col: number) => {
+    if (!cell) return <div key={`empty-${row}-${col}`} aria-hidden="true" />;
+
     const cellNumber = row * grid.cols + col + 1;
-    const assignment = cell ? assignmentBySlot.get(cell.slotId) : undefined;
-    const isPreserved = !!cell && !assignment && !!cell.imageSrc;
+    const assignment = assignmentBySlot.get(cell.slotId);
+    const isPreserved = !assignment && !!cell.imageSrc;
     const isSkipped = !!cell && !assignment && !cell.imageSrc && autofillImages.length > 0;
     const src = assignment?.src ?? cell?.imageSrc;
     const thumbSrc = src && slots.length <= MAP_THUMBNAIL_LIMIT ? getThumbnailSrc(src, 128) : null;
@@ -272,10 +274,8 @@ export function CollageAutofillTab() {
           assignment
             ? 'border-primary/50 bg-primary/10 text-foreground'
             : isPreserved
-              ? 'border-border/60 bg-muted/25 text-muted-foreground/70'
-              : isSkipped
-                ? 'border-dashed border-border/50 bg-muted/10 text-muted-foreground/45'
-                : 'border-dashed border-border/40 bg-muted/10 text-muted-foreground/40',
+              ? 'border-border bg-muted text-muted-foreground'
+              : 'border-dashed border-muted-foreground/60 bg-background text-muted-foreground',
         )}
       >
         {thumbSrc && (
@@ -307,10 +307,12 @@ export function CollageAutofillTab() {
             <span className="text-mini font-mono font-bold">{assignment.order}</span>
           )
         ) : isPreserved ? (
-          <Check className="w-3 h-3" weight="bold" />
-        ) : isSkipped ? (
-          <Minus className="w-3 h-3" weight="bold" />
-        ) : null}
+          <span className="relative flex size-4 items-center justify-center rounded-sm bg-background text-foreground">
+            <Check className="size-3" weight="bold" aria-hidden="true" />
+          </span>
+        ) : (
+          <Minus className="size-3" weight="bold" aria-hidden="true" />
+        )}
       </div>
     );
   };
@@ -346,23 +348,11 @@ export function CollageAutofillTab() {
           ) : undefined
         }
       >
-        <div
-          className={cn(
-            'grid gap-2',
-            autofillImages.length > 0
-              ? 'grid-cols-2'
-              : 'rounded-md border border-dashed border-primary/30 bg-primary/5 p-4',
-          )}
-        >
-          {autofillImages.length === 0 && (
-            <p className="pb-1 text-xs text-muted-foreground text-center leading-relaxed">
-              اختر صورك، ثم عاين توزيعها قبل التطبيق.
-            </p>
-          )}
+        <div className="grid grid-cols-2 gap-2">
           <Button
             type="button"
-            variant="default"
-            className="h-9"
+            variant={autofillImages.length > 0 ? 'outline' : 'default'}
+            className="h-8 min-w-0 px-2"
             onClick={() => pickImages(false)}
             disabled={isPicking || atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : 'اختيار صور متعددة'}
@@ -379,6 +369,7 @@ export function CollageAutofillTab() {
           <Button
             type="button"
             variant="outline"
+            className="h-8 min-w-0 px-2"
             onClick={() => pickImages(true)}
             disabled={isPicking || atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : 'استيراد مجلد صور'}
@@ -585,8 +576,7 @@ export function CollageAutofillTab() {
             />
 
             <FluentSettingRow
-              label="تكرار الصور"
-              description="عند نقص الصور"
+              label="تكرار عند النقص"
               control={
                 <Switch
                   checked={repeat}
@@ -598,7 +588,6 @@ export function CollageAutofillTab() {
 
             <FluentSettingRow
               label="خلط عشوائي"
-              description="ترتيب مختلف كل مرة"
               control={
                 <div className="flex items-center gap-1">
                   {shuffle && (
@@ -639,7 +628,7 @@ export function CollageAutofillTab() {
 
               <div
                 className={cn(
-                  'rounded-md bg-muted/20 border border-border/40 p-1.5',
+                  'rounded-md bg-muted border border-border p-2',
                   slots.length > 24 && 'max-h-44 overflow-y-auto',
                 )}
               >
@@ -657,9 +646,28 @@ export function CollageAutofillTab() {
                 </div>
               </div>
 
-              <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
-                الرقم = ترتيب التعبئة · الباهت = يبقى · المتقطع = بلا صورة
-              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 text-micro text-muted-foreground">
+                {fillCount > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <span aria-hidden="true" className="font-mono font-bold text-primary">
+                      #
+                    </span>
+                    ترتيب التعبئة
+                  </span>
+                )}
+                {preservedCount > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Check className="size-3" weight="bold" aria-hidden="true" />
+                    يبقى
+                  </span>
+                )}
+                {skippedCount > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Minus className="size-3" weight="bold" aria-hidden="true" />
+                    {autofillImages.length > 0 ? 'بلا صورة' : 'فارغة'}
+                  </span>
+                )}
+              </div>
             </div>
           </FluentSection>
           <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/50 bg-sidebar py-2">

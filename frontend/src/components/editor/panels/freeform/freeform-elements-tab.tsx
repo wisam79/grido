@@ -262,18 +262,21 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             {displayedStickers.map((tmpl) => {
               const svg = getStickerSvgPreview(tmpl);
               const isBusy = isInserting === tmpl.id;
+              const stickerLabel = `${tmpl.name} — ${getCategoryBadgeLabel(tmpl.category)}`;
 
               return (
                 <button
                   key={tmpl.id}
                   type="button"
                   disabled={isBusy}
+                  aria-busy={isBusy}
+                  aria-label={stickerLabel}
                   onClick={() => handleInsertSticker(tmpl)}
-                  title={tmpl.name}
-                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-md p-1 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  title={stickerLabel}
+                  className="group relative bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border focus-visible:border-border rounded-md p-1 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* سطح محايد ومعاينة أكبر بلا إطار داخلي يزاحم تفاصيل الملصق */}
-                  <div className="w-full h-22 rounded-md bg-preview-surface flex items-center justify-center p-1 relative overflow-hidden">
+                  <div className="w-full h-28 rounded-md bg-preview-surface flex items-center justify-center p-1 relative overflow-hidden">
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto duration-200 pointer-events-none drop-shadow-2xs"
@@ -284,7 +287,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                     )}
 
                     {/* زر + صغير يظهر عند التحويم لإعطاء إيحاء فوري بالإدراج السريع */}
-                    <span className="absolute bottom-1 end-1 w-4.5 h-4.5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center shadow-xs">
+                    <span className="absolute bottom-1 end-1 w-4.5 h-4.5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 flex items-center justify-center">
                       <Plus className="w-2.5 h-2.5" weight="bold" />
                     </span>
 
@@ -292,7 +295,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-md">
                         <span className="text-mini font-bold text-foreground/80 animate-pulse">
-                          جاري الإدراج...
+                          جاري الإدراج ...
                         </span>
                       </div>
                     )}
@@ -300,18 +303,9 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
 
                   {/* اسم القالب: سطران كحد أقصى — سطر واحد كان يقتطع أسماء
                       حقيقية مثل «صُنع في العراق (منتج وطني)» في شبكة عمودين */}
-                  <span
-                    className="text-control font-semibold text-foreground mt-1 min-h-9 w-full text-center line-clamp-2"
-                    title={tmpl.name}
-                  >
+                  <span className="text-control font-semibold text-foreground mt-1 min-h-9 w-full text-center line-clamp-2">
                     {tmpl.name}
                   </span>
-
-                  {(selectedStickerFilter === 'all' || selectedStickerFilter === 'retail') && (
-                    <span className="text-mini text-muted-foreground mt-0.5 truncate w-full text-center">
-                      {getCategoryBadgeLabel(tmpl.category)}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -329,10 +323,8 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             return (
               <div key={group.id} className="space-y-1.5">
                 <div className="px-1 flex items-center justify-between">
-                  <span className="text-control font-semibold text-muted-foreground">
-                    {group.label}
-                  </span>
-                  <span className="text-mini font-mono text-muted-foreground/60 font-semibold">
+                  <span className="text-control font-semibold text-foreground">{group.label}</span>
+                  <span className="text-mini font-mono text-muted-foreground font-semibold">
                     {shapes.length}
                   </span>
                 </div>
@@ -349,7 +341,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                       onClick={() => handleAddShape(shape)}
                       title={shape.label}
                       aria-label={shape.label}
-                      className="group flex items-center justify-center h-11 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none"
+                      className="group flex items-center justify-center h-11 bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border focus-visible:border-border rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none"
                     >
                       <ShapeGlyph
                         kind={shape.kind}
@@ -357,7 +349,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                         sides={shape.defaults?.sides}
                         starPoints={shape.defaults?.starPoints}
                         doubleArrow={shape.defaults?.pointerAtBeginning === true}
-                        className="w-8 h-8 shrink-0 text-muted-foreground group-hover:text-foreground"
+                        className="w-8 h-8 shrink-0 text-foreground/80 group-hover:text-foreground group-focus-visible:text-foreground"
                       />
                     </button>
                   ))}

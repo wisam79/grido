@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useId, useMemo } from 'react';
 
 import { Plus } from '@/components/ui/icons';
 import { TEXT_LABEL_PREVIEW } from '@/lib/canvas/text-helpers';
@@ -18,8 +18,6 @@ const INSERT_PRESET_GROUPS = TEXT_INSERT_GROUPS.map((group) => ({
   items: INSERT_TEXT_PRESETS.filter((preset) => preset.group === group.id),
 }));
 
-const TYPOGRAPHY_PRESETS = INSERT_TEXT_PRESETS.filter((preset) => preset.group === 'typography');
-
 const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
@@ -36,40 +34,57 @@ function PresetRow({
 }) {
   const isTypography = preset.group === 'typography';
   const canApply = hasSelection && isTypography;
-  // الأنماط الطباعية تُعرض تسميتها بخطها ووزنها الحقيقيين (هرمية مضغوطة)،
-  // وكتل الاستوديو تبقى تسمية واجهة عادية لأنها وظيفة لا مظهر.
-  const labelStyle: React.CSSProperties | undefined = isTypography
-    ? {
-        fontFamily: preset.config.fontFamily,
-        fontWeight: preset.config.fontWeight,
-        fontSize: textPresetPreviewSize(preset.config),
-        lineHeight: 1.25,
-      }
-    : undefined;
+  const curveId = useId();
+  const labelStyle: React.CSSProperties = {
+    fontFamily: preset.config.fontFamily,
+    fontWeight: preset.config.fontWeight,
+    fontSize: textPresetPreviewSize(preset.config),
+    lineHeight: 1.25,
+    ...(preset.config.rotation && { transform: `rotate(${preset.config.rotation / 3}deg)` }),
+    ...(preset.config.textBgColor && {
+      borderRadius: preset.config.textBgRadius,
+      padding: '4px 10px',
+    }),
+  };
 
   return (
-    <div
-      className={cn(
-        'group/row flex items-center gap-1 px-1 transition-colors duration-150 hover:bg-accent/50',
-        isTypography ? 'h-10' : 'h-8',
-      )}
-    >
+    <div className="group/row flex h-11 items-center gap-1 rounded-md px-1 transition-colors duration-150 hover:bg-accent/50 focus-within:bg-accent/50">
       <button
         type="button"
         data-testid={`element-add-text-${preset.id}`}
         onClick={() => (canApply ? onApply(preset.id) : onInsert(preset.id))}
         title={canApply ? `تطبيق ${preset.label} على المحدد` : `إدراج ${preset.label}`}
+        aria-label={preset.label}
         className={cn(
-          'flex h-full min-w-0 flex-1 items-center rounded-sm px-1.5 text-start cursor-pointer',
+          'flex h-full min-w-0 flex-1 items-center rounded-md px-2 text-start cursor-pointer',
           focusRing,
         )}
       >
-        <span
-          style={labelStyle}
-          className={cn('truncate text-foreground', !isTypography && 'text-xs font-medium')}
-        >
-          {preset.label}
-        </span>
+        {preset.config.curve ? (
+          <svg viewBox="0 0 104 44" className="h-11 w-26 text-foreground" aria-hidden="true">
+            <defs>
+              {/* قوس منخفض بما يكفي ليبقى صعود الحروف داخل إطار المعاينة */}
+              <path id={curveId} d={`M 4 38 Q 52 ${38 - preset.config.curve / 2} 100 38`} />
+            </defs>
+            <text fill="currentColor" style={labelStyle} textAnchor="middle">
+              <textPath href={`#${curveId}`} startOffset="50%">
+                {preset.label}
+              </textPath>
+            </text>
+          </svg>
+        ) : (
+          <span
+            style={labelStyle}
+            className={cn(
+              'inline-block truncate text-foreground',
+              preset.config.opacity !== undefined && 'text-muted-foreground',
+              preset.config.textBgColor &&
+                (preset.id === 'badge' ? 'bg-primary-action text-primary-foreground' : 'bg-muted'),
+            )}
+          >
+            {preset.label}
+          </span>
+        )}
       </button>
 
       {canApply && (
@@ -105,7 +120,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
 
   // معاينة التسميات بخطوطها تتطلب تحميل الوجه الدقيق (عائلة + وزن) مرة واحدة
   useEffect(() => {
-    for (const preset of TYPOGRAPHY_PRESETS) {
+    for (const preset of INSERT_TEXT_PRESETS) {
       void loadGoogleFont(preset.config.fontFamily, preset.config.fontWeight);
     }
   }, []);
@@ -173,7 +188,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             </div>
           )}
 
-          <div className="divide-y divide-border/50 overflow-hidden rounded-md border border-border/60 bg-card/40">
+          <div className="divide-y divide-border/50">
             {group.items.map((preset) => (
               <PresetRow
                 key={preset.id}

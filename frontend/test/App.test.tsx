@@ -315,6 +315,36 @@ describe('Component Testing: UI Rendering', () => {
     expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
   }, 15000);
 
+  it('shows no illustrative layout before a freeform template is applied', async () => {
+    useEditorStore.setState({ mode: 'collage', collageTemplate: null });
+    render(<TemplatePanel activeCollageTab="freeform" />);
+
+    expect(await screen.findByRole('button', { name: 'فتح المحرر' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /^التخطيط المطبق:/ })).not.toBeInTheDocument();
+  }, 15000);
+
+  it('previews resumable freeform geometry with its paper ratio and rotation', async () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      collageTemplate: {
+        id: 'freeform-preview',
+        name: 'تخطيط تجريبي',
+        slots: 1,
+        cells: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.4, rotation: 90 }],
+        metadata: { version: 1, kind: 'freeform', paperWidthMM: 200, paperHeightMM: 100 },
+      },
+    });
+    render(<TemplatePanel activeCollageTab="freeform" />);
+
+    const preview = await screen.findByRole('img', { name: 'التخطيط المطبق: تخطيط تجريبي' });
+    expect(preview).toHaveAttribute('viewBox', '-1 -1 102 52');
+    expect(preview.querySelector('rect[transform]')).toHaveAttribute(
+      'transform',
+      'rotate(90 25 20)',
+    );
+    expect(screen.getByRole('button', { name: 'تحرير التخطيط' })).toBeInTheDocument();
+  }, 15000);
+
   it('opens the freeform collage dialog from the shared app host', async () => {
     useEditorStore.setState({ accountModalOpen: false });
     render(

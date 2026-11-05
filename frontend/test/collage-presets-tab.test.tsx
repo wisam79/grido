@@ -34,6 +34,16 @@ describe('CollagePresetsTab Component Suite', () => {
     expect(screen.getAllByText(/جواز/).length).toBeGreaterThan(0);
   });
 
+  it('keeps full specifications accessible and applies the chosen template', () => {
+    const onSelect = vi.fn();
+    render(<CollagePresetsTab {...defaultProps} onSelect={onSelect} />);
+
+    const card = screen.getByRole('button', { name: /^طقم تقديم -/ });
+    expect(card).toHaveAttribute('title', expect.stringContaining('30×40 مم'));
+    fireEvent.click(card);
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'collage-combo-student' }));
+  });
+
   it('displays the selected category in select trigger', () => {
     render(<CollagePresetsTab {...defaultProps} presetCategory="combo" />);
 

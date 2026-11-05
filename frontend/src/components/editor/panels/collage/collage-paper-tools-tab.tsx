@@ -9,6 +9,7 @@ import {
 import { CaretLeft } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════
    أداة الورق والقص — وصول سريع من الشريط الجانبي لكل ما يخص
@@ -63,8 +64,7 @@ export function CollagePaperToolsTab() {
       className="flex min-w-0 flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
       dir="rtl"
     >
-      {/* النزيف وشكل القص */}
-      <FluentSection title="النزيف والقص" collapsible>
+      <FluentSection title="النزيف" collapsible>
         <FluentSettingRow
           label="خطوط النزيف"
           control={
@@ -86,23 +86,49 @@ export function CollagePaperToolsTab() {
           disabled={!showBleedGuides}
           onChange={setBleedMarginMM}
         />
+      </FluentSection>
 
-        <FluentSettingRow
-          layout="vertical"
-          label="شكل القص"
-          description="يُطبَّق على تصدير وطباعة الورقة"
-          control={
-            <FluentSegmentedControl<(typeof CUT_SHAPES)[number]['id']>
-              layoutId="paper-cut-shape"
-              variant="field"
-              value={cutShapeType}
-              onChange={setCutShapeType}
-              size="sm"
-              className="p-0.5 border-0 h-8"
-              options={CUT_SHAPES.map((shape) => ({ id: shape.id, label: shape.label }))}
-            />
-          }
-        />
+      <FluentSection title="شكل القص" collapsible>
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="شكل القص">
+          {CUT_SHAPES.map((shape) => (
+            <button
+              key={shape.id}
+              type="button"
+              aria-pressed={cutShapeType === shape.id}
+              onClick={() => setCutShapeType(shape.id)}
+              className={cn(
+                'flex min-w-0 flex-col items-center gap-1.5 rounded-md border px-1 py-2 text-mini cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                cutShapeType === shape.id
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <svg
+                width="32"
+                height="24"
+                viewBox="0 0 32 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {shape.id === 'circle' ? (
+                  <circle cx="16" cy="12" r="9" />
+                ) : (
+                  <rect
+                    x="3"
+                    y="3"
+                    width="26"
+                    height="18"
+                    rx={shape.id === 'rounded-rect' ? 5 : 0}
+                  />
+                )}
+              </svg>
+              <span>{shape.label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* تنقل للوحـة الخصائص — خطوط القص وسماكتها ولونها هناك بلا تكرار */}
         <button
@@ -139,14 +165,19 @@ export function CollagePaperToolsTab() {
 
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-semibold text-foreground/90">عدد النسخ</span>
-          <div className="flex items-center gap-1" dir="ltr">
+          <div
+            className="flex items-center rounded-md border border-border bg-background"
+            dir="ltr"
+            role="group"
+            aria-label="عدد النسخ"
+          >
             <button
               type="button"
               onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, copiesPerSheet - 1) })}
               disabled={copiesPerSheet <= 1}
               title="تقليل النسخ"
               aria-label="تقليل عدد النسخ"
-              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="size-7 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               −
             </button>
@@ -162,7 +193,7 @@ export function CollagePaperToolsTab() {
               disabled={copiesPerSheet >= 48}
               title="إضافة نسخة"
               aria-label="زيادة عدد النسخ"
-              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="size-7 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               +
             </button>

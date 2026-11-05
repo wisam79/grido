@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { GridFour, MagicWand } from '@/components/ui/icons';
+import { Button } from '@/components/ui/button';
+import { GridFour } from '@/components/ui/icons';
 import { setFreeformDialogOpen } from '@/features/freeform-collage/lib/freeform-dialog-state';
 import { getTemplateGrid } from '@/lib/canvas/collage-grid';
 import { useEditorStore } from '@/lib/editor-store';
@@ -82,6 +83,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const isCustomActive = activeTemplateId === 'collage-custom';
   const isFreeformActive =
     typeof activeTemplateId === 'string' && activeTemplateId.startsWith('freeform-');
+  const resumableLayout =
+    collageTemplate?.metadata?.kind === 'freeform' || collageTemplate?.id.startsWith('freeform-')
+      ? collageTemplate
+      : null;
+  const previewHeight =
+    (100 * (resumableLayout?.metadata?.paperHeightMM ?? canvasHeight)) /
+    (resumableLayout?.metadata?.paperWidthMM ?? canvasWidth);
 
   // تحديث التبويب النشط وفئة القالب تلقائياً عند تغيير القالب لاحقاً من قبل المستخدم
   // مع الحفاظ الإجباري على "الشبكة" (custom) كتبويب افتراضي عند فتح التطبيق
@@ -395,51 +403,55 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           />
         )}
 
-        {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
         {effectiveTab === 'freeform' && (
-          <div className="flex flex-col gap-4 py-3">
-            <div className="flex justify-center rounded-md bg-muted/25 py-6" aria-hidden="true">
-              <svg viewBox="0 0 120 150" className="h-36 w-28">
-                <rect
-                  x="1"
-                  y="1"
-                  width="118"
-                  height="148"
-                  rx="3"
-                  className="fill-card stroke-border"
-                />
-                {(isFreeformActive && collageTemplate
-                  ? collageTemplate.cells
-                  : [
-                      { x: 0.08, y: 0.07, w: 0.5, h: 0.52 },
-                      { x: 0.63, y: 0.07, w: 0.29, h: 0.25 },
-                      { x: 0.63, y: 0.36, w: 0.29, h: 0.23 },
-                      { x: 0.08, y: 0.64, w: 0.84, h: 0.29 },
-                    ]
-                ).map((cell, index) => (
-                  <rect
-                    key={index}
-                    x={cell.x * 120}
-                    y={cell.y * 150}
-                    width={cell.w * 120}
-                    height={cell.h * 150}
-                    rx="2"
-                    className="fill-primary/15 stroke-primary/60"
-                  />
-                ))}
-              </svg>
-            </div>
-            <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              صمّم خانات بمقاسات مختلفة، مع تقسيم ومحاذاة دقيقة بالمليمتر.
-            </p>
-            <button
-              type="button"
-              onClick={() => setFreeformDialogOpen(true)}
-              className="w-full h-9 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-            >
-              <MagicWand className="size-4" />
-              <span>فتح المحرر</span>
-            </button>
+          <div className="flex flex-col gap-3 py-1">
+            <Button type="button" className="w-full" onClick={() => setFreeformDialogOpen(true)}>
+              {resumableLayout ? 'تحرير التخطيط' : 'فتح المحرر'}
+            </Button>
+            {resumableLayout ? (
+              <figure className="space-y-2">
+                <div className="flex h-48 items-center justify-center rounded-md bg-muted/60 p-3">
+                  <svg
+                    viewBox={`-1 -1 102 ${previewHeight + 2}`}
+                    className="h-full max-w-full"
+                    role="img"
+                    aria-label={`التخطيط المطبق: ${resumableLayout.name}`}
+                  >
+                    <rect
+                      width="100"
+                      height={previewHeight}
+                      className="fill-background stroke-muted-foreground/60"
+                    />
+                    {resumableLayout.cells.map((cell, index) => (
+                      <rect
+                        key={index}
+                        x={cell.x * 100}
+                        y={cell.y * previewHeight}
+                        width={cell.w * 100}
+                        height={cell.h * previewHeight}
+                        transform={
+                          cell.rotation
+                            ? `rotate(${cell.rotation} ${(cell.x + cell.w / 2) * 100} ${(cell.y + cell.h / 2) * previewHeight})`
+                            : undefined
+                        }
+                        className="fill-primary/25 stroke-primary"
+                        strokeWidth="0.75"
+                      />
+                    ))}
+                  </svg>
+                </div>
+                <figcaption className="flex items-start justify-between gap-2 text-control">
+                  <span className="min-w-0 break-words font-medium">{resumableLayout.name}</span>
+                  <span className="shrink-0 text-muted-foreground tabular-nums">
+                    {resumableLayout.cells.length} خانات
+                  </span>
+                </figcaption>
+              </figure>
+            ) : (
+              <p className="text-control text-muted-foreground leading-relaxed">
+                يبدأ بورقة جديدة؛ يبقى الكولاج الحالي حتى تطبيق التخطيط.
+              </p>
+            )}
           </div>
         )}
 

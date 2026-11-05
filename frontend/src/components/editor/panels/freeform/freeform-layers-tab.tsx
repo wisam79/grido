@@ -227,7 +227,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       dir="rtl"
     >
       {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
-      <div className="flex items-center justify-between h-8 px-1.5 rounded-md border border-border/60 bg-card/40">
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-1 border-b border-border/60 pb-2">
         {/* عدّاد فقط — رأس اللوح يحمل اسم «الطبقات» فلا نكرّره هنا؛
             والباقي من عرض الصف يعود لأزرار الإجراءات. */}
         <div className="flex items-center gap-1.5 shrink-0 ps-0.5">
@@ -239,7 +239,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
                 : `${elements.length} عنصر`
             }
             className={cn(
-              'text-3xs font-mono font-semibold tabular-nums px-1.5 py-0.5 rounded-md border shrink-0 transition-colors',
+              'text-mini font-mono font-semibold tabular-nums px-1.5 py-0.5 rounded-md border shrink-0 transition-colors',
               hasSelection
                 ? 'bg-primary/10 text-primary border-primary/25'
                 : 'bg-muted/60 text-muted-foreground border-border/50',
