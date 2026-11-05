@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.31.0] - 2026-11-05
+
+### Added
+- make default collage state for new projects a single top-left cell of civil id dimensions
+- transform tool launcher into a direct-access floating command palette with dedicated top toolbar trigger
+- promote freeform collage to top-level rail section, streamline presets to user-saved only, and relocate launcher and zen controls
+
+### Fixed
+- handle escape key to dismiss floating command palette modal and adjust e2e assertions
+- enlarge rows and columns counter buttons and typography for effortless clicking
+- soften vector shape glyph contrast and adjust thumbnail dimensions for visual comfort
+- sync e2e and unit tests with promoted freeform rail, bottom quick bar zen toggle, toolbar launcher, and user-saved presets
 ## [v1.30.2] - 2026-11-05
 
 ### Fixed
@@ -62,14 +74,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - تضمين `continue-on-error: true` في خطوة إثبات المنشأ المشفر (Attest Build Provenance) داخل `release.yml`: يتيح لخط سير النشر إكمال بناء وتوزيع حزم الإصدار حتى في المستودعات الفردية الخاصة التي يقيد GitHub عليها خدمة Sigstore، مع استمرار عمل الإثبات فورياً عند جعل المستودع عاماً أو ترقيته لمنظمة.
-## [v1.28.2] - 2026-11-03
-
-### Fixed
-- إصلاح سبعة عيوب في وضع الكولاج: حفظ التباعد الصفري وصيغة PNG، وضبط القص والتراجع، وعزل أوامر الخانات عن العناصر الحرة، وتصحيح إزاحة الأسهم مع الدوران والقلب، وتطبيع EXIF قبل قص الطباعة في Go. أُضيفت حالات انحدار داخل ملفات الاختبارات القائمة.
-- إخفاء موكب التطبيق (AppMockup) في وضع شاشات الهاتف (< md) داخل صفحة الهبوط لتحسين تجربة التصفح الرأسية وإزالة الازدحام وتوجيه المستخدم مباشرة إلى المميزات.
-
-### Changed
-- توثيق صقل فيديو Grido المحلي: إخراج عربي حبر/ورق، دمج تسجيلَي المالك بسرعة أصلية، واستبدال الصوت المصحّح دون تغيير التوقيتات.
-الأصول تبقى داخل promo المستثنى من Git؛ الملصقات والطباعة السابقة توضيحية، وموافقة النشر وترخيص الصور بوابتان مستقلتان لم تُفتحا.
-متابعة بطلب المالك: تصدير MP4 جديد بدقة 1080p وبمعدل 30fps مع الصوت المصحّح، والتحقق من الإطارات والصوت وفك الترميز دون استبدال النسخ السابقة.
-إصلاح إضافي بطلب المالك: إعادة مزامنة حدود المشاهد مع الوقفات المقيسة على الصوت المصحّح، وماستر جهارة -16.9 LUFS، وتصدير ثانٍ إلى اسم جديد؛ ملفات المالك والنسخ القديمة لم تُستبدل.
