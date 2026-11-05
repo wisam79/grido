@@ -75,8 +75,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>('saved');
 
   const [rows, setRows] = useState(1);
-  const [cols, setCols] = useState(4);
-  const [photoType, setPhotoType] = useState<PhotoGridType>('iq-national-id');
+  const [cols, setCols] = useState(1);
+  const [photoType, setPhotoType] = useState<PhotoGridType>('iq-civil-id');
   const [gridAlign, setGridAlign] = useState<GridAlignment>('top-left');
 
   const isCustomActive = activeTemplateId === 'collage-custom';

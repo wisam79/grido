@@ -44,7 +44,7 @@ class FakeImage {
 
 // إعداد مشترك: تطبيق قالب الكولاج وإرجاع أول فتحة — يزيل تكرار كتل الإعداد عبر الاختبارات
 function setupCollage() {
-  const tmpl = COLLAGE_TEMPLATES[0];
+  const tmpl = COLLAGE_TEMPLATES.find((t) => t.slots >= 4) ?? COLLAGE_TEMPLATES[0];
   useEditorStore.getState().setCollageTemplate(tmpl);
   return useEditorStore.getState().slots[0];
 }
@@ -1059,7 +1059,7 @@ describe('CollageSlice Unit Tests', () => {
 
   it('assigns multiple slot images in one batch', () => {
     const state = useEditorStore.getState();
-    const tmpl = COLLAGE_TEMPLATES[0];
+    const tmpl = COLLAGE_TEMPLATES.find((t) => t.slots >= 2) ?? COLLAGE_TEMPLATES[0];
     state.setCollageTemplate(tmpl);
     const slots = useEditorStore.getState().slots;
     const before = useEditorStore.getState().historyIndex;

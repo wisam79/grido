@@ -27,7 +27,17 @@ function a4Cell(
   };
 }
 
+export const DEFAULT_COLLAGE_TEMPLATE: CollageTemplate = {
+  id: 'collage-iq-civil-single',
+  name: 'هوية أحوال مدنية (خلية واحدة)',
+  slots: 1,
+  cells: [a4Cell(3, 3, 32, 40, { presetType: 'iq-civil-id', label: 'أحوال' })],
+  icon: SquaresFour,
+  physicalLayout: { type: 'iq-civil-id', rows: 1, cols: 1, align: 'top-left' },
+};
+
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [
+  DEFAULT_COLLAGE_TEMPLATE,
   // --- 🎴 قوالب الاستوديو الرسمية (شيت كامل) ---
   {
     id: 'collage-iq-national',

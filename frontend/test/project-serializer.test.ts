@@ -477,7 +477,7 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     });
 
     it('preserves a zero saturation/brightness when reconciling legacy slots', () => {
-      const tmpl = COLLAGE_TEMPLATES[0]; // قالب فيزيائي بـ 8 خلايا — العدد المحفوظ مختلف عمداً
+      const tmpl = COLLAGE_TEMPLATES.find((t) => t.slots >= 4) ?? COLLAGE_TEMPLATES[0]; // قالب فيزيائي بعدة خلايا — العدد المحفوظ مختلف عمداً
       const project = {
         version: 1,
         mode: 'collage',
