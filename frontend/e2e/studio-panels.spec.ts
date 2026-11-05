@@ -55,8 +55,8 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       await expect(page.getByTestId(segmentedId)).toHaveCount(0);
     }
 
-    // 4. Zen mode toggle — الزر مصيَّر دائماً في ذيل الشريط («لا تمرّ أبداً» في الكود)
-    const zenBtn = page.getByTestId('rail-zen-mode');
+    // 4. Zen mode toggle — تم نقله إلى سطح العرض أسفل الكانفس لتقليل ازدحام الشريط
+    const zenBtn = page.getByTestId('canvas-zen-mode-toggle');
     await expect(zenBtn).toBeVisible();
     await zenBtn.click(); // Toggle on
     await expect(page.locator('#canvas-area')).toBeVisible();
@@ -71,14 +71,11 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       .first()
       .click();
 
-    const launcherBtn = page.getByTestId('rail-tool-launcher');
+    const launcherBtn = page.getByTestId('toolbar-tool-launcher');
     await expect(launcherBtn).toBeVisible();
     await launcherBtn.click();
-    const popover = page
-      .getByRole('dialog')
-      .or(page.locator('[data-radix-popper-content-wrapper]'))
-      .first();
-    await expect(popover).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'لوحة الأوامر السريعة' });
+    await expect(dialog).toBeVisible();
     for (const tool of ['layers', 'stickers', 'shapes', 'text']) {
       await expect(page.getByTestId(`launcher-${tool}`)).toBeVisible();
     }

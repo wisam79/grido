@@ -53,7 +53,9 @@ test.describe('Collage Mode Rails & Configuration Panels E2E', () => {
     }
     await expect(page.getByTestId('segmented-custom')).toBeVisible();
     await expect(page.getByTestId('segmented-presets')).toBeVisible();
-    await expect(page.getByTestId('segmented-freeform')).toBeVisible();
+
+    // Freeform collage is promoted to its own primary rail button
+    await expect(page.getByTestId('rail-collage-freeform')).toBeVisible();
 
     await page.getByTestId('segmented-presets').click();
     await expect(page.getByTestId('segmented-presets')).toHaveAttribute('aria-selected', 'true');
@@ -77,12 +79,7 @@ test.describe('Collage Mode Rails & Configuration Panels E2E', () => {
     await expect(page.getByTestId('rail-collage-backdrop')).toHaveCount(0);
 
     // Old flat rail buttons are gone — tabs live inside their section
-    for (const oldId of [
-      'rail-collage-presets',
-      'rail-collage-freeform',
-      'rail-collage-autofill',
-      'rail-collage-arrange',
-    ]) {
+    for (const oldId of ['rail-collage-presets', 'rail-collage-autofill', 'rail-collage-arrange']) {
       await expect(page.getByTestId(oldId)).toHaveCount(0);
     }
   });

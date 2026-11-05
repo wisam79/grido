@@ -325,8 +325,8 @@ describe('Component Testing: UI Rendering', () => {
     useEditorStore.setState({ mode: 'collage' });
     render(<TemplatePanel activeCollageTab="presets" />);
 
-    // التحقق من عرض محتوى تبويب القوالب مباشرة
-    expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
+    // التحقق من عرض محتوى تبويب القوالب المحفوظة
+    expect(await screen.findByText('لا توجد قوالب محفوظة')).toBeInTheDocument();
   }, 15000);
 
   it('shows no illustrative layout before a freeform template is applied', async () => {
