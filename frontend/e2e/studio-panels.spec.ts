@@ -74,7 +74,7 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
     const launcherBtn = page.getByTestId('toolbar-tool-launcher');
     await expect(launcherBtn).toBeVisible();
     await launcherBtn.click();
-    const dialog = page.getByRole('dialog', { name: 'لوحة الأوامر السريعة' });
+    const dialog = page.getByRole('dialog', { name: 'لوحة الأوامر والأدوات' });
     await expect(dialog).toBeVisible();
     for (const tool of ['layers', 'stickers', 'shapes', 'text']) {
       await expect(page.getByTestId(`launcher-${tool}`)).toBeVisible();

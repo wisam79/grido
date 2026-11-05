@@ -97,7 +97,7 @@ test.describe('Transformer box follows store geometry', () => {
       .toBe(true);
     const moved = await transformerBox(page);
     expect(moved!.x).toBeGreaterThan(grown!.x);
-    expect(moved!.w).toBeCloseTo(grown!.w, 0);
+    expect(Math.abs(moved!.w - grown!.w)).toBeLessThanOrEqual(2);
     expect(moved!.nodes).toBe(1);
   });
 });

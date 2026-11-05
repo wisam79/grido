@@ -521,6 +521,18 @@ export function CompactToolLauncher({
     [sectionIndexById],
   );
   const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
+
+  useEffect(() => {
+    if (!isLauncherOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onLauncherOpenChange(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isLauncherOpen, onLauncherOpenChange]);
   const runGlobalCommand = useCallback(
     (command: WorkspaceCommand) => {
       dispatchWorkspaceCommand(command);
