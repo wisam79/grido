@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/alexbrainman/printer v0.0.0-20200912035444-f40f26f0bdeb
-	github.com/coder/websocket v1.8.14
+	github.com/coder/websocket v1.8.15
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/jung-kurt/gofpdf v1.16.2
