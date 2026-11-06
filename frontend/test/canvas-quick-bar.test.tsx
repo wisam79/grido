@@ -132,7 +132,7 @@ describe('CanvasQuickBar Component Tests', () => {
    * 🧷 حارس «أيقونات فقط»: أُزيلت النصوص من الشريط (خلية كولاج/تغيير/الصف/
    * العمود) وصغر حجمه — فلا يعود نص عربي مرئي إليه وحجم الأزرار موحّد.
    */
-  it('contains no visible text and uses compact 24px icon buttons', () => {
+  it('contains no visible text and uses compact 28px icon buttons', () => {
     selectSingleImage();
 
     render(
@@ -145,8 +145,8 @@ describe('CanvasQuickBar Component Tests', () => {
     // لا حروف عربية مرئية داخل الشريط (الأسماء في aria-label والتلميحات)
     expect(bar.textContent ?? '').not.toMatch(/[\u0621-\u064A]/);
     for (const btn of screen.getAllByRole('button')) {
-      expect(btn.className).toContain('h-6');
-      expect(btn.className).toContain('w-6');
+      expect(btn.className).toContain('h-7');
+      expect(btn.className).toContain('w-7');
     }
   });
 
