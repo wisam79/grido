@@ -54,7 +54,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               size="sm"
               onClick={() => bringToFront(element.id)}
               aria-label="إحضار للأمام"
-              className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
             >
               <ArrowUp className="w-3.5 h-3.5" weight="bold" />
             </Button>
@@ -69,7 +69,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               size="sm"
               onClick={() => sendToBack(element.id)}
               aria-label="إرسال للخلف"
-              className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
             >
               <ArrowDown className="w-3.5 h-3.5" weight="bold" />
             </Button>
@@ -94,7 +94,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 useEditorStore.getState().pushHistory();
               }}
               aria-label="تدوير 90 درجة"
-              className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
             >
               <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
             </Button>
@@ -113,7 +113,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               }}
               aria-label="قلب أفقي"
               className={cn(
-                'h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground',
+                'h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground',
                 element.flipX && 'bg-primary/10 text-primary',
               )}
             >
@@ -144,7 +144,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     toast.success('تمت الاستعادة');
                   }}
                   aria-label="استعادة الصورة الأصلية"
-                  className="h-6 w-6 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                 >
                   <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
                 </Button>
@@ -167,7 +167,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     window.addEventListener('mouseup', restore);
                   }}
                   aria-label="معاينة الصورة الأصلية"
-                  className="h-6 w-6 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
+                  className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary-action active:text-primary-foreground"
                 >
                   <Eye className="w-3.5 h-3.5" weight="regular" />
                 </Button>

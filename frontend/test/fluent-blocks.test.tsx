@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
 import { Sparkle, Folder } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
 
 import {
   FluentSection,
@@ -205,6 +206,64 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       expect(handleCommit).toHaveBeenCalledTimes(2);
       expect(handleCommit).toHaveBeenLastCalledWith(13);
     });
+
+    it.each([0, 20])(
+      'commits a thumb keyboard pulse before immediate undo and preserves it for redo (%i ms before keyup)',
+      (beforeKeyupMs) => {
+        vi.useFakeTimers();
+        useEditorStore.getState().reset();
+        const initialRadius = useEditorStore.getState().collageRadius;
+        useEditorStore.getState().setCollageRadius(initialRadius + 10);
+        useEditorStore.getState().pushHistory();
+        const startingIndex = useEditorStore.getState().historyIndex;
+
+        function HistoryField() {
+          const radius = useEditorStore((state) => state.collageRadius);
+          return (
+            <>
+              <FluentSliderField
+                layout={layout}
+                label="الزوايا"
+                value={radius}
+                min={0}
+                max={200}
+                onChange={(next) => useEditorStore.getState().setCollageRadius(next)}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+              <button onClick={() => useEditorStore.getState().undo()}>Undo</button>
+              <button onClick={() => useEditorStore.getState().redo()}>Redo</button>
+            </>
+          );
+        }
+
+        const { unmount } = render(<HistoryField />);
+        try {
+          const thumb = screen.getByRole('slider', { name: 'الزوايا' });
+          act(() => thumb.focus());
+          fireEvent.keyDown(thumb, { key: 'ArrowUp', code: 'ArrowUp' });
+          act(() => vi.advanceTimersByTime(beforeKeyupMs));
+          fireEvent.keyUp(thumb, { key: 'ArrowUp', code: 'ArrowUp' });
+          expect(useEditorStore.getState().collageRadius).toBe(initialRadius + 11);
+          expect(useEditorStore.getState().historyIndex).toBe(startingIndex + 1);
+
+          const undo = screen.getByRole('button', { name: 'Undo' });
+          act(() => undo.focus());
+          fireEvent.click(undo);
+          expect(useEditorStore.getState().collageRadius).toBe(initialRadius + 10);
+          expect(useEditorStore.getState().historyIndex).toBe(startingIndex);
+
+          fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+          expect(useEditorStore.getState().collageRadius).toBe(initialRadius + 11);
+          expect(useEditorStore.getState().historyIndex).toBe(startingIndex + 1);
+          act(() => vi.advanceTimersByTime(500));
+          expect(useEditorStore.getState().historyIndex).toBe(startingIndex + 1);
+        } finally {
+          unmount();
+          useEditorStore.getState().reset();
+          vi.useRealTimers();
+        }
+      },
+    );
 
     it('commits the arrow pulse exactly once on blur without re-applying the draft', () => {
       const handleChange = vi.fn();

@@ -683,19 +683,18 @@ export function LayersList({
 
   // ── Empty ───────────────────────────────────────────────────────────────
   if (elements.length === 0) {
-    // أيقونة وحدها تكفي: العنوان والشرح وتلميحات السحب حشو بصري بلا
-    // معلومة جديدة (معيار «حظر الحشو البصري») — والشرح ينتقل إلى Tooltip.
-    // بلا بطاقة ولا إطار: الإطار يحوّل الأيقونة إلى زرٍّ كاذب. وبلون باهت
-    // بحجم 5× فتذوب مع الخلفية بدل أن تنافس عناصر اللوح. والارتفاع
-    // 60vh يضعها في منتصف البطاقة لا ملتصقاً بأعلى اللوح.
+    // أيقونة باهتة مع سطر إرشادي وحيد يخدم التعلّم الأول (P2-03) ويختفي بعد أول عنصر.
     return (
-      <div className="min-h-[60vh] w-full select-none flex items-center justify-center animate-in fade-in duration-100">
+      <div className="min-h-[60vh] w-full select-none flex flex-col items-center justify-center gap-8 animate-in fade-in duration-100 text-center px-4">
         <TooltipBtn
           content="لا توجد طبقات بعد — أضف من الملصقات أو الأشكال أو النصوص"
           side="bottom"
         >
           <Layer className="h-6 w-6 scale-500 text-muted-foreground/20" />
         </TooltipBtn>
+        <p className="text-mini text-muted-foreground">
+          لا توجد عناصر بعد — أضف شكلاً أو نصاً من اللوح الأيسر
+        </p>
       </div>
     );
   }

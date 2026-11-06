@@ -34,7 +34,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
         <TooltipTrigger asChild>
           <span
             aria-label={`${selectedIds.length} عناصر محددة`}
-            className="flex h-6 w-6 items-center justify-center text-primary cursor-default"
+            className="flex h-7 w-7 items-center justify-center text-primary cursor-default"
           >
             <Stack className="w-3.5 h-3.5" weight="regular" />
           </span>
@@ -54,7 +54,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 size="sm"
                 onClick={() => distributeSelectedElements('horizontal')}
                 aria-label="توزيع أفقي"
-                className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
               >
                 <ArrowsHorizontal className="w-3.5 h-3.5" weight="bold" />
               </Button>
@@ -69,7 +69,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 size="sm"
                 onClick={() => distributeSelectedElements('vertical')}
                 aria-label="توزيع عمودي"
-                className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
               >
                 <ArrowsVertical className="w-3.5 h-3.5" weight="bold" />
               </Button>

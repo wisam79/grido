@@ -83,7 +83,7 @@ export function FluentFilterChips<T extends string = string>({
                   'absolute inset-0 -z-10 shadow-xs',
                   radiusClass,
                   variant === 'brand'
-                    ? 'bg-primary text-primary-foreground shadow-primary/25'
+                    ? 'bg-primary-action text-primary-foreground shadow-primary/25'
                     : 'bg-card border border-border/80 dark:border-white/15',
                 )}
                 transition={{ duration: 0.12, ease: 'easeOut' }}

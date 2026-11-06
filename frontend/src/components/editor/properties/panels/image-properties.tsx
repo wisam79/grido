@@ -21,9 +21,11 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useFaceFrame } from '@/hooks/use-face-frame';
+import { findLiveAiTarget } from '@/lib/ai/ai-result-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
@@ -621,7 +623,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground shadow-2xs"
+                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary-action active:text-primary-foreground shadow-2xs"
                 onPointerDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
@@ -721,19 +723,30 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             onOpenChange={setCropOpen}
             imageSrc={element.imageSrc}
             originalImageSrc={element.originalImageSrc}
-            onCropSave={async (cropped, dims) => {
+            onCropSave={async (cropped, dims, isActive) => {
+              const session = getDocumentSession();
+              const isCurrent = () =>
+                isMountedRef.current &&
+                (!isActive || isActive()) &&
+                session === getDocumentSession() &&
+                findLiveAiTarget(element.id)?.imageSrc === element.imageSrc;
               try {
+                if (!isCurrent()) return false;
                 let localPath = cropped;
                 if (cropped.startsWith('data:image/')) {
                   localPath = await SaveImageFromBase64(cropped);
                 }
 
                 const applyUpdate = (w: number, h: number) => {
-                  if (!isMountedRef.current) return;
+                  if (!isCurrent()) return false;
+                  if (![w, h].every((value) => Number.isFinite(value) && value > 0)) {
+                    throw new Error('فشل قراءة أبعاد القص');
+                  }
                   const croppedAspect = w / h;
                   const state = useEditorStore.getState();
+                  const live = state.elements.find((item) => item.id === element.id);
                   const canvasRatio = state.canvasWidth / state.canvasHeight;
-                  const newHeight = (element.width * canvasRatio) / croppedAspect;
+                  const newHeight = ((live?.width ?? element.width) * canvasRatio) / croppedAspect;
 
                   onUpdate(element.id, {
                     imageSrc: localPath,
@@ -744,32 +757,39 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   state.setLastEditedImageAspect(croppedAspect);
                   // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
                   state.pushHistory();
+                  return true;
                 };
 
                 if (dims && dims.width > 0 && dims.height > 0) {
-                  applyUpdate(dims.width, dims.height);
-                } else {
-                  const img = new Image();
-                  img.onload = () => {
-                    const width = img.width;
-                    const height = img.height;
-                    img.onload = null;
-                    img.onerror = null;
-                    img.src = '';
-                    applyUpdate(width, height);
-                  };
-                  img.onerror = () => {
-                    img.onload = null;
-                    img.onerror = null;
-                    img.src = '';
-                    // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
-                    toast.error('فشل قراءة القص');
-                  };
-                  img.src = cropped;
+                  return applyUpdate(dims.width, dims.height);
                 }
+                const decoded = await new Promise<{ width: number; height: number }>(
+                  (resolve, reject) => {
+                    const img = new Image();
+                    const cleanup = () => {
+                      img.onload = null;
+                      img.onerror = null;
+                      img.src = '';
+                    };
+                    img.onload = () => {
+                      const size = { width: img.width, height: img.height };
+                      cleanup();
+                      resolve(size);
+                    };
+                    img.onerror = () => {
+                      cleanup();
+                      reject(new Error('فشل قراءة القص'));
+                    };
+                    img.src = cropped;
+                  },
+                );
+                return applyUpdate(decoded.width, decoded.height);
               } catch (err) {
-                logger.error('Failed to save cropped image:', err);
-                toast.error(toErrorMessage(err, 'فشل حفظ القص'));
+                if (isCurrent()) {
+                  logger.error('Failed to save cropped image:', err);
+                  toast.error(toErrorMessage(err, 'فشل حفظ القص'));
+                }
+                return false;
               }
             }}
           />
@@ -793,9 +813,16 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             open={refineOpen}
             onOpenChange={setRefineOpen}
             element={element}
-            onSave={async (newImageSrc) => {
+            onSave={(newImageSrc, isActive) => {
+              if (
+                !isMountedRef.current ||
+                (isActive && !isActive()) ||
+                findLiveAiTarget(element.id)?.imageSrc !== element.imageSrc
+              )
+                return false;
               onUpdate(element.id, { imageSrc: newImageSrc });
               useEditorStore.getState().pushHistory();
+              return true;
             }}
           />
         </Suspense>

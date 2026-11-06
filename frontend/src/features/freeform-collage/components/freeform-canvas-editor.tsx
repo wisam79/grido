@@ -353,7 +353,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
               {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
               {liveBadge && (
                 <div
-                  className="absolute top-1.5 start-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
+                  className="absolute top-1.5 start-1.5 bg-primary-action text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
                   dir="ltr"
                 >
                   {liveBadge}

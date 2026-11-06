@@ -51,7 +51,7 @@ export function StickerPresetsTab({
             type="button"
             size="sm"
             onClick={onSavePreset}
-            className="h-8 px-3 rounded-md text-xs font-bold gap-1 cursor-pointer shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-8 px-3 rounded-md text-xs font-bold gap-1 cursor-pointer shrink-0 bg-primary-action text-primary-foreground hover:bg-primary-action-hover"
           >
             <Plus className="w-3.5 h-3.5" weight="bold" />
             <span>حفظ</span>
@@ -104,7 +104,7 @@ export function StickerPresetsTab({
 
                 <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
                   <span className="text-micro text-muted-foreground font-mono">
-                    {new Date(preset.createdAt).toLocaleDateString('ar-EG', {
+                    {new Date(preset.createdAt).toLocaleDateString('ar-EG-u-nu-latn', {
                       month: 'short',
                       day: 'numeric',
                     })}
@@ -126,7 +126,7 @@ export function StickerPresetsTab({
                       type="button"
                       size="sm"
                       onClick={() => onApplyPreset(preset)}
-                      className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-colors gap-1"
+                      className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary-action hover:text-primary-foreground transition-colors gap-1"
                     >
                       <span>تطبيق</span>
                     </Button>

@@ -25,6 +25,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadCanvasBlob } from '@/lib/io/media-upload';
 import { cn } from '@/lib/utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
@@ -38,7 +39,11 @@ interface CropDialogProps {
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
   originalImageSrc?: string;
-  onCropSave: (croppedBase64: string, dims?: { width: number; height: number }) => void;
+  onCropSave: (
+    croppedBase64: string,
+    dims?: { width: number; height: number },
+    isActive?: () => boolean,
+  ) => void | boolean | Promise<void | boolean>;
 }
 
 export function CropDialog({
@@ -61,17 +66,36 @@ export function CropDialog({
   const [currentSrc, setCurrentSrc] = useState(imageSrc);
   const [straightenAngle, setStraightenAngle] = useState(0);
   const [baseRotation, setBaseRotation] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveAttemptRef = useRef(0);
+  const saveInFlightRef = useRef(false);
 
   // إعادة ضبط الحالة عند فتح النافذة أو تغيير الصورة
   useEffect(() => {
+    saveAttemptRef.current += 1;
+    saveInFlightRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSaving(false);
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAspect(templateAspect);
       setCurrentSrc(imageSrc);
       setStraightenAngle(0);
       setBaseRotation(0);
     }
-  }, [open, imageSrc, templateAspect]);
+    return () => {
+      saveAttemptRef.current += 1;
+      saveInFlightRef.current = false;
+    };
+  }, [open, imageSrc, originalImageSrc, templateAspect]);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      saveAttemptRef.current += 1;
+      saveInFlightRef.current = false;
+      setIsSaving(false);
+    }
+    onOpenChange(next);
+  };
 
   const handleRestoreOriginal = () => {
     if (originalImageSrc) {
@@ -104,9 +128,8 @@ export function CropDialog({
     }
   }, [aspect]);
 
-  const [isSaving, setIsSaving] = useState(false);
-
   const handleCrop = async () => {
+    if (!open || saveInFlightRef.current) return;
     const cropper = cropperRef.current?.cropper;
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas({
@@ -114,6 +137,11 @@ export function CropDialog({
         imageSmoothingQuality: 'high',
       });
       if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
+        const attempt = ++saveAttemptRef.current;
+        const session = getDocumentSession();
+        const isActive = () =>
+          attempt === saveAttemptRef.current && session === getDocumentSession();
+        saveInFlightRef.current = true;
         setIsSaving(true);
         try {
           let finalPath = '';
@@ -128,18 +156,23 @@ export function CropDialog({
               finalPath = uploadRes.imageSrc;
             }
           }
+          if (!isActive()) return;
           if (!finalPath) {
             finalPath = croppedCanvas.toDataURL();
           }
-          onCropSave(finalPath, {
-            width: croppedCanvas.width,
-            height: croppedCanvas.height,
-          });
-          onOpenChange(false);
+          const committed = await onCropSave(
+            finalPath,
+            { width: croppedCanvas.width, height: croppedCanvas.height },
+            isActive,
+          );
+          if (committed !== false && isActive()) handleOpenChange(false);
         } catch {
-          toast.error('فشل حفظ الصورة المقصوصة');
+          if (isActive()) toast.error('فشل حفظ الصورة المقصوصة');
         } finally {
-          setIsSaving(false);
+          if (attempt === saveAttemptRef.current) {
+            saveInFlightRef.current = false;
+            setIsSaving(false);
+          }
         }
       } else {
         toast.error('حدد منطقة قص صالحة');
@@ -173,7 +206,7 @@ export function CropDialog({
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-xl border border-border bg-card p-5 sm:p-6 shadow-fluent-16 transition-colors duration-150 fluent-specular"
@@ -324,7 +357,7 @@ export function CropDialog({
                       className={cn(
                         'text-xs h-8 rounded-md cursor-pointer font-semibold transition-colors border-border/80',
                         isSelected
-                          ? 'bg-primary text-primary-foreground shadow-2xs'
+                          ? 'bg-primary-action text-primary-foreground shadow-2xs'
                           : 'hover:bg-accent/60 text-foreground/80',
                       )}
                       onClick={() => setAspect(opt.value)}
@@ -341,7 +374,7 @@ export function CropDialog({
                     className={cn(
                       'text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-colors mt-0.5',
                       aspect === templateAspect
-                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        ? 'bg-primary-action text-primary-foreground shadow-2xs'
                         : 'hover:bg-primary/10 text-primary border-primary/30',
                     )}
                     onClick={() => setAspect(templateAspect)}
@@ -396,7 +429,7 @@ export function CropDialog({
         <DialogFooter className="gap-2 border-t border-border/40 pt-3 flex items-center justify-end">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer"
           >
             إلغاء
@@ -404,7 +437,7 @@ export function CropDialog({
           <Button
             onClick={handleCrop}
             disabled={isSaving}
-            className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors"
+            className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary-action hover:bg-primary-action-hover text-primary-foreground shadow-xs transition-colors"
           >
             {isSaving && <CircleNotch className="w-3.5 h-3.5 animate-spin" />}
             <span>{isSaving ? 'جاري الحفظ...' : 'تطبيق القص'}</span>

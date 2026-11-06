@@ -337,7 +337,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         >
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">{quickLayouts}</div>
-            <div className="relative size-[64px] shrink-0 rounded-md border border-border/40 bg-muted/20 p-1 select-none">
+            <div className="relative size-[80px] shrink-0 rounded-md border border-border/40 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"
@@ -356,7 +356,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     onKeyDown={(event) => handleAlignKeyDown(event, align)}
                     title={ALIGNMENT_LABELS[align]}
                     className={cn(
-                      'relative flex items-center justify-center rounded-xs transition-colors cursor-pointer hover:bg-muted/50',
+                      'relative min-w-6 min-h-6 flex items-center justify-center rounded-xs transition-colors cursor-pointer hover:bg-muted/50',
                       FOCUS_RING,
                     )}
                   >

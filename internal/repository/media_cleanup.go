@@ -138,23 +138,25 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 
 // mediaCleanupBatchSize حجم دفعة جلب المشاريع أثناء جمع مراجع التنظيف: جلب
 // كامل المكتبة دفعة واحدة بكل أعمدة المراجع الستة يضاعف ذروة الذاكرة على
-// المكتبات الكبيرة، فتُجلب المشاريع على دفعات (LIMIT/OFFSET) وتُجمع مراجعها
+// المكتبات الكبيرة، فتُجلب المشاريع على دفعات مرتبة بالمفتاح وتُجمع مراجعها
 // تدريجياً في الذاكرة، مع إلزامية اكتمال جمع كل الدفعات قبل بدء أي حذف.
 const mediaCleanupBatchSize = 200
 
 // cleanupProjectsBatch يجلب دفعة مشاريع واحدة بكل حقول المراجع الستة
 // (elements وslots وtemplate وcollage_template وprint_settings وeditor_state
 // — إسقاط أي حقل يعني نقل صورة مستخدم حيّة إلى MediaTrash وفق ثابت «حماية
-// مراجع الوسائط في التنظيف»). ORDER BY إلزامي: بلا ترتيب ثابت لا يضمن SQLite
-// تطابق صفحات LIMIT/OFFSET بين الدفعات.
-func cleanupProjectsBatch(db *gorm.DB, offset int) ([]domain.Project, error) {
+// مراجع الوسائط في التنظيف»). التقدم بالمعرّف لا بإزاحة الصفوف حتى لا يتسبب حذف
+// مشروع سبق فحصه في تخطي مشروع حيّ في الدفعة التالية. nil يعني أول دفعة.
+func cleanupProjectsBatch(db *gorm.DB, afterID *string) ([]domain.Project, error) {
 	var projects []domain.Project
-	err := db.
-		Select("elements", "slots", "template", "collage_template", "print_settings", "editor_state").
+	query := db.
+		Select("id", "elements", "slots", "template", "collage_template", "print_settings", "editor_state").
 		Order("id asc").
-		Offset(offset).
-		Limit(mediaCleanupBatchSize).
-		Find(&projects).Error
+		Limit(mediaCleanupBatchSize)
+	if afterID != nil {
+		query = query.Where("id > ?", *afterID)
+	}
+	err := query.Find(&projects).Error
 	return projects, err
 }
 
@@ -162,16 +164,20 @@ func cleanupProjectsBatch(db *gorm.DB, offset int) ([]domain.Project, error) {
 // دفعة حتى دفعة غير ممتلئة (أقل من حجم الدفعة) تعني نهاية المكتبة. أي خطأ في
 // أي دفعة يُعاد فوراً — الجمع غير المكتمل لا يفتح باب الحذف إطلاقاً
 // (fail-closed: امتداد حارس فساد مسودة autosave على كل دفعة على حدة).
+// يحمي من حذف صفوف الدفعات السابقة، ولا يدّعي لقطة معاملية للتعديلات المتزامنة.
 func forEachCleanupProjectBatch(db *gorm.DB, fn func(batch []domain.Project)) error {
-	for offset := 0; ; offset += mediaCleanupBatchSize {
-		batch, err := cleanupProjectsBatch(db, offset)
+	var afterID *string
+	for {
+		batch, err := cleanupProjectsBatch(db, afterID)
 		if err != nil {
-			return fmt.Errorf("fetch cleanup projects batch (offset %d): %w", offset, err)
+			return fmt.Errorf("fetch cleanup projects batch: %w", err)
 		}
 		fn(batch)
 		if len(batch) < mediaCleanupBatchSize {
 			return nil
 		}
+		lastID := batch[len(batch)-1].ID
+		afterID = &lastID
 	}
 }
 
@@ -232,7 +238,7 @@ func collectCustomTemplateReferences(referenced map[string]bool) error {
 }
 
 // collectReferencedImages يجمع كل الصور المشار إليها: المشاريع (جلب على دفعات
-// LIMIT/OFFSET وجمع تدريجي في الذاكرة) ثم مسودة autosave.json ثم القوالب
+// بالمفتاح وجمع تدريجي في الذاكرة) ثم مسودة autosave.json ثم القوالب
 // المخصصة. لا يُعاد النداء بنجاح إلا بعد اكتمال جمع كل الدفعات ومصادر المراجع
 // كلها — أي خطأ يُبطل العملية قبل بدء أي حذف (fail-closed).
 func collectReferencedImages(db *gorm.DB, appDir string) (map[string]bool, error) {

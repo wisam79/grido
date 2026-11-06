@@ -172,7 +172,7 @@ export function LicenseLockScreen({
 
             <Button
               type="submit"
-              className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md"
+              className="w-full h-8 bg-primary-action hover:bg-primary-action-hover text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md"
               disabled={lockLoading}
             >
               {lockLoading ? (

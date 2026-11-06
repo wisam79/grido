@@ -24,6 +24,7 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
   return (
     <main
       className="startup-splash font-cairo select-none"
+      data-status={status}
       dir="rtl"
       aria-labelledby="startup-splash-title"
     >
@@ -43,19 +44,19 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
           >
             <path
               className="startup-splash__axis"
-              d="M144 16V32M144 208V224M40 120H56M232 120H248"
+              d="M144 12V26M144 214V228M36 120H50M238 120H252"
             />
             <g className="startup-splash__corner startup-splash__corner--top-start">
-              <path d="M64 60V40H84" pathLength="1" />
+              <path d="M58 60V38C58 35.7909 59.7909 34 62 34H84" pathLength="1" />
             </g>
             <g className="startup-splash__corner startup-splash__corner--top-end">
-              <path d="M204 40H224V60" pathLength="1" />
+              <path d="M204 34H226C228.209 34 230 35.7909 230 38V60" pathLength="1" />
             </g>
             <g className="startup-splash__corner startup-splash__corner--bottom-start">
-              <path d="M64 180V200H84" pathLength="1" />
+              <path d="M58 180V202C58 204.209 59.7909 206 62 206H84" pathLength="1" />
             </g>
             <g className="startup-splash__corner startup-splash__corner--bottom-end">
-              <path d="M204 200H224V180" pathLength="1" />
+              <path d="M204 206H226C228.209 206 230 204.209 230 202V180" pathLength="1" />
             </g>
           </svg>
           {/* هندسة SVG المورّدة واحدة للأجزاء وقناع اللمعة؛ بلا خلفية سوداء. */}
@@ -77,7 +78,7 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
               </linearGradient>
               <linearGradient id={`${logoId}-sheen`}>
                 <stop offset="0%" stopColor="#fff" stopOpacity="0" />
-                <stop offset="48%" stopColor="#fff" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#fff" stopOpacity="0.42" />
                 <stop offset="100%" stopColor="#fff" stopOpacity="0" />
               </linearGradient>
               <path
@@ -129,9 +130,9 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
               <g clipPath={`url(#${logoId}-silhouette)`}>
                 <rect
                   className="startup-splash__sheen"
-                  x="-500"
+                  x="-520"
                   y="-120"
-                  width="320"
+                  width="260"
                   height="1240"
                   fill={`url(#${logoId}-sheen)`}
                 />
@@ -149,12 +150,21 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
         {needsAttention && (
           <div className="startup-splash__actions">
             {status === 'error' && onRetry && (
-              <Button type="button" onClick={onRetry}>
+              <Button
+                type="button"
+                onClick={onRetry}
+                className="h-8 px-4 rounded-md text-xs font-bold"
+              >
                 إعادة المحاولة
               </Button>
             )}
             {onClose && (
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="h-8 px-4 rounded-md text-xs font-semibold"
+              >
                 إغلاق التطبيق
               </Button>
             )}

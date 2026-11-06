@@ -93,7 +93,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             onClick={onOpenFileForSlot}
             disabled={isBusy}
             aria-label="تغيير الصورة"
-            className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-60 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-60 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             {isBusy ? (
               <Spinner className="w-3.5 h-3.5" size={14} />
@@ -119,7 +119,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   size="sm"
                   onClick={() => fillAllSlots(slot.imageSrc!, slot.id)}
                   aria-label="تكرار الصورة بكل الخلايا"
-                  className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   <GridFour className="w-3.5 h-3.5" weight="regular" />
                 </Button>
@@ -134,7 +134,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   size="sm"
                   onClick={() => fillRowSlots(slot.id, slot.imageSrc!)}
                   aria-label="تعبئة الصف"
-                  className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   <TableInsertRow className="w-3.5 h-3.5" weight="regular" />
                 </Button>
@@ -149,7 +149,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   size="sm"
                   onClick={() => fillColumnSlots(slot.id, slot.imageSrc!)}
                   aria-label="تعبئة العمود"
-                  className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   <TableInsertColumn className="w-3.5 h-3.5" weight="regular" />
                 </Button>
@@ -176,7 +176,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                       toast.success('تمت الاستعادة');
                     }}
                     aria-label="استعادة الصورة الأصلية"
-                    className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
                     <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
                   </Button>
@@ -208,7 +208,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                       window.addEventListener('blur', restore);
                     }}
                     aria-label="معاينة الصورة الأصلية"
-                    className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 select-none active:bg-primary-action active:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
                     <Eye className="w-3.5 h-3.5" weight="regular" />
                   </Button>
@@ -230,7 +230,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   useEditorStore.getState().pushHistory();
                 }}
                 aria-label="تفريغ الخلية"
-                className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <Broom className="w-3.5 h-3.5" weight="regular" />
               </Button>
@@ -251,7 +251,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             onClick={handleRemoveSlot}
             disabled={isBusy || isLastSlot}
             aria-label="حذف الخلية"
-            className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-60 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-60 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <Trash className="w-3.5 h-3.5" weight="regular" />
           </Button>

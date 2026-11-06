@@ -448,6 +448,108 @@ describe('Component Testing: UI Rendering', () => {
   }, 15000);
 });
 
+describe('App workspace selection integration', () => {
+  const preferencesKey = 'grido_workspace_layout_v1';
+  let previousWidth: number;
+  let previousPreferences: string | null;
+
+  beforeEach(() => {
+    previousWidth = window.innerWidth;
+    previousPreferences = localStorage.getItem(preferencesKey);
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    localStorage.setItem(
+      preferencesKey,
+      JSON.stringify({ isInspectorPinned: true, isTemplatesDrawerOpen: true }),
+    );
+    useEditorStore.getState().reset();
+    useEditorStore.setState({
+      mode: 'collage',
+      accountModalOpen: false,
+      user: {
+        plan: 'pro',
+        status: 'active',
+        expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      } as any,
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: previousWidth,
+    });
+    if (previousPreferences === null) localStorage.removeItem(preferencesKey);
+    else localStorage.setItem(preferencesKey, previousPreferences);
+  });
+
+  it('keeps desktop panels collapsed when selection changes during Zen and restores them on exit', async () => {
+    render(<App />);
+    const zen = await screen.findByTestId('canvas-zen-mode-toggle');
+    const templates = screen.getByTestId('workspace-panel-templates');
+    const inspector = screen.getByTestId('workspace-panel-properties');
+    const [firstSlot] = useEditorStore.getState().slots;
+
+    act(() => useEditorStore.getState().selectElement(firstSlot.id));
+    expect(inspector).toHaveAttribute('data-collapsed', 'false');
+    fireEvent.click(zen);
+    expect(templates).toHaveAttribute('data-collapsed', 'true');
+    expect(inspector).toHaveAttribute('data-collapsed', 'true');
+
+    act(() => useEditorStore.getState().selectElement(null));
+    act(() => useEditorStore.getState().selectElement(firstSlot.id));
+    expect(templates).toHaveAttribute('data-collapsed', 'true');
+    expect(inspector).toHaveAttribute('data-collapsed', 'true');
+
+    fireEvent.click(zen);
+    expect(templates).toHaveAttribute('data-collapsed', 'false');
+    expect(inspector).toHaveAttribute('data-collapsed', 'false');
+    expect(useEditorStore.getState().selectedId).toBe(firstSlot.id);
+  }, 15000);
+
+  it('reveals an unpinned desktop inspector without pinning it and hides it on deselection', async () => {
+    localStorage.setItem(
+      preferencesKey,
+      JSON.stringify({ isInspectorPinned: false, isTemplatesDrawerOpen: true }),
+    );
+    render(<App />);
+    const inspector = await screen.findByTestId('workspace-panel-properties');
+    const pin = within(inspector).getByRole('button', {
+      name: 'اللوحة تفاعلية مع التحديد (انقر للتثبيت الدائم)',
+      hidden: true,
+    });
+    expect(inspector).toHaveAttribute('data-collapsed', 'true');
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+
+    act(() => useEditorStore.getState().selectElement(useEditorStore.getState().slots[0].id));
+    expect(inspector).toHaveAttribute('data-collapsed', 'false');
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+
+    act(() => useEditorStore.getState().selectElement(null));
+    expect(inspector).toHaveAttribute('data-collapsed', 'true');
+  }, 15000);
+
+  it('still opens the compact properties sheet when a canvas slot is selected', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 840 });
+    render(<App />);
+    await screen.findByTestId('workspace-layout');
+    expect(screen.queryByRole('dialog', { name: 'لوحات العمل' })).not.toBeInTheDocument();
+
+    act(() => useEditorStore.getState().selectElement(useEditorStore.getState().slots[0].id));
+    const sheet = await screen.findByRole('dialog', { name: 'لوحات العمل' });
+    expect(within(sheet).getByRole('tab', { name: 'الخصائص' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.queryByTestId('workspace-panel-properties')).not.toBeInTheDocument();
+  }, 15000);
+});
+
 describe('Startup splash regressions', () => {
   const activeProfile: NonNullable<Awaited<ReturnType<typeof GetLicenseStatus>>> = {
     id: 'startup-user',

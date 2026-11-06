@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"grido/internal/core/domain"
+	"grido/internal/utils"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // TestCleanupUnusedMedia_BatchedCollectionCompletesBeforeDeletion يتحقق من أن
-// جمع المراجع على دفعات (LIMIT/OFFSET بحجم mediaCleanupBatchSize) يكتمل لكل
+// جمع المراجع على دفعات مرتبة بالمفتاح بحجم mediaCleanupBatchSize يكتمل لكل
 // الدفعات قبل بدء أي حذف: صورة يشير إليها مشروع في دفعة متأخرة يجب ألا تُنقل
 // إلى الحجر الصحي في نفس دورة التنظيف التي تجلب الدفعات الأولى.
 func TestCleanupUnusedMedia_BatchedCollectionCompletesBeforeDeletion(t *testing.T) {
@@ -121,6 +122,110 @@ func TestCleanupUnusedMedia_BatchedCollectionCompletesBeforeDeletion(t *testing.
 	}
 	if _, err := os.Stat(tailImage); os.IsNotExist(err) {
 		t.Error("expected tail-image.jpg to remain in Media/ after manual clean (later-batch reference)")
+	}
+}
+
+// TestCleanupUnusedMedia_DeleteBetweenBatchesKeepsLiveReferences deletes an
+// already-scanned row at the exact page boundary. OFFSET skips the surviving
+// last project; keyset pagination must still collect its image reference.
+func TestCleanupUnusedMedia_DeleteBetweenBatchesKeepsLiveReferences(t *testing.T) {
+	for _, mode := range []string{"automatic", "manual"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Setenv("GRIDO_APP_DIR", t.TempDir())
+			appDir := utils.GetAppDir()
+			mediaDir := filepath.Join(appDir, "Media")
+			trashDir := filepath.Join(appDir, "MediaTrash")
+			if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range []string{"live.jpg", "orphan.jpg"} {
+				path := filepath.Join(mediaDir, name)
+				if err := utils.AtomicWriteFile(path, []byte("image-data"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				agePath(t, path, 10*24*time.Hour)
+			}
+
+			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			sqlDB, err := db.DB()
+			if err != nil {
+				t.Fatal(err)
+			}
+			sqlDB.SetMaxOpenConns(1)
+			t.Cleanup(func() { _ = sqlDB.Close() })
+			if err := db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{}); err != nil {
+				t.Fatal(err)
+			}
+			projects := make([]domain.Project, mediaCleanupBatchSize+1)
+			for i := range projects {
+				projects[i] = domain.Project{ID: fmt.Sprintf("p%04d", i), Elements: `[]`, Slots: `[]`}
+			}
+			lastID := projects[len(projects)-1].ID
+			projects[len(projects)-1].Elements = `[{"imageSrc":"/local-image/live.jpg"}]`
+			if err := db.CreateInBatches(&projects, 50).Error; err != nil {
+				t.Fatal(err)
+			}
+
+			dbMu.Lock()
+			previousDB := dbInstance
+			dbInstance = db
+			dbMu.Unlock()
+			t.Cleanup(func() {
+				dbMu.Lock()
+				dbInstance = previousDB
+				dbMu.Unlock()
+			})
+
+			repo := NewProjectRepository(db)
+			deleted := false
+			// A post-query callback runs after rows have been scanned and closed.
+			// Commit the deletion synchronously here: no timing sleeps or races.
+			if err := db.Callback().Query().After("gorm:query").Register("test:delete_between_cleanup_batches", func(tx *gorm.DB) {
+				if deleted || tx.Error != nil || tx.Statement.Table != "projects" {
+					return
+				}
+				if tx.RowsAffected != int64(mediaCleanupBatchSize) {
+					tx.AddError(fmt.Errorf("expected a full first batch, got %d rows", tx.RowsAffected))
+					return
+				}
+				deleted = true
+				if err := repo.Delete("p0000"); err != nil {
+					tx.AddError(err)
+				}
+			}); err != nil {
+				t.Fatal(err)
+			}
+
+			if mode == "automatic" {
+				runCleanupMedia()
+			} else {
+				count, _, err := CleanUnusedMediaNow()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if count != 1 {
+					t.Errorf("expected only the orphan to be cleaned, got %d files", count)
+				}
+			}
+			if !deleted {
+				t.Fatal("the first-page deletion was not exercised")
+			}
+			if _, err := repo.FindByID(lastID); err != nil {
+				t.Fatalf("referencing project must survive: %v", err)
+			}
+			if _, err := os.Stat(filepath.Join(mediaDir, "live.jpg")); err != nil {
+				t.Errorf("live image was skipped after deleting an earlier row: %v", err)
+			}
+			if _, err := os.Stat(filepath.Join(trashDir, "live.jpg")); !os.IsNotExist(err) {
+				t.Errorf("referenced live.jpg must not enter MediaTrash, stat error: %v", err)
+			}
+			if _, err := os.Stat(filepath.Join(trashDir, "orphan.jpg")); err != nil {
+				t.Errorf("real orphan must still be quarantined: %v", err)
+			}
+		})
 	}
 }
 

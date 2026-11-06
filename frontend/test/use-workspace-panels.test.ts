@@ -2,8 +2,12 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { useWorkspacePanels } from '../src/hooks/use-workspace-panels';
+import { useEditorStore } from '../src/lib/editor-store';
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';
+
+beforeEach(() => act(() => useEditorStore.getState().selectElement(null)));
+afterEach(() => act(() => useEditorStore.getState().selectElement(null)));
 
 function setWindowWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', {
@@ -117,6 +121,25 @@ describe('useWorkspacePanels — استقرار الألواح عند تغيّر
     });
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
   });
+
+  it('عقد 1024px (P1-01): يطوي درج القوالب افتراضياً تحت 1200px لضمان كانفاس >= 660px ويفتحه عند 1280px', async () => {
+    setWindowWidth(1024);
+    const { result } = renderHook(() => useWorkspacePanels());
+
+    expect(result.current.breakpoint).toBe('standard');
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    expect(result.current.isInspectorPinned).toBe(true);
+
+    // عند توسيع النافذة إلى 1280px يُفتح الدرج الأيسر تلقائياً
+    await resizeTo(1280);
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    expect(result.current.isInspectorPinned).toBe(true);
+
+    // وعند تصغيرها مجدداً إلى 1024px يُطوى الدرج الأيسر لمنع اختناق الكانفاس
+    await resizeTo(1024);
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    expect(result.current.isInspectorPinned).toBe(true);
+  });
 });
 
 describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة الحالة السابقة)', () => {
@@ -128,6 +151,53 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
   afterEach(() => {
     localStorage.clear();
     setWindowWidth(1280);
+  });
+
+  it('keeps the inspector hidden in Zen mode while selection changes and restores it on exit', () => {
+    act(() => useEditorStore.getState().selectElement('selected-before-zen'));
+    const { result } = renderHook(() => useWorkspacePanels());
+    expect(result.current.isInspectorOpen).toBe(true);
+
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isZenMode).toBe(true);
+    expect(result.current.isInspectorOpen).toBe(false);
+
+    act(() => useEditorStore.getState().selectElement('selected-during-zen'));
+    expect(result.current.isInspectorOpen).toBe(false);
+
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.isInspectorOpen).toBe(true);
+    expect(useEditorStore.getState().selectedId).toBe('selected-during-zen');
+  });
+
+  it('close-all suppresses selection-driven reopening until the inspector is explicitly opened', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => result.current.closeActivePanel());
+    act(() => useEditorStore.getState().selectElement('selected-after-close'));
+    expect(result.current.isInspectorOpen).toBe(false);
+
+    act(() => result.current.openPanel('properties'));
+    expect(result.current.isInspectorOpen).toBe(true);
+  });
+
+  it('ordinary unpinned selection still reveals the inspector without entering Zen mode', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => {
+      result.current.setIsTemplatesDrawerOpen(false);
+      result.current.setIsInspectorPinned(false);
+    });
+    expect(result.current.isInspectorOpen).toBe(false);
+
+    act(() => useEditorStore.getState().selectElement('ordinary-selection'));
+    expect(result.current.isInspectorOpen).toBe(true);
+
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isInspectorOpen).toBe(false);
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isInspectorPinned).toBe(false);
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    expect(result.current.isInspectorOpen).toBe(true);
   });
 
   it('يحفظ الدرج ولوحة الخصائص عند الدخول ويستعيدهما بدقة عند الخروج', () => {

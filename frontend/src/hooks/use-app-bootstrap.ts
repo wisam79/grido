@@ -6,13 +6,14 @@ import {
   ProcessLocalImageFile,
   CheckPendingCrashReport,
   DismissCrashReport,
-  ClearAutoSave,
 } from '@bindings/grido/app';
 
+import { clearAutoSave } from '@/hooks/use-autosave';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { addImageFromSrc } from '@/lib/canvas/load-image';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import {
   isLicenseCheckInvalidatedError,
@@ -72,18 +73,24 @@ export function useAppBootstrap(): AppBootstrapState {
   };
 
   const handleDismissCrash = async () => {
+    const session = getDocumentSession();
     try {
       if (typeof DismissCrashReport === 'function') {
         await DismissCrashReport();
       }
-      if (typeof ClearAutoSave === 'function') {
-        await ClearAutoSave();
-      }
+      // Do not reset a project opened while the report was being dismissed.
+      if (getDocumentSession() !== session) return;
       useEditorStore.getState().reset();
+      const resetSession = getDocumentSession();
+      // Queue immediately after reset: old writes drain before the clear, while
+      // edits made during the clear are saved after it, never erased by it.
+      await clearAutoSave(resetSession);
+      if (getDocumentSession() !== resetSession) return;
     } catch (e) {
       logger.error('Failed to dismiss crash report:', e);
+    } finally {
+      setCrashReport(null);
     }
-    setCrashReport(null);
     toast.info('تم بدء مشروع جديد');
   };
 

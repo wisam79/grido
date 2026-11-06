@@ -4,6 +4,15 @@
 
 ---
 
+## جلسة التصحيح الشاملة red→green — 6 نوفمبر 2026
+
+- ملف اختبار جديد واحد: `frontend/test/image-dialog-lifecycle.test.tsx` (12 حالة) لملكية نتائج القص والتعديل اليدوي (حفظ ناجح يغلق بعد الالتزام، إلغاء/استبدال صورة/جلسة جديدة/unmount ترفض النتيجة) — رفع عداد Vitest في بلوك `docs-metrics` إلى **158**. باقي الإضافات توسعة ملفات قائمة: `use-autosave.test.ts` (+14→19)، `export-dialog.test.tsx` (+5→26)، `print-export-payload.test.ts` (+5→43)، `projects-dialog-backup.test.tsx` (+3→6)، `use-workspace-panels.test.ts` (+3→10)، `fluent-blocks.test.tsx` (+2→22)، `App.test.tsx` (+3→26)، ومجموعتا Go المسماة في تقرير `docs/reviews/22-app-debugging-2026-11-06.md`.
+- النمط المعتمد للجميع: تشغيل الملف الواحد بعامل واحد دون تغطية (`node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/<file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false`)، وإثبات الحالة الحمراء قبل الإصلاح ثم الأخضر بعده. اختبارات Go بالمرشح `^Regex$` مع `CGO_ENABLED=1 GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local` و`GRIDO_APP_DIR` مؤقت بـ`.env` فارغ قبل انطلاق العملية.
+- تقنيات إعادة الإنتاج المستخدمة وتصلح لاحقاً: وعود مؤجلة (deferred) لكل استدعاء IPC محاكى، ساعة وهمية للنبضات، مستندات بمساحة عمل مؤقتة لاختبارات SQLite، وواحد-shot hook بعد الاستعلام لإثبات سباق الحذف بين دفعات التنظيف دون انتظار جدولة.
+- لم تُشغل الحزمة الكاملة أو التغطية أو E2E محلياً؛ بوابات CI السحابية (Vitest الكامل، IPC contract-drift، بناء ويندوز، chromium shards + WebKit smoke) مستقلة.
+
+---
+
 ## بوابة التهيئة تنتظر نتيجة الترخيص — 5 نوفمبر 2026
 
 - `frontend/test/App.test.tsx`: **23/23 ناجحة** بعد إضافة تغطية انتظار الأربع ثواني وما بعدها (بما فيها خمس دقائق ومستخدم قديم صالح)، عدم تنفيذ تحميل ملف الإقلاع قبل النتيجة، الفشل التقني وإعادة المحاولة بنقرة واحدة فعلية، حفظ عنصر الشعار أثناء تبدل الحالة، الطرد الصريح، StrictMode، تنظيف المؤقتات، تجاهل نتائج/رفض جلسة قديمة بعد دخول أحدث، ودلالات أزرار الخطأ/التأخر.

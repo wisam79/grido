@@ -41,6 +41,7 @@ import {
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { isAutoFillGridEnabled, setAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
 import { getEffectiveDpi, IMAGE_FILTERS, filterShortName } from '@/lib/templates';
@@ -830,12 +831,20 @@ export const SlotProperties = React.memo(function SlotProperties({
             onOpenChange={setCropOpen}
             imageSrc={slot.imageSrc}
             originalImageSrc={slot.originalImageSrc}
-            onCropSave={async (cropped) => {
+            onCropSave={async (cropped, _dims, isActive) => {
+              const session = getDocumentSession();
+              const isCurrent = () =>
+                (!isActive || isActive()) &&
+                session === getDocumentSession() &&
+                useEditorStore.getState().slots.find((item) => item.id === slot.id)?.imageSrc ===
+                  slot.imageSrc;
               try {
+                if (!isCurrent()) return false;
                 let localPath = cropped;
                 if (wailsIsDesktop() && cropped.startsWith('data:image/')) {
                   localPath = await SaveImageFromBase64(cropped);
                 }
+                if (!isCurrent()) return false;
                 onUpdate(slot.id, {
                   imageSrc: localPath,
                   dragX: 0,
@@ -844,9 +853,13 @@ export const SlotProperties = React.memo(function SlotProperties({
                   originalImageSrc: slot.originalImageSrc || slot.imageSrc,
                 });
                 useEditorStore.getState().pushHistory();
+                return true;
               } catch (err) {
-                logger.error('Failed to save cropped slot image:', err);
-                toast.error(toErrorMessage(err, 'فشل حفظ القص'));
+                if (isCurrent()) {
+                  logger.error('Failed to save cropped slot image:', err);
+                  toast.error(toErrorMessage(err, 'فشل حفظ القص'));
+                }
+                return false;
               }
             }}
           />

@@ -224,7 +224,7 @@ export function UpdateNotifier() {
 
             <div className="flex flex-col items-end gap-0.5">
               <span className="text-micro text-muted-foreground font-bold">الإصدار الأحدث</span>
-              <span className="font-mono text-xs text-primary-foreground font-bold bg-primary px-2.5 py-0.5 rounded-md shadow-xs shadow-primary/30 flex items-center gap-1">
+              <span className="font-mono text-xs text-primary-foreground font-bold bg-primary-action px-2.5 py-0.5 rounded-md shadow-xs shadow-primary/30 flex items-center gap-1">
                 <Sparkle className="w-3 h-3" weight="fill" />
                 {updateInfo.latest_version}
               </span>
@@ -286,7 +286,7 @@ export function UpdateNotifier() {
               {!error ? (
                 <Button
                   onClick={handleStartUpdate}
-                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm fluent-hover-lift cursor-pointer"
+                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary-action text-primary-foreground hover:bg-primary-action-hover shadow-sm fluent-hover-lift cursor-pointer"
                 >
                   <DownloadSimple className="w-4 h-4" weight="bold" />
                   تثبيت التحديث
@@ -302,7 +302,7 @@ export function UpdateNotifier() {
                       window.open(url, '_blank', 'noopener,noreferrer');
                     }
                   }}
-                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
+                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary-action text-primary-foreground hover:bg-primary-action-hover shadow-sm cursor-pointer"
                 >
                   <Globe className="w-4 h-4" weight="bold" />
                   تحميل من الموقع

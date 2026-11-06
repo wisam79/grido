@@ -96,114 +96,119 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
       dir="ltr"
     >
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            title="وحدة القياس وإدارة الخطوط الإرشادية (Ctrl+R)"
-            aria-label="خيارات وحدة قياس المسطرة"
-            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
-          >
-            <span className="text-3xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
-              {rulerUnit}
-            </span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-56 font-cairo text-xs z-(--z-menu) rounded-lg backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16"
-        >
-          <div dir="rtl">
-            <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
-                <span>وحدة قياس المسطرة</span>
+      <div className="w-[20px] h-[20px] shrink-0 flex items-center justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              title="وحدة القياس وإدارة الخطوط الإرشادية (Ctrl+R)"
+              aria-label="خيارات وحدة قياس المسطرة"
+              className="w-6 h-6 -m-0.5 shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
+            >
+              <span className="text-2xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
+                {rulerUnit}
               </span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {RULER_UNITS.map((u) => {
-              const isSelected = rulerUnit === u.id;
-              return (
-                <DropdownMenuItem
-                  key={u.id}
-                  onClick={() => onChangeRulerUnit(u.id)}
-                  className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group"
-                >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs text-primary font-bold">{u.id}</span>
-                      <span className="text-xs">{u.label}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-56 font-cairo text-xs z-(--z-menu) rounded-lg backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16"
+          >
+            <div dir="rtl">
+              <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                  <span>وحدة قياس المسطرة</span>
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {RULER_UNITS.map((u) => {
+                const isSelected = rulerUnit === u.id;
+                return (
+                  <DropdownMenuItem
+                    key={u.id}
+                    onClick={() => onChangeRulerUnit(u.id)}
+                    className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group"
+                  >
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs text-primary font-bold">{u.id}</span>
+                        <span className="text-xs">{u.label}</span>
+                      </div>
+                      <span className="text-micro text-muted-foreground font-normal">{u.sub}</span>
                     </div>
-                    <span className="text-micro text-muted-foreground font-normal">{u.sub}</span>
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-micro text-muted-foreground font-bold">
+                الخطوط الإرشادية
+              </DropdownMenuLabel>
+
+              {onToggleShowGuides && (
+                <DropdownMenuItem
+                  onClick={onToggleShowGuides}
+                  className="flex items-center justify-between cursor-pointer py-1.5 font-semibold text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    {showUserGuides ? (
+                      <EyeSlash
+                        className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                        weight="fill"
+                      />
+                    ) : (
+                      <Eye
+                        className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                        weight="regular"
+                      />
+                    )}
+                    <span>
+                      {showUserGuides ? 'إخفاء الخطوط الإرشادية' : 'إظهار الخطوط الإرشادية'}
+                    </span>
                   </div>
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
-                  )}
+                  <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+;</span>
                 </DropdownMenuItem>
-              );
-            })}
+              )}
 
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-micro text-muted-foreground font-bold">
-              الخطوط الإرشادية
-            </DropdownMenuLabel>
-
-            {onToggleShowGuides && (
-              <DropdownMenuItem
-                onClick={onToggleShowGuides}
-                className="flex items-center justify-between cursor-pointer py-1.5 font-semibold text-xs"
-              >
-                <div className="flex items-center gap-2">
-                  {showUserGuides ? (
-                    <EyeSlash
+              {hasGuides && onToggleLockGuides && (
+                <DropdownMenuItem
+                  onClick={onToggleLockGuides}
+                  className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
+                >
+                  {lockUserGuides ? (
+                    <LockSimpleOpen
+                      className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                      weight="regular"
+                    />
+                  ) : (
+                    <LockSimple
                       className="w-3.5 h-3.5 text-muted-foreground shrink-0"
                       weight="fill"
                     />
-                  ) : (
-                    <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
                   )}
                   <span>
-                    {showUserGuides ? 'إخفاء الخطوط الإرشادية' : 'إظهار الخطوط الإرشادية'}
+                    {lockUserGuides ? 'إلغاء قفل الخطوط الإرشادية' : 'قفل الخطوط الإرشادية'}
                   </span>
-                </div>
-                <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+;</span>
-              </DropdownMenuItem>
-            )}
+                </DropdownMenuItem>
+              )}
 
-            {hasGuides && onToggleLockGuides && (
-              <DropdownMenuItem
-                onClick={onToggleLockGuides}
-                className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
-              >
-                {lockUserGuides ? (
-                  <LockSimpleOpen
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-                    weight="regular"
-                  />
-                ) : (
-                  <LockSimple
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-                    weight="fill"
-                  />
-                )}
-                <span>
-                  {lockUserGuides ? 'إلغاء قفل الخطوط الإرشادية' : 'قفل الخطوط الإرشادية'}
-                </span>
-              </DropdownMenuItem>
-            )}
-
-            {hasGuides && onClearGuides && (
-              <DropdownMenuItem
-                onClick={onClearGuides}
-                className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
-              >
-                <Trash className="w-3.5 h-3.5 shrink-0" weight="regular" />
-                <span>مسح كافة الخطوط الإرشادية</span>
-              </DropdownMenuItem>
-            )}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              {hasGuides && onClearGuides && (
+                <DropdownMenuItem
+                  onClick={onClearGuides}
+                  className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
+                >
+                  <Trash className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                  <span>مسح كافة الخطوط الإرشادية</span>
+                </DropdownMenuItem>
+              )}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <div className="flex-1 overflow-hidden relative">
         <HorizontalRuler

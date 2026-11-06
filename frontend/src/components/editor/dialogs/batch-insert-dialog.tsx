@@ -536,7 +536,7 @@ export function BatchInsertDialog({
                   className={cn(
                     'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
                     layoutMode === 'grid'
-                      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+                      ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
                       : 'hover:bg-muted/60 text-foreground',
                   )}
                 >
@@ -552,7 +552,7 @@ export function BatchInsertDialog({
                   className={cn(
                     'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
                     layoutMode === 'cascade'
-                      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+                      ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
                       : 'hover:bg-muted/60 text-foreground',
                   )}
                 >
@@ -665,7 +665,7 @@ export function BatchInsertDialog({
               size="sm"
               onClick={handleExecute}
               disabled={images.length === 0 || isProcessing}
-              className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
+              className="h-8 rounded-md bg-primary-action hover:bg-primary-action-hover text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
               {isProcessing ? 'جاري الإدراج ...' : 'إدراج'}
             </Button>

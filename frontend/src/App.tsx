@@ -56,10 +56,9 @@ export default function App() {
   } = useAppBootstrap();
 
   const panelsHook = useWorkspacePanels();
-  const isPropertiesOpen =
-    panelsHook.breakpoint !== 'compact'
-      ? panelsHook.isInspectorPinned
-      : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'properties';
+  const isCompactWorkspace = panelsHook.breakpoint === 'compact';
+  const isCompactPropertiesOpen =
+    panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'properties';
   const { theme, toggleTheme } = useTheme();
   const { zoomIn: uiZoomIn, zoomOut: uiZoomOut, resetZoom: uiZoomReset } = useUiZoom();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
@@ -148,24 +147,22 @@ export default function App() {
   const selectedId = useEditorStore((state) => state.selectedId);
   const prevSelectedIdRef = useRef<string | null>(null);
 
-  // 🛡️ الأداء: تبعيات محددة لا الكائن الكامل — panelsHook كائن جديد بكل رندر،
-  // وكان اعتماده كاملاً يعيد تسجيل التأثير (تنظيف + إعادة تشغيل) في كل تحديث
-  // لأي حالة داخل App. حارس prevSelectedIdRef يضمن التشغيل مرة واحدة لكل تحديد،
-  // فقراءة breakpoint/activePanel عند الإطلاق فقط سلوك مطابق للأصل.
+  // Desktop visibility belongs to useWorkspacePanels: imperative opening would
+  // pin ordinary selections and override explicit Zen/close-all suppression.
+  // Compact mode still opens its properties sheet once per new selection.
   const { openPanel: panelsOpenPanel } = panelsHook;
 
   useEffect(() => {
-    if (selectedId && selectedId !== prevSelectedIdRef.current) {
-      // 🛡️ مزامنة التحديد ثنائية الاتجاه لجميع العروض: فحص حالة ظهور لوح الخصائص
-      // الفعلية (isPropertiesOpen) بدلاً من activePanel وحده حتى يفتح المفتش
-      // على شاشات standard و wide عند تحديد خلية أو عنصر إذا كان مطوياً.
-      if (!isPropertiesOpen) {
-        panelsOpenPanel('properties');
-      }
+    if (
+      isCompactWorkspace &&
+      selectedId &&
+      selectedId !== prevSelectedIdRef.current &&
+      !isCompactPropertiesOpen
+    ) {
+      panelsOpenPanel('properties');
     }
     prevSelectedIdRef.current = selectedId;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, panelsOpenPanel]);
+  }, [selectedId, panelsOpenPanel, isCompactWorkspace, isCompactPropertiesOpen]);
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);

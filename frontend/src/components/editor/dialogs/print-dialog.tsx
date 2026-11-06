@@ -1270,7 +1270,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   : 'طباعة مباشرة إلى الطابعة (Enter)'
               }
               aria-keyshortcuts="Enter"
-              className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-colors duration-150 cursor-pointer rounded-md"
+              className="h-8 px-5 gap-2 bg-primary-action hover:bg-primary-action-hover text-primary-foreground font-semibold text-xs transition-colors duration-150 cursor-pointer rounded-md"
               disabled={isExporting || !hasContent}
             >
               {isExporting ? (

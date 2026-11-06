@@ -101,7 +101,11 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
   },
   'studio-date': {
     getText: () =>
-      new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
+      new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
     label: 'تاريخ اليوم',
     group: 'studio',
     lineHeight: 1.2,

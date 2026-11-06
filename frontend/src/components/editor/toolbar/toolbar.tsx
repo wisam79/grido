@@ -133,6 +133,12 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               variant="outline"
               size="icon"
               onClick={onExport}
+              onMouseEnter={() => {
+                void import('@/components/editor/dialogs/export-dialog');
+              }}
+              onFocus={() => {
+                void import('@/components/editor/dialogs/export-dialog');
+              }}
               data-testid="toolbar-export"
               aria-label="تصدير صورة"
               className="h-8 w-8 p-0 cursor-pointer"
@@ -146,6 +152,12 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             <Button
               size="icon"
               onClick={onPrint}
+              onMouseEnter={() => {
+                void import('@/components/editor/dialogs/print-dialog');
+              }}
+              onFocus={() => {
+                void import('@/components/editor/dialogs/print-dialog');
+              }}
               data-testid="toolbar-print"
               aria-label="طباعة المستند"
               className="h-8 w-8 p-0 cursor-pointer"

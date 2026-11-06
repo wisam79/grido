@@ -237,7 +237,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             type="button"
             size="sm"
             onClick={onClose}
-            className="h-7 px-3 text-xs font-bold rounded-md bg-primary text-primary-foreground cursor-pointer gap-1"
+            className="h-7 px-3 text-xs font-bold rounded-md bg-primary-action hover:bg-primary-action-hover text-primary-foreground cursor-pointer gap-1"
           >
             تم
           </Button>
@@ -327,7 +327,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
           type="button"
           size="sm"
           onClick={onClose}
-          className="h-8 px-3 text-xs font-bold rounded-md bg-primary text-primary-foreground shrink-0 cursor-pointer"
+          className="h-8 px-3 text-xs font-bold rounded-md bg-primary-action hover:bg-primary-action-hover text-primary-foreground shrink-0 cursor-pointer"
         >
           تم
         </Button>

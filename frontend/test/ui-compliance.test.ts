@@ -235,6 +235,27 @@ describe('UI Compliance Guard — حلقة التركيز البؤرية (R24/R3
       expect(button, `button.tsx مفقود فيه ${token}`).toContain(token);
     }
   });
+
+  it('عناصر النص الأبيض التعبوية تستعمل bg-primary-action (تباين 5.17:1) لا bg-primary الخام (P1-02)', () => {
+    // في الثيم الداكن --primary = #3b82f6 للأيقونات والروابط (4.82:1 على خلفية داكنة)،
+    // لكن مع نص أبيض يعطي 3.67:1 فقط؛ لذا يجب استخدام bg-primary-action (#2563eb = 5.17:1).
+    const offenders: string[] = [];
+    for (const full of walkSource(SRC)) {
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      lines.forEach((line, i) => {
+        if (
+          /(?:^|[\s"'`:])bg-primary(?![-/a-z])/.test(line) &&
+          /\btext-primary-foreground\b/.test(line)
+        ) {
+          offenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+      });
+    }
+    expect(
+      offenders,
+      `استخدام bg-primary مع text-primary-foreground (استخدم bg-primary-action):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
 });
 
 describe('UI Compliance Guard — طبقات z-index', () => {

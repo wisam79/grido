@@ -190,7 +190,7 @@ const RailToolButton = React.memo(function RailToolButton({
 
           {showBadge && (
             <span
-              className="absolute top-0 end-0 min-w-3.5 h-3.5 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
+              className="absolute top-0 end-0 min-w-3.5 h-3.5 px-1 rounded-full bg-primary-action text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
               aria-hidden="true"
             >
               {badgeCount > 99 ? '99+' : badgeCount}
@@ -581,7 +581,7 @@ export function CompactToolLauncher({
                   data-testid="compact-tool-launcher"
                   aria-label="لوحة الأدوات"
                   className={cn(
-                    'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
+                    'h-10 w-10 rounded-full bg-primary-action text-primary-foreground shadow-fluent-16 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     'transition-colors duration-100',
                   )}

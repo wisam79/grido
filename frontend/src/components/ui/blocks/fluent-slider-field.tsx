@@ -124,8 +124,13 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       window.clearTimeout(keyCommitTimerRef.current);
       keyCommitTimerRef.current = null;
     }
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    flushPending();
     onCommitRef.current?.(latestValRef.current);
-  }, []);
+  }, [flushPending]);
 
   const handleDragEnd = useCallback(() => {
     if (rafRef.current !== null) {
@@ -178,16 +183,15 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         rafRef.current = requestAnimationFrame(flushPending);
       }
 
-      // تعديلات لوحة المفاتيح (أسهم/Home/End) لا تُطلق pointerdown/up
+      // Thumb keyboard edits share the numeric field's pulse: commit on
+      // keyup/blur, not only after a timer that can run after Undo.
       if (!isDraggingRef.current) {
+        keyPulseActiveRef.current = true;
         if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
-        keyCommitTimerRef.current = window.setTimeout(() => {
-          keyCommitTimerRef.current = null;
-          onCommitRef.current?.(newVal);
-        }, 400);
+        keyCommitTimerRef.current = window.setTimeout(pulseCommit, 400);
       }
     },
-    [flushPending],
+    [flushPending, pulseCommit],
   );
 
   const handleValueCommit = useCallback(
@@ -314,7 +318,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
               onClick={resetToDefault}
               aria-label="إعادة تعيين إلى القيمة الافتراضية"
               title="إعادة تعيين"
-              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             >
               <ArrowCounterClockwise className="w-3 h-3" weight="bold" />
             </button>
@@ -324,7 +328,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       <span
         dir="ltr"
         title={editable ? `من ${min} إلى ${max}${unit ? ` ${unit}` : ''}` : undefined}
-        className="flex min-w-14 items-center justify-between gap-1 font-mono text-control tabular-nums bg-input ps-1.5 pe-1 py-0.5 rounded-md border border-control-border text-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
+        className="flex min-w-14 min-h-6 items-center justify-between gap-1 font-mono text-control tabular-nums bg-input ps-1.5 pe-1 py-0.5 rounded-md border border-control-border text-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
       >
         {editable ? (
           <input
@@ -340,7 +344,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
             onKeyDown={handleNumericKeyDown}
             onKeyUp={handleNumericKeyUp}
             disabled={disabled}
-            className="w-9 bg-transparent text-center outline-none font-mono text-control tabular-nums text-inherit"
+            className="w-9 h-6 bg-transparent text-center outline-none font-mono text-control tabular-nums text-inherit"
           />
         ) : (
           <span className="text-center px-0.5">{displayVal}</span>
@@ -385,6 +389,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           onValueChange={handleChange}
           onValueCommit={handleValueCommit}
           onPointerDown={handlePointerDown}
+          onKeyUp={pulseCommit}
+          onBlur={pulseCommit}
           className="py-2 min-w-0 flex-1"
         />
 
@@ -420,6 +426,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         onValueChange={handleChange}
         onValueCommit={handleValueCommit}
         onPointerDown={handlePointerDown}
+        onKeyUp={pulseCommit}
+        onBlur={pulseCommit}
         className="py-1"
       />
     </div>

@@ -55,86 +55,95 @@ function isEmptyWorkspace(data: {
 // لانطلق حفظٌ بلا معنى: savedAt جديد في كل نداء مثلاً).
 const SERIALIZER_METADATA_KEYS = new Set(['version', 'savedAt', 'embeddedAssets']);
 
-// ─── التفريغ النهائي قبل إغلاق النافذة (H5 من تدقيق 2026-10-08) ────────────
-// كان المسار القديم يعتمد على كتابة عائمة غير منتظرة داخل تنظيف React تسابق
-// `Quit()`: أي تعديل في آخر ثانيتين قبل الإغلاق يُفقد. صار التفريغ دالة
-// قابلة للانتظار يستدعيها مُغلِّق النافذة (ومستمع beforeunload احتياطاً).
-let flushInFlight: Promise<void> | null = null;
-// 🛡️ مسار كتابة واحد: بصمة آخر كتابة مقبولة — بصمة المستند الثابتة (بدون
-// savedAt) مشتركة بين التفريغ والحفظ المنظم. كانت السلسلة الكاملة تتضمن
-// savedAt فتختلف كل مرة حتى لو بقي المحتوى مكافئاً؛ الآن مرور الزمن وحده
-// لا يولّد كتابة جديدة والمحتوى المكافئ لا يُكتب مرتين.
-let lastAcceptedFingerprint = '';
-// الكتابة الجارية للحفظ المنظم — ينتظرها التفريغ قبل التسلسل من جديد.
-let saveDraftInFlight: Promise<void> | null = null;
+// One writer survives hook cleanup/remount. The tail covers complete operations,
+// not a raw IPC promise whose continuation may start another write behind a flush.
+let persistenceTail: Promise<void> = Promise.resolve();
+let lastAccepted: { fingerprint: string; session: number } | null = null;
+// Recovery actions may only delete the disk revision they originally offered.
+let draftRevision = 0;
 
-// savedAt يُختم على الكتابة المقبولة فقط — البصمة تُحسب دون تاريخ، والملف
-// المكتوب يحمل تاريخ لحظة القبول نفسها.
+function queuePersistence<T>(operation: () => Promise<T>): Promise<T> {
+  const result = persistenceTail.then(operation);
+  // A failed operation must not poison subsequent saves/clears.
+  persistenceTail = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
 const stampAcceptedPayload = (doc: Omit<ProjectFileV1, 'savedAt'>): string =>
   JSON.stringify({ ...doc, savedAt: new Date().toISOString() });
 
+async function writeCurrentDraft(session: number): Promise<void> {
+  if (session !== getDocumentSession()) return;
+  // Sample only after taking writer ownership: queued payloads may already be stale.
+  const doc = buildProjectDocument(useEditorStore.getState());
+  if (isEmptyWorkspace(doc)) return;
+  const fingerprint = JSON.stringify(doc);
+  if (lastAccepted?.session === session && lastAccepted.fingerprint === fingerprint) return;
+
+  await SaveAutoSave(stampAcceptedPayload(doc));
+  draftRevision += 1;
+  // An already-dispatched write cannot be cancelled, but cannot claim a new document.
+  lastAccepted = session === getDocumentSession() ? { fingerprint, session } : null;
+}
+
 /**
- * كتابة فورية للحالة الحالية على القرص. تُعيد true إذا لا يوجد ما يُكتب أو
- * نجحت الكتابة، وfalse عند الفشل — الاستدعاء لا يرمي أبداً.
+ * Queue a clear behind existing writes and ahead of later saves. Reset callers
+ * reset synchronously first, then call this helper with the new session. A clear
+ * superseded by another reset/load is a no-op; recovery actions also pin a revision.
+ * Returns whether the clear ran; backend failures still reject to the caller.
  */
+export function clearAutoSave(
+  expectedSession = getDocumentSession(),
+  expectedRevision?: number,
+): Promise<boolean> {
+  return queuePersistence(async () => {
+    if (expectedSession !== getDocumentSession()) return false;
+    if (expectedRevision !== undefined && expectedRevision !== draftRevision) return false;
+    await ClearAutoSave();
+    draftRevision += 1;
+    lastAccepted = null;
+    return true;
+  });
+}
+
+/** Flush current live content in the same ordered writer; never reject. */
 export async function flushAutoSave(): Promise<boolean> {
-  if (flushInFlight) {
-    return flushInFlight.then(() => true).catch(() => false);
-  }
-
-  // انتظر كتابة منظمة جارية ثم أعد التسلسل من المتجر — لئلا تُكتب لقطة أقدم فوق أحدث.
-  if (saveDraftInFlight) {
-    try {
-      await saveDraftInFlight;
-    } catch {
-      /* مسجلة في مسارها */
-    }
-  }
-
-  const freshState = useEditorStore.getState();
-  const freshDoc = buildProjectDocument(freshState);
-  if (isEmptyWorkspace(freshDoc)) return true;
-
-  const fingerprint = JSON.stringify(freshDoc);
-  if (fingerprint === lastAcceptedFingerprint) return true;
-
-  flushInFlight = (async () => {
-    await SaveAutoSave(stampAcceptedPayload(freshDoc));
-    lastAcceptedFingerprint = fingerprint;
-  })();
-
   try {
-    await flushInFlight;
+    await queuePersistence(() => writeCurrentDraft(getDocumentSession()));
     return true;
   } catch (err) {
     logger.error('Failed to flush autosave draft', err);
     return false;
-  } finally {
-    flushInFlight = null;
   }
 }
 
 export function useAutoSave() {
   // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
   useEffect(() => {
-    // 🛡️ حارس إعادة التركيب/StrictMode: الجلب الأساسي يغيّر حالة المتجر، فلو
-    // نُفِّذ مرتين يقرأ الحارس الثاني حالة لم يعد فيها «مساحة نقية» ويُظهر
-    // إشعاراً كاذباً بعرض حذف مسودة المستخدم (M42 من تدقيق 2026-10-08).
-    let draftLoaded = false;
+    let disposed = false;
+    const loadSession = getDocumentSession();
+    const loadedRevision = draftRevision;
+    const clearOfferedDraft = () => clearAutoSave(loadSession, loadedRevision);
 
     const initAutoSave = async () => {
       try {
         const saved = await LoadAutoSave();
+        if (disposed) return;
         if (saved) {
           try {
             const parsed = deserializeProjectFile(JSON.parse(saved));
-            if (draftLoaded) return;
             //
             // 🛡️ حارس قِدم: التحميل غير متزامن — إن كان المستخدم قد بدأ التحرير
             // أو فتح مشروعاً/أعد الضبط قبل وصول المسودة، فلا يحق لنا استبدال
             // حالته الحالية (كانت المسودة تطمس العمل الجديد بصمت).
-            if (!isPristineWorkspace()) {
-              draftLoaded = true;
+            if (
+              getDocumentSession() !== loadSession ||
+              loadedRevision !== draftRevision ||
+              !isPristineWorkspace()
+            ) {
               // تدقيق 2026-11-03 (Bug#3): سباق ملف الإقلاع — وصول المسودة بعد بدء
               // العمل كان يُتجاهل بخيار حذف فقط، والحفظ المنظم المزاح يكتب فوق ملف
               // المسودة بعد ثانيتين فلا يبقى لها أثر على القرص. نلتقط نص المسودة
@@ -162,7 +171,7 @@ export function useAutoSave() {
                 cancel: {
                   label: 'حذف المسودة',
                   onClick: () => {
-                    void ClearAutoSave().catch((err: unknown) => {
+                    void clearOfferedDraft().catch((err: unknown) => {
                       logger.error('Failed to clear stale autosave draft', err);
                     });
                   },
@@ -170,20 +179,20 @@ export function useAutoSave() {
               });
               return;
             }
-            draftLoaded = true;
             // 🛡️ تمرير `projectId` (تدقيق 2026-10-08): `loadProject` كان يهبط به
             // إلى null فيهبط `state.projectId || uid()` إلى صنع معرّف جديد — أي
             // حفظ بعد است المسودة يُنشئ مشروعاً مكرراً في المكتبة بدل تحديث الأصلي.
             useEditorStore.getState().loadProject(parsed, parsed.projectId ?? null);
+            const restoredSession = getDocumentSession();
             toast.info('تم استعادة مسودة العمل السابقة تلقائياً', {
               action: {
                 label: 'بدء من جديد',
                 onClick: () => {
+                  if (getDocumentSession() !== restoredSession) return;
                   useEditorStore.getState().reset();
-                  void ClearAutoSave().catch((err: unknown) => {
+                  void clearAutoSave().catch((err: unknown) => {
                     logger.error('Failed to clear autosave draft', err);
                   });
-                  lastAcceptedFingerprint = '';
                 },
               },
             });
@@ -192,14 +201,13 @@ export function useAutoSave() {
             // بايت واحد فاسد يُدمّر النسخة الوحيدة من عمل غير محفوظ بلا إشعار.
             // الآن نُبقي الملف كما هو (أول حفظ ناجح يكتب فوقه) ونُبلغ المستخدم،
             // والحذف صار قراراً يدوياً.
-            draftLoaded = true;
             logger.error('Failed to parse autosave draft — preserved on disk', e);
             toast.error('تعذّر قراءة مسودة العمل السابقة', {
               description: 'أُبقي الملف كما هو. أعد الفتح بعد إصلاح المشكلة أو امسحه يدوياً.',
               action: {
                 label: 'مسح المسودة',
                 onClick: () => {
-                  void ClearAutoSave().catch((err: unknown) => {
+                  void clearOfferedDraft().catch((err: unknown) => {
                     logger.error('Failed to clear corrupt autosave draft', err);
                   });
                 },
@@ -211,7 +219,10 @@ export function useAutoSave() {
         logger.error('Failed to load autosave', err);
       }
     };
-    initAutoSave();
+    void initAutoSave();
+    return () => {
+      disposed = true;
+    };
   }, []);
 
   // 2. تفريغ نهائي احتياطي عند إعادة التحميل/الخروج (لا يمكن انتظار النتيجة هنا)
@@ -230,7 +241,7 @@ export function useAutoSave() {
   // 2. المراقبة والحفظ التلقائي المنظم في الخلفية (بعد ثانيتين من توقف أي تفاعل)
   useEffect(() => {
     let isSaving = false;
-    let pendingSave: { fingerprint: string; payload: string; session: number } | null = null;
+    let pendingSave: number | null = null;
     let disposed = false;
     // عدّاد محاولات متتالية بلا نجاح — يمنع وميض إشعار عند كل تعديل لاحق
     let consecutiveFailures = 0;
@@ -252,57 +263,33 @@ export function useAutoSave() {
       idleHandle = null;
     };
 
-    // دالة الحفظ الفعلي للمسودة بشكل متسلسل لحماية الملفات من التلف
-    const saveDraft = async (fingerprint: string, payload: string, session: number) => {
+    // Coalesce background requests, but keep writer ownership shared with flush/clear.
+    // Store only a session: content is sampled when the ordered operation starts.
+    const saveDraft = async (session: number) => {
       if (isSaving) {
-        pendingSave = { fingerprint, payload, session };
+        pendingSave = session;
         return;
       }
 
       isSaving = true;
       try {
-        // 🛡️ انتظر تفريغاً جارياً ثم أعد التسلسل من المتجر الحي — لئلا تُكتب
-        // اللقطة الممررة (الأقدم) فوق ما كتبه التفريغ للتو.
-        if (flushInFlight) {
-          try {
-            await flushInFlight;
-          } catch {
-            /* مسجل في مسار التفريغ */
-          }
-          const live = useEditorStore.getState();
-          const liveDoc = buildProjectDocument(live);
-          if (isEmptyWorkspace(liveDoc)) return;
-          const liveFingerprint = JSON.stringify(liveDoc);
-          if (liveFingerprint === lastAcceptedFingerprint) return;
-          fingerprint = liveFingerprint;
-          payload = stampAcceptedPayload(liveDoc);
-        }
-        saveDraftInFlight = SaveAutoSave(payload);
-        await saveDraftInFlight;
-        lastAcceptedFingerprint = fingerprint;
+        await queuePersistence(() => writeCurrentDraft(session));
         consecutiveFailures = 0;
       } catch (err) {
-        // 🛡️ H6 من تدقيق 2026-10-08: فشل الحفظ التلقائي (امتلاء القرص، تجاوز
-        // سقف الحمولة) كان يُطبع في وحدة التحكم فقط فيتوقف الحفظ صامتاً بينما
-        // يظن المستخدم أن عمله محفوظ. الآن يُعلَن صراحةً مع نص الخطأ الحقيقي.
         consecutiveFailures += 1;
         logger.error('Failed to save autosave draft', err);
-        if (consecutiveFailures === 1) {
+        if (consecutiveFailures === 1 && session === getDocumentSession()) {
           toast.error(toErrorMessage(err, 'فشل حفظ مسودة العمل التلقائية'), {
             description: 'لن تُحفظ تعديلاتك حتى تُحل المشكلة (مساحة القرص مثلاً).',
           });
         }
       } finally {
         isSaving = false;
-        saveDraftInFlight = null;
-        // السلسلة تفرّغ آخر مسودة معلّقة حتى بعد إلغاء التنشيط (كتابة نهائية
-        // بأحدث حالة) — ومسودة من جلسة سابقة تُهمل كي لا تطبع المستند الجديد.
+        // Cleanup's latest request is retained, but never a previous document's payload.
         if (pendingSave !== null) {
-          const next = pendingSave;
+          const nextSession = pendingSave;
           pendingSave = null;
-          if (next.session === getDocumentSession()) {
-            saveDraft(next.fingerprint, next.payload, next.session);
-          }
+          if (nextSession === getDocumentSession()) void saveDraft(nextSession);
         }
       }
     };
@@ -315,20 +302,7 @@ export function useAutoSave() {
         // اللقطة الممسوكة وقت الجدولة تُكتب بعد reset/تحميل فتُحيي مسودة
         // محاها المستخدم، والآن تُرفض كتابة من جلسة أخرى أصلاً.
         if (getDocumentSession() !== scheduledSession) return;
-        const live = useEditorStore.getState();
-        const doc = buildProjectDocument(live);
-
-        if (isEmptyWorkspace(doc)) {
-          // مساحة العمل فارغة تماماً (تم مسح الكانفس أو الإعادة للوضع الافتراضي) — لا نحفظ مسودة فارغة
-          return;
-        }
-
-        // بصمة المستند الثابتة (بدون savedAt): المحتوى المكافئ لا يُكتب مرتين
-        const fingerprint = JSON.stringify(doc);
-        if (fingerprint === lastAcceptedFingerprint) {
-          return; // تخطي إذا لم تتغير مساحة العمل فعلياً
-        }
-        saveDraft(fingerprint, stampAcceptedPayload(doc), scheduledSession);
+        void saveDraft(scheduledSession);
       };
 
       if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
@@ -369,7 +343,7 @@ export function useAutoSave() {
         scheduledSession = session;
         debouncedSave.cancel();
         cancelPendingIdle();
-        if (pendingSave !== null && pendingSave.session !== session) pendingSave = null;
+        pendingSave = null;
         lastDeps = getDeps(state);
         return;
       }
@@ -395,21 +369,8 @@ export function useAutoSave() {
       unsubscribe();
       debouncedSave.cancel();
       cancelPendingIdle(); // (هـ) الـ idle المعلق يُلغى كي لا يشغّل runSave بعد التنظيف
-      // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات
-      const live = useEditorStore.getState();
-      const doc = buildProjectDocument(live);
-      if (!isEmptyWorkspace(doc)) {
-        const fingerprint = JSON.stringify(doc);
-        if (fingerprint !== lastAcceptedFingerprint) {
-          const payload = stampAcceptedPayload(doc);
-          const session = getDocumentSession();
-          if (isSaving) {
-            pendingSave = { fingerprint, payload, session };
-          } else {
-            saveDraft(fingerprint, payload, session);
-          }
-        }
-      }
+      // Final live-state request uses the same writer, including across remounts.
+      void saveDraft(getDocumentSession());
     };
   }, []);
 }

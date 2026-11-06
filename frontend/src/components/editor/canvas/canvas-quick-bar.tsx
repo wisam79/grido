@@ -268,7 +268,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
             variant="ghost"
             size="sm"
             onClick={() => selectElement(null)}
-            className="h-6 w-6 p-0 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground ms-0.5 cursor-pointer"
+            className="h-7 w-7 p-0 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground ms-0.5 cursor-pointer"
             aria-label="إغلاق الشريط"
           >
             <X className="w-3 h-3" weight="regular" />

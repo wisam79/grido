@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
 import { AddPhotoIcon } from '@/components/ui/image-icons';
+import { clearAutoSave } from '@/hooks/use-autosave';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
@@ -32,7 +33,7 @@ import { createLogger } from '@/lib/logger';
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
 
-import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
 // حوارات ثقيلة تُحمَّل عند أول فتح فقط: كانت تُستورد استيراداً ثابتاً فتدخل
 // الحزمة الرئيسية (projects يجرّ قاعدة المشاريع، phone-bridge يجرّ qrcode.react).
@@ -226,7 +227,7 @@ export function ToolbarFileOps() {
 
   const confirmClearCanvas = () => {
     useEditorStore.getState().reset();
-    ClearAutoSave().catch((err) => logger.error('Failed to clear autosave:', err));
+    void clearAutoSave().catch((err) => logger.error('Failed to clear autosave:', err));
   };
 
   return (

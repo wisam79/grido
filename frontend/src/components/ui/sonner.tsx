@@ -34,7 +34,7 @@ const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
           title: 'text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap',
           description: 'text-xs text-muted-foreground font-sans mt-0.5',
           actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary/90 text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
+            'group-[.toast]:bg-primary-action group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary-action-hover text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
           cancelButton:
             'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
           closeButton:

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,213 @@ func setupBackupTestDB(t *testing.T) (*gorm.DB, func()) {
 	}
 
 	return db, cleanup
+}
+
+type recordingBackupRepository struct {
+	domain.ProjectRepository
+	importCalls int
+}
+
+func (r *recordingBackupRepository) ImportProjects(projects []domain.Project, overwrite bool) error {
+	r.importCalls++
+	return r.ProjectRepository.ImportProjects(projects, overwrite)
+}
+
+func TestBackupService_ImportBackupRejectsMalformedProjectsWithoutMutation(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	cases := []struct {
+		name    string
+		entry   any
+		wantErr string
+	}{
+		{"null_entry", nil, "ID"},
+		{"missing_id", map[string]any{"name": "Broken backup"}, "ID"},
+		{"empty_id", map[string]any{"id": ""}, "ID"},
+		{"blank_id", map[string]any{"id": " \t\n"}, "ID"},
+		{"duplicate_id", map[string]any{"id": "original-1", "name": "Second duplicate"}, "duplicate"},
+	}
+	for _, field := range []string{"elements", "slots", "template", "collageTemplate", "printSettings", "editorState", "userGuides"} {
+		for _, invalid := range []struct{ name, value string }{
+			{"truncated", `{"imageSrc":`},
+			{"trailing_json", `[] {}`},
+			{"number", `42`},
+			{"boolean", `true`},
+			{"string", `"not project references"`},
+		} {
+			cases = append(cases, struct {
+				name    string
+				entry   any
+				wantErr string
+			}{field + "_" + invalid.name, map[string]any{"id": "broken", field: invalid.value}, field})
+		}
+	}
+
+	for _, mode := range []string{"merge", "overwrite"} {
+		for _, tc := range cases {
+			t.Run(mode+"/"+tc.name, func(t *testing.T) {
+				db, cleanup := setupBackupTestDB(t)
+				defer cleanup()
+				repo := &recordingBackupRepository{ProjectRepository: repository.NewProjectRepository(db)}
+				svc := NewBackupService(repo, &MockLicenseRepository{})
+				for _, p := range []domain.Project{
+					{ID: "original-1", Name: "Keep original", Elements: `[{"imageSrc":"/local-image/keep.jpg"}]`},
+					{ID: "original-2", Name: "Keep second", EditorState: `{"autofillImages":["/local-image/second.jpg"]}`},
+				} {
+					if err := repo.Save(&p); err != nil {
+						t.Fatal(err)
+					}
+				}
+				before, err := repo.FindAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				// A valid update precedes the bad entry: validation must finish
+				// before *any* import, not partially replace earlier projects.
+				payload, err := json.Marshal([]any{
+					map[string]any{"id": "original-1", "name": "Must not replace original", "elements": "[]"},
+					tc.entry,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := svc.ImportBackup(string(payload), mode); err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+					t.Errorf("expected validation error containing %q, got %v", tc.wantErr, err)
+				}
+				if repo.importCalls != 0 {
+					t.Errorf("malformed backup reached ImportProjects %d times", repo.importCalls)
+				}
+				after, err := repo.FindAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(after, before) {
+					t.Error("malformed backup changed the existing library")
+				}
+			})
+		}
+	}
+}
+
+func TestBackupService_ImportBackupRejectsTrailingDataWithoutMutation(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	for _, mode := range []string{"merge", "overwrite"} {
+		for _, trailing := range []string{` {"id":"extra"}`, ` []`, ` trailing`} {
+			t.Run(mode+trailing, func(t *testing.T) {
+				db, cleanup := setupBackupTestDB(t)
+				defer cleanup()
+				repo := &recordingBackupRepository{ProjectRepository: repository.NewProjectRepository(db)}
+				svc := NewBackupService(repo, &MockLicenseRepository{})
+				if err := repo.Save(&domain.Project{ID: "original", Name: "Keep original"}); err != nil {
+					t.Fatal(err)
+				}
+				before, err := repo.FindAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := svc.ImportBackup(`[{"id":"replacement"}]`+trailing, mode); err == nil {
+					t.Error("expected trailing JSON/data to be rejected")
+				}
+				if repo.importCalls != 0 {
+					t.Error("trailing data reached ImportProjects")
+				}
+				after, err := repo.FindAll()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(after, before) {
+					t.Error("trailing data changed the existing library")
+				}
+			})
+		}
+	}
+}
+
+func TestBackupService_ImportBackupPreservesLegacyReferenceFormats(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	for _, tc := range []struct {
+		name  string
+		value any
+	}{
+		{"empty", ""},
+		{"whitespace", " \t\n"},
+		{"null_field", nil},
+		{"null_json", "null"},
+		{"array", `[{"imageSrc":"/local-image/not-present.jpg","futureField":true}]`},
+		{"object", `{"nested":{"originalImageSrc":"C:\\legacy\\Media\\photo.png"},"futureVersion":99}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, cleanup := setupBackupTestDB(t)
+			defer cleanup()
+			repo := repository.NewProjectRepository(db)
+			svc := NewBackupService(repo, &MockLicenseRepository{})
+			entry := map[string]any{"id": "legacy", "name": "Legacy project", "futureField": true}
+			for _, field := range []string{"elements", "slots", "template", "collageTemplate", "printSettings", "editorState", "userGuides"} {
+				entry[field] = tc.value
+			}
+			payload, err := json.Marshal([]any{entry, map[string]any{"id": "minimal"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, mode := range []string{"overwrite", "merge"} {
+				if err := svc.ImportBackup(string(payload), mode); err != nil {
+					t.Fatalf("legacy format must remain valid in %s mode: %v", mode, err)
+				}
+			}
+			p, err := repo.FindByID("legacy")
+			if err != nil {
+				t.Fatal(err)
+			}
+			want, _ := tc.value.(string)
+			for _, got := range []domain.JSONText{p.Elements, p.Slots, p.Template, p.CollageTemplate, p.PrintSettings, p.EditorState, p.UserGuides} {
+				if string(got) != want {
+					t.Errorf("legacy reference value changed: got %q, want %q", got, want)
+				}
+			}
+			if _, err := repo.FindByID("minimal"); err != nil {
+				t.Fatalf("legacy project with omitted optional fields must survive: %v", err)
+			}
+		})
+	}
+}
+
+func TestBackupService_ImportBackupLegacyNullIsNoop(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	for _, mode := range []string{"merge", "overwrite"} {
+		t.Run(mode, func(t *testing.T) {
+			db, cleanup := setupBackupTestDB(t)
+			defer cleanup()
+			repo := &recordingBackupRepository{ProjectRepository: repository.NewProjectRepository(db)}
+			svc := NewBackupService(repo, &MockLicenseRepository{})
+			if err := repo.Save(&domain.Project{ID: "original", Name: "Keep original"}); err != nil {
+				t.Fatal(err)
+			}
+			before, err := repo.FindAll()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := svc.ImportBackup(" \nnull\t", mode); err != nil {
+				t.Fatalf("legacy null export must be accepted without mutation: %v", err)
+			}
+			if repo.importCalls != 0 {
+				t.Error("legacy null must not call ImportProjects")
+			}
+			after, err := repo.FindAll()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(after, before) {
+				t.Error("legacy null erased the existing library")
+			}
+
+			// An explicit empty array still represents a deliberate replacement.
+			if err := svc.ImportBackup("[]", "overwrite"); err != nil {
+				t.Fatal(err)
+			}
+			if count, err := repo.Count(); err != nil || count != 0 {
+				t.Fatalf("explicit empty overwrite must clear the library: count=%d err=%v", count, err)
+			}
+		})
+	}
 }
 
 func TestBackupService_ExportAndImport(t *testing.T) {

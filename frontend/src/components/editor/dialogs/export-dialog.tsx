@@ -151,22 +151,40 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   // بلا نزيف لا شيء يُرسم، فالمفتاح يُعطَّل مع تلميح بدل لا-فعل صامت.
   const cropMarksEnabled = bleedMM > 0;
 
-  // تصفير مؤشرات التحميل ومزامنة هوامش النزيف للمطابع (Fluent 2 Wait UX Invariant)
+  // إغلاق الجولة يُبطل رمزها نهائياً؛ إعادة الفتح لا تُحيي العمل المعلّق.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
     setProgress(0);
     SetTaskbarProgress(0, 'none').catch(() => {});
-    if (!open) {
+    isCancelledRef.current = !open;
+    return () => {
       isCancelledRef.current = true;
-    } else {
-      isCancelledRef.current = false;
-      if (showBleedGuides && bleedMarginMM > 0) {
-        setBleedMM(bleedMarginMM);
-        setShowCropMarks(true);
-      }
+      runTokenRef.current += 1;
+      SetTaskbarProgress(0, 'none').catch(() => {});
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (open && showBleedGuides && bleedMarginMM > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBleedMM(bleedMarginMM);
+      setShowCropMarks(true);
     }
   }, [open, showBleedGuides, bleedMarginMM]);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      // الإبطال متزامن لكل مسارات الإغلاق، قبل وصول أي وعد مؤجّل.
+      isCancelledRef.current = true;
+      runTokenRef.current += 1;
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = '';
+      }
+      triggerMemoryTrim();
+    }
+    onOpenChange(next);
+  };
 
   const handleExport = async () => {
     setLoading(true);
@@ -179,6 +197,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     SetTaskbarProgress(0, 'normal').catch(() => {});
     setTimeout(async () => {
       try {
+        if (shouldStop()) return;
         // 🖨️ كثافة الحفظ: نفس القيمة المعروضة في «الدقة» أعلى الحوار (قالب →
         // إعدادات طباعة → 300). تُرسل لمسار الحفظ ليحقنها في بايتات PNG/JPEG
         // لكل ملف (المفرد والمُجلَّد) — TIFF/CMYK لا يحمل بيانات كثافة.
@@ -267,10 +286,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             skipBlobFetch: true,
           });
 
-          if (shouldStop()) {
-            SetTaskbarProgress(0, 'none').catch(() => {});
-            return;
-          }
+          if (shouldStop()) return;
 
           const ext = safeCmykFormat === 'tiff' ? 'tif' : 'jpg';
           const dateStr = new Date().toISOString().slice(0, 10);
@@ -279,10 +295,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
 
           const res = await downloadBlob(cmykBlob, name, undefined, undefined, sourceFilename);
+          // نتيجة الحفظ القديمة لا تملك تقدّم الجولة الجديدة ولا إشعاراتها.
+          if (shouldStop()) return;
           setProgress(100);
           SetTaskbarProgress(0, 'none').catch(() => {});
-          // المستخدم أغلق أثناء حوار الحفظ — لا رسائل مضللة بعد الإغلاق
-          if (shouldStop()) return;
           const outcome = classifySaveResult(res);
           if (outcome === 'success') {
             toast.success(`تم تصدير ${safeCmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
@@ -307,6 +323,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           // اختيار مجلد التصدير مرة واحدة لكافة الصور بدلاً من فتح نافذة لكل صورة
           const targetDir = await SelectExportDirectory();
+          if (shouldStop()) return;
           if (!targetDir) {
             setLoading(false);
             SetTaskbarProgress(0, 'none').catch(() => {});
@@ -338,10 +355,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             await new Promise((r) => setTimeout(r, 60));
           }
 
-          if (shouldStop()) {
-            SetTaskbarProgress(0, 'none').catch(() => {});
-            return;
-          }
+          if (shouldStop()) return;
 
           SetTaskbarProgress(0, 'none').catch(() => {});
           if (successCount > 0) {
@@ -373,10 +387,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               quality / 100,
               exportDpi,
             );
-            if (shouldStop()) {
-              SetTaskbarProgress(0, 'none').catch(() => {});
-              return;
-            }
+            if (shouldStop()) return;
             const ext = format === 'png' ? 'png' : 'jpg';
             const dateStr = new Date().toISOString().slice(0, 10);
             const name = template
@@ -385,10 +396,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
                 : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
             const res = await downloadBlob(finalBlob, name, undefined, exportDpi);
+            // المستخدم أغلق أثناء الحفظ — لا نغيّر حالة الجولة الجديدة.
+            if (shouldStop()) return;
             setProgress(100);
             SetTaskbarProgress(0, 'none').catch(() => {});
-            // المستخدم أغلق أثناء حوار الحفظ — خروج صامت بدل نجاح/فشل كاذب
-            if (shouldStop()) return;
             const outcome = classifySaveResult(res);
             if (outcome === 'success') {
               toast.success('تم تصدير الصورة بنجاح');
@@ -400,8 +411,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               toast.error('فشل حفظ الصورة');
             }
           } else if (shouldStop()) {
-            // إلغاء المستخدم — خروج صامت بدل خطأ مضلل
-            SetTaskbarProgress(0, 'none').catch(() => {});
+            // إلغاء المستخدم — الجولة القديمة لا تملك مؤشرات الجولة الحالية.
             return;
           } else {
             SetTaskbarProgress(0, 'none').catch(() => {});
@@ -409,13 +419,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           }
         }
       } catch (e) {
-        if (shouldStop()) {
-          // فشل بعد إغلاق المستخدم — تنظيف صامت بلا رسائل
-          SetTaskbarProgress(0, 'none').catch(() => {});
-        } else {
+        if (!shouldStop()) {
           SetTaskbarProgress(100, 'error').catch(() => {});
           setTimeout(() => {
-            SetTaskbarProgress(0, 'none').catch(() => {});
+            if (!shouldStop()) SetTaskbarProgress(0, 'none').catch(() => {});
           }, 2500);
           if (e instanceof CanvasTooLargeError) {
             toast.error(
@@ -427,33 +434,20 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           }
         }
       } finally {
-        setLoading(false);
-        SetTaskbarProgress(0, 'none').catch(() => {});
-        if (typeof document !== 'undefined' && document.body) {
-          document.body.style.pointerEvents = '';
+        if (!shouldStop()) {
+          setLoading(false);
+          SetTaskbarProgress(0, 'none').catch(() => {});
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.pointerEvents = '';
+          }
+          triggerMemoryTrim();
         }
-        triggerMemoryTrim();
       }
     }, 50);
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        // الإغلاق أثناء التصدير مسموح (X/Escape/خلفية/زر الإلغاء): يرفع راية
-        // الإلغاء عبر التأثير أدناه فتتوقف الحلقة عند أقرب فحص بصمت، وأي بدء
-        // جديد يُبطل الجولة القديمة عبر runToken (يمنع تصديرين متزامنين —
-        // خليفة إصلاح Bug#9 الذي كان يمنع الإغلاق كلياً فيحبس المستخدم).
-        if (!next && typeof document !== 'undefined' && document.body) {
-          document.body.style.pointerEvents = '';
-        }
-        if (!next) {
-          triggerMemoryTrim();
-        }
-        onOpenChange(next);
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         className="w-[calc(100%-2rem)] sm:max-w-lg font-cairo rounded-xl border border-border bg-card p-4 sm:p-5"
@@ -721,7 +715,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <DialogFooter className="gap-2 border-t border-border/60 pt-3">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="h-8 px-4 text-control font-semibold rounded-md cursor-pointer"
           >
             {loading ? 'إيقاف التصدير' : 'إلغاء'}

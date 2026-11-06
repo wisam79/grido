@@ -30,6 +30,7 @@ import {
   previewBlue,
   previewChecker,
 } from '@/lib/canvas/canvas-colors';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadCanvasBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,10 @@ interface RefineBgDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   element: { id?: string; imageSrc?: string; originalImageSrc?: string };
-  onSave: (newImageSrc: string) => void;
+  onSave: (
+    newImageSrc: string,
+    isActive?: () => boolean,
+  ) => void | boolean | Promise<void | boolean>;
 }
 
 type ToolType = 'erase' | 'restore' | 'defringe' | 'pan' | 'magic';
@@ -62,6 +66,28 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     visible: false,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const saveAttemptRef = useRef(0);
+  const saveInFlightRef = useRef(false);
+  useEffect(() => {
+    saveAttemptRef.current += 1;
+    saveInFlightRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSaving(false);
+    return () => {
+      saveAttemptRef.current += 1;
+      saveInFlightRef.current = false;
+    };
+  }, [open, element.id, element.imageSrc, element.originalImageSrc]);
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      saveAttemptRef.current += 1;
+      saveInFlightRef.current = false;
+      setIsSaving(false);
+    }
+    onOpenChange(next);
+  };
+
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
@@ -80,11 +106,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
-  // Global keyboard shortcuts and mouse wheel zoom & loading state cleanup
+  // Global keyboard shortcuts and mouse wheel zoom
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsSaving(false);
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCursorPos((p) => ({ ...p, visible: false }));
       return;
     }
@@ -538,31 +563,42 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     // ولو أُغلق/فُتح الحوار بلا صورة محمّلة (أو فشل تحميلها) كان `toDataURL`
     // ينتج PNG فارغاً يُكتب فوق imageSrc للعنصر — فقدان صامت للصورة الأصلية.
     const canvas = canvasRef.current;
-    if (!canvas || !originalImage) return;
+    if (!open || !canvas || !originalImage || saveInFlightRef.current) return;
 
+    const attempt = ++saveAttemptRef.current;
+    const session = getDocumentSession();
+    const isActive = () => attempt === saveAttemptRef.current && session === getDocumentSession();
+    saveInFlightRef.current = true;
     setIsSaving(true);
     try {
       // 🚀 بث ثنائي مباشر (Binary Streaming) إلى Go عبر uploadCanvasBlob لتفادي Base64 وHeap Bloat
       const uploadRes = await uploadCanvasBlob(canvas, 'image/png', undefined, 'refined.png');
+      if (!isActive()) return;
       const localPath = uploadRes.imageSrc;
       // التحقق من نتيجة الحفظ — مسار فارغ كان يكتب imageSrc فارغاً على العنصر
       // مع رسالة نجاح كاذبة (إصلاح Bug#20)
       if (!localPath || !localPath.startsWith('/local-image/')) {
         throw new Error('Invalid path returned from uploadCanvasBlob');
       }
-      onSave(localPath);
-      onOpenChange(false);
+      const committed = await onSave(localPath, isActive);
+      if (committed === false || !isActive()) return;
+      handleOpenChange(false);
       toast.success('تم حفظ التعديلات');
     } catch (err) {
-      logger.error('Save failed:', err);
-      toast.error(toErrorMessage(err, 'فشل حفظ التعديلات'));
+      if (isActive()) {
+        logger.error('Save failed:', err);
+        toast.error(toErrorMessage(err, 'فشل حفظ التعديلات'));
+      }
     } finally {
-      setIsSaving(false);
+      if (attempt === saveAttemptRef.current) {
+        saveInFlightRef.current = false;
+        setIsSaving(false);
+      }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 overflow-hidden fluent-specular"
         dir="rtl"
@@ -596,7 +632,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 variant={tool === 'erase' ? 'default' : 'outline'}
                 className={cn(
                   'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
-                  tool === 'erase' && 'bg-primary text-primary-foreground',
+                  tool === 'erase' && 'bg-primary-action text-primary-foreground',
                 )}
                 onClick={() => setTool('erase')}
               >
@@ -607,7 +643,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 variant={tool === 'defringe' ? 'default' : 'outline'}
                 className={cn(
                   'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
-                  tool === 'defringe' && 'bg-primary text-primary-foreground',
+                  tool === 'defringe' && 'bg-primary-action text-primary-foreground',
                 )}
                 onClick={() => setTool('defringe')}
               >
@@ -621,7 +657,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 variant={tool === 'restore' ? 'default' : 'outline'}
                 className={cn(
                   'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
-                  tool === 'restore' && 'bg-primary text-primary-foreground',
+                  tool === 'restore' && 'bg-primary-action text-primary-foreground',
                 )}
                 onClick={() => setTool('restore')}
               >
@@ -635,7 +671,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 variant={tool === 'magic' ? 'default' : 'outline'}
                 className={cn(
                   'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
-                  tool === 'magic' && 'bg-primary text-primary-foreground',
+                  tool === 'magic' && 'bg-primary-action text-primary-foreground',
                 )}
                 onClick={() => setTool('magic')}
               >
@@ -646,7 +682,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 variant={tool === 'pan' ? 'default' : 'outline'}
                 className={cn(
                   'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
-                  tool === 'pan' && 'bg-primary text-primary-foreground',
+                  tool === 'pan' && 'bg-primary-action text-primary-foreground',
                 )}
                 onClick={() => setTool('pan')}
               >
@@ -854,7 +890,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         >
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="text-xs font-semibold h-8 px-4 rounded-md"
           >
             إلغاء
@@ -862,7 +898,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           <Button
             onClick={handleSave}
             disabled={isSaving || !originalImage}
-            className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+            className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary-action hover:bg-primary-action-hover text-primary-foreground gap-1.5"
           >
             {isSaving ? (
               <>

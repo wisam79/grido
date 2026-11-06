@@ -572,7 +572,7 @@ export function DocumentScannerDialog({
               }
               disabled={!cornersReady || processor.isExporting}
               title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
-              className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary-action hover:bg-primary-action-hover text-primary-foreground shadow-xs transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               {processor.isExporting ? (
                 <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />

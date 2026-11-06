@@ -13,7 +13,12 @@ import {
   runCmykExport,
   applyBleedAndCropMarks,
 } from '../src/lib/export';
-import { SelectExportDirectory } from '../wailsjs/go/main/App';
+import { triggerMemoryTrim } from '../src/lib/memory-trim';
+import {
+  SelectExportDirectory,
+  SetTaskbarProgress,
+  SendNotification,
+} from '../wailsjs/go/main/App';
 
 // مسار CMYK: لقطة الكانفاس تُرفع ثم يحوّلها محرك الطباعة في Go، فنقرأ الملف الناتج.
 vi.mock('../src/lib/export', () => ({
@@ -38,6 +43,8 @@ vi.mock('../wailsjs/go/main/App', () => ({
   SaveFileDialog: vi.fn(() => Promise.resolve('success')),
 }));
 
+vi.mock('../src/lib/memory-trim', () => ({ triggerMemoryTrim: vi.fn() }));
+
 vi.mock('sonner', () => ({
   toast: { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
@@ -58,6 +65,16 @@ const clickExportAndSettle = async () => {
   });
   await waitFor(() => expect(screen.getByRole('button', { name: 'تصدير' })).toBeEnabled());
 };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 class DecodedImage {
   static fail = false;
@@ -123,6 +140,119 @@ describe('ExportDialog Component Tests', () => {
     fireEvent.click(cancelBtn);
 
     expect(handleOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  describe('export attempt ownership', () => {
+    const renderSession = () => {
+      useEditorStore.setState({ mode: 'single', elements: [] });
+      const onOpenChange = vi.fn();
+      const ui = (open: boolean) => (
+        <TooltipProvider>
+          <ExportDialog open={open} onOpenChange={onOpenChange} />
+        </TooltipProvider>
+      );
+      const view = render(ui(true));
+      return { ...view, setOpen: (open: boolean) => view.rerender(ui(open)), onOpenChange };
+    };
+
+    it('does not revive a pending capture when closed and reopened without another export', async () => {
+      const capture = deferred<Blob | null>();
+      mockExportCanvas.mockReturnValueOnce(capture.promise);
+      const session = renderSession();
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockExportCanvas).toHaveBeenCalledTimes(1));
+
+      session.setOpen(false);
+      session.setOpen(true);
+      await act(async () => capture.resolve(new Blob(['cancelled capture'])));
+
+      expect(mockDownloadBlob).not.toHaveBeenCalled();
+      expect(SendNotification).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(session.onOpenChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'تصدير' })).toBeEnabled();
+    });
+
+    it.each(['resolve', 'reject'] as const)(
+      'does not let an old capture %s clear a newer export state',
+      async (completion) => {
+        const oldCapture = deferred<Blob | null>();
+        const newCapture = deferred<Blob | null>();
+        mockExportCanvas
+          .mockReturnValueOnce(oldCapture.promise)
+          .mockReturnValueOnce(newCapture.promise);
+        const session = renderSession();
+        fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+        await waitFor(() => expect(mockExportCanvas).toHaveBeenCalledTimes(1));
+        session.setOpen(false);
+        session.setOpen(true);
+        fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+        await waitFor(() => expect(mockExportCanvas).toHaveBeenCalledTimes(2));
+        vi.mocked(SetTaskbarProgress).mockClear();
+        vi.mocked(triggerMemoryTrim).mockClear();
+
+        try {
+          await act(async () => {
+            if (completion === 'resolve') oldCapture.resolve(new Blob(['old capture']));
+            else oldCapture.reject(new Error('old capture failed'));
+          });
+
+          expect(mockDownloadBlob).not.toHaveBeenCalled();
+          expect(toast.error).not.toHaveBeenCalled();
+          expect(session.onOpenChange).not.toHaveBeenCalled();
+          expect(screen.getByRole('button', { name: 'جاري التصدير ...' })).toBeDisabled();
+          expect(SetTaskbarProgress).not.toHaveBeenCalled();
+          expect(triggerMemoryTrim).not.toHaveBeenCalled();
+        } finally {
+          await act(async () => newCapture.resolve(new Blob(['new capture'])));
+        }
+        expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+        expect(session.onOpenChange).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it('ignores an old save result while a newer capture owns progress', async () => {
+      const oldSave = deferred<string>();
+      const newCapture = deferred<Blob | null>();
+      mockDownloadBlob.mockReturnValueOnce(oldSave.promise);
+      const session = renderSession();
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockDownloadBlob).toHaveBeenCalledTimes(1));
+      session.setOpen(false);
+      session.setOpen(true);
+      mockExportCanvas.mockReturnValueOnce(newCapture.promise);
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockExportCanvas).toHaveBeenCalledTimes(2));
+      vi.mocked(SetTaskbarProgress).mockClear();
+
+      try {
+        await act(async () => oldSave.resolve('success'));
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(SendNotification).not.toHaveBeenCalled();
+        expect(session.onOpenChange).not.toHaveBeenCalled();
+        expect(SetTaskbarProgress).not.toHaveBeenCalled();
+        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'جاري التصدير ...' })).toBeDisabled();
+      } finally {
+        await act(async () => newCapture.resolve(new Blob(['new capture'])));
+      }
+      expect(mockDownloadBlob).toHaveBeenCalledTimes(2);
+      expect(session.onOpenChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('invalidates a pending capture on unmount', async () => {
+      const capture = deferred<Blob | null>();
+      mockExportCanvas.mockReturnValueOnce(capture.promise);
+      const session = renderSession();
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockExportCanvas).toHaveBeenCalledTimes(1));
+      session.unmount();
+      await act(async () => capture.resolve(new Blob(['unmounted capture'])));
+
+      expect(mockDownloadBlob).not.toHaveBeenCalled();
+      expect(SendNotification).not.toHaveBeenCalled();
+      expect(session.onOpenChange).not.toHaveBeenCalled();
+    });
   });
 
   describe('R-04: preflight covers every export branch', () => {

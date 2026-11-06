@@ -118,12 +118,26 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 
 	var projects []domain.Project
 	// فك متدفق فوق نفس السلسلة — Unmarshal([]byte(...)) كان ينسخ 50MB كاملة
-	if err := json.NewDecoder(strings.NewReader(jsonData)).Decode(&projects); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(jsonData))
+	if err := decoder.Decode(&projects); err != nil {
 		return fmt.Errorf("failed to parse backup JSON data: %w", err)
+	}
+	// Decode يقبل أول قيمة فقط؛ لا يجوز استبدال المكتبة ببادئة ملف تالف.
+	if _, err := decoder.Token(); err != io.EOF {
+		return fmt.Errorf("backup JSON must contain exactly one value")
 	}
 
 	if mode != "merge" && mode != "overwrite" {
 		return fmt.Errorf("invalid backup import mode: %q (expected %q or %q)", mode, "merge", "overwrite")
+	}
+
+	// بعض المصدّرات القديمة أعادت null لمكتبة nil: نقبلها بلا تغيير، لا كأمر
+	// حذف. المصفوفة الصريحة [] تبقى قابلة للاستيراد بوضع overwrite لتفريغها.
+	if projects == nil {
+		return nil
+	}
+	if err := validateBackupProjects(projects); err != nil {
+		return err
 	}
 
 	// Check licensing limits
@@ -160,6 +174,45 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 		return fmt.Errorf("failed to import projects to repository: %w", err)
 	}
 
+	return nil
+}
+
+// validateBackupProjects completes validation before either import mode can
+// mutate the library. Keep legacy optional fields and object/array envelopes;
+// do not reinterpret paths, require local files, or impose a newer DTO schema.
+func validateBackupProjects(projects []domain.Project) error {
+	ids := make(map[string]struct{}, len(projects))
+	for i := range projects {
+		p := &projects[i]
+		if strings.TrimSpace(p.ID) == "" {
+			return fmt.Errorf("backup project %d: ID cannot be empty", i+1)
+		}
+		if _, exists := ids[p.ID]; exists {
+			return fmt.Errorf("backup project %d: duplicate ID %q", i+1, p.ID)
+		}
+		ids[p.ID] = struct{}{}
+
+		for _, field := range []struct {
+			name  string
+			value domain.JSONText
+		}{
+			{"elements", p.Elements},
+			{"slots", p.Slots},
+			{"template", p.Template},
+			{"collageTemplate", p.CollageTemplate},
+			{"printSettings", p.PrintSettings},
+			{"editorState", p.EditorState},
+			{"userGuides", p.UserGuides},
+		} {
+			value := strings.TrimSpace(string(field.value))
+			if value == "" || value == "null" {
+				continue
+			}
+			if (value[0] != '{' && value[0] != '[') || !json.Valid([]byte(value)) {
+				return fmt.Errorf("backup project %d (%q): %s must contain a JSON object, array, or null", i+1, p.ID, field.name)
+			}
+		}
+	}
 	return nil
 }
 

@@ -105,13 +105,15 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=157
+vitest_test_files=158
 e2e_spec_files=30
 go_test_files=61
 docs_files=6
 ```
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
+
+مراجعة 6 نوفمبر 2026 — التدقيق والإصلاح الوظيفي الشامل: أضيف `frontend/test/image-dialog-lifecycle.test.tsx` لتغطية ملكية نتائج القص والتعديل اليدوي (حفظ ناجح، إلغاء، تبديل صورة/مستند، فك التركيب)، فأصبح عداد Vitest **158** وفق `node scripts/docs-gate.mjs --strict-refs`. بقي E2E **30** وGo **61** ومستندات الجذر **6**؛ اختبارات Go والتراجع والحفظ الأخرى توسعة ملفات قائمة. التقرير الجديد `docs/reviews/22-app-debugging-2026-11-06.md` داخل مجلد التقارير المسجل. نتائج التشغيل المستهدف وأوامره في التقرير وفي `docs/testing_guide.md`؛ لا حزمة شاملة أو تغطية أو CI أو E2E محلي، ولا تغيير عقد IPC.
 
 مراجعة 5 نوفمبر 2026 — بوابة التهيئة والترخيص: توسعت الاختبارات في ملفين قائمين بلا تغيير `docs-metrics`. شُغّل `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/App.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` فنجح **23/23**، ونفس الأمر مع `test/license-slice.test.ts` فنجح **39/39**؛ النتيجتان بتاريخ 2026-11-05. حالات عدم اختفاء السبلاش بمهلة فقط، الخطأ/إعادة المحاولة، الإلغاء وStrictMode، ملكية الطلب وأجيال المصادقة مضافة دون ملف جديد أو تغيير Go/IPC. توثيق العقد في `docs/developer_guide.md`، والأرقام السابقة للشاشة في الفقرات التالية تخص مراحلها السابقة.
 

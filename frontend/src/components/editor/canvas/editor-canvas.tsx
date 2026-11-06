@@ -588,7 +588,7 @@ export const EditorCanvas = React.memo(
                   }}
                 >
                   <div
-                    className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-micro font-bold shadow-fluent-8 ${
+                    className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary-action text-primary-foreground font-mono text-micro font-bold shadow-fluent-8 ${
                       dragGuideState.type === 'h' ? 'left-3 -top-5' : 'top-3 left-2'
                     }`}
                   >

@@ -300,7 +300,7 @@ export function CollageAutofillTab() {
 
         {assignment ? (
           thumbSrc ? (
-            <span className="absolute start-0.5 top-0.5 min-w-4 h-4 px-1 rounded-sm bg-primary text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center shadow-xs">
+            <span className="absolute start-0.5 top-0.5 min-w-4 h-4 px-1 rounded-sm bg-primary-action text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center shadow-xs">
               {assignment.order}
             </span>
           ) : (

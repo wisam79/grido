@@ -430,7 +430,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
               size="sm"
               onClick={handleGenerate}
               disabled={!dataset || mappedFieldCount === 0 || isGenerating}
-              className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary-action text-primary-foreground hover:bg-primary-action-hover transition-colors"
             >
               {isGenerating ? (
                 <>

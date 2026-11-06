@@ -120,8 +120,11 @@ export function usePrintExport({
   useEffect(() => {
     mountedRef.current = true;
     const timers = timersRef.current;
+    const attempts = attemptRef;
     return () => {
       mountedRef.current = false;
+      attempts.current += 1;
+      isExportingRef.current = false;
       timers.forEach((t) => clearTimeout(t));
       timers.clear();
     };
@@ -206,7 +209,10 @@ export function usePrintExport({
   ]);
 
   const buildSingleItems = useCallback(
-    async (stickerSrcMap?: ReadonlyMap<string, string>): Promise<BuiltItems | null> => {
+    async (
+      attempt: number,
+      stickerSrcMap?: ReadonlyMap<string, string>,
+    ): Promise<BuiltItems | null> => {
       const stage = stageRef.current;
       if (!stage) {
         toast.error('تعذر الوصول إلى محتوى الكانفاس');
@@ -229,6 +235,7 @@ export function usePrintExport({
           stickerSrcMap,
         });
       } catch (e) {
+        if (attempt !== attemptRef.current) return null;
         if (e instanceof CanvasTooLargeError) {
           // أرقام البكسل والميجابكسل من الحقول المحمولة في الخطأ نفسه (لا نعيد حسابها هنا)
           const megapixels = (e.pixelCount / 1e6).toFixed(1);
@@ -270,6 +277,7 @@ export function usePrintExport({
         // نُسلّم إطار رسم واحد بعد إظهار حالة التحميل — وإلا ظلّت الواجهة
         // مجمدة أثناء التقاط كانفاس 50MP المتزامن على خيط UI قبل أن يُرسم المؤشر
         await new Promise((r) => requestAnimationFrame(() => r(null)));
+        if (attempt !== attemptRef.current) return;
 
         // 🔍 فحص جودة الوضع الحر + ترقية دقة الملصقات — قبل أي التقاط/رفع مكلف.
         // عناصر الصور الحرة (الملصقات) كانت تُطبع بلا حراسة: تكبيرها فوق قدرة
@@ -321,7 +329,9 @@ export function usePrintExport({
         }
 
         const built =
-          mode === 'collage' ? await buildItems() : await buildSingleItems(stickerSrcMap);
+          mode === 'collage' ? await buildItems() : await buildSingleItems(attempt, stickerSrcMap);
+        // الإلغاء أثناء الالتقاط/الرفع يمنع بدء طلب جديد أو تحرير حالة جولة أحدث.
+        if (attempt !== attemptRef.current) return;
         if (!built) {
           setExporting(false);
           return;

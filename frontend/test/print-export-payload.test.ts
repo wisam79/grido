@@ -1,7 +1,8 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { SetTaskbarProgress } from '@bindings/grido/app';
 import {
   ExportPrintSheet,
   PrintNative,
@@ -9,12 +10,14 @@ import {
   PollJobStatus,
 } from '@bindings/grido/internal/handlers/printhandler';
 
+import { uploadPrintImage } from '../src/components/editor/print/print-transport';
 import {
   usePrintExport,
   type PrintExportContext,
   type PrintExecuteOptions,
 } from '../src/components/editor/print/use-print-export';
 import * as imageDimensions from '../src/lib/canvas/image-dimensions';
+import { captureStageBlob, swapNodeImagesForCapture } from '../src/lib/canvas/konva-export-utils';
 import { useEditorStore } from '../src/lib/editor-store';
 
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
@@ -34,6 +37,24 @@ import type { CanvasSlot } from '../src/lib/store/types';
 // المحاكاة على هوية الوحدة الفعلية (@bindings/grido/internal/handlers/printhandler)
 // لا على جسر wailsjs/**، لأن المحرك يستورد الربطات المولدة مباشرةً.
 // ─────────────────────────────────────────────────────────────────────────────
+
+vi.mock('../src/lib/canvas/stage-context', () => ({
+  useStageRef: () => ({ current: {} }),
+}));
+
+vi.mock('../src/lib/canvas/konva-export-utils', () => ({
+  captureStageBlob: vi.fn(async () => new Blob(['png-bytes'], { type: 'image/png' })),
+  swapNodeImagesForCapture: vi.fn(async () => () => {}),
+}));
+
+vi.mock('../src/components/editor/print/print-transport', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../src/components/editor/print/print-transport')>();
+  return {
+    ...actual,
+    uploadPrintImage: vi.fn(async () => '/local-image/print_upload_mock.png'),
+  };
+});
 
 vi.mock('sonner', () => ({
   toast: { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() },
@@ -159,6 +180,19 @@ async function runPrint(
   });
   return result;
 }
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+const makeCaptureContext = (): PrintExportContext =>
+  makeContext({ mode: 'single', slots: [], backgroundColor: 'transparent' });
 
 class FakeImage {
   static decodedWidth = 800;
@@ -881,6 +915,117 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it.each(['capture', 'upload'] as const)(
+    'does not submit a single-mode print cancelled during %s',
+    async (phase) => {
+      const capture = deferred<Blob | null>();
+      const upload = deferred<string>();
+      const restoreNodes = vi.fn();
+      vi.mocked(swapNodeImagesForCapture).mockResolvedValueOnce(restoreNodes);
+      if (phase === 'capture') vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+      else vi.mocked(uploadPrintImage).mockReturnValueOnce(upload.promise);
+      const onDone = vi.fn();
+      const { result } = renderHook(() => usePrintExport(makeCaptureContext()));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, onDone);
+      });
+      await waitFor(() =>
+        expect(phase === 'capture' ? captureStageBlob : uploadPrintImage).toHaveBeenCalledTimes(1),
+      );
+
+      act(() => result.current.cancelExport());
+      vi.mocked(SetTaskbarProgress).mockClear();
+      await act(async () => {
+        capture.resolve(new Blob(['cancelled capture']));
+        upload.resolve('/local-image/cancelled-print.png');
+        await attempt;
+      });
+
+      expect(mockExportPrintSheet).not.toHaveBeenCalled();
+      expect(mockPrintDirect).not.toHaveBeenCalled();
+      expect(onDone).not.toHaveBeenCalled();
+      expect(mockToastSuccess).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(SetTaskbarProgress).not.toHaveBeenCalled();
+      expect(restoreNodes).toHaveBeenCalledTimes(1);
+      expect(result.current.isExporting).toBe(false);
+    },
+  );
+
+  it.each(['resolve', 'reject'] as const)(
+    'keeps the newer print owner when cancelled payload preparation later %s',
+    async (completion) => {
+      const oldCapture = deferred<Blob | null>();
+      const newCapture = deferred<Blob | null>();
+      vi.mocked(captureStageBlob)
+        .mockReturnValueOnce(oldCapture.promise)
+        .mockReturnValueOnce(newCapture.promise);
+      const oldDone = vi.fn();
+      const newDone = vi.fn();
+      const { result } = renderHook(() => usePrintExport(makeCaptureContext()));
+      let oldAttempt!: Promise<void>;
+      let newAttempt!: Promise<void>;
+      act(() => {
+        oldAttempt = result.current.executePrint(0, oldDone);
+      });
+      await waitFor(() => expect(captureStageBlob).toHaveBeenCalledTimes(1));
+      act(() => {
+        result.current.cancelExport();
+        newAttempt = result.current.executePrint(0, newDone);
+      });
+      await waitFor(() => expect(captureStageBlob).toHaveBeenCalledTimes(2));
+      vi.mocked(SetTaskbarProgress).mockClear();
+
+      try {
+        await act(async () => {
+          if (completion === 'resolve') oldCapture.resolve(new Blob(['old capture']));
+          else oldCapture.reject(new Error('old capture failed'));
+          await oldAttempt;
+        });
+
+        expect(mockExportPrintSheet).not.toHaveBeenCalled();
+        expect(mockPrintDirect).not.toHaveBeenCalled();
+        expect(mockToastError).not.toHaveBeenCalled();
+        expect(oldDone).not.toHaveBeenCalled();
+        expect(newDone).not.toHaveBeenCalled();
+        expect(SetTaskbarProgress).not.toHaveBeenCalled();
+        expect(result.current.isExporting).toBe(true);
+      } finally {
+        await act(async () => {
+          newCapture.resolve(new Blob(['new capture']));
+          await newAttempt;
+        });
+      }
+      expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+      expect(newDone).toHaveBeenCalledTimes(1);
+      expect(result.current.isExporting).toBe(false);
+    },
+  );
+
+  it('invalidates single-mode preparation when the hook unmounts', async () => {
+    const capture = deferred<Blob | null>();
+    vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+    const onDone = vi.fn();
+    const { result, unmount } = renderHook(() => usePrintExport(makeCaptureContext()));
+    let attempt!: Promise<void>;
+    act(() => {
+      attempt = result.current.executePrint(0, onDone);
+    });
+    await waitFor(() => expect(captureStageBlob).toHaveBeenCalledTimes(1));
+    unmount();
+    vi.mocked(SetTaskbarProgress).mockClear();
+    await act(async () => {
+      capture.resolve(new Blob(['unmounted capture']));
+      await attempt;
+    });
+
+    expect(mockExportPrintSheet).not.toHaveBeenCalled();
+    expect(mockPrintDirect).not.toHaveBeenCalled();
+    expect(SetTaskbarProgress).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('يتجاهل نتائج PrintDirect المتأخرة عند استدعاء cancelExport (حماية الجيل والإلغاء)', async () => {

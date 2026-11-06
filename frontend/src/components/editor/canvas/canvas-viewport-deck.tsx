@@ -484,7 +484,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                       type="button"
                       data-testid="canvas-fit-menu"
                       aria-label="أوضاع ملاءمة الورقة"
-                      className="h-full px-1 flex items-center justify-center rounded-e-md border-s border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                      className="h-full min-w-6 px-1 flex items-center justify-center rounded-e-md border-s border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                     >
                       <CaretDown className="w-3 h-3 shrink-0" />
                     </button>

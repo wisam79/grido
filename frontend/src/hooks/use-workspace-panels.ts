@@ -44,6 +44,12 @@ function saveStoredPreferences(prefs: StoredPreferences) {
   }
 }
 
+// عتبة العرض الأدنى لفتح اللوحين الجانبيين (القوالب + الخصائص) معاً افتراضياً:
+// عند 1024..1199px يلتهم اللوحان (288+288+44=620px) أكثر من نصف النافذة فينكمش
+// الكانفاس إلى 404px (تقرير التدقيق البصري 21، البند P1-01). تحت 1200px يبدأ درج
+// القوالب مطوياً افتراضياً ليبقى الكانفاس >= 660px مع إتاحة فتحه بنقرة من الشريط.
+export const DUAL_PANEL_MIN_WIDTH = 1200;
+
 function getBreakpoint(width: number): WorkspaceBreakpoint {
   if (width < 1024) return 'compact';
   if (width < 1440) return 'standard';
@@ -75,8 +81,11 @@ export function useWorkspacePanels() {
     return saved !== undefined ? saved : true;
   });
 
+  // Explicit close-all/Zen takes precedence over selection-driven auto-reveal.
+  // Ordinary unpinning still follows selection, even with the templates drawer closed.
+  const [isInspectorSuppressed, setIsInspectorSuppressed] = useState(false);
   const hasSelection = useEditorStore((s) => !!s.selectedId || s.selectedIds.length > 0);
-  const isInspectorOpen = isInspectorPinned || hasSelection;
+  const isInspectorOpen = !isInspectorSuppressed && (isInspectorPinned || hasSelection);
 
   // Active studio tool — «الطبقات» افتراضياً لمعاينة وتنظيم عناصر الكانفاس
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
@@ -115,6 +124,10 @@ export function useWorkspacePanels() {
   // تُنفَّذ مرتين في StrictMode (يُستدعى المُحدِّث مرتين للتحقق من النقاء) لكن
   // saveStoredPreferences مدمجة (setItem بنفس القيمة) فلا ضرر فعلي.
   const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpenState] = useState(() => {
+    const initialWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    if (initialWidth < DUAL_PANEL_MIN_WIDTH) {
+      return false;
+    }
     const saved = getStoredPreferences().isTemplatesDrawerOpen;
     return saved !== undefined ? saved : true;
   });
@@ -134,7 +147,16 @@ export function useWorkspacePanels() {
     const handleResize = () => {
       if (rAFId !== null) cancelAnimationFrame(rAFId);
       rAFId = requestAnimationFrame(() => {
-        setWindowWidth(window.innerWidth);
+        const nextWidth = window.innerWidth;
+        setWindowWidth((prevWidth) => {
+          if (prevWidth >= DUAL_PANEL_MIN_WIDTH && nextWidth < DUAL_PANEL_MIN_WIDTH) {
+            setIsTemplatesDrawerOpenState(false);
+          } else if (prevWidth < DUAL_PANEL_MIN_WIDTH && nextWidth >= DUAL_PANEL_MIN_WIDTH) {
+            const saved = getStoredPreferences().isTemplatesDrawerOpen;
+            setIsTemplatesDrawerOpenState(saved !== undefined ? saved : true);
+          }
+          return nextWidth;
+        });
       });
     };
 
@@ -151,6 +173,7 @@ export function useWorkspacePanels() {
   }, []);
 
   const setIsInspectorPinned = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setIsInspectorSuppressed(false);
     setIsInspectorPinnedState((prev) => {
       const next = typeof value === 'function' ? value(prev) : value;
       saveStoredPreferences({ isInspectorPinned: next });
@@ -233,14 +256,12 @@ export function useWorkspacePanels() {
   const closeActivePanel = useCallback(() => {
     setIsTemplatesDrawerOpen(false);
     setIsInspectorPinned(false);
+    setIsInspectorSuppressed(true);
     setActivePanel(null);
   }, [setActivePanel, setIsInspectorPinned, setIsTemplatesDrawerOpen]);
 
-  // Zen Mode toggle: collapse all panels or restore default
-  const isZenMode = useMemo(() => {
-    if (breakpoint === 'compact') return false;
-    return !isTemplatesDrawerOpen && !isInspectorPinned;
-  }, [breakpoint, isTemplatesDrawerOpen, isInspectorPinned]);
+  // Zen is an explicit close-all, not the incidental absence of pinned panels.
+  const isZenMode = breakpoint !== 'compact' && isInspectorSuppressed && !isTemplatesDrawerOpen;
 
   const savedZenStateRef = useRef<{
     wasDrawerOpen: boolean;

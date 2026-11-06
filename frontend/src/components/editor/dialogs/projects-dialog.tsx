@@ -43,6 +43,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ProjectsSkeleton } from '@/components/ui/skeleton';
 import { isPristineWorkspace } from '@/hooks/use-autosave';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import {
   buildProjectDocument,
   serializeEditorState,
@@ -50,6 +51,7 @@ import {
   domainProjectToProjectFile,
 } from '@/lib/io/project-serializer';
 import { createLogger } from '@/lib/logger';
+import { captureHistoryEntry } from '@/lib/store/history-snapshot';
 import { uid } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -173,6 +175,8 @@ export function ProjectsDialog({
     // معرّف المشروع كما كان قبل الانتظار — لا نكتب معرّفاً جديداً فوق
     // مشروع فتحه المستخدم أثناء الحفظ
     const projectIdBefore = state.projectId;
+    const documentSession = getDocumentSession();
+    const submittedHistory = captureHistoryEntry(state);
     setIsLoading(true);
     try {
       const currentId = state.projectId || uid();
@@ -193,9 +197,8 @@ export function ProjectsDialog({
       // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً — فقط إن لم
       // يتغير المشروع المفتوح خلال الانتظار (تحميل/تفريغ موازٍ)
       const live = useEditorStore.getState();
-      // A reset/load replaces the history seed even when both documents have a null ID.
-      // Compare saved content too: edits made during IPC must remain dirty.
-      if (live.projectId === projectIdBefore && live.history[0] === state.history[0]) {
+      // إخلاء أقدم لقطة ليس تبديل مستند؛ الجلسة تتغير عند reset/load فقط.
+      if (live.projectId === projectIdBefore && getDocumentSession() === documentSession) {
         // المقارنة تعيد استخدام بصمة لقطة الإرسال المحسوبة أعلاه — الحيّ يُسلسل
         // مرة واحدة فقط عبر بنية المستند الثابتة (بدون savedAt)، فلا إعادة
         // تسلسل كاملة ولا تسلسل ثانٍ للقطة المرسلة. (ترتيب المفاتيح متطابق:
@@ -205,13 +208,9 @@ export function ProjectsDialog({
           projectId: currentId,
           projectName: projectName.trim(),
           isDirty: !unchanged,
+          // مرساة الحفظ هي لقطة الإرسال، حتى مع وجود تعديلات حيّة أحدث منها.
+          lastSavedEntry: submittedHistory,
         });
-        // الحفظ الناجح يثبّت مرساة آخر حفظ — اشتقاق isDirty اللاحق يقارن بها.
-        // تدقيق 2026-11-03 (Bug#1): كان الشرط معكوساً (!unchanged) فيثبّت الحالة
-        // الحيّة كـ«آخر حفظ» حتى مع تعديلات أحدث من المحفوَث أثناء انتظار الحفظ.
-        // المرساة تُثبَّت في فرع «غير متغيّر» فقط — حين تطابق الحيّ ما حُفظ فعلاً؛
-        // وتعديلات أثناء الانتظار تبقى غير محفوظة (isDirty محسوبة بـ !unchanged).
-        if (unchanged) useEditorStore.getState().markHistorySaved();
       }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
@@ -576,7 +575,9 @@ export function ProjectsDialog({
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3 shrink-0" />
                                 {project.updatedAt
-                                  ? new Date(project.updatedAt).toLocaleDateString('ar-EG')
+                                  ? new Date(project.updatedAt).toLocaleDateString(
+                                      'ar-EG-u-nu-latn',
+                                    )
                                   : ''}
                               </span>
                             </div>
@@ -806,7 +807,7 @@ export function ProjectsDialog({
               <Button
                 onClick={handleConfirmImport}
                 disabled={backupActionLoading}
-                className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary-action hover:bg-primary-action-hover text-primary-foreground"
               >
                 {backupActionLoading ? (
                   <>

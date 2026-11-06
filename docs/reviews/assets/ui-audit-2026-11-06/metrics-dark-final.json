@@ -1,0 +1,1147 @@
+{
+  "generatedAt": "2026-11-06T11:15:37.164Z",
+  "layouts": {
+    "840": {
+      "viewport": {
+        "w": 840,
+        "h": 800
+      },
+      "dark": true,
+      "rail": null,
+      "templates": null,
+      "properties": null,
+      "canvasShell": {
+        "x": 0,
+        "y": 77,
+        "w": 840,
+        "h": 723
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "w": 840,
+        "h": 37
+      },
+      "footer": {
+        "x": 0,
+        "y": 768,
+        "w": 840,
+        "h": 32
+      },
+      "modeToggle": "كولاج"
+    },
+    "1023": {
+      "viewport": {
+        "w": 1023,
+        "h": 768
+      },
+      "dark": true,
+      "rail": null,
+      "templates": null,
+      "properties": null,
+      "canvasShell": {
+        "x": 0,
+        "y": 77,
+        "w": 1023,
+        "h": 691
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "w": 1023,
+        "h": 37
+      },
+      "footer": {
+        "x": 0,
+        "y": 736,
+        "w": 1023,
+        "h": 32
+      },
+      "modeToggle": "كولاج"
+    },
+    "1024": {
+      "viewport": {
+        "w": 1024,
+        "h": 768
+      },
+      "dark": true,
+      "rail": {
+        "x": 0,
+        "y": 77,
+        "w": 44,
+        "h": 691
+      },
+      "templates": {
+        "x": 44,
+        "y": 77,
+        "w": 288,
+        "h": 691
+      },
+      "properties": {
+        "x": 736,
+        "y": 77,
+        "w": 288,
+        "h": 691
+      },
+      "canvasShell": {
+        "x": 332,
+        "y": 77,
+        "w": 404,
+        "h": 691
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 37
+      },
+      "footer": {
+        "x": 332,
+        "y": 736,
+        "w": 404,
+        "h": 32
+      },
+      "modeToggle": "كولاج"
+    },
+    "1280": {
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "dark": true,
+      "rail": {
+        "x": 0,
+        "y": 77,
+        "w": 44,
+        "h": 723
+      },
+      "templates": {
+        "x": 44,
+        "y": 77,
+        "w": 288,
+        "h": 723
+      },
+      "properties": {
+        "x": 992,
+        "y": 77,
+        "w": 288,
+        "h": 723
+      },
+      "canvasShell": {
+        "x": 332,
+        "y": 77,
+        "w": 660,
+        "h": 723
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 37
+      },
+      "footer": {
+        "x": 332,
+        "y": 768,
+        "w": 660,
+        "h": 32
+      },
+      "modeToggle": "كولاج"
+    },
+    "1440": {
+      "viewport": {
+        "w": 1440,
+        "h": 800
+      },
+      "dark": true,
+      "rail": {
+        "x": 0,
+        "y": 77,
+        "w": 44,
+        "h": 723
+      },
+      "templates": {
+        "x": 44,
+        "y": 77,
+        "w": 288,
+        "h": 723
+      },
+      "properties": {
+        "x": 1152,
+        "y": 77,
+        "w": 288,
+        "h": 723
+      },
+      "canvasShell": {
+        "x": 332,
+        "y": 77,
+        "w": 820,
+        "h": 723
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 37
+      },
+      "footer": {
+        "x": 332,
+        "y": 768,
+        "w": 820,
+        "h": 32
+      },
+      "modeToggle": "كولاج"
+    }
+  },
+  "metrics": {
+    "840": {
+      "dark": true,
+      "viewport": {
+        "w": 840,
+        "h": 800
+      },
+      "fontSizes": {
+        "11.5px": 14,
+        "12px": 1,
+        "8px": 28,
+        "9px": 2
+      },
+      "tinyText": [
+        {
+          "text": "mm",
+          "fs": "8px"
+        },
+        {
+          "text": "-75",
+          "fs": "8px"
+        },
+        {
+          "text": "-50",
+          "fs": "8px"
+        },
+        {
+          "text": "-25",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "25",
+          "fs": "8px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "75",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "125",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "175",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "225",
+          "fs": "8px"
+        },
+        {
+          "text": "250",
+          "fs": "8px"
+        },
+        {
+          "text": "275",
+          "fs": "8px"
+        },
+        {
+          "text": "300",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "25",
+          "fs": "8px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "75",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "125",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "175",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "225",
+          "fs": "8px"
+        },
+        {
+          "text": "250",
+          "fs": "8px"
+        },
+        {
+          "text": "275",
+          "fs": "8px"
+        },
+        {
+          "text": "300",
+          "fs": "8px"
+        }
+      ],
+      "contrastFailures": [],
+      "primaryButtons": [
+        {
+          "text": "لوحة الأدوات",
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(59, 130, 246)",
+          "ratio": 3.68
+        }
+      ],
+      "smallTargets": [
+        {
+          "text": "خيارات وحدة قياس المسطرة",
+          "w": 20,
+          "h": 20
+        },
+        {
+          "text": "إعادة توسيط الكانفاس",
+          "w": 18,
+          "h": 18
+        },
+        {
+          "text": "أوضاع ملاءمة الورقة",
+          "w": 21,
+          "h": 28
+        }
+      ],
+      "unnamedButtons": [],
+      "focusableCount": 39,
+      "overflow": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        },
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        }
+      ],
+      "documentOverflow": {
+        "scrollWidth": 840,
+        "clientWidth": 840,
+        "delta": 0,
+        "bodyScrollWidth": 840
+      },
+      "surfaces": [
+        {
+          "sel": "[data-testid=\"workspace-panel-templates\"]",
+          "bg": null,
+          "radius": null
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-properties\"]",
+          "bg": null,
+          "radius": null
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-rail\"]",
+          "bg": null,
+          "radius": null
+        },
+        {
+          "sel": "[data-testid=\"workspace-canvas-shell\"]",
+          "bg": "rgba(20, 20, 20, 0.78)",
+          "radius": "0px"
+        },
+        {
+          "sel": "header",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "footer",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        }
+      ],
+      "tokens": {
+        "primary": "#3b82f6",
+        "primaryAction": "#2563eb",
+        "bg": "rgba(20, 20, 20, 0.78)",
+        "card": "#202020"
+      }
+    },
+    "1024": {
+      "dark": true,
+      "viewport": {
+        "w": 1024,
+        "h": 768
+      },
+      "fontSizes": {
+        "11.5px": 37,
+        "12px": 11,
+        "11px": 7,
+        "13.5px": 2,
+        "8px": 13,
+        "9px": 2
+      },
+      "tinyText": [
+        {
+          "text": "mm",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "-50",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "250",
+          "fs": "8px"
+        },
+        {
+          "text": "300",
+          "fs": "8px"
+        },
+        {
+          "text": "350",
+          "fs": "8px"
+        }
+      ],
+      "contrastFailures": [],
+      "primaryButtons": [],
+      "smallTargets": [
+        {
+          "text": "أعلى اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أعلى الوسط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أعلى اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "منتصف اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "توسيط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "منتصف اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل الوسط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "خيارات وحدة قياس المسطرة",
+          "w": 20,
+          "h": 20
+        },
+        {
+          "text": "إعادة توسيط الكانفاس",
+          "w": 18,
+          "h": 18
+        },
+        {
+          "text": "أوضاع ملاءمة الورقة",
+          "w": 21,
+          "h": 28
+        },
+        {
+          "text": "قيمة التباعد",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة الهوامش",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة الزوايا",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة السُّمك",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "إظهار خطوط القص",
+          "w": 36,
+          "h": 20
+        }
+      ],
+      "unnamedButtons": [],
+      "focusableCount": 85,
+      "overflow": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-4"
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex min-w-0 flex-col gap-2 font-cairo"
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0"
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col font-cairo motion-safe:animate-in motion-safe:fade-in du"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "DIV",
+          "cls": "w-full flex items-center justify-between gap-2 select-none font-cairo "
+        },
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        }
+      ],
+      "documentOverflow": {
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "delta": 0,
+        "bodyScrollWidth": 1024
+      },
+      "surfaces": [
+        {
+          "sel": "[data-testid=\"workspace-panel-templates\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-properties\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-rail\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-canvas-shell\"]",
+          "bg": "rgba(20, 20, 20, 0.78)",
+          "radius": "0px"
+        },
+        {
+          "sel": "header",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "footer",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        }
+      ],
+      "tokens": {
+        "primary": "#3b82f6",
+        "primaryAction": "#2563eb",
+        "bg": "rgba(20, 20, 20, 0.78)",
+        "card": "#202020"
+      }
+    },
+    "1280": {
+      "dark": true,
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "fontSizes": {
+        "11.5px": 37,
+        "12px": 11,
+        "11px": 7,
+        "13.5px": 2,
+        "8px": 24,
+        "9px": 2
+      },
+      "tinyText": [
+        {
+          "text": "mm",
+          "fs": "8px"
+        },
+        {
+          "text": "-25",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "25",
+          "fs": "8px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "75",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "125",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "175",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "225",
+          "fs": "8px"
+        },
+        {
+          "text": "250",
+          "fs": "8px"
+        },
+        {
+          "text": "0",
+          "fs": "9px"
+        },
+        {
+          "text": "25",
+          "fs": "8px"
+        },
+        {
+          "text": "50",
+          "fs": "8px"
+        },
+        {
+          "text": "75",
+          "fs": "8px"
+        },
+        {
+          "text": "100",
+          "fs": "8px"
+        },
+        {
+          "text": "125",
+          "fs": "8px"
+        },
+        {
+          "text": "150",
+          "fs": "8px"
+        },
+        {
+          "text": "175",
+          "fs": "8px"
+        },
+        {
+          "text": "200",
+          "fs": "8px"
+        },
+        {
+          "text": "225",
+          "fs": "8px"
+        },
+        {
+          "text": "250",
+          "fs": "8px"
+        },
+        {
+          "text": "275",
+          "fs": "8px"
+        },
+        {
+          "text": "300",
+          "fs": "8px"
+        }
+      ],
+      "contrastFailures": [],
+      "primaryButtons": [],
+      "smallTargets": [
+        {
+          "text": "أعلى اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أعلى الوسط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أعلى اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "منتصف اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "توسيط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "منتصف اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل اليسار",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل الوسط",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "أسفل اليمين",
+          "w": 17,
+          "h": 17
+        },
+        {
+          "text": "خيارات وحدة قياس المسطرة",
+          "w": 20,
+          "h": 20
+        },
+        {
+          "text": "إعادة توسيط الكانفاس",
+          "w": 18,
+          "h": 18
+        },
+        {
+          "text": "أوضاع ملاءمة الورقة",
+          "w": 21,
+          "h": 28
+        },
+        {
+          "text": "قيمة التباعد",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة الهوامش",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة الزوايا",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "قيمة السُّمك",
+          "w": 36,
+          "h": 18
+        },
+        {
+          "text": "إظهار خطوط القص",
+          "w": 36,
+          "h": 20
+        }
+      ],
+      "unnamedButtons": [],
+      "focusableCount": 85,
+      "overflow": [
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-4"
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex min-w-0 flex-col gap-2 font-cairo"
+        },
+        {
+          "tag": "DIV",
+          "cls": "min-w-0"
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex flex-col font-cairo motion-safe:animate-in motion-safe:fade-in du"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "DIV",
+          "cls": "border-b first:pt-0 last:border-b-0 last:pb-0 transition-colors durati"
+        },
+        {
+          "tag": "SPAN",
+          "cls": "sr-only"
+        },
+        {
+          "tag": "DIV",
+          "cls": "space-y-3"
+        }
+      ],
+      "documentOverflow": {
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "delta": 0,
+        "bodyScrollWidth": 1280
+      },
+      "surfaces": [
+        {
+          "sel": "[data-testid=\"workspace-panel-templates\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-properties\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-panel-rail\"]",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "[data-testid=\"workspace-canvas-shell\"]",
+          "bg": "rgba(20, 20, 20, 0.78)",
+          "radius": "0px"
+        },
+        {
+          "sel": "header",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        },
+        {
+          "sel": "footer",
+          "bg": "rgba(26, 26, 26, 0.84)",
+          "radius": "0px"
+        }
+      ],
+      "tokens": {
+        "primary": "#3b82f6",
+        "primaryAction": "#2563eb",
+        "bg": "rgba(20, 20, 20, 0.78)",
+        "card": "#202020"
+      }
+    }
+  },
+  "exportDialog": {
+    "dialogBg": "rgb(32, 32, 32)",
+    "buttons": [
+      {
+        "text": "",
+        "bg": "rgb(32, 32, 32)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 14.94
+      },
+      {
+        "text": "إدراج",
+        "bg": "rgb(32, 32, 32)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 14.94
+      },
+      {
+        "text": "",
+        "bg": "rgb(32, 32, 32)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 14.94
+      },
+      {
+        "text": "",
+        "bg": "rgb(32, 32, 32)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 14.94
+      },
+      {
+        "text": "",
+        "bg": "rgb(37, 99, 235)",
+        "color": "rgb(255, 255, 255)",
+        "ratio": 5.17
+      },
+      {
+        "text": "مخصص",
+        "bg": "oklab(0.239291 0.0000108778 0.00000478327 / 0.340392)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": null
+      },
+      {
+        "text": "وطنية35×45",
+        "bg": "oklab(0.243533 0.0000111014 0.00000487268 / 0.35)",
+        "color": "rgb(169, 175, 175)",
+        "ratio": null
+      },
+      {
+        "text": "أحوال32×40",
+        "bg": "oklab(0.623066 -0.0332245 -0.185038 / 0.1)",
+        "color": "rgb(59, 130, 246)",
+        "ratio": null
+      },
+      {
+        "text": "فيزا35×45",
+        "bg": "oklab(0.243533 0.0000111014 0.00000487268 / 0.35)",
+        "color": "rgb(169, 175, 175)",
+        "ratio": null
+      },
+      {
+        "text": "عامة40×60",
+        "bg": "oklab(0.243533 0.0000111014 0.00000487268 / 0.35)",
+        "color": "rgb(169, 175, 175)",
+        "ratio": null
+      },
+      {
+        "text": "معاملات30×40",
+        "bg": "oklab(0.243533 0.0000111014 0.00000487268 / 0.35)",
+        "color": "rgb(169, 175, 175)",
+        "ratio": null
+      },
+      {
+        "text": "تمدد حرملء الحيز",
+        "bg": "oklab(0.243533 0.0000111014 0.00000487268 / 0.35)",
+        "color": "rgb(169, 175, 175)",
+        "ratio": null
+      },
+      {
+        "text": "ملء الورقة36",
+        "bg": "rgba(31, 31, 31, 0.85)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 15.12
+      },
+      {
+        "text": "شريط علوي4",
+        "bg": "rgba(31, 31, 31, 0.85)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 15.12
+      },
+      {
+        "text": "تطبيق الشبكة",
+        "bg": "rgb(37, 99, 235)",
+        "color": "rgb(255, 255, 255)",
+        "ratio": 5.17
+      },
+      {
+        "text": "mm",
+        "bg": "rgb(28, 28, 31)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 15.59
+      },
+      {
+        "text": "",
+        "bg": "oklab(0.623066 -0.0332245 -0.185038 / 0.1)",
+        "color": "rgb(59, 130, 246)",
+        "ratio": null
+      },
+      {
+        "text": "الكولاج",
+        "bg": "oklab(0.239291 0.0000108778 0.00000478327 / 0.340392)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": null
+      },
+      {
+        "text": "",
+        "bg": "oklab(0.204625 0.00000931323 0.00000409782 / 0.4)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": null
+      },
+      {
+        "text": "RGBشاشة وطباعة رقمية",
+        "bg": "oklab(0.623066 -0.0332245 -0.185038 / 0.1)",
+        "color": "rgb(59, 130, 246)",
+        "ratio": null
+      },
+      {
+        "text": "CMYKمطابع الأوفست",
+        "bg": "rgba(23, 23, 23, 0.85)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 16.44
+      },
+      {
+        "text": "PNGجودة فائقة وشفافية",
+        "bg": "oklab(0.623066 -0.0332245 -0.185038 / 0.1)",
+        "color": "rgb(59, 130, 246)",
+        "ratio": null
+      },
+      {
+        "text": "JPGحجم أصغر",
+        "bg": "rgba(23, 23, 23, 0.85)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 16.44
+      },
+      {
+        "text": "",
+        "bg": "oklab(0.204625 0.00000931323 0.00000409782 / 0.4)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": null
+      },
+      {
+        "text": "",
+        "bg": "oklab(0.204625 0.00000931323 0.00000409782 / 0.4)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": null
+      },
+      {
+        "text": "إلغاء",
+        "bg": "rgb(32, 32, 32)",
+        "color": "rgb(245, 245, 245)",
+        "ratio": 14.94
+      },
+      {
+        "text": "تصدير",
+        "bg": "rgb(37, 99, 235)",
+        "color": "rgb(255, 255, 255)",
+        "ratio": 5.17
+      }
+    ]
+  },
+  "dialogFocus": {
+    "activeElement": {
+      "tag": "DIV",
+      "role": "dialog",
+      "slot": "dialog-content",
+      "ariaLabel": null
+    },
+    "dialogOutline": {
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineColor": "rgb(59, 130, 246)",
+      "outlineOffset": "2px"
+    }
+  }
+}

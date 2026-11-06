@@ -135,7 +135,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               x={isNearEnd ? x - 2 : x + (isZero ? 3 : 2)}
               y={8}
               textAnchor={isNearEnd ? 'end' : 'start'}
-              fontSize={8}
+              fontSize={9}
               // هالة بلون سطح المسطرة تحافظ على مقروئية الرقم فوق خطوط التدريج
               style={{ paintOrder: 'stroke' }}
               strokeWidth={2.5}
@@ -270,7 +270,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               <text
                 x={Math.max(0, selectionBounds!.startPx) + 3}
                 y={11.5}
-                fontSize={7.5}
+                fontSize={9}
                 style={{ paintOrder: 'stroke' }}
                 strokeWidth={2.5}
                 strokeLinejoin="round"
@@ -400,7 +400,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               <text
                 x={4}
                 y={y + 2}
-                fontSize={8}
+                fontSize={9}
                 style={{ paintOrder: 'stroke' }}
                 strokeWidth={2.5}
                 strokeLinejoin="round"
@@ -414,7 +414,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               <text
                 x={5.5}
                 y={y}
-                fontSize={8}
+                fontSize={9}
                 style={{ paintOrder: 'stroke' }}
                 strokeWidth={2.5}
                 strokeLinejoin="round"
@@ -547,7 +547,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               <text
                 x={11.5}
                 y={Math.max(0, selectionBounds!.startPx) + 3}
-                fontSize={7.5}
+                fontSize={9}
                 style={{ paintOrder: 'stroke' }}
                 strokeWidth={2.5}
                 strokeLinejoin="round"
