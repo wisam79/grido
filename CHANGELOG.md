@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.31.3] - 2026-11-07
+
+### Fixed
+- تحصين النصوص والخطوط F1–F10: أصول لاتينية محلية وأوزان حقيقية وتحميل قابل لإعادة المحاولة، ومعاينة تستعيد وزن النص وهندسته عند الإلغاء؛ تصحيح الوصل العربي والأسطر المنحنية وتوضيح تحرير القوس، مع إزاحات الظل وإطار الشارة ومعاينة خطوط الملصقات المعزولة عن الحفظ والتصدير. تفاصيل الإثبات وحدود التحقق في خطة المتابعة ودليل الاختبار.
+
+### Performance
+- تسريع انتقال الصور من كاميرا الهاتف إلى الكانفاس (السحابي والمحلي LAN): ضغط وتحجيم الصور على الهاتف حتى 2048px مع إلغاء إعادة الضغط المزدوج في الوضع السحابي وإصلاح مصافحة الاقتران وفك حجب حلقة الـ WebSocket، وإضافة مسار النسخ الذري المباشر في `EnsureThumbnail` للصور الموجهة ضمن السقف دون إعادة فك وترميز البكسلات، وحقن الأبعاد المسبقة مباشرة مع حدث `phone:photo-received` لتفادي جولات IPC الإضافية قبل الإدراج.
 ## [v1.31.2] - 2026-11-06
 
 ### Added
@@ -40,7 +47,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - verification patch for silent background update flow
-## [v1.30.1] - 2026-11-05
-
-### Fixed
-- allow checksum-verified updates without requiring pinned Ed25519 public key
