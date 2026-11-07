@@ -89,7 +89,7 @@ describe('Element Slice Text & Typography Tests', () => {
     const el = elements[0];
     if (el.type === 'text') {
       expect(el.fontSize).toBe(16);
-      expect(el.fontWeight).toBe(600);
+      expect(el.fontWeight).toBe(700);
       expect(el.textBgColor).toBe('transparent');
     }
   });
@@ -115,7 +115,7 @@ describe('Element Slice Text & Typography Tests', () => {
     if (el.type === 'text') {
       expect(el.text).toBe('عنوان مخصص للاختبار');
       expect(el.fontSize).toBe(48);
-      expect(el.fontWeight).toBe(800);
+      expect(el.fontWeight).toBe(700);
     }
   });
 
@@ -134,7 +134,7 @@ describe('Element Slice Text & Typography Tests', () => {
       expect(el.x).toBe(originalX);
       expect(el.y).toBe(originalY);
       expect(el.fontSize).toBe(48);
-      expect(el.fontWeight).toBe(800);
+      expect(el.fontWeight).toBe(700);
     }
   });
 });

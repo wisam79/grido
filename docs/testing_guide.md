@@ -15,7 +15,7 @@
 node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/fonts.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false
 ```
 
-- النتيجة النهائية: **219/219** في **17 ملفاً مستهدفاً**، شُغّل كل منها مستقلاً، مع `typecheck` و`lint` و`format:check` ناجحة. تفصيل الملفات والأرقام في الخطة؛ لا تُعمّم هذه النتيجة على الحزمة الكاملة.
+- النتيجة النهائية: **232/232** في **18 ملفاً مستهدفاً**، شُغّل كل منها مستقلاً، مع `typecheck` و`lint` و`format:check` ناجحة. تفصيل الملفات والأرقام في الخطة؛ لا تُعمّم هذه النتيجة على الحزمة الكاملة. ملف `element-slice-text.test.ts` فاتته الاستهدافات فأمسكه CI الكامل (3 توقعات وزن قديمة) — عند تعديل الأنماط ابحث `git grep` عن كل ملفات اختبار الإدراج قبل الالتزام.
 - لا تشغيل للحزمة الكاملة أو E2E أو بناء محلي؛ المعاينة التفاعلية في متصفح محلي معزول ليست اختبار WebView2 الأصلي أو الطباعة أو خدمات السحابة. تحذير Wails عن بيئة المتصفح متوقع؛ عولجت تحذيرات React/Radix `act` في منتقي الخطوط والاستوديو بانتظار التفاعلات داخل `act` دون إخفاء stderr.
 
 ---
@@ -113,9 +113,9 @@ node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/App.test
 - قياس فعلي: `python -m modal_ai.benchmark_upscaler --models C:/projects/grido/scratch/dual-stage-models --image C:/projects/grido/scratch/dual-stage-models/portrait.jpg --sizes 256,512 --output C:/projects/grido/scratch/dual-stage-benchmark.json`. العينة صورة OpenCV العامة lena.jpg، Windows 11، CPUExecutionProvider، أربع خيوط، tiles=512/halo=36. لا GPU ولا نشر Modal. تحميل الجلسات **1.5278s** منفصل عن المعالجة.
 
 | الدخل / الناتج | كشف الوجه | التكبير العام | ترميم/دمج وجه واحد | المعالجة | التشفير |
-|---|---|---|---|---|---|
-| 256² / 512² | 0.0216s | 0.8492s | 4.5627s | 5.4335s | 0.0020s |
-| 512² / 1024² | 0.0207s | 3.3515s | 4.5136s | 7.8858s | 0.0112s |
+| -------------- | --------- | ------------- | ------------------ | -------- | ------- |
+| 256² / 512²    | 0.0216s   | 0.8492s       | 4.5627s            | 5.4335s  | 0.0020s |
+| 512² / 1024²   | 0.0207s   | 3.3515s       | 4.5136s            | 7.8858s  | 0.0112s |
 
 - فرق tiled/full بالنموذج الحقيقي في عينة 77×65 مع tiles=40: **0 بايت** أقصى ومتوسط؛ ليس ذلك إثباتاً لكل الصور أو benchmark كبير. تحسين tile الافتراضي من 256 إلى 512 قلّل تكبير 512² من 4.2117s إلى 3.3515s في التشغيلين المقاسين، مع بقاء الحد المكاني للذاكرة.
 - هذه قراءات محلية مفردة وليست median/p95 أو قياس تخصيص Modal. شرط التكبير أقل من ثانيتين لم يتحقق للدخل 512²؛ الزمن يرتفع مع المقاس وعدد الوجوه. لا ضمان 6–8 ثوانٍ لكل صورة حتى 2048²، ولا قياس شبكة/بدء حاوية أو قبول بصري بشري شامل.
@@ -207,10 +207,12 @@ flowchart TD
 ## 2. معمارية جسر المحاكاة Wails v3 Mock Bridge
 
 ### 2.1 كيف يعمل اتصال Wails v3 في المتصفح؟
+
 عند تشغيل التطبيق في بيئة متصفح (Web Browser / Playwright Headless)، لا يتوفر محرك WebView2 الأصلي لسطح المكتب. يقوم موديول `@wailsio/runtime` بإرسال طلبات POST إلى:
 `POST /wails/runtime`
 
 الحمولة المشفرة تكون بالشكل:
+
 ```json
 {
   "object": 0,
@@ -224,6 +226,7 @@ flowchart TD
 ```
 
 ### 2.2 دور `frontend/e2e/helpers/wails-v3-bridge.ts`
+
 1. **اعتراض طلبات HTTP:** يقوم باعتراض مسار `**/wails/runtime` عبر `page.route()`.
 2. **فك تشفير الـ Method ID:** يطابق الرقم البرمجي للطريقة ويستجيب بنتيجة JSON فورية.
 3. **تفعيل ترخيص Pro فوري:** اعتراض الطريقة `2229562725` (`GetLicenseStatus`) وإرجاع كائن ترخيص مفعّل برقم تجاري دائم، مما يمنع تجمد الاختبارات في شاشة "النسخة مقفلة".
@@ -231,10 +234,13 @@ flowchart TD
 5. **حقن التوافقية لـ `window.go`:** حقن دوال وهمية ذكية في الـ Global Window لتلبية متطلبات المخازن القديمة إن وجدت.
 
 ### 2.3 كيفية إضافة مسار أو دالة Wails Backend جديدة للـ Mock Bridge
+
 عند إضافة دالة Go جديدة في `internal/handlers` وتوليد روابط Wails bindings:
+
 1. افتح ملف الربط المولد في `frontend/bindings/grido/...` لمعرفة `methodID` الخاص بالدالة.
 2. افتح `frontend/e2e/helpers/wails-v3-bridge.ts`.
 3. أضف الـ Method ID إلى خريطة المعالجات `WAILS_V3_METHOD_MAP`:
+
 ```typescript
 case 1234567890: // اسم الدالة الجديدة
   return { success: true, data: "Mocked response" };
@@ -246,12 +252,12 @@ case 1234567890: // اسم الدالة الجديدة
 
 ### 3.1 عبر Taskfile (الموصى به للمشروع كاملاً)
 
-| الأمر | الوصف | الطبقة المستهدفة |
-| :--- | :--- | :--- |
-| `task test:all` | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة | المشروع بالكامل |
-| `task test:backend` | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (150 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component |
-| `task test:e2e` | تشغيل اختبارات Playwright E2E السريعة على Chromium | E2E Browser |
+| الأمر                | الوصف                                                                                                | الطبقة المستهدفة         |
+| :------------------- | :--------------------------------------------------------------------------------------------------- | :----------------------- |
+| `task test:all`      | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة                                                | المشروع بالكامل          |
+| `task test:backend`  | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم                                                   | Backend (`internal/...`) |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (150 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component  |
+| `task test:e2e`      | تشغيل اختبارات Playwright E2E السريعة على Chromium                                                   | E2E Browser              |
 
 ### 3.2 عبر npm في مجلد `frontend`
 
@@ -285,12 +291,12 @@ go test -count=1 -v ./internal/...
 
 ### 3.4 بوابة التوثيق (قبل أي كومت)
 
-| الأمر | الوصف |
-| :--- | :--- |
-| `node scripts/docs-gate.mjs` | تفحص الأرقام المرجعية والجرد و**تأكيدات التحقق على الكود** وتشترط توثيقاً مرافقاً لأي تغيير كود (تُشغَّل آلياً عبر `.husky/pre-commit`) |
-| `node scripts/docs-gate.mjs --push` | نفس الفحوص على مدى الكومتات غير المدفوعة (تُشغَّل آلياً عبر `.husky/pre-push`) |
-| `node scripts/docs-gate.mjs --strict-refs` | يجعل مراجع المسارات في `.agents/` مُعِقة (نفس مهمة `wails3 task docs:check`) |
-| `GRIDO_DOCS_GATE=off` | تخطّي طارئ مبرَّر — يجب ذكر السبب في رسالة الكومت |
+| الأمر                                      | الوصف                                                                                                                                   |
+| :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/docs-gate.mjs`               | تفحص الأرقام المرجعية والجرد و**تأكيدات التحقق على الكود** وتشترط توثيقاً مرافقاً لأي تغيير كود (تُشغَّل آلياً عبر `.husky/pre-commit`) |
+| `node scripts/docs-gate.mjs --push`        | نفس الفحوص على مدى الكومتات غير المدفوعة (تُشغَّل آلياً عبر `.husky/pre-push`)                                                          |
+| `node scripts/docs-gate.mjs --strict-refs` | يجعل مراجع المسارات في `.agents/` مُعِقة (نفس مهمة `wails3 task docs:check`)                                                            |
+| `GRIDO_DOCS_GATE=off`                      | تخطّي طارئ مبرَّر — يجب ذكر السبب في رسالة الكومت                                                                                       |
 
 > 🔒 **تأكيدات التحقق على الكود (فحص 5):** كل بند وُسم ✅ في `BUGS_REPORT.md` له دليل نصّي مُثبَّت في صفيف `CODE_ASSERTIONS` داخل `scripts/docs-gate.mjs`. إن عاد العيب إلى الكود (أو حُذف دليل الإصلاح) **تفشل البوابة ويفشل CI** — ومُثبَت باختبار انحراف سالب على `window_state.go` (`utils.AtomicWriteFile`). **لا تُحذف التأكيدات لتفادي الفشل** — أصلح الكود أو أضف تصحيحاً مؤرَّخاً.
 
@@ -300,12 +306,12 @@ go test -count=1 -v ./internal/...
 
 ### 3.5 بوابات التنسيق والالتزام (Pre-Commit / CI)
 
-| البوابة | الأمر | النطاق | الحالة عند الفشل |
-| :--- | :--- | :--- | :--- |
-| Prettier | `npm --prefix frontend run format:check` | `src`, `test`, `e2e`, وملفات إعداد Vite/Vitest/ESLint | ⛔ في CI |
-| ESLint | `npm --prefix frontend run lint` | نفس النطاق + `--max-warnings 0` | ⛔ في CI و`lint-staged` |
-| Go Format | `git ls-files -z '*.go' \| xargs -0 gofmt -l` | كل ملفات Go المتتبعة | ⛔ في CI |
-| Conventional Commits | `node scripts/commit-msg-lint.mjs "$1"` | رسالة كل كومت | ⛔ عبر `.husky/commit-msg` |
+| البوابة              | الأمر                                         | النطاق                                                | الحالة عند الفشل           |
+| :------------------- | :-------------------------------------------- | :---------------------------------------------------- | :------------------------- |
+| Prettier             | `npm --prefix frontend run format:check`      | `src`, `test`, `e2e`, وملفات إعداد Vite/Vitest/ESLint | ⛔ في CI                   |
+| ESLint               | `npm --prefix frontend run lint`              | نفس النطاق + `--max-warnings 0`                       | ⛔ في CI و`lint-staged`    |
+| Go Format            | `git ls-files -z '*.go' \| xargs -0 gofmt -l` | كل ملفات Go المتتبعة                                  | ⛔ في CI                   |
+| Conventional Commits | `node scripts/commit-msg-lint.mjs "$1"`       | رسالة كل كومت                                         | ⛔ عبر `.husky/commit-msg` |
 
 - **`lint-staged`** يشغّل ESLint وPrettier على الملفات المرحّلة فقط، بينما CI يفحص الشبكة كاملة — فلا تمرّ مخالفة تنسيق أو استيراد من كومت محلي.
 - **`.editorconfig`** هو مرجع المسافات (2 للملفات العامة، Tab لـGo) ونهايات الأسطر، و**`.gitattributes`** يثبّت `lf` في Git ويعزل الأصول الثنائية عن التطبيع.
@@ -317,6 +323,7 @@ go test -count=1 -v ./internal/...
 ## 4. إرشادات كتابة الاختبارات (Best Practices)
 
 ### 4.1 اختبارات مكونات React (Vitest + RTL)
+
 - **مزوّد التلميحات الموحد:** يجب دائماً تغليف المكونات بـ `<TooltipProvider>` لتجنب أخطاء Radix Tooltip السياقية.
 - **تسميات Fluent 2 وأدوار الوصولية (ARIA):**
   - الكبسولات وشارات التصفية (`FluentFilterChips`) تمتلك دور `role="tab"`.
@@ -328,13 +335,14 @@ go test -count=1 -v ./internal/...
 - **Golden vectors للاستعدال (`scanner-warp-golden.test.ts`) — الجلسة 1.43:** شبكة أمان المرحلة 0 من ترحيل الماسح العصبي (`docs/plans/neural-scanner-warp-migration-spec.md`): 15 حالة (3 صور × 5 مضلعات) تثبّت مخرجات `warpSourceImage` (قصّ + Homography عكسي + Bilinear) بايت-ببايت من `internal/service/testdata/scanner_warp/`، مع مخرجات أوضاع الفلاتر الخمسة و8 توسيمات EXIF. **قواعد:** (1) أي تعديل مقصود على محرك الاستعدال/الفلاتر يستلزم إعادة التوليد بـ`FIXTURE_GEN=1` ثم مراجعة الفرق؛ (2) محاكي الكانفاس المشترك في `test/helpers/scanner-canvas-mock.ts` مصدره واحد — تعديله يغيّر المخرجات الملتقطة فيستلزم إعادة توليد؛ (3) هذه الـfixtures مرجع توازي Go (RMSE < 1.5/255) في المرحلة 1 — لا تُحذف إلا مع أرشفة الخطة.
 
 ### 4.2 اختبارات الـ E2E بـ Playwright
+
 - **تجهيز التطبيق الأولي:** استخدم دائماً المساعد القياسي:
   ```typescript
-  import { setupWailsV3Mock, waitForAppReady } from './helpers/wails-v3-bridge';
+  import { setupWailsV3Mock, waitForAppReady } from "./helpers/wails-v3-bridge";
 
   test.beforeEach(async ({ page }) => {
     await setupWailsV3Mock(page);
-    await page.goto('/');
+    await page.goto("/");
     await waitForAppReady(page);
   });
   ```
