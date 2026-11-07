@@ -2,10 +2,12 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { usePhoneBridgeListener } from '../src/components/editor/system/use-phone-bridge';
+import * as imageDims from '../src/lib/canvas/image-dimensions';
 import { useEditorStore } from '../src/lib/editor-store';
 import * as runtime from '../wailsjs/runtime/runtime';
+import type { ImageElement } from '../src/lib/store/types';
 
-type EventHandler = (payload: any) => Promise<void>;
+type EventHandler = (payload: unknown) => Promise<void>;
 let registeredHandler: EventHandler | null = null;
 const unsubscribeMock = vi.fn();
 
@@ -21,6 +23,8 @@ vi.mock('../wailsjs/runtime/runtime', () => ({
 
 vi.mock('../src/lib/canvas/image-dimensions', () => ({
   resolveImageAspectRatio: vi.fn(() => Promise.resolve(1.77)),
+  setCachedImageDimensions: vi.fn(),
+  setCachedImageAspectRatio: vi.fn(),
 }));
 
 describe('usePhoneBridgeListener Hook Tests', () => {
@@ -99,6 +103,34 @@ describe('usePhoneBridgeListener Hook Tests', () => {
     const state = useEditorStore.getState();
     expect(state.elements.length).toBe(1);
     expect(state.elements[0].type).toBe('image');
-    expect((state.elements[0] as any).imageSrc).toBe('local-image://single-photo.jpg');
+    expect((state.elements[0] as ImageElement).imageSrc).toBe('local-image://single-photo.jpg');
+  });
+
+  it('caches precomputed dimensions from payload and skips resolveImageAspectRatio IPC call', async () => {
+    useEditorStore.getState().setMode('single');
+    renderHook(() => usePhoneBridgeListener());
+
+    await act(async () => {
+      await registeredHandler!({
+        path: '/local-image/img_fast.jpg',
+        width: 1536,
+        height: 2048,
+        aspectRatio: 0.75,
+      });
+    });
+
+    expect(imageDims.setCachedImageDimensions).toHaveBeenCalledWith(
+      '/local-image/img_fast.jpg',
+      1536,
+      2048,
+    );
+    expect(imageDims.setCachedImageAspectRatio).toHaveBeenCalledWith(
+      '/local-image/img_fast.jpg',
+      0.75,
+    );
+    expect(imageDims.resolveImageAspectRatio).not.toHaveBeenCalled();
+    const state = useEditorStore.getState();
+    expect(state.elements.length).toBe(1);
+    expect((state.elements[0] as ImageElement).imageSrc).toBe('/local-image/img_fast.jpg');
   });
 });

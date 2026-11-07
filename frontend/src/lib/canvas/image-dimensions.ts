@@ -36,6 +36,18 @@ export function getCachedImageAspectRatio(src: string): number | undefined {
 }
 
 /**
+ * تخزين أبعاد الصورة والنسبة الباعية في الكاش يدوياً (مثلاً عند استلامها من Go مباشرة)
+ */
+export function setCachedImageDimensions(
+  src: string,
+  width: number,
+  height: number,
+  isRotated?: boolean,
+): void {
+  rememberDimensions(src, width, height, isRotated);
+}
+
+/**
  * تخزين النسبة الباعية في الكاش يدوياً
  */
 export function setCachedImageAspectRatio(src: string, aspectRatio: number): void {

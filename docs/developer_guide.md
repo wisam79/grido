@@ -4,6 +4,13 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 ---
 
+## تسريع انتقال الصور عبر جسر الهاتف (Phone Bridge Fast Pipeline) — 7 نوفمبر 2026
+
+- **ضغط وتوجيه موحّد على الهاتف (`2048px`):** كل من صفحة الكاميرا السحابية (`admin-web/src/pages/PhoneCameraPage.tsx`) وصفحة الشبكة المحلية المضمّنة (`internal/service/embedded/phone_camera_page.html`) تضغط وتحجّم الصور الملتقطة أو المختارة من المعرض على معالج الهاتف الرسومي إلى سقف `2048px` بصيغة JPEG، مع تمرير لقطات المعاينة الحية مباشرة دون إعادة ضغط مزدوج واستخدام `URL.createObjectURL` للمصغرات بدلاً من ترميز Base64، ورفع مصافحة الاقتران بـ `upsert: false` توافقاً مع سياسة `INSERT`-only في RLS.
+- **عدم حجب WebSocket وحقن الأبعاد المسبقة في Go (`internal/service/phone_bridge_service.go`):** إشعار `photo-ready` عبر Supabase Realtime WebSocket يشغّل `downloadAndSaveCloudPhoto` داخل `utils.SafeGo` فلا تتجمّد حلقة قراءة الرسائل أثناء التنزيل، مع تقليص الاستقصاء الاحتياطي إلى 4 ثوانٍ (وبدء أول فحص بعد ثانيتين). كما تبني `buildPhotoReceivedPayload` أبعاد الصورة الموجهة بـ EXIF (`width`, `height`, `aspectRatio`) وتبثها ضمن حدث `phone:photo-received`.
+- **حقن الكاش المتزامن في الواجهة (`frontend/src/components/editor/system/use-phone-bridge.ts` + `frontend/src/lib/canvas/image-dimensions.ts`):** تخزّن `setCachedImageDimensions` و`setCachedImageAspectRatio` الأبعاد فور وصول الحدث، فيُدرج العنصر في الكانفاس مباشرة بلا انتظار نداء IPC إضافي (`resolveImageAspectRatio`).
+- **مسار النسخ الذري المباشر في `EnsureThumbnail` (`internal/service/media_thumbnail.go`):** عندما تكون الصورة المحلية (`.jpg`/`.jpeg` أو `.png`) ضمن سقف العرض المطلوب (`max(W, H) <= width`) واتجاه EXIF طبيعياً (`orientation <= 1`)، تُنسخ البايتات ذرياً إلى مجلد `.thumbs` مباشرة دون فك ترميز البكسلات عبر `imaging.Open` أو إعادة ضغطها.
+
 ## محرك الخطوط والأوزان — 7 نوفمبر 2026
 
 `frontend/src/lib/io/fonts.ts` يعرّف `weights` لكل عائلة و`offlineWeights` لما هو معلن محلياً. `findFontOption` يطابق اسم العائلة كاملاً أو معرّف الكتالوج، و`getSupportedFontWeights` و`resolveSupportedFontWeight` مصدر واحد للقائمة والتحميل والقياس؛ الخط المحلي لا يجلب أوزاناً سحابية ضمنياً. `loadGoogleFont` يبقى `Promise<boolean>`، وينتظر ورقة CSS ثم الوجه بوزنه ونمطه وعينة عربية/لاتينية. فشل الورقة أو المهلة أو غياب الوجه لا يُخزَّن كجاهزية؛ إشعار انتهاء المحاولة لا يعني نجاحها. الخطوط اللاتينية الأربع مضمّنة فعلياً وأوزان IBM المتوسطة مربوطة، وملفات OFL ومصدر الأصول في مجلد الخطوط.

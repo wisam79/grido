@@ -116,6 +116,26 @@ func (s *PhoneBridgeService) currentGeneration() uint64 {
 	return s.generation
 }
 
+// buildPhotoReceivedPayload يبني حمولة حدث phone:photo-received مع أبعاد الصورة
+// الموجهة بـ EXIF لتفادي طلب IPC إضافي من الواجهة قبل الإدراج في الكانفاس.
+func (s *PhoneBridgeService) buildPhotoReceivedPayload(virtualPath string) map[string]interface{} {
+	payload := map[string]interface{}{
+		"path": virtualPath,
+	}
+	if s.mediaSvc != nil {
+		if dims, err := s.mediaSvc.GetImageDimensions(virtualPath); err == nil && dims.Width > 0 && dims.Height > 0 {
+			w, h := dims.Width, dims.Height
+			if dims.IsRotated {
+				w, h = h, w
+			}
+			payload["width"] = w
+			payload["height"] = h
+			payload["aspectRatio"] = float64(w) / float64(h)
+		}
+	}
+	return payload
+}
+
 // generationMatches يتحقق أن الجيل الملتقط ما زال هو الجيل الحيّ — false تعني
 // أن الجلسة توقفت (أو بدأت جلسة جديدة) فلا يصحّ الالتزام ولا البثّ
 func (s *PhoneBridgeService) generationMatches(captured uint64) bool {
@@ -695,9 +715,7 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 		lastRec := s.lastReceived
 		s.mu.Unlock()
 
-		s.runtime.Emit("phone:photo-received", map[string]string{
-			"path": virtualPath,
-		})
+		s.runtime.Emit("phone:photo-received", s.buildPhotoReceivedPayload(virtualPath))
 		s.runtime.Emit("phone:status", map[string]interface{}{
 			"isRunning":     true,
 			"receivedCount": count,
@@ -944,9 +962,7 @@ func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, obje
 		cloudLastRec := s.lastReceived
 		s.mu.Unlock()
 
-		s.runtime.Emit("phone:photo-received", map[string]string{
-			"path": virtualPath,
-		})
+		s.runtime.Emit("phone:photo-received", s.buildPhotoReceivedPayload(virtualPath))
 		s.runtime.Emit("phone:status", map[string]interface{}{
 			"isRunning":     true,
 			"receivedCount": cloudCount,
@@ -957,7 +973,9 @@ func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, obje
 	slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
 
 	deleteURL := bucketBase
-	go s.deleteCloudObject(deleteURL, objectPath, userJWT)
+	utils.SafeGo("phone-bridge.delete-cloud-object", func() {
+		s.deleteCloudObject(deleteURL, objectPath, userJWT)
+	})
 
 	return nil
 }
@@ -1112,7 +1130,10 @@ func (s *PhoneBridgeService) startRealtimeSync(ctx context.Context, sessionToken
 					photoPath := envelope.Payload.Payload.Path
 					if photoPath != "" {
 						slog.Info("Phone bridge received photo-ready notification via WebSocket", "path", photoPath)
-						_ = s.downloadAndSaveCloudPhoto(ctx, photoPath, userJWT)
+						pathCopy := photoPath
+						utils.SafeGo("phone-bridge.realtime-download", func() {
+							_ = s.downloadAndSaveCloudPhoto(ctx, pathCopy, userJWT)
+						})
 					}
 				}
 			}
@@ -1140,8 +1161,8 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 	sessionGen := s.currentGeneration()
 
 	client := phoneBridgeHTTPClient
-	pollInterval := 12 * time.Second
-	timer := time.NewTimer(pollInterval)
+	pollInterval := 4 * time.Second
+	timer := time.NewTimer(2 * time.Second)
 	defer timer.Stop()
 
 	bucketBase := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"

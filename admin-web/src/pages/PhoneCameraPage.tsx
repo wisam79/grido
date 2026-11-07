@@ -250,9 +250,9 @@ function PhoneCameraPageInner() {
         const blob = new Blob([JSON.stringify(handshakeData)], { type: 'application/json' });
         const { error } = await supabase.storage
           .from('phone-bridge')
-          .upload(`${sessionId}/.handshake.json`, blob, {
+          .upload(`${sessionId}/handshake_${Date.now()}.handshake.json`, blob, {
             contentType: 'application/json',
-            upsert: true,
+            upsert: false,
           });
 
         if (!error && isMounted) {
@@ -435,8 +435,8 @@ function PhoneCameraPageInner() {
         }
       }
 
-      // إذا كانت الصورة بالأبعاد المطلوبة ومضغوطة أصلاً بشكل كافٍ (< 600KB) لا داعي لإعادة المعالجة
-      if (targetW === width && targetH === height && rawBlob.size < 600 * 1024 && rawBlob.type === 'image/jpeg') {
+      // إذا كانت الصورة بالأبعاد المطلوبة ومضغوطة أصلاً بشكل كافٍ (< 1.2MB) لا داعي لإعادة المعالجة
+      if (targetW === width && targetH === height && rawBlob.size < 1200 * 1024 && rawBlob.type === 'image/jpeg') {
         bitmap.close();
         return rawBlob;
       }
@@ -469,7 +469,7 @@ function PhoneCameraPageInner() {
   };
 
   // 5. رفع الصورة إلى مسار الجسر المؤقت في Supabase Storage مع طابور الرفع التراكمي
-  const uploadImageBlob = async (rawBlob: Blob, customName?: string) => {
+  const uploadImageBlob = async (rawBlob: Blob, customName?: string, alreadyOptimized = false) => {
     if (!supabase) {
       showStatus('فشل الاتصال بخادم المزامنة', 'error');
       return;
@@ -484,7 +484,7 @@ function PhoneCameraPageInner() {
     setUploadQueueCount((prev) => prev + 1);
 
     try {
-      const blob = await optimizeImageBlob(rawBlob, 2560, 0.85);
+      const blob = alreadyOptimized ? rawBlob : await optimizeImageBlob(rawBlob, 2048, 0.85);
       const filename = customName || `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
       const filePath = `${sessionId}/${filename}`;
 
@@ -537,7 +537,7 @@ function PhoneCameraPageInner() {
 
   // 6. التقاط الصورة من البث المباشر فورياً بدون أي تأخير وبدقة عالية
   const handleCapture = async () => {
-    if (isCapturingRef.current || isUploading) return;
+    if (isCapturingRef.current) return;
     isCapturingRef.current = true;
 
     try {
@@ -593,13 +593,13 @@ function PhoneCameraPageInner() {
           canvas.toBlob(
             (blob) => {
               if (blob) {
-                uploadImageBlob(blob);
+                uploadImageBlob(blob, undefined, true);
               } else {
                 nativeCameraInputRef.current?.click();
               }
             },
             'image/jpeg',
-            0.80
+            0.82
           );
           return;
         }
@@ -891,11 +891,8 @@ function PhoneCameraPageInner() {
         <div className="relative flex items-center justify-center">
           <button
             onClick={handleCapture}
-            disabled={isUploading}
             aria-label="التقاط صورة"
-            className={`w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 shadow-2xl ${
-              isUploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-            }`}
+            className="w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 shadow-2xl cursor-pointer"
           >
             <div className="w-full h-full rounded-full bg-white transition-all duration-150 active:scale-95 shadow-md flex items-center justify-center">
               {isUploading && (

@@ -558,6 +558,46 @@
     checkPing();
     setInterval(checkPing, 5000);
 
+    // Optimize & orient image on phone GPU before LAN upload (caps at 2048px for instant canvas display)
+    async function optimizeImageFile(file, maxDim = 2048, quality = 0.85) {
+      try {
+        if (typeof createImageBitmap !== 'function') return file;
+        const bitmap = await createImageBitmap(file);
+        const width = bitmap.width;
+        const height = bitmap.height;
+        let targetW = width;
+        let targetH = height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            targetW = maxDim;
+            targetH = Math.round((height * maxDim) / width);
+          } else {
+            targetH = maxDim;
+            targetW = Math.round((width * maxDim) / height);
+          }
+        }
+        if (targetW === width && targetH === height && file.size < 1200 * 1024 && file.type === 'image/jpeg') {
+          bitmap.close();
+          return file;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          bitmap.close();
+          return file;
+        }
+        ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+        bitmap.close();
+        return await new Promise((resolve) => {
+          canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', quality);
+        });
+      } catch {
+        return file;
+      }
+    }
+
     // Upload
     async function sendFile(file) {
       if (!file || !file.type.startsWith('image/')) return;
@@ -567,18 +607,17 @@
       setView('upload');
       pctText.textContent = 'جاري الرفع ...';
 
-      // Thumbnail
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = document.createElement('img');
-        img.className = 'thumb';
-        img.src = e.target.result;
-        reel.prepend(img);
-      };
-      reader.readAsDataURL(file);
+      const payloadBlob = await optimizeImageFile(file, 2048, 0.85);
+
+      // Zero-copy Thumbnail via Object URL instead of full Base64 FileReader
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.src = URL.createObjectURL(payloadBlob);
+      reel.prepend(img);
 
       const form = new FormData();
-      form.append('photo', file, file.name || 'shot.jpg');
+      const baseName = (file.name || 'shot.jpg').replace(/\.[^.]+$/, '') + '.jpg';
+      form.append('photo', payloadBlob, baseName);
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload');
@@ -600,7 +639,7 @@
             setView('idle');
             document.getElementById('camera-in').value = '';
             document.getElementById('gallery-in').value = '';
-          }, 1800);
+          }, 900);
         } else {
           alert('فشل الإرسال: ' + xhr.responseText);
           setView('idle');

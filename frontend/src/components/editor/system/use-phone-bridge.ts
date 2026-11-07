@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import {
+  resolveImageAspectRatio,
+  setCachedImageDimensions,
+  setCachedImageAspectRatio,
+} from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
@@ -67,10 +71,21 @@ export function usePhoneBridgeListener() {
     // 3. الاستماع لوصول صورة جديدة من الهاتف وإسقاطها في الكانفاس
     const unsubPhoto = EventsOn(
       'phone:photo-received',
-      async (payload: { path: string } | string) => {
+      async (
+        payload: { path: string; width?: number; height?: number; aspectRatio?: number } | string,
+      ) => {
         if (!isSubscribed) return;
+        const isObj = typeof payload === 'object' && payload !== null;
         const src = typeof payload === 'string' ? payload : payload?.path;
         if (!src) return;
+
+        // استباق تخزين الأبعاد والنسبة إذا أرسلتها الخلفية جاهزة لمنع أي تجميد أو انتظار I/O
+        if (isObj && payload.width && payload.height) {
+          setCachedImageDimensions(src, payload.width, payload.height);
+        }
+        if (isObj && payload.aspectRatio) {
+          setCachedImageAspectRatio(src, payload.aspectRatio);
+        }
 
         try {
           usePhoneBridgeStore.getState().incrementReceivedCount();
@@ -110,13 +125,13 @@ export function usePhoneBridgeListener() {
               });
             } else {
               // مسار احتياطي آمن إن لم تتوفر أي خانة
-              const aspect = await resolveImageAspectRatio(src);
+              const aspect = (isObj && payload.aspectRatio) || (await resolveImageAspectRatio(src));
               useEditorStore.getState().addImageElement(src, aspect);
               toast.success('تم استلام الصورة من الهاتف إلى مساحة العمل');
             }
           } else {
             // وضع العناصر الحرة (Single Mode) أو قالب كولاج بلا خانات
-            const aspect = await resolveImageAspectRatio(src);
+            const aspect = (isObj && payload.aspectRatio) || (await resolveImageAspectRatio(src));
             useEditorStore.getState().addImageElement(src, aspect);
             toast.success('تم استلام الصورة من الهاتف إلى مساحة العمل', {
               description: 'تم إدراج الصورة مباشرة في الكانفاس',

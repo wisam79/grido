@@ -4,6 +4,15 @@
 
 ---
 
+## تسريع مسار جسر الهاتف ومشتق العرض — 7 نوفمبر 2026
+
+- توسّع `frontend/test/use-phone-bridge.test.tsx` بحالة تتحقق من حقن الأبعاد المسبقة (`width`, `height`, `aspectRatio`) القادمة مع حدث `phone:photo-received` في كاش الواجهة وتخطي نداء `resolveImageAspectRatio`، وتوسّع `internal/service/phone_bridge_service_test.go` للتحقق من وجود `optimizeImageFile` في صفحة الـ LAN وإرسال الأبعاد المسبقة في الحدث.
+- الأوامر المستهدفة المنفّذة:
+  - `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/use-phone-bridge.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` (**5/5 ناجحة**).
+  - `go test -v -run "TestEnsureThumbnail|TestPhoneBridgeService" ./internal/service` (**12/12 ناجحة**).
+
+---
+
 ## النصوص والخطوط F1–F10 — 7 نوفمبر 2026
 
 - مرجع النطاق ونتائج كل بند: `docs/plans/2026-11-07-text-and-fonts-review-plan.md`؛ أضيف `frontend/test/text-node.test.tsx` للتحقق من إبقاء القوس خافتاً أثناء التحرير، والبقية توسعة ملفات قائمة. لا اختبارات Go أو عقود IPC جديدة.

@@ -131,6 +131,8 @@ func TestPhoneBridgeService_Endpoints(t *testing.T) {
 
 	mediaSvc := NewMediaService()
 	bridgeSvc := NewPhoneBridgeService(mediaSvc)
+	recEvents := &phoneEventRecorder{}
+	bridgeSvc.SetRuntimeBridge(recEvents)
 	bridgeSvc.token = "test-secret-token"
 
 	// 1. Test GET / (Mobile Page)
@@ -143,6 +145,9 @@ func TestPhoneBridgeService_Endpoints(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "Grido Studio") {
 		t.Errorf("GET / response missing 'Grido Studio'")
+	}
+	if !strings.Contains(rec.Body.String(), "optimizeImageFile") {
+		t.Errorf("GET / response missing client-side image optimization")
 	}
 
 	// 2. Test GET /ping
@@ -229,6 +234,27 @@ func TestPhoneBridgeService_Endpoints(t *testing.T) {
 	}
 	if !foundImage {
 		t.Errorf("uploaded file not found with expected format in %s", mediaDir)
+	}
+
+	// Verify phone:photo-received event includes precomputed dimensions & aspectRatio
+	events := recEvents.snapshot()
+	foundPhotoEvent := false
+	for _, ev := range events {
+		if ev.name == "phone:photo-received" && ev.data != nil {
+			foundPhotoEvent = true
+			if w, ok := ev.data["width"].(int); !ok || w != 1 {
+				t.Errorf("expected width=1 in phone:photo-received payload, got %v", ev.data["width"])
+			}
+			if h, ok := ev.data["height"].(int); !ok || h != 1 {
+				t.Errorf("expected height=1 in phone:photo-received payload, got %v", ev.data["height"])
+			}
+			if ar, ok := ev.data["aspectRatio"].(float64); !ok || ar != 1.0 {
+				t.Errorf("expected aspectRatio=1.0 in phone:photo-received payload, got %v", ev.data["aspectRatio"])
+			}
+		}
+	}
+	if !foundPhotoEvent {
+		t.Errorf("expected phone:photo-received event to be emitted")
 	}
 }
 

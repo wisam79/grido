@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,7 +76,7 @@ func (s *MediaService) EnsureThumbnail(
 	}
 
 	// فحص الترويسة فقط أولاً: يمنع تفكيك صورة ضخمة جداً لمجرد طلب مصغرة.
-	cfg, err := readImageConfig(resolved)
+	cfg, orientation, err := readImageConfig(resolved)
 	if err != nil {
 		return ThumbnailResult{}, err
 	}
@@ -122,6 +123,28 @@ func (s *MediaService) EnsureThumbnail(
 			return ThumbnailResult{}, fmt.Errorf("create thumbnail dir: %w", err)
 		}
 
+		// 🚀 مسار النسخ المباشر السريع: إذا كانت الصورة أصلاً ضمن سقف العرض المطلوب
+		// (مثل صور جسر الهاتف المهيأة عند 2048px) وبدون تدوير EXIF وبنفس امتداد المشتق
+		// (.jpg/.jpeg أو .png)، ننسخ البايتات ذرياً دون فك ترميز البكسلات وإعادة ضغطها.
+		canDirectCopy := max(cfg.Width, cfg.Height) <= width &&
+			orientation <= 1 &&
+			(ext == ".jpg" || ext == ".jpeg" || ext == ".png")
+		if canDirectCopy {
+			if srcFile, openErr := os.Open(resolved); openErr == nil {
+				af, createErr := utils.CreateAtomic(thumbPath, 0o644)
+				if createErr == nil {
+					_, copyErr := io.Copy(af, srcFile)
+					_ = srcFile.Close()
+					if copyErr == nil && af.Commit() == nil {
+						return ThumbnailResult{Path: thumbPath, ContentType: thumbnailContentType(thumbExt)}, nil
+					}
+					af.Abort()
+				} else {
+					_ = srcFile.Close()
+				}
+			}
+		}
+
 		img, err := imaging.Open(resolved, imaging.AutoOrientation(true))
 		if err != nil {
 			return ThumbnailResult{}, fmt.Errorf("open image for thumbnail: %w", err)
@@ -163,18 +186,19 @@ func (s *MediaService) EnsureThumbnail(
 	return v.(ThumbnailResult), nil
 }
 
-func readImageConfig(path string) (image.Config, error) {
+func readImageConfig(path string) (image.Config, int, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return image.Config{}, fmt.Errorf("open image: %w", err)
+		return image.Config{}, 1, fmt.Errorf("open image: %w", err)
 	}
 	defer f.Close()
 
 	cfg, _, err := image.DecodeConfig(f)
 	if err != nil {
-		return image.Config{}, fmt.Errorf("decode image config: %w", err)
+		return image.Config{}, 1, fmt.Errorf("decode image config: %w", err)
 	}
-	return cfg, nil
+	orientation := readExifOrientation(f)
+	return cfg, orientation, nil
 }
 
 func isThumbnailableExtension(ext string) bool {
