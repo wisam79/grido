@@ -2382,3 +2382,9 @@
 
 ### Fixed
 - allow checksum-verified updates without requiring pinned Ed25519 public key
+
+
+## [v1.30.2] - 2026-11-05
+
+### Fixed
+- verification patch for silent background update flow

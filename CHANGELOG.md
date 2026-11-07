@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.31.4] - 2026-11-07
+
+### Added
+- إعادة هيكلة لوح خصائص الخلية (SlotProperties) ليعتمد نظام التبويبات القياسي الثلاثي الرشيق من Fluent 2 (تنسيق، ضبط، تأثير) مع تقديم بطاقة الصورة وأدوات الذكاء الاصطناعي في صدارة تبويب التنسيق (Content-First UX) تليها بطاقة مقاس الخلية، واستعادة شريط تمرير تكبير الصورة داخل الخلية (Zoom Slider 100%-300%) المفقود مع دعم التراجع الذري، وموازنة شبكة أدوات الصورة (صف متكافئ ثنائي لـ «قص» و«توسيط»، وصف متكافئ ثلاثي لـ «تدوير» و«أفقي» و«عمودي») مع اختصار العناوين والتسميات إلى كلمات مفردة دالة، وإزالة قسم توزيع الصورة المكرر لمنع ظهور شريط التمرير والحفاظ على كثافة بصرية نظيفة وهادئة، مع إزالة أزرار الذكاء الاصطناعي من شريط الأدوات العلوي لتحقيق واجهة هادئة وأيقونية خالصة وموحدة الأبعاد (h-8 w-8). وإصلاح سلوك إغلاق حوار القص (CropDialog) تلقائياً وفورياً بمجرد ضغط المستخدم على زر تطبيق القص بنجاح.
 ## [v1.31.3] - 2026-11-07
 
 ### Fixed
@@ -43,7 +47,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - enlarge rows and columns counter buttons and typography for effortless clicking
 - soften vector shape glyph contrast and adjust thumbnail dimensions for visual comfort
 - sync e2e and unit tests with promoted freeform rail, bottom quick bar zen toggle, toolbar launcher, and user-saved presets
-## [v1.30.2] - 2026-11-05
-
-### Fixed
-- verification patch for silent background update flow
