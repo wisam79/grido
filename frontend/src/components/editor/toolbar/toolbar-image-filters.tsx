@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { FadersHorizontal } from '@/components/ui/icons';
+import { PhotoFilter } from '@/components/ui/icons';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useEditorStore } from '@/lib/editor-store';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
@@ -52,6 +52,8 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
 
   if (!selectedId) return null;
 
+  const hasActiveFilter = Boolean(filter && filter !== 'none');
+
   return (
     <Popover>
       <TooltipBtn content="المرشحات">
@@ -62,10 +64,11 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
             aria-label="المرشحات"
             className={cn(
               compact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0',
-              'text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'hover:bg-muted/60 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              hasActiveFilter ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <FadersHorizontal className="w-4 h-4" />
+            <PhotoFilter className="w-4 h-4" weight={hasActiveFilter ? 'fill' : 'regular'} />
           </Button>
         </PopoverTrigger>
       </TooltipBtn>

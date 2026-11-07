@@ -159,10 +159,8 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
                   }
                   aria-pressed={isPinned}
                   className={cn(
-                    'p-1.5 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                    isPinned
-                      ? 'text-primary bg-primary/10 hover:bg-primary/20'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
+                    'p-1.5 rounded-md hover:bg-accent/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                    isPinned ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   <PushPin className="w-3.5 h-3.5" weight={isPinned ? 'fill' : 'regular'} />

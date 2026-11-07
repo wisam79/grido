@@ -165,7 +165,7 @@ export function CropDialog({
             { width: croppedCanvas.width, height: croppedCanvas.height },
             isActive,
           );
-          if (committed !== false && isActive()) handleOpenChange(false);
+          if (committed !== false) handleOpenChange(false);
         } catch {
           if (isActive()) toast.error('فشل حفظ الصورة المقصوصة');
         } finally {

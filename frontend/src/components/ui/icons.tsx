@@ -233,14 +233,10 @@ import {
   Eye12Regular as _Eye12Regular,
   Eye16Filled as _Eye16Filled,
   Eye16Regular as _Eye16Regular,
-  Eye20Filled as _Eye20Filled,
-  Eye20Regular as _Eye20Regular,
   Eyedropper16Filled as _Eyedropper16Filled,
   Eyedropper16Regular as _Eyedropper16Regular,
   EyeOff16Filled as _EyeOff16Filled,
   EyeOff16Regular as _EyeOff16Regular,
-  EyeOff20Filled as _EyeOff20Filled,
-  EyeOff20Regular as _EyeOff20Regular,
   Flash16Filled as _Flash16Filled,
   Flash16Regular as _Flash16Regular,
   FlipHorizontal16Filled as _FlipHorizontal16Filled,
@@ -313,8 +309,8 @@ import {
   Link16Regular as _Link16Regular,
   LinkDismiss16Filled as _LinkDismiss16Filled,
   LinkDismiss16Regular as _LinkDismiss16Regular,
-  List16Filled as _List16Filled,
-  List16Regular as _List16Regular,
+  List20Filled as _List20Filled,
+  List20Regular as _List20Regular,
   LockClosed16Filled as _LockClosed16Filled,
   LockClosed16Regular as _LockClosed16Regular,
   LockClosed20Filled as _LockClosed20Filled,
@@ -353,6 +349,8 @@ import {
   PersonSquare16Regular as _PersonSquare16Regular,
   Phone20Filled as _Phone20Filled,
   Phone20Regular as _Phone20Regular,
+  PhotoFilter20Filled as _PhotoFilter20Filled,
+  PhotoFilter20Regular as _PhotoFilter20Regular,
   Pin12Filled as _Pin12Filled,
   Pin12Regular as _Pin12Regular,
   Pin16Filled as _Pin16Filled,
@@ -391,6 +389,8 @@ import {
   SelectObject20Regular as _SelectObject20Regular,
   Settings16Filled as _Settings16Filled,
   Settings16Regular as _Settings16Regular,
+  Settings20Filled as _Settings20Filled,
+  Settings20Regular as _Settings20Regular,
   ShapeExclude16Filled as _ShapeExclude16Filled,
   ShapeExclude16Regular as _ShapeExclude16Regular,
   ShapeIntersect16Filled as _ShapeIntersect16Filled,
@@ -847,18 +847,14 @@ export const ExportLtr: Icon = createIcon({
 export const Eye: Icon = createIcon({
   12: [_Eye12Regular, _Eye12Filled],
   16: [_Eye16Regular, _Eye16Filled],
-  20: [_Eye20Regular, _Eye20Filled],
 });
-export const EyeSlash: Icon = createIcon({
-  16: [_EyeOff16Regular, _EyeOff16Filled],
-  20: [_EyeOff20Regular, _EyeOff20Filled],
-});
+export const EyeSlash: Icon = createIcon({ 16: [_EyeOff16Regular, _EyeOff16Filled] });
 export const Eyedropper: Icon = createIcon({ 16: [_Eyedropper16Regular, _Eyedropper16Filled] });
 export const Faders: Icon = createIcon({
   16: [_Options16Regular, _Options16Filled],
   20: [_Options20Regular, _Options20Filled],
 });
-export const FadersHorizontal: Icon = createIcon({ 16: [_Options16Regular, _Options16Filled] });
+export const FadersHorizontal: Icon = createIcon({ 20: [_Options20Regular, _Options20Filled] });
 export const FilePlus: Icon = createIcon({ 20: [_DocumentAdd20Regular, _DocumentAdd20Filled] });
 export const FilePng: Icon = createIcon({ 16: [_Image16Regular, _Image16Filled] });
 export const FileSvg: Icon = createIcon({ 16: [_Image16Regular, _Image16Filled] });
@@ -881,7 +877,10 @@ export const Folders: Icon = createIcon({
   16: [_FolderMultiple16Regular, _FolderMultiple16Filled],
 });
 export const FrameCorners: Icon = createIcon({ 20: [_CropInterim20Regular, _CropInterim20Filled] });
-export const Gear: Icon = createIcon({ 16: [_Settings16Regular, _Settings16Filled] });
+export const Gear: Icon = createIcon({
+  16: [_Settings16Regular, _Settings16Filled],
+  20: [_Settings20Regular, _Settings20Filled],
+});
 export const Globe: Icon = createIcon({ 16: [_Globe16Regular, _Globe16Filled] });
 export const GridFour: Icon = createIcon({
   16: [_Grid16Regular, _Grid16Filled],
@@ -928,7 +927,7 @@ export const Lightning: Icon = createIcon({ 16: [_Flash16Regular, _Flash16Filled
 export const LineSegment: Icon = createIcon({ 20: [_DividerTall20Regular, _DividerTall20Filled] });
 export const Link: Icon = createIcon({ 16: [_Link16Regular, _Link16Filled] });
 export const LinkBreak: Icon = createIcon({ 16: [_LinkDismiss16Regular, _LinkDismiss16Filled] });
-export const List: Icon = createIcon({ 16: [_List16Regular, _List16Filled] });
+export const List: Icon = createIcon({ 20: [_List20Regular, _List20Filled] });
 export const Lock: Icon = createIcon({ 16: [_LockClosed16Regular, _LockClosed16Filled] });
 export const LockSimple: Icon = createIcon({
   16: [_LockClosed16Regular, _LockClosed16Filled],
@@ -957,6 +956,7 @@ export const PaintBrush: Icon = createIcon({ 16: [_PaintBrush16Regular, _PaintBr
 export const PaintBucket: Icon = createIcon({ 16: [_PaintBucket16Regular, _PaintBucket16Filled] });
 export const PaintRoller: Icon = createIcon({ 20: [_PaintBrush20Regular, _PaintBrush20Filled] });
 export const Palette: Icon = createIcon({ 16: [_Color16Regular, _Color16Filled] });
+export const PhotoFilter: Icon = createIcon({ 20: [_PhotoFilter20Regular, _PhotoFilter20Filled] });
 export const Plus: Icon = createIcon({
   12: [_Add12Regular, _Add12Filled],
   16: [_Add16Regular, _Add16Filled],

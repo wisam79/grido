@@ -129,21 +129,20 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
   // 4. الحالة الطبيعية: Split Button أنيق ومدمج يجمع الإجراء السريع والقائمة الذكية
   return (
     <>
-      <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border border-primary/25 dark:border-primary/30 rounded-md overflow-hidden shadow-2xs">
+      <div className="fluent-command-group font-cairo flex items-center">
         {/* الزر الرئيسي السريع: عزل الخلفية الذكي */}
         <TooltipBtn content="عزل الخلفية الذكي">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             aria-label="عزل الخلفية"
             className={cn(
-              compact ? 'h-7 px-2' : 'h-8 px-2.5',
-              'gap-1.5 font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-none border-e border-primary/20 transition-colors cursor-pointer flex items-center select-none group',
+              compact ? 'h-7 w-7' : 'h-8 w-8',
+              'p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-e-none transition-colors cursor-pointer flex items-center justify-center select-none',
             )}
             onClick={() => handleRemoveBg(selectedItem)}
           >
-            <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
-            <span>عزل</span>
+            <Sparkle className="w-4 h-4 shrink-0" />
           </Button>
         </TooltipBtn>
 
@@ -153,14 +152,14 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 aria-label="المزيد من أدوات الذكاء الاصطناعي"
                 className={cn(
-                  compact ? 'h-7 px-1' : 'h-8 px-1.5',
-                  'text-primary hover:text-primary hover:bg-primary/10 rounded-none transition-colors cursor-pointer flex items-center justify-center',
+                  compact ? 'h-7 w-4' : 'h-8 w-4',
+                  'p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-s-none transition-colors cursor-pointer flex items-center justify-center data-[state=open]:bg-muted/60',
                 )}
               >
-                <CaretDown className="w-3.5 h-3.5 opacity-80" />
+                <CaretDown className="w-3 h-3 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipBtn>

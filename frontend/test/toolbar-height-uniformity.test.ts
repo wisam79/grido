@@ -49,26 +49,20 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     expect(aiToolsContent).toContain('h-8');
   });
 
-  it('يجب ألا يتم تضمين مجموعة أدوات الذكاء الاصطناعي كحاوية متداخلة داخل fluent-command-group أخرى', () => {
+  it('يجب أن يخلو شريط أدوات التحديد من أدوات الذكاء الاصطناعي بعد نقلها للوح الخصائص', () => {
     const selectionToolsContent = readFileSync(
       join(toolbarDir, 'toolbar-selection-tools.tsx'),
       'utf-8',
     );
 
-    // التأكد من أن AiToolsToolbarGroup منفصلة وليست محشورة داخل div.fluent-command-group
-    const aiIndex = selectionToolsContent.indexOf('<AiToolsToolbarGroup />');
-    const groupDivIndex = selectionToolsContent.indexOf('<div className="fluent-command-group');
-
-    expect(aiIndex).toBeGreaterThan(-1);
-    expect(groupDivIndex).toBeGreaterThan(-1);
-    // يجب أن تظهر AiToolsToolbarGroup قبل حاوية التحديد العامة ككتلة مستقلة
-    expect(aiIndex).toBeLessThan(groupDivIndex);
+    // التأكد من خلو شريط أدوات التحديد من أزرار الذكاء الاصطناعي بعد نقلها للوح الجانبي
+    expect(selectionToolsContent).not.toContain('<AiToolsToolbarGroup />');
+    expect(selectionToolsContent).not.toContain('AiToolsToolbarGroup');
   });
 
-  it('يجب أن تكون أزرار الإخراج الثلاثة (حفظ، طباعة، تصدير) أزراراً أيقونية متطابقة الأبعاد h-8 w-8 وبلا نصوص ممتدة', () => {
+  it('يجب أن يكون زرا الحفظ والتصدير أيقونيين (h-8 w-8) بينما يبرز زر الطباعة كإجراء إخراج أساسي بارتفاع h-8', () => {
     const toolbarContent = readFileSync(join(toolbarDir, 'toolbar.tsx'), 'utf-8');
 
-    // استخراج أزرار الإخراج الثلاثة
     const saveMatch = toolbarContent.match(/data-testid="toolbar-save"[\s\S]*?className="([^"]+)"/);
     const printMatch = toolbarContent.match(
       /data-testid="toolbar-print"[\s\S]*?className="([^"]+)"/,
@@ -85,10 +79,9 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     const printClass = printMatch![1];
     const exportClass = exportMatch![1];
 
-    // التحقق من الأبعاد المتطابقة 32×32px وبلا حشوات ممتدة
+    // الحفظ والتصدير أيقونيان متطابقان 32×32px
     for (const [name, cls] of [
       ['حفظ', saveClass],
-      ['طباعة', printClass],
       ['تصدير', exportClass],
     ]) {
       expect(cls, `${name} يجب أن يكون بارتفاع h-8`).toContain('h-8');
@@ -96,9 +89,30 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
       expect(cls, `${name} يجب أن يكون بدون حشوة p-0`).toContain('p-0');
     }
 
-    // التحقق من خلو زر التصدير من أي نص ممتد
-    const exportBlock = toolbarContent.match(/data-testid="toolbar-export"[\s\S]*?<\/Button>/);
-    expect(exportBlock).toBeTruthy();
-    expect(exportBlock![0]).not.toContain('<span>تصدير</span>');
+    // الطباعة إجراء أساسي بارز بارتفاع h-8 موحد وبنفس تنسيق زر الإدراج
+    expect(printClass).toContain('h-8');
+    expect(printClass).toContain('bg-primary/10');
+    expect(printClass).toContain('text-primary');
+    expect(printClass).toContain('border-primary/35');
+    const printBlock = toolbarContent.match(
+      /<Button[\s\S]*?data-testid="toolbar-print"[\s\S]*?<\/Button>/,
+    );
+    expect(printBlock).toBeTruthy();
+    expect(printBlock![0]).toContain('variant="outline"');
+    expect(printBlock![0]).toContain('<span>طباعة</span>');
+  });
+
+  it('يجب أن يكون زر الإدراج بارزاً بتمييز لوني وتسمية واضحة وارتفاع h-8 موحد مطابق لزر الطباعة', () => {
+    const fileOpsContent = readFileSync(join(toolbarDir, 'toolbar-file-ops.tsx'), 'utf-8');
+
+    const insertBlock = fileOpsContent.match(
+      /<Button[^>]*data-testid="toolbar-insert"[\s\S]*?<\/Button>/,
+    );
+    expect(insertBlock).toBeTruthy();
+    expect(insertBlock![0]).toContain('h-8');
+    expect(insertBlock![0]).toContain('bg-primary/10');
+    expect(insertBlock![0]).toContain('text-primary');
+    expect(insertBlock![0]).toContain('border-primary/35');
+    expect(insertBlock![0]).toContain('<span>إدراج</span>');
   });
 });

@@ -124,21 +124,21 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           <g key={`h-lbl-${idx}`}>
             <line
               x1={x}
-              y1={isZero ? 2 : 10}
+              y1={isZero ? 2 : 8}
               x2={x}
-              y2={20}
+              y2={16}
               stroke="currentColor"
               className={isZero ? 'stroke-primary' : 'stroke-ruler-tick-major'}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
             <text
               x={isNearEnd ? x - 2 : x + (isZero ? 3 : 2)}
-              y={8}
+              y={7}
               textAnchor={isNearEnd ? 'end' : 'start'}
-              fontSize={9}
+              fontSize={8.5}
               // هالة بلون سطح المسطرة تحافظ على مقروئية الرقم فوق خطوط التدريج
               style={{ paintOrder: 'stroke' }}
-              strokeWidth={2.5}
+              strokeWidth={2}
               strokeLinejoin="round"
               className={cn(
                 'font-mono select-none tracking-tighter stroke-ruler-surface',
@@ -152,9 +152,9 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           </g>,
         );
       } else if (isMid) {
-        midD += `M${x} 14V20`;
+        midD += `M${x} 11V16`;
       } else {
-        subD += `M${x} 17V20`;
+        subD += `M${x} 13.5V16`;
       }
     }
 
@@ -171,7 +171,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
   return (
     <svg
       width={viewportWidth}
-      height={20}
+      height={16}
       onPointerDown={onPointerDown}
       className="bg-ruler-surface text-foreground overflow-hidden select-none block cursor-ns-resize"
       style={{ touchAction: 'none' }}
@@ -189,27 +189,27 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       </defs>
 
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
-      <rect x={0} y={0} width={viewportWidth} height={20} className="fill-ruler-track" />
+      <rect x={0} y={0} width={viewportWidth} height={16} className="fill-ruler-track" />
 
       {/* محتوى المسطرة المتحرك مع إزاحة الورقة */}
       <g id="h-ruler-content">
         {displayW > 0 && (
           <g>
             {/* مساحة الورقة الفعلية (Paper Track Area) */}
-            <rect x={originX} y={0} width={displayW} height={20} className="fill-card" />
+            <rect x={originX} y={0} width={displayW} height={16} className="fill-card" />
             {/* ظل حواف الورقة الناعم */}
             <rect
               x={originX}
               y={0}
               width={Math.min(PAPER_EDGE_SHADOW, displayW)}
-              height={20}
+              height={16}
               fill="url(#h-paper-shadow-left)"
             />
             <rect
               x={endX - Math.min(PAPER_EDGE_SHADOW, displayW)}
               y={0}
               width={Math.min(PAPER_EDGE_SHADOW, displayW)}
-              height={20}
+              height={16}
               fill="url(#h-paper-shadow-right)"
             />
           </g>
@@ -240,9 +240,9 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               <line
                 key={`h-margin-${i}`}
                 x1={mx}
-                y1={3}
+                y1={2}
                 x2={mx}
-                y2={20}
+                y2={16}
                 className="stroke-primary/40"
                 strokeWidth={1}
                 strokeDasharray="2 2"
@@ -256,23 +256,23 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           <g>
             <rect
               x={Math.max(0, selectionBounds!.startPx)}
-              y={13}
+              y={10}
               width={Math.min(
                 selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
                 viewportWidth - Math.max(0, selectionBounds!.startPx),
               )}
-              height={7}
-              rx={2}
+              height={5}
+              rx={1.5}
               className="fill-primary/15 stroke-primary/60"
               strokeWidth={1}
             />
             {selectionBounds!.label && (
               <text
                 x={Math.max(0, selectionBounds!.startPx) + 3}
-                y={11.5}
-                fontSize={9}
+                y={8.5}
+                fontSize={8}
                 style={{ paintOrder: 'stroke' }}
-                strokeWidth={2.5}
+                strokeWidth={2}
                 strokeLinejoin="round"
                 className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
               >
@@ -282,24 +282,16 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           </g>
         )}
 
-        {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
-        {displayW > 0 && (
-          <polygon
-            points={`${originX - 4},0 ${originX + 4},0 ${originX},7`}
-            className="fill-primary"
-          />
-        )}
-
-        {/* 6. الأرقام والعلامات الرئيسية */}
+        {/* 5. الأرقام والعلامات الرئيسية */}
         {labelElements}
       </g>
 
       {/* خط الإطار السفلي الفاصل مع الكانفس */}
       <line
         x1={0}
-        y1={19.5}
+        y1={15.5}
         x2={viewportWidth}
-        y2={19.5}
+        y2={15.5}
         className="stroke-ruler-border"
         strokeWidth={1}
       />
@@ -310,7 +302,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         x1={0}
         y1={0}
         x2={0}
-        y2={20}
+        y2={16}
         stroke={rulerCursor()}
         strokeWidth={1.25}
         strokeLinecap="round"
@@ -388,9 +380,9 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         labels.push(
           <g key={`v-lbl-${idx}`}>
             <line
-              x1={isZero ? 2 : 10}
+              x1={isZero ? 2 : 8}
               y1={y}
-              x2={20}
+              x2={16}
               y2={y}
               stroke="currentColor"
               className={isZero ? 'stroke-primary' : 'stroke-ruler-tick-major'}
@@ -398,11 +390,11 @@ export const VerticalRuler = React.memo(function VerticalRuler({
             />
             {isZero ? (
               <text
-                x={4}
-                y={y + 2}
-                fontSize={9}
+                x={3}
+                y={y + 1}
+                fontSize={8.5}
                 style={{ paintOrder: 'stroke' }}
-                strokeWidth={2.5}
+                strokeWidth={2}
                 strokeLinejoin="round"
                 className="font-mono select-none tracking-tighter stroke-ruler-surface fill-primary font-bold text-2xs"
                 textAnchor="start"
@@ -412,14 +404,14 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               </text>
             ) : (
               <text
-                x={5.5}
+                x={4.5}
                 y={y}
-                fontSize={9}
+                fontSize={8.5}
                 style={{ paintOrder: 'stroke' }}
-                strokeWidth={2.5}
+                strokeWidth={2}
                 strokeLinejoin="round"
                 className="font-mono select-none tracking-tighter stroke-ruler-surface fill-ruler-tick-label-active font-medium"
-                transform={`rotate(-90, 5.5, ${y})`}
+                transform={`rotate(-90, 4.5, ${y})`}
                 textAnchor={isNearEnd ? 'start' : 'middle'}
                 dominantBaseline="middle"
               >
@@ -429,9 +421,9 @@ export const VerticalRuler = React.memo(function VerticalRuler({
           </g>,
         );
       } else if (isMid) {
-        midD += `M14 ${y}H20`;
+        midD += `M11 ${y}H16`;
       } else {
-        subD += `M17 ${y}H20`;
+        subD += `M13.5 ${y}H16`;
       }
     }
 
@@ -447,7 +439,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
 
   return (
     <svg
-      width={20}
+      width={16}
       height={viewportHeight}
       onPointerDown={onPointerDown}
       className="bg-ruler-surface text-foreground overflow-hidden select-none block cursor-ew-resize"
@@ -466,26 +458,26 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       </defs>
 
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
-      <rect x={0} y={0} width={20} height={viewportHeight} className="fill-ruler-track" />
+      <rect x={0} y={0} width={16} height={viewportHeight} className="fill-ruler-track" />
 
       {/* محتوى المسطرة المتحرك مع إزاحة الورقة */}
       <g id="v-ruler-content">
         {displayH > 0 && (
           <g>
             {/* مساحة الورقة الفعلية (Paper Track Area) */}
-            <rect x={0} y={originY} width={20} height={displayH} className="fill-card" />
+            <rect x={0} y={originY} width={16} height={displayH} className="fill-card" />
             {/* ظل حواف الورقة الناعم */}
             <rect
               x={0}
               y={originY}
-              width={20}
+              width={16}
               height={Math.min(PAPER_EDGE_SHADOW, displayH)}
               fill="url(#v-paper-shadow-top)"
             />
             <rect
               x={0}
               y={endY - Math.min(PAPER_EDGE_SHADOW, displayH)}
-              width={20}
+              width={16}
               height={Math.min(PAPER_EDGE_SHADOW, displayH)}
               fill="url(#v-paper-shadow-bottom)"
             />
@@ -516,9 +508,9 @@ export const VerticalRuler = React.memo(function VerticalRuler({
             {[originY + marginPx, endY - marginPx].map((my, i) => (
               <line
                 key={`v-margin-${i}`}
-                x1={3}
+                x1={2}
                 y1={my}
-                x2={20}
+                x2={16}
                 y2={my}
                 className="stroke-primary/40"
                 strokeWidth={1}
@@ -532,27 +524,27 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         {hasSelection && (
           <g>
             <rect
-              x={13}
+              x={10}
               y={Math.max(0, selectionBounds!.startPx)}
-              width={7}
+              width={5}
               height={Math.min(
                 selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
                 viewportHeight - Math.max(0, selectionBounds!.startPx),
               )}
-              rx={2}
+              rx={1.5}
               className="fill-primary/15 stroke-primary/60"
               strokeWidth={1}
             />
             {selectionBounds!.label && (
               <text
-                x={11.5}
+                x={9}
                 y={Math.max(0, selectionBounds!.startPx) + 3}
-                fontSize={9}
+                fontSize={8}
                 style={{ paintOrder: 'stroke' }}
-                strokeWidth={2.5}
+                strokeWidth={2}
                 strokeLinejoin="round"
                 className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
-                transform={`rotate(-90, 11.5, ${Math.max(0, selectionBounds!.startPx) + 3})`}
+                transform={`rotate(-90, 9, ${Math.max(0, selectionBounds!.startPx) + 3})`}
                 textAnchor="start"
               >
                 {selectionBounds!.label}
@@ -561,23 +553,15 @@ export const VerticalRuler = React.memo(function VerticalRuler({
           </g>
         )}
 
-        {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
-        {displayH > 0 && (
-          <polygon
-            points={`0,${originY - 4} 0,${originY + 4} 7,${originY}`}
-            className="fill-primary"
-          />
-        )}
-
-        {/* 6. الأرقام والعلامات الرئيسية */}
+        {/* 5. الأرقام والعلامات الرئيسية */}
         {labelElements}
       </g>
 
       {/* خط الإطار الأيمن الفاصل مع الكانفس */}
       <line
-        x1={19.5}
+        x1={15.5}
         y1={0}
-        x2={19.5}
+        x2={15.5}
         y2={viewportHeight}
         className="stroke-ruler-border"
         strokeWidth={1}
@@ -588,7 +572,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         id="v-ruler-cursor"
         x1={0}
         y1={0}
-        x2={20}
+        x2={16}
         y2={0}
         stroke={rulerCursor()}
         strokeWidth={1.25}

@@ -97,7 +97,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           <ModeSwitcher />
         </div>
 
-        {/* المجموعة النهائية: حفظ محايد، تصدير بإطار، وطباعة بارزة على سطح واحد */}
+        {/* المجموعة النهائية: أزرار إخراج أيقونية موحدة بالكامل بنمط Fluent 2 Subtle */}
         <CommandGroup className="gap-1.5">
           {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
           <TooltipBtn content="حفظ المشروع (Ctrl + S)">
@@ -127,10 +127,10 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             </Button>
           </TooltipBtn>
 
-          {/* تصدير (Ctrl+E) — إطار خفيف يميّز الإجراء الثانوي */}
+          {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
           <TooltipBtn content="تصدير صورة (Ctrl + E)">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={onExport}
               onMouseEnter={() => {
@@ -147,10 +147,10 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             </Button>
           </TooltipBtn>
 
-          {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
+          {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي البارز بنفس تنسيق زر الإدراج */}
           <TooltipBtn content="طباعة المستند (Ctrl + P)">
             <Button
-              size="icon"
+              variant="outline"
               onClick={onPrint}
               onMouseEnter={() => {
                 void import('@/components/editor/dialogs/print-dialog');
@@ -160,9 +160,10 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               }}
               data-testid="toolbar-print"
               aria-label="طباعة المستند"
-              className="h-8 w-8 p-0 cursor-pointer"
+              className="h-8 px-2.5 gap-1.5 text-xs font-semibold border-primary/35 bg-primary/10 text-primary hover:bg-primary/18 hover:text-primary cursor-pointer shadow-none"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 shrink-0" weight="bold" />
+              <span>طباعة</span>
             </Button>
           </TooltipBtn>
 

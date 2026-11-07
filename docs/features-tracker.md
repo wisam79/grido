@@ -9,6 +9,20 @@
 
 ---
 
+## توحيد شريط الأدوات العلوي وإعادة هيكلة لوح خصائص الخلية بتبويبات Fluent 2 الداخلية وأدوات AI — 7 نوفمبر 2026
+
+| المحور | ما نُفّذ | دليل التنفيذ |
+|---|---|---|
+| تبويبات لوح خصائص الخلية (SlotProperties) | تحويل لوح خصائص الخلية إلى نظام التبويبات القياسي اللاصق الثلاثي الرشيق من Fluent 2 (`تنسيق` style، `ضبط` adjust، `تأثير` effects) مع دمج تحويلات التدوير والقلب والقص والذكاء الاصطناعي في تبويب التنسيق، وإزالة قسم توزيع الصورة المكرر لمنع ظهور شريط التمرير والحفاظ على كثافة بصرية أنيقة خالية من الحشو | `frontend/src/components/editor/properties/slot-properties.tsx:515` |
+| دمج أدوات الذكاء الاصطناعي في اللوح الجانبي | نقل أزرار أدوات الذكاء الاصطناعي (عزل الخلفية، ترميم الوجه، تأطير الوجه) مباشرة إلى التبويب الأول (`تنسيق`) في لوح خصائص الخلية مقترنة بمؤشرات التقدم والحصص وزر الإلغاء، لتتماثل مع لوح الخصائص في الوضع الحر | `frontend/src/components/editor/properties/slot-properties.tsx:530` |
+| تنقية شريط الأدوات العلوي وتمييز الإدراج والطباعة | إزالة أزرار الذكاء الاصطناعي من شريط أدوات التحديد العلوي (`toolbar-selection-tools.tsx`) وإزالة أزرار التدوير والقلب الزائدة، مع تمييز نقطتي بداية ونهاية سير العمل: زر «إدراج» المنقسم المميز بلون الهوية الخفيف (`bg-primary/10 text-primary border-primary/35 h-8`) في اليمين، وزر «طباعة» الأساسي البارز (`variant="default" h-8`) في اليسار، وتوحيد بقية أزرار الشريط كأزرار أيقونية مسطحة هادئة (`h-8 w-8 p-0`) | `frontend/src/components/editor/toolbar/toolbar.tsx:84`، `frontend/src/components/editor/toolbar/toolbar-file-ops.tsx:120`، `frontend/src/components/editor/toolbar/toolbar-selection-tools.tsx:30` |
+| حراس الاختبارات وتفادي الانحدار | تحديث اختبار الحارس `toolbar-height-uniformity.test.ts` للتحقق الصارم من خلو شريط أدوات التحديد من أزرار الذكاء الاصطناعي وتطابق أبعاد ومحاذاة كافة الأزرار الأيقونية | `frontend/test/toolbar-height-uniformity.test.ts:52` |
+| إغلاق حوار القص تلقائياً عند التطبيق | تصحيح سباق دورة حياة `CropDialog` و`RefineBgDialog` حيث كان تحديث `imageSrc` بعد الحفظ يبطل محاولة الحفظ (`saveAttemptRef`) ويمنع استدعاء إغلاق الحوار، وتم ضمان إغلاق الحوار فور التزام الحفظ بنجاح | `frontend/src/components/editor/dialogs/crop-dialog.tsx:168`، `frontend/src/components/editor/dialogs/refine-bg-dialog.tsx:585`، `frontend/src/components/editor/properties/slot-properties.tsx:1103` |
+
+**التحقق:** اختبارات مستهدفة: `toolbar-height-uniformity.test.ts` (5/5)، `toolbar-transfer-to-collage.test.tsx` (6/6)، `collage-image-crop.test.tsx` (15/15)، `image-dialog-lifecycle.test.tsx` (12/12)، `App.test.tsx` (26/26)؛ واجتياز الفحص النمطي `npm run lint` بنجاح صفر تحذيرات و`npm run typecheck` و`docs-gate.mjs --strict-refs`.
+
+---
+
 ## تسريع مسار جسر كاميرا الهاتف إلى الكانفاس — 7 نوفمبر 2026
 
 | المحور | ما نُفّذ | دليل التنفيذ |

@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getPhotoDimensions } from '@/components/editor/panels/collage/collage-grid-math';
 import {
   FluentSection,
+  FluentSegmentedControl,
   FluentSettingRow,
   FluentSliderField,
   FluentTooltip,
@@ -16,10 +17,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   ArrowClockwise,
   ArrowCounterClockwise,
-  ArrowsLeftRight,
   CaretDown,
   Check,
   Copy,
@@ -27,12 +28,19 @@ import {
   Crosshair,
   FlipHorizontal,
   FlipVertical,
-  GridFour,
   LockSimple,
   LockSimpleOpen,
+  MagicWand,
+  Sparkle,
+  UserFocus,
+  X,
 } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useAiEnhance } from '@/hooks/use-ai-enhance';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useFaceFrame } from '@/hooks/use-face-frame';
 import {
   getCollageGeometry,
   getSlotRect,
@@ -105,6 +113,28 @@ const APPLY_ALL_ERROR_MESSAGES: Record<CollageSlotSizeError, string> = {
   'out-of-bounds': 'هذا المقاس يخرج بعض الخلايا عن حدود الورقة',
   overlap: 'المقاس يتداخل مع خلايا أخرى — استخدم الكولاج الحر للمواضع المخصصة',
 };
+
+/** تبويبات لوح خصائص الخلية القياسية الثلاث الموحدة (Zero Dead Tabs) */
+const SLOT_PROPERTIES_TABS = [
+  {
+    id: 'style',
+    label: 'تنسيق',
+    ariaLabel: 'التنسيق والقياسات والتحويلات',
+    tooltip: 'القياسات والذكاء الاصطناعي والتحويلات وتوزيع الخلية',
+  },
+  {
+    id: 'adjust',
+    label: 'ضبط',
+    ariaLabel: 'الألوان والضبط',
+    tooltip: 'السطوع والتباين ولون الخلفية',
+  },
+  {
+    id: 'effects',
+    label: 'تأثير',
+    ariaLabel: 'التأثيرات والمرشحات',
+    tooltip: 'المرشحات وتأثيرات الصورة',
+  },
+];
 
 /** حقول سياقية لمقاس الخلية المحددة؛ تُحفظ كخطوة تراجع واحدة عند تأكيد القيمة. */
 function SlotSizeFields({
@@ -398,9 +428,7 @@ export const SlotProperties = React.memo(function SlotProperties({
 }) {
   const {
     slots,
-    swapSlots,
     fillAllSlots,
-    fillEmptySlots,
     setSlotImage,
     lastEditedImage,
     applyCollageSlotSizeToAll,
@@ -410,9 +438,7 @@ export const SlotProperties = React.memo(function SlotProperties({
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
-      swapSlots: state.swapSlots,
       fillAllSlots: state.fillAllSlots,
-      fillEmptySlots: state.fillEmptySlots,
       setSlotImage: state.setSlotImage,
       lastEditedImage: state.lastEditedImage,
       applyCollageSlotSizeToAll: state.applyCollageSlotSizeToAll,
@@ -425,7 +451,6 @@ export const SlotProperties = React.memo(function SlotProperties({
   const [lockSlotAspect, setLockSlotAspect] = useState(false);
   const [autoFill, setAutoFill] = useState(isAutoFillGridEnabled);
 
-  const hasEmptySlots = useMemo(() => slots.some((s) => !s.imageSrc), [slots]);
   const hasColorChanges =
     (slot.brightness ?? 100) !== 100 ||
     (slot.contrast ?? 100) !== 100 ||
@@ -440,6 +465,28 @@ export const SlotProperties = React.memo(function SlotProperties({
     [slot.filter],
   );
 
+  const [activeTab, setActiveTab] = useState<string>('style');
+
+  const onUpdateAdapter = React.useCallback(
+    (id: string, patch: Partial<CanvasSlot>) => {
+      onUpdate(id, patch);
+    },
+    [onUpdate],
+  );
+
+  const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } =
+    useBgRemoval(onUpdateAdapter);
+  const {
+    isEnhancing,
+    enhanceProgress,
+    enhanceProgressText,
+    remainingQuota,
+    dailyLimit,
+    handleEnhance,
+  } = useAiEnhance(onUpdateAdapter);
+  const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } =
+    useFaceFrame(onUpdateAdapter);
+
   const handleUseLastImage = () => {
     if (lastEditedImage) {
       setSlotImage(slot.id, lastEditedImage);
@@ -451,377 +498,531 @@ export const SlotProperties = React.memo(function SlotProperties({
 
   return (
     <div className="min-w-0 font-cairo select-none pb-2" dir="rtl">
-      {/* 1. مقاس الخلية — زر «تطبيق على الكل» مدمج بهدوء في رأس القسم لتوفير المساحة الرأسية */}
-      <FluentSection
-        title="مقاس الخلية"
-        collapsible
-        defaultOpen
-        className="border-border/40 py-2.5"
-        action={
-          slots.length > 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                const result = applyCollageSlotSizeToAll(slot.id);
-                if (result.ok) {
-                  toast.success('تم توحيد مقاس الخلايا');
-                } else {
-                  toast.error(APPLY_ALL_ERROR_MESSAGES[result.reason]);
-                }
-              }}
-              className="inline-flex items-center gap-1 text-mini text-primary hover:text-primary/80 transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-            >
-              <Copy className="size-3 shrink-0" />
-              <span>تطبيق على الكل</span>
-            </button>
-          ) : undefined
-        }
-      >
-        <SlotSizeFields
-          key={slot.id}
-          slot={slot}
-          lockAspect={lockSlotAspect}
-          onLockAspectChange={() => setLockSlotAspect((value) => !value)}
-        />
-      </FluentSection>
-
-      {/* 2. الصورة — صف القص والتوسيط ثم صف تحويلات موحّد (تدوير + قلبان) */}
-      <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2.5">
-        {slot.imageSrc ? (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                className="h-8 min-w-0 flex-1 gap-1.5 px-2 text-xs border-border/60 shadow-none"
-                onClick={() => setCropOpen(true)}
-                aria-label="قص الصورة"
-              >
-                <Crop className="size-4 text-primary shrink-0" weight="bold" />
-                <span>قص</span>
-              </Button>
-
-              <FluentTooltip content="إعادة توسيط الصورة" side="top">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8 shrink-0 border-border/60 shadow-none"
-                  onClick={() => {
-                    onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  aria-label="توسيط"
-                >
-                  <Crosshair className="size-4" />
-                </Button>
-              </FluentTooltip>
-            </div>
-
-            {/* التحويلات: أزرار أيقونية متساوية — القلبان مفاتيح حالة (aria-pressed)
-                والتدوير فعل مباشر. الفعل عبر أدوات الخانة في الستور بخطوة تراجع واحدة. */}
-            <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="تحويلات الصورة">
-              <FluentTooltip content="تدوير 90 درجة" side="top">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-full border-border/60 shadow-none"
-                  onClick={() => rotateSlot(slot.id, 90)}
-                  aria-label="تدوير 90 درجة"
-                >
-                  <ArrowClockwise className="size-4" weight="bold" />
-                </Button>
-              </FluentTooltip>
-
-              <FluentTooltip content="قلب أفقي" side="top">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-pressed={Boolean(slot.flipX)}
-                  className={cn(
-                    'h-8 w-full border-border/60 shadow-none',
-                    slot.flipX && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
-                  )}
-                  onClick={() => flipSlotX(slot.id)}
-                >
-                  <FlipHorizontal className="size-4" weight={slot.flipX ? 'fill' : 'regular'} />
-                </Button>
-              </FluentTooltip>
-
-              <FluentTooltip content="قلب عمودي" side="top">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-pressed={Boolean(slot.flipY)}
-                  className={cn(
-                    'h-8 w-full border-border/60 shadow-none',
-                    slot.flipY && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
-                  )}
-                  onClick={() => flipSlotY(slot.id)}
-                >
-                  <FlipVertical className="size-4" weight={slot.flipY ? 'fill' : 'regular'} />
-                </Button>
-              </FluentTooltip>
-            </div>
-          </div>
-        ) : (
-          lastEditedImage && (
-            <Button
-              variant="secondary"
-              className="h-8 w-full gap-1.5 text-xs shadow-none"
-              onClick={handleUseLastImage}
-              aria-label="آخر صورة"
-            >
-              <Copy className="size-3.5 text-muted-foreground shrink-0" />
-              <span>آخر صورة</span>
-            </Button>
-          )
-        )}
-
-        <FluentSettingRow label="تعبئة تلقائية" className="py-0.5">
-          <Switch
-            checked={autoFill}
-            onCheckedChange={(checked) => {
-              setAutoFill(checked);
-              setAutoFillGridEnabled(checked);
-            }}
-            aria-label="تعبئة تلقائية"
+      {/* شريط التبويبات القياسي اللاصق الأربعة الموحد */}
+      <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
+          <FluentSegmentedControl<string>
+            layoutId="slot-properties-tabs"
+            variant="tabs"
+            value={activeTab}
+            onChange={setActiveTab}
+            size="md"
+            idPrefix="slot-properties-tabs"
+            options={SLOT_PROPERTIES_TABS}
           />
-        </FluentSettingRow>
-      </FluentSection>
+        </div>
 
-      {slot.imageSrc && (
-        <>
-          {/* 3. ألوان الصورة — بلا فواصل داخلية زائدة، وزر الاستعادة في الرأس عند التغيير */}
-          <FluentSection
-            title="ألوان الصورة"
-            collapsible
-            defaultOpen
-            className="border-border/40 py-2.5"
-            action={
-              hasColorChanges ? (
-                <button
-                  type="button"
-                  aria-label="إعادة تعيين الألوان"
-                  onClick={() => {
-                    onUpdate(slot.id, {
-                      filter: 'none',
-                      brightness: 100,
-                      contrast: 100,
-                      saturation: 100,
-                    });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className="inline-flex items-center gap-1 text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                >
-                  <ArrowCounterClockwise className="size-3 shrink-0" />
-                  <span>إعادة تعيين</span>
-                </button>
-              ) : undefined
-            }
-          >
-            <FluentSettingRow label="الخلفية" className="py-0">
-              <ColorPanel wheelPosition="bottom">
-                <ColorField
-                  color={slot.bgColor ?? 'transparent'}
-                  onChange={(val: string) => {
-                    const freshStore = useEditorStore.getState();
-                    if (autoFill) {
-                      freshStore.updateSlotsBatch(
-                        freshStore.slots.map((s) => s.id),
-                        { bgColor: val },
-                      );
-                    } else {
-                      onUpdate(slot.id, { bgColor: val });
+        {/* 1. تبويب التنسيق (Style) — بطاقة الصورة والذكاء الاصطناعي في الصدارة كأولوية تفاعلية، يليها مقاس الخلية */}
+        <TabsContent value="style" className="mt-0 space-y-2.5 focus-visible:outline-none">
+          {/* الصورة والتحسينات */}
+          {slot.imageSrc ? (
+            <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2">
+              <div className="space-y-2.5">
+                {/* أدوات الذكاء الاصطناعي (3 أعمدة متماثلة) */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {/* 1. عزل الخلفية */}
+                  <FluentTooltip
+                    content={
+                      isRemovingBg
+                        ? bgProgressText || 'إلغاء عزل الخلفية'
+                        : 'عزل الخلفية الذكي (AI)'
                     }
-                  }}
-                  onCommit={() => useEditorStore.getState().pushHistory()}
-                  className="w-full border-border/60 shadow-none"
-                  ariaLabel="لون الخلفية"
-                />
-              </ColorPanel>
-            </FluentSettingRow>
-
-            <div className="space-y-2.5 pt-1">
-              <FluentSliderField
-                label="السطوع"
-                value={slot.brightness ?? 100}
-                min={0}
-                max={200}
-                step={1}
-                unit="%"
-                defaultValue={100}
-                onChange={(v) => onUpdate(slot.id, { brightness: v })}
-                onCommit={() => {
-                  useRenderQuality.getState().setIsDraggingFilter(false);
-                  useEditorStore.getState().pushHistory();
-                }}
-                onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-              />
-              <FluentSliderField
-                label="التباين"
-                value={slot.contrast ?? 100}
-                min={0}
-                max={200}
-                step={1}
-                unit="%"
-                defaultValue={100}
-                onChange={(v) => onUpdate(slot.id, { contrast: v })}
-                onCommit={() => {
-                  useRenderQuality.getState().setIsDraggingFilter(false);
-                  useEditorStore.getState().pushHistory();
-                }}
-                onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-              />
-              <FluentSliderField
-                label="التشبع"
-                value={slot.saturation ?? 100}
-                min={0}
-                max={200}
-                step={1}
-                unit="%"
-                defaultValue={100}
-                onChange={(v) => onUpdate(slot.id, { saturation: v })}
-                onCommit={() => {
-                  useRenderQuality.getState().setIsDraggingFilter(false);
-                  useEditorStore.getState().pushHistory();
-                }}
-                onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-              />
-            </div>
-          </FluentSection>
-
-          {/* 4. المرشحات — مطوية افتراضياً لمنع الازدحام البصري، مع إظهار اسم المرشح النشط في الرأس */}
-          <FluentSection
-            title="المرشحات"
-            collapsible
-            defaultOpen={false}
-            className="border-border/40 py-2.5"
-            badge={
-              activeFilterObj ? (
-                <span className="text-mini font-normal text-primary">
-                  · {filterShortName(activeFilterObj.name)}
-                </span>
-              ) : undefined
-            }
-            action={
-              activeFilterObj ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onUpdate(slot.id, { filter: 'none' });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className="text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                >
-                  إزالة
-                </button>
-              ) : undefined
-            }
-          >
-            <div className="grid grid-cols-3 gap-1.5">
-              {IMAGE_FILTERS.map((filter) => {
-                const isActive = (slot.filter || 'none') === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(slot.id, { filter: filter.id });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    aria-pressed={isActive}
-                    aria-label={filter.name}
-                    title={filter.name}
-                    className={cn(
-                      'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors duration-150 cursor-pointer',
-                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      isActive
-                        ? 'border-primary bg-primary/10 text-primary font-semibold'
-                        : 'border-border/60 bg-card/60 hover:bg-accent/60 text-muted-foreground hover:text-foreground',
-                    )}
+                    side="top"
                   >
-                    <span className="w-full aspect-4/3 rounded-sm overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
-                      <img
-                        src={slot.imageSrc}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        style={{ filter: filter.css }}
-                      />
-                    </span>
-                    <span className="text-mini w-full text-center leading-tight truncate px-0.5">
-                      {filterShortName(filter.name)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </FluentSection>
+                    <Button
+                      variant={isRemovingBg ? 'destructive' : 'outline'}
+                      title={isRemovingBg ? 'إلغاء العزل' : 'عزل الخلفية'}
+                      className={cn(
+                        'relative overflow-hidden h-13 flex flex-col items-center justify-center gap-1 rounded-md border transition-all cursor-pointer p-1 shadow-2xs',
+                        isRemovingBg
+                          ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent'
+                          : 'border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 text-foreground',
+                      )}
+                      onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(slot)}
+                    >
+                      {isRemovingBg ? (
+                        <Spinner className="w-4 h-4 shrink-0" size={16} />
+                      ) : (
+                        <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                      )}
+                      <span className="text-mini font-semibold truncate max-w-full leading-tight">
+                        {isRemovingBg
+                          ? bgProgress > 0
+                            ? `إلغاء (${Math.round(bgProgress)}%)`
+                            : 'إلغاء'
+                          : 'عزل الخلفية'}
+                      </span>
+                      {isRemovingBg && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
+                        >
+                          <span
+                            className="block h-full bg-destructive-foreground transition-[width] duration-300"
+                            style={{ width: `${Math.round(bgProgress)}%` }}
+                          />
+                        </span>
+                      )}
+                    </Button>
+                  </FluentTooltip>
 
-          {/* 5. توزيع الصورة — مطوي افتراضياً ومرتب في صف واحد نظيف عند الفتح */}
-          {slots.length > 1 && (
-            <FluentSection
-              title="توزيع الصورة"
-              collapsible
-              defaultOpen={false}
-              className="border-border/40 py-2.5"
-            >
-              <div className="grid grid-cols-2 gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!hasEmptySlots}
-                  className="h-8 min-w-0 gap-1.5 px-2 text-xs font-medium border-border/60 shadow-none"
-                  onClick={() => {
-                    if (slot.imageSrc) fillEmptySlots(slot.imageSrc, slot.id);
-                  }}
-                  aria-label="تعبئة الخلايا الفارغة"
-                >
-                  <GridFour className="size-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">تعبئة الفارغ</span>
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  {/* 2. ترميم الوجه */}
+                  <FluentTooltip
+                    content={
+                      isEnhancing
+                        ? enhanceProgressText || 'جاري ترميم الوجه'
+                        : `ترميم وتوضيح الوجه (${remainingQuota}/${dailyLimit} اليوم)`
+                    }
+                    side="top"
+                  >
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="h-8 min-w-0 justify-between gap-1 px-2 text-xs font-medium border-border/60 shadow-none"
-                      aria-label="تبديل مع خلية أخرى"
+                      title={`ترميم الوجه (${remainingQuota}/${dailyLimit})`}
+                      disabled={isEnhancing || isRemovingBg}
+                      className={cn(
+                        'relative overflow-hidden h-13 flex flex-col items-center justify-center gap-1 rounded-md border transition-all cursor-pointer p-1 shadow-2xs',
+                        isEnhancing && 'border-primary/50 bg-primary/10 text-primary opacity-100',
+                        !isEnhancing && isRemovingBg && 'opacity-50 cursor-not-allowed',
+                        !isEnhancing &&
+                          !isRemovingBg &&
+                          'border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 text-foreground',
+                      )}
+                      onClick={() => handleEnhance(slot)}
                     >
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <ArrowsLeftRight className="size-3.5 text-muted-foreground shrink-0" />
-                        <span className="truncate">تبديل مع</span>
-                      </span>
-                      <CaretDown className="size-3 shrink-0 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
-                    {slots
-                      .filter((s) => s.id !== slot.id)
-                      .map((otherSlot, idx) => (
-                        <DropdownMenuItem
-                          key={otherSlot.id}
-                          onClick={() => swapSlots(slot.id, otherSlot.id)}
-                          className="cursor-pointer flex items-center justify-between text-xs py-1.5"
+                      {!isEnhancing && (
+                        <span
+                          className="absolute top-1 start-1.5 text-3xs font-mono text-muted-foreground/75 leading-none select-none"
+                          dir="ltr"
                         >
-                          <span className="font-medium">
-                            الخلية #
-                            {otherSlot.cellIndex !== undefined ? otherSlot.cellIndex + 1 : idx + 1}
-                          </span>
-                          <span className="text-3xs text-muted-foreground">
-                            {otherSlot.imageSrc ? 'ممتلئة' : 'فارغة'}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                          {remainingQuota}/{dailyLimit}
+                        </span>
+                      )}
+                      {isEnhancing ? (
+                        <Spinner className="w-4 h-4 text-primary shrink-0" size={16} />
+                      ) : (
+                        <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                      )}
+                      <span className="text-mini font-semibold tabular-nums truncate max-w-full leading-tight">
+                        {isEnhancing
+                          ? enhanceProgress > 0
+                            ? `${Math.round(enhanceProgress)}%`
+                            : 'جاري...'
+                          : 'ترميم الوجه'}
+                      </span>
+                      {isEnhancing && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20"
+                        >
+                          <span
+                            className="block h-full bg-primary transition-[width] duration-300"
+                            style={{ width: `${Math.round(enhanceProgress)}%` }}
+                          />
+                        </span>
+                      )}
+                    </Button>
+                  </FluentTooltip>
+
+                  {/* 3. تأطير الوجه */}
+                  <FluentTooltip
+                    content={
+                      isFraming
+                        ? frameProgressText || 'إلغاء ضبط الوجه'
+                        : 'تأطير وتوسيط الوجه وفق معايير الهوية'
+                    }
+                    side="top"
+                  >
+                    <Button
+                      variant={isFraming ? 'destructive' : 'outline'}
+                      title={isFraming ? 'إلغاء ضبط الوجه' : 'تأطير الوجه تلقائياً'}
+                      className={cn(
+                        'relative overflow-hidden h-13 flex flex-col items-center justify-center gap-1 rounded-md border transition-all cursor-pointer p-1 shadow-2xs',
+                        isFraming
+                          ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent'
+                          : 'border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 text-foreground',
+                      )}
+                      onClick={isFraming ? handleCancelFrame : () => handleFrameFace(slot)}
+                    >
+                      {isFraming ? (
+                        <X className="w-4 h-4 text-destructive-foreground shrink-0" weight="bold" />
+                      ) : (
+                        <UserFocus className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                      )}
+                      <span className="text-mini font-semibold truncate max-w-full leading-tight">
+                        {isFraming
+                          ? frameProgress > 0
+                            ? `إلغاء (${Math.round(frameProgress)}%)`
+                            : 'إلغاء'
+                          : 'تأطير الوجه'}
+                      </span>
+                      {isFraming && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
+                        >
+                          <span
+                            className="block h-full bg-destructive-foreground transition-[width] duration-300"
+                            style={{ width: `${Math.round(frameProgress)}%` }}
+                          />
+                        </span>
+                      )}
+                    </Button>
+                  </FluentTooltip>
+                </div>
+
+                {/* شريط التحويلات المدمج (أسلوب Figma / Lightroom): 5 أزرار متكافئة في صف واحد */}
+                <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="تحويلات الصورة">
+                  <FluentTooltip content="قص وتعديل إطار الصورة" side="top">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40"
+                      onClick={() => setCropOpen(true)}
+                      aria-label="قص الصورة"
+                    >
+                      <Crop className="size-4 text-primary shrink-0" weight="bold" />
+                    </Button>
+                  </FluentTooltip>
+
+                  <FluentTooltip content="تدوير 90 درجة" side="top">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40"
+                      onClick={() => rotateSlot(slot.id, 90)}
+                      aria-label="تدوير 90 درجة"
+                    >
+                      <ArrowClockwise className="size-4 shrink-0" weight="bold" />
+                    </Button>
+                  </FluentTooltip>
+
+                  <FluentTooltip content="قلب أفقي" side="top">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-pressed={Boolean(slot.flipX)}
+                      className={cn(
+                        'h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40',
+                        slot.flipX &&
+                          'border-primary/45 text-primary bg-primary/10 hover:text-primary',
+                      )}
+                      onClick={() => flipSlotX(slot.id)}
+                      aria-label="قلب أفقي"
+                    >
+                      <FlipHorizontal
+                        className="size-4 shrink-0"
+                        weight={slot.flipX ? 'fill' : 'regular'}
+                      />
+                    </Button>
+                  </FluentTooltip>
+
+                  <FluentTooltip content="قلب عمودي" side="top">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-pressed={Boolean(slot.flipY)}
+                      className={cn(
+                        'h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40',
+                        slot.flipY &&
+                          'border-primary/45 text-primary bg-primary/10 hover:text-primary',
+                      )}
+                      onClick={() => flipSlotY(slot.id)}
+                      aria-label="قلب عمودي"
+                    >
+                      <FlipVertical
+                        className="size-4 shrink-0"
+                        weight={slot.flipY ? 'fill' : 'regular'}
+                      />
+                    </Button>
+                  </FluentTooltip>
+
+                  <FluentTooltip content="إعادة توسيط الصورة وإلغاء الإزاحة" side="top">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40"
+                      onClick={() => {
+                        onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      aria-label="توسيط الصورة"
+                    >
+                      <Crosshair className="size-4 shrink-0" weight="bold" />
+                    </Button>
+                  </FluentTooltip>
+                </div>
+
+                {/* تكبير الصورة داخل الخلية */}
+                <div className="pt-0.5">
+                  <FluentSliderField
+                    label="التكبير"
+                    value={Math.round((slot.zoom ?? 1) * 100)}
+                    min={100}
+                    max={300}
+                    step={5}
+                    unit="%"
+                    defaultValue={100}
+                    onChange={(v) => onUpdate(slot.id, { zoom: v / 100 })}
+                    onCommit={() => useEditorStore.getState().pushHistory()}
+                  />
+                </div>
               </div>
             </FluentSection>
+          ) : (
+            <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2">
+              {lastEditedImage ? (
+                <Button
+                  variant="secondary"
+                  className="h-8 w-full gap-1.5 text-xs font-semibold shadow-none cursor-pointer"
+                  onClick={handleUseLastImage}
+                  aria-label="آخر صورة"
+                >
+                  <Copy className="size-3.5 text-muted-foreground shrink-0" />
+                  <span>استخدام آخر صورة</span>
+                </Button>
+              ) : (
+                <div className="py-4 text-center text-xs text-muted-foreground select-none">
+                  انقر نقراً مزدوجاً على الخلية لإدراج صورة
+                </div>
+              )}
+            </FluentSection>
           )}
-        </>
-      )}
+
+          {/* مقاس الخلية — أبعاد الحاوية الهندسية وسلوك التعبئة */}
+          <FluentSection
+            title="مقاس الخلية"
+            collapsible
+            defaultOpen
+            className="border-border/40 py-2"
+            action={
+              slots.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const result = applyCollageSlotSizeToAll(slot.id);
+                    if (result.ok) {
+                      toast.success('تم توحيد مقاس الخلايا');
+                    } else {
+                      toast.error(APPLY_ALL_ERROR_MESSAGES[result.reason]);
+                    }
+                  }}
+                  className="text-mini font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  تطبيق على الكل
+                </button>
+              ) : undefined
+            }
+          >
+            <div className="space-y-2.5">
+              <SlotSizeFields
+                key={slot.id}
+                slot={slot}
+                lockAspect={lockSlotAspect}
+                onLockAspectChange={() => setLockSlotAspect((value) => !value)}
+              />
+
+              <FluentSettingRow
+                label="تعبئة تلقائية"
+                className="py-0.5 pt-1 border-t border-border/30"
+              >
+                <Switch
+                  checked={autoFill}
+                  onCheckedChange={(checked) => {
+                    setAutoFill(checked);
+                    setAutoFillGridEnabled(checked);
+                  }}
+                  aria-label="تعبئة تلقائية"
+                />
+              </FluentSettingRow>
+            </div>
+          </FluentSection>
+        </TabsContent>
+
+        {/* 2. تبويب الضبط (Adjust) — الخلفية، السطوع، التباين، والتشبع */}
+        <TabsContent value="adjust" className="mt-0 space-y-2.5 focus-visible:outline-none">
+          {slot.imageSrc ? (
+            <FluentSection
+              title="ألوان الصورة"
+              collapsible
+              defaultOpen
+              className="border-border/40 py-2.5"
+              action={
+                hasColorChanges ? (
+                  <button
+                    type="button"
+                    aria-label="إعادة تعيين الألوان"
+                    onClick={() => {
+                      onUpdate(slot.id, {
+                        filter: 'none',
+                        brightness: 100,
+                        contrast: 100,
+                        saturation: 100,
+                      });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="inline-flex items-center gap-1 text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                  >
+                    <ArrowCounterClockwise className="size-3 shrink-0" />
+                    <span>إعادة تعيين</span>
+                  </button>
+                ) : undefined
+              }
+            >
+              <FluentSettingRow label="الخلفية" className="py-0">
+                <ColorPanel wheelPosition="bottom">
+                  <ColorField
+                    color={slot.bgColor ?? 'transparent'}
+                    onChange={(val: string) => {
+                      const freshStore = useEditorStore.getState();
+                      if (autoFill) {
+                        freshStore.updateSlotsBatch(
+                          freshStore.slots.map((s) => s.id),
+                          { bgColor: val },
+                        );
+                      } else {
+                        onUpdate(slot.id, { bgColor: val });
+                      }
+                    }}
+                    onCommit={() => useEditorStore.getState().pushHistory()}
+                    className="w-full border-border/60 shadow-none"
+                    ariaLabel="لون الخلفية"
+                  />
+                </ColorPanel>
+              </FluentSettingRow>
+
+              <div className="space-y-2.5 pt-1">
+                <FluentSliderField
+                  label="السطوع"
+                  value={slot.brightness ?? 100}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="%"
+                  defaultValue={100}
+                  onChange={(v) => onUpdate(slot.id, { brightness: v })}
+                  onCommit={() => {
+                    useRenderQuality.getState().setIsDraggingFilter(false);
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
+                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+                />
+                <FluentSliderField
+                  label="التباين"
+                  value={slot.contrast ?? 100}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="%"
+                  defaultValue={100}
+                  onChange={(v) => onUpdate(slot.id, { contrast: v })}
+                  onCommit={() => {
+                    useRenderQuality.getState().setIsDraggingFilter(false);
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
+                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+                />
+                <FluentSliderField
+                  label="التشبع"
+                  value={slot.saturation ?? 100}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="%"
+                  defaultValue={100}
+                  onChange={(v) => onUpdate(slot.id, { saturation: v })}
+                  onCommit={() => {
+                    useRenderQuality.getState().setIsDraggingFilter(false);
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
+                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+                />
+              </div>
+            </FluentSection>
+          ) : (
+            <div className="py-8 text-center text-xs text-muted-foreground select-none">
+              اختر صورة للخلية لضبط ألوانها
+            </div>
+          )}
+        </TabsContent>
+
+        {/* 3. تبويب التأثيرات (Effects) — المرشحات */}
+        <TabsContent value="effects" className="mt-0 space-y-2.5 focus-visible:outline-none">
+          {slot.imageSrc ? (
+            <FluentSection
+              title="المرشحات"
+              collapsible
+              defaultOpen
+              className="border-border/40 py-2.5"
+              badge={
+                activeFilterObj ? (
+                  <span className="text-mini font-normal text-primary">
+                    · {filterShortName(activeFilterObj.name)}
+                  </span>
+                ) : undefined
+              }
+              action={
+                activeFilterObj ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUpdate(slot.id, { filter: 'none' });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                  >
+                    إزالة
+                  </button>
+                ) : undefined
+              }
+            >
+              <div className="grid grid-cols-3 gap-1.5">
+                {IMAGE_FILTERS.map((filter) => {
+                  const isActive = (slot.filter || 'none') === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => {
+                        onUpdate(slot.id, { filter: filter.id });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      aria-pressed={isActive}
+                      aria-label={filter.name}
+                      title={filter.name}
+                      className={cn(
+                        'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors duration-150 cursor-pointer',
+                        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                        isActive
+                          ? 'border-primary bg-primary/10 text-primary font-semibold'
+                          : 'border-border/60 bg-card/60 hover:bg-accent/60 text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <span className="w-full aspect-4/3 rounded-sm overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                        <img
+                          src={slot.imageSrc}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          style={{ filter: filter.css }}
+                        />
+                      </span>
+                      <span className="text-mini w-full text-center leading-tight truncate px-0.5">
+                        {filterShortName(filter.name)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </FluentSection>
+          ) : (
+            <div className="py-8 text-center text-xs text-muted-foreground select-none">
+              اختر صورة للخلية لتطبيق المرشحات
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* حوار القص */}
       {slot.imageSrc && cropOpen && (
@@ -853,6 +1054,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                   originalImageSrc: slot.originalImageSrc || slot.imageSrc,
                 });
                 useEditorStore.getState().pushHistory();
+                setCropOpen(false);
                 return true;
               } catch (err) {
                 if (isCurrent()) {

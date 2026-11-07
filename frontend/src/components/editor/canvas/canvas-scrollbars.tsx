@@ -185,7 +185,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`h-[20px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden ${className}`}
+      className={`h-[16px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل العرض */}
@@ -206,7 +206,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
             width: `${thumbLength}px`,
             transform: `translate3d(${thumbOffset}px, 0, 0)`,
           }}
-          className="h-[8px] group-hover:h-[10px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[height,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
+          className="h-[6px] group-hover:h-[8px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[height,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
         />
       </div>
     </div>
@@ -345,7 +345,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden ${className}`}
+      className={`w-[16px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل الارتفاع */}
@@ -366,7 +366,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
             height: `${thumbLength}px`,
             transform: `translate3d(0, ${thumbOffset}px, 0)`,
           }}
-          className="w-[8px] group-hover:w-[10px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[width,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
+          className="w-[6px] group-hover:w-[8px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[width,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
         />
       </div>
     </div>
@@ -384,7 +384,7 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
 }: CanvasCornerResetButtonProps) {
   return (
     <div
-      className={`w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none ${className}`}
+      className={`w-[16px] h-[16px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none ${className}`}
       dir="ltr"
     >
       <Tooltip>
@@ -394,9 +394,9 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
             onClick={onResetPan}
             title="إعادة توسيط الكانفاس (Home)"
             aria-label="إعادة توسيط الكانفاس"
-            className="w-6 h-6 -m-0.5 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
+            className="w-[16px] h-[16px] shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
           >
-            <Crosshair className="w-3 h-3" weight="regular" />
+            <Crosshair className="w-2.5 h-2.5" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" align="end" className="text-micro font-cairo">
@@ -420,12 +420,12 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
 }: CanvasScrollbarsBottomBarProps) {
   return (
     <div
-      className={`flex h-[20px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
+      className={`flex h-[16px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
       dir="ltr"
     >
-      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (20x20px) */}
+      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (16x16px) */}
       <div
-        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none"
+        className="w-[16px] h-[16px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none"
         aria-hidden="true"
       />
 
@@ -439,7 +439,7 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
         />
       </div>
 
-      {/* 🧭 زر الزاوية السفلية اليمنى لإعادة التوسيط (20x20px) */}
+      {/* 🧭 زر الزاوية السفلية اليمنى لإعادة التوسيط (16x16px) */}
       <CanvasCornerResetButton onResetPan={onResetPan} />
     </div>
   );

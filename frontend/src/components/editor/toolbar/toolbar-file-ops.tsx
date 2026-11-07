@@ -234,18 +234,17 @@ export function ToolbarFileOps() {
     <>
       {/* مجموعة الإدراج والمشاريع */}
       <div className="flex items-center gap-1.5">
-        {/* زر الإدراج المنقسم: ارتفاع موحّد وحد مشترك بين الإدراج وقائمة الخيارات */}
+        {/* زر الإدراج المنقسم البارز: نقطة البداية الأساسية بتمييز لوني متناسق مع الهوية */}
         <div className="flex items-center">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
               variant="outline"
-              size="default"
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="rounded-e-none border-e-0 cursor-pointer focus-visible:relative"
+              className="h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-e-none border-primary/35 bg-primary/10 text-primary hover:bg-primary/18 hover:text-primary cursor-pointer focus-visible:relative shadow-none"
             >
-              <AddPhotoIcon className="w-4 h-4" />
+              <AddPhotoIcon className="w-4 h-4 shrink-0" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -257,9 +256,9 @@ export function ToolbarFileOps() {
                   variant="outline"
                   size="icon"
                   aria-label="خيارات الإدراج"
-                  className="rounded-s-none cursor-pointer focus-visible:relative data-[state=open]:bg-accent data-[state=open]:text-foreground"
+                  className="h-8 w-6 p-0 rounded-s-none border-s-0 border-primary/35 bg-primary/10 text-primary hover:bg-primary/18 hover:text-primary cursor-pointer focus-visible:relative data-[state=open]:bg-primary/20 shadow-none"
                 >
-                  <CaretDown className="w-4 h-4" />
+                  <CaretDown className="w-3.5 h-3.5" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipBtn>
@@ -302,30 +301,28 @@ export function ToolbarFileOps() {
           </DropdownMenu>
         </div>
 
-        {/* مؤشر كاميرا الهاتف النشط مع اسم الجهاز وعدد الصور المستلمة */}
+        {/* مؤشر كاميرا الهاتف النشط — أيقونة موحدة هادئة متناسقة مع شريط الأدوات */}
         {isPhoneBridgeRunning && (
           <TooltipBtn
             content={`كاميرا الهاتف متصلة (${phoneBridgePairedDevice || 'جاهز للاستلام'}) — انقر للإدارة أو الإيقاف`}
           >
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => {
                 setPhoneBridgeMounted(true);
                 setIsPhoneBridgeOpen(true);
               }}
-              className="h-8 px-2.5 gap-1.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-xs font-semibold rounded-md flex items-center justify-center select-none"
+              className="relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-md flex items-center justify-center select-none"
             >
-              <span className="relative flex h-2 w-2">
+              <DeviceMobileCamera className="w-4 h-4" />
+              {/* نقطة حالة خضراء دقيقة على الزر */}
+              <span className="absolute top-1.5 start-1.5 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <DeviceMobileCamera className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="hidden md:inline font-bold">
-                {phoneBridgePairedDevice ? phoneBridgePairedDevice : 'كاميرا الهاتف'}
-              </span>
               {phoneBridgeReceivedCount > 0 && (
-                <span className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-mono text-micro font-bold">
+                <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-[9px] font-bold leading-none">
                   {phoneBridgeReceivedCount}
                 </span>
               )}

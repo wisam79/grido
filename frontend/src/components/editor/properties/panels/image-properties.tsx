@@ -757,6 +757,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   state.setLastEditedImageAspect(croppedAspect);
                   // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
                   state.pushHistory();
+                  setCropOpen(false);
                   return true;
                 };
 

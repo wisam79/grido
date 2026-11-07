@@ -15,19 +15,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import {
-  Copy,
-  Link,
-  LinkBreak,
-  Trash,
-  CaretDown,
-  ArrowClockwise,
-  FlipHorizontal,
-} from '@/components/ui/icons';
+import { Copy, Link, LinkBreak, Trash, CaretDown } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { useEditorStore } from '@/lib/editor-store';
 
-import { AiToolsToolbarGroup } from './toolbar-ai-tools';
 import { ImageFiltersPopover } from './toolbar-image-filters';
 
 /** تنفيذ فعل على التحديد: عنصر واحد أو دفعة — كان الفرع مكرراً في تكرار/حذف. */
@@ -96,33 +87,6 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
   const ungroupSelectedElements = useEditorStore((state) => state.ungroupSelectedElements);
   const removeElement = useEditorStore((state) => state.removeElement);
   const removeElements = useEditorStore((state) => state.removeElements);
-  const rotateSlot = useEditorStore((state) => state.rotateSlot);
-  const flipSlotX = useEditorStore((state) => state.flipSlotX);
-  const updateElement = useEditorStore((state) => state.updateElement);
-  const selectedId = useEditorStore((state) => state.selectedId);
-  const selectedElement = useEditorStore((state) =>
-    state.elements.find((el) => el.id === state.selectedId),
-  );
-
-  const handleRotate = useCallback(() => {
-    if (isSlotSelection && selectedId) {
-      rotateSlot(selectedId, 90);
-    } else if (selectedElement) {
-      updateElement(selectedElement.id, {
-        rotation: ((selectedElement.rotation ?? 0) + 90) % 360,
-      });
-    }
-  }, [isSlotSelection, selectedId, selectedElement, rotateSlot, updateElement]);
-
-  const handleFlip = useCallback(() => {
-    if (isSlotSelection && selectedId) {
-      flipSlotX(selectedId);
-    } else if (selectedElement) {
-      updateElement(selectedElement.id, {
-        flipX: !selectedElement.flipX,
-      });
-    }
-  }, [isSlotSelection, selectedId, selectedElement, flipSlotX, updateElement]);
 
   const alignElement = useCallback(
     (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
@@ -157,15 +121,6 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
     >
       <Separator orientation="vertical" className="h-4 mx-1 bg-border/60" />
 
-      {isImageSelected && (
-        <>
-          <AiToolsToolbarGroup />
-          {isSlotSelection && (
-            <Separator orientation="vertical" className="h-4 bg-border/60 mx-1" />
-          )}
-        </>
-      )}
-
       <div className="fluent-command-group">
         {!isSlotSelection && (
           <TooltipBtn content="تكرار العناصر">
@@ -181,35 +136,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           </TooltipBtn>
         )}
 
-        {isImageSelected && (
-          <>
-            <TooltipBtn content="تدوير 90 درجة">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRotate}
-                aria-label="تدوير 90 درجة"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
-              >
-                <ArrowClockwise className="w-4 h-4" />
-              </Button>
-            </TooltipBtn>
-
-            <TooltipBtn content="قلب أفقي">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleFlip}
-                aria-label="قلب أفقي"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
-              >
-                <FlipHorizontal className="w-4 h-4" />
-              </Button>
-            </TooltipBtn>
-
-            <ImageFiltersPopover />
-          </>
-        )}
+        {isImageSelected && <ImageFiltersPopover />}
 
         {canGroup && (
           <TooltipBtn content="تجميع العناصر">

@@ -92,20 +92,20 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
 
   return (
     <div
-      className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none"
+      className="flex h-[16px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none"
       dir="ltr"
     >
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
-      <div className="w-[20px] h-[20px] shrink-0 flex items-center justify-center">
+      <div className="w-[16px] h-[16px] shrink-0 flex items-center justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               title="وحدة القياس وإدارة الخطوط الإرشادية (Ctrl+R)"
               aria-label="خيارات وحدة قياس المسطرة"
-              className="w-6 h-6 -m-0.5 shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
+              className="w-[16px] h-[16px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
             >
-              <span className="text-2xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
+              <span className="text-[9px] font-bold text-primary font-mono leading-none tracking-tighter uppercase">
                 {rulerUnit}
               </span>
             </button>
@@ -224,9 +224,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
         />
       </div>
 
-      {/* 🧭 الزاوية العلوية اليمنى أعلى شريط التمرير الرأسي (20x20px) */}
+      {/* 🧭 الزاوية العلوية اليمنى أعلى شريط التمرير الرأسي (16x16px) */}
       <div
-        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border select-none"
+        className="w-[16px] h-[16px] shrink-0 bg-ruler-corner border-l border-ruler-border select-none"
         aria-hidden="true"
       />
     </div>
@@ -265,7 +265,7 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
 
   return (
     <div
-      className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none"
+      className="w-[16px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none"
       dir="ltr"
     >
       <VerticalRuler

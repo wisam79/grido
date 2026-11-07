@@ -60,105 +60,108 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
     <main
       data-testid="workspace-layout"
       dir="ltr"
-      className="flex-1 flex h-full w-full min-w-0 overflow-hidden relative select-none"
+      className="flex-1 flex flex-col h-full w-full min-w-0 overflow-hidden relative select-none"
     >
-      {/* 1. الشريط الأيقوني الجانبي الأيسر (Rail - 48px) يظهر في Standard و Wide */}
-      {!isCompact && (
-        <WorkspacePanelRail
-          activeStudioTab={panelsHook.activeStudioTab}
-          activeCollageTab={panelsHook.activeCollageTab}
-          isZenMode={isZenMode}
-          onSelectStudioTab={panelsHook.selectStudioTab}
-          onSelectCollageTab={panelsHook.selectCollageTab}
-          onToggleZenMode={toggleZenMode}
-          isLauncherOpen={panelsHook.isLauncherOpen}
-          onLauncherOpenChange={panelsHook.setIsLauncherOpen}
-        />
-      )}
+      {/* الصف الرئيسي الحاوي للشريط الجانبي والألواح ومنطقة الكانفاس */}
+      <div className="flex-1 flex min-h-0 w-full overflow-hidden relative">
+        {/* 1. الشريط الأيقوني الجانبي الأيسر (Rail - 48px) يظهر في Standard و Wide */}
+        {!isCompact && (
+          <WorkspacePanelRail
+            activeStudioTab={panelsHook.activeStudioTab}
+            activeCollageTab={panelsHook.activeCollageTab}
+            isZenMode={isZenMode}
+            onSelectStudioTab={panelsHook.selectStudioTab}
+            onSelectCollageTab={panelsHook.selectCollageTab}
+            onToggleZenMode={toggleZenMode}
+            isLauncherOpen={panelsHook.isLauncherOpen}
+            onLauncherOpenChange={panelsHook.setIsLauncherOpen}
+          />
+        )}
 
-      {/* 2. درج الأدوات والقوالب الأيسر (Left Drawer - 288px) — يظهر في كل شاشات سطح المكتب */}
-      {!isCompact && (
-        <aside
-          aria-label="لوحة القوالب"
-          data-testid="workspace-panel-templates"
-          data-collapsed={!isLeftDrawerOpen}
-          className={cn(
-            'h-full shrink-0 border-e border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
-            isLeftDrawerOpen
-              ? 'w-[288px] min-w-[288px] max-w-[288px]'
-              : 'w-0 min-w-0 max-w-0 pointer-events-none',
-          )}
-        >
-          <div
-            dir="rtl"
+        {/* 2. درج الأدوات والقوالب الأيسر (Left Drawer - 288px) — يظهر في كل شاشات سطح المكتب */}
+        {!isCompact && (
+          <aside
+            aria-label="لوحة القوالب"
+            data-testid="workspace-panel-templates"
+            data-collapsed={!isLeftDrawerOpen}
             className={cn(
-              'h-full w-[288px] flex flex-col overflow-hidden fluent-panel-content-motion',
-              isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full',
+              'h-full shrink-0 border-e border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
+              isLeftDrawerOpen
+                ? 'w-[288px] min-w-[288px] max-w-[288px]'
+                : 'w-0 min-w-0 max-w-0 pointer-events-none',
             )}
           >
-            {templatesContent}
-          </div>
-        </aside>
-      )}
-
-      {/* 3. منطقة الكانفس الرئيسية (الوسط - مضمونة بأقصى مساحة ممكنة) */}
-      <section
-        data-testid="workspace-canvas-shell"
-        data-layout="canvas-center"
-        className="flex-1 flex flex-col min-w-0 bg-background relative z-(--z-canvas-overlay) overflow-hidden h-full"
-      >
-        {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
-            شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
-        <div className="flex-1 relative w-full min-h-0 overflow-hidden">
-          <CanvasOverlayHost>
-            {canvasContent}
-            {floatingFeedback}
-          </CanvasOverlayHost>
-          {/* لوحة الأوامر (Command Palette) المركزية على سطح المكتب أو زر الجوال */}
-          {(!isCompact || (!isZenMode && isCompact)) && (
             <div
-              className={
-                isCompact ? 'absolute bottom-4 start-4 z-(--z-quick-bar) no-print' : 'no-print'
-              }
+              dir="rtl"
+              className={cn(
+                'h-full w-[288px] flex flex-col overflow-hidden fluent-panel-content-motion',
+                isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full',
+              )}
             >
-              <CompactToolLauncher
-                activeStudioTab={panelsHook.activeStudioTab}
-                activeCollageTab={panelsHook.activeCollageTab}
-                onSelectStudioTab={panelsHook.selectStudioTab}
-                onSelectCollageTab={panelsHook.selectCollageTab}
-                isLauncherOpen={panelsHook.isLauncherOpen}
-                onLauncherOpenChange={panelsHook.setIsLauncherOpen}
-                isCompact={isCompact}
-              />
+              {templatesContent}
             </div>
-          )}
-        </div>
-
-        {/* الشريط السفلي المثبت */}
-        {footerContent && (
-          <footer className="h-8 shrink-0 border-t border-border bg-sidebar px-2 flex items-center justify-center relative z-(--z-panel) no-print select-none">
-            {footerContent}
-          </footer>
+          </aside>
         )}
-      </section>
 
-      {/* 4. لوحة المفتش والخصائص اليمنى (Right Inspector - 288px) — مثبتة ومستقرة يميناً دائماً */}
-      {!isCompact && (
-        <aside
-          aria-label="لوحة خصائص العنصر"
-          data-testid="workspace-panel-properties"
-          data-collapsed={!isRightPanelOpen}
-          className={cn(
-            'h-full shrink-0 border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
-            isRightPanelOpen
-              ? 'w-[288px] min-w-[288px] max-w-[288px]'
-              : 'w-0 min-w-0 max-w-0 pointer-events-none',
-          )}
+        {/* 3. منطقة الكانفس الرئيسية (الوسط - مضمونة بأقصى مساحة ممكنة) */}
+        <section
+          data-testid="workspace-canvas-shell"
+          data-layout="canvas-center"
+          className="flex-1 flex flex-col min-w-0 bg-background relative z-(--z-canvas-overlay) overflow-hidden h-full"
         >
-          <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
-            {propertiesContent}
+          {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
+              شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
+          <div className="flex-1 relative w-full min-h-0 overflow-hidden">
+            <CanvasOverlayHost>
+              {canvasContent}
+              {floatingFeedback}
+            </CanvasOverlayHost>
+            {/* لوحة الأوامر (Command Palette) المركزية على سطح المكتب أو زر الجوال */}
+            {(!isCompact || (!isZenMode && isCompact)) && (
+              <div
+                className={
+                  isCompact ? 'absolute bottom-4 start-4 z-(--z-quick-bar) no-print' : 'no-print'
+                }
+              >
+                <CompactToolLauncher
+                  activeStudioTab={panelsHook.activeStudioTab}
+                  activeCollageTab={panelsHook.activeCollageTab}
+                  onSelectStudioTab={panelsHook.selectStudioTab}
+                  onSelectCollageTab={panelsHook.selectCollageTab}
+                  isLauncherOpen={panelsHook.isLauncherOpen}
+                  onLauncherOpenChange={panelsHook.setIsLauncherOpen}
+                  isCompact={isCompact}
+                />
+              </div>
+            )}
           </div>
-        </aside>
+        </section>
+
+        {/* 4. لوحة المفتش والخصائص اليمنى (Right Inspector - 288px) — مثبتة ومستقرة يميناً دائماً */}
+        {!isCompact && (
+          <aside
+            aria-label="لوحة خصائص العنصر"
+            data-testid="workspace-panel-properties"
+            data-collapsed={!isRightPanelOpen}
+            className={cn(
+              'h-full shrink-0 border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
+              isRightPanelOpen
+                ? 'w-[288px] min-w-[288px] max-w-[288px]'
+                : 'w-0 min-w-0 max-w-0 pointer-events-none',
+            )}
+          >
+            <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
+              {propertiesContent}
+            </div>
+          </aside>
+        )}
+      </div>
+
+      {/* الشريط السفلي المتصل بكامل عرض الواجهة (Full-Width Status Bar) */}
+      {footerContent && (
+        <footer className="h-8 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-between relative z-(--z-panel) no-print select-none">
+          {footerContent}
+        </footer>
       )}
 
       {/* 5. ورقة اللوحات للجوال والشاشات المدمجة (< 1024px) */}

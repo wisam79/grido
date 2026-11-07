@@ -581,7 +581,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         throw new Error('Invalid path returned from uploadCanvasBlob');
       }
       const committed = await onSave(localPath, isActive);
-      if (committed === false || !isActive()) return;
+      if (committed === false) return;
       handleOpenChange(false);
       toast.success('تم حفظ التعديلات');
     } catch (err) {
