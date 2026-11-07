@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,31 @@ vi.mock('../src/lib/io/fonts', async (importOriginal) => ({
 }));
 
 const renderPicker = (ui: ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
+function setupUser() {
+  const user = userEvent.setup();
+  return {
+    click: (target: Element) =>
+      act(async () => {
+        await user.click(target);
+      }),
+    clear: (target: Element) =>
+      act(async () => {
+        await user.clear(target);
+      }),
+    type: (target: Element, value: string) =>
+      act(async () => {
+        await user.type(target, value);
+      }),
+    keyboard: (keys: string) =>
+      act(async () => {
+        await user.keyboard(keys);
+      }),
+    tab: () =>
+      act(async () => {
+        await user.tab();
+      }),
+  };
+}
 const scrollIntoView = vi.fn();
 const baseText: TextElement = {
   id: 'font-preview',
@@ -53,7 +78,7 @@ beforeEach(() => {
 
 describe('FontSelector', () => {
   it('renders one compact list without categories or repeated sample metadata', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPicker(<FontSelector value="Cairo" onChange={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
 
@@ -72,7 +97,7 @@ describe('FontSelector', () => {
   });
 
   it('searches Arabic and Latin names, handles empty results and resets on reopening', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onChange = vi.fn();
     renderPicker(<FontSelector value="Cairo" onChange={onChange} />);
     const trigger = screen.getByRole('button', { name: 'الخط: كايرو' });
@@ -96,7 +121,7 @@ describe('FontSelector', () => {
   });
 
   it('scrolls the active descendant with arrows and commits only once on Enter', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onChange = vi.fn();
     const onPreview = vi.fn();
     renderPicker(<FontSelector value="Cairo" onChange={onChange} onPreview={onPreview} />);
@@ -115,7 +140,7 @@ describe('FontSelector', () => {
   });
 
   it('cancels previews with Escape and restores focus to the trigger', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onCancel = vi.fn();
     const onChange = vi.fn();
     renderPicker(<FontSelector value="Cairo" onChange={onChange} onCancel={onCancel} />);
@@ -128,7 +153,7 @@ describe('FontSelector', () => {
   });
 
   it('keeps favorites independent from selection and persists them across picker instances', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onChange = vi.fn();
     const view = renderPicker(<FontSelector value="Cairo" onChange={onChange} />);
     await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
@@ -146,7 +171,7 @@ describe('FontSelector', () => {
   });
 
   it('supports row navigation, RTL favorite navigation and Space without double commits', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onChange = vi.fn();
     renderPicker(<FontSelector value="Cairo" onChange={onChange} />);
     await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
@@ -165,7 +190,7 @@ describe('FontSelector', () => {
   });
 
   it('does not create a history entry when the already-selected font is activated', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     useEditorStore.setState({
       elements: [baseText],
       selectedId: baseText.id,
@@ -179,7 +204,7 @@ describe('FontSelector', () => {
   });
 
   it('passes a clean family name to sticker generators', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onChange = vi.fn();
     renderPicker(<StickerFontSelector value="Cairo" onChange={onChange} />);
     await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
@@ -188,7 +213,7 @@ describe('FontSelector', () => {
   });
 
   it('restores each selected text separately and leaves locked elements untouched', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const second = { ...baseText, id: 'second', fontFamily: 'Amiri, serif', x: 0.7, width: 0.2 };
     const locked = { ...baseText, id: 'locked', locked: true };
     useEditorStore.setState({
@@ -209,7 +234,7 @@ describe('FontSelector', () => {
   });
 
   it('cancels an uncommitted preview when the inspector unmounts', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     useEditorStore.setState({
       elements: [baseText],
       selectedId: baseText.id,
@@ -224,7 +249,7 @@ describe('FontSelector', () => {
   });
 
   it('commits one font to differently styled selected texts even when it matches the primary text', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const second = { ...baseText, id: 'second', fontFamily: 'Amiri, serif', x: 0.7, width: 0.2 };
     useEditorStore.setState({
       elements: [baseText, second],
@@ -242,8 +267,49 @@ describe('FontSelector', () => {
     expect(useEditorStore.getState().historyIndex).toBe(0);
   });
 
+  it('previews a supported weight and restores each original weight on Escape', async () => {
+    const user = setupUser();
+    const second = { ...baseText, id: 'second', fontFamily: 'Amiri, serif', fontWeight: 400 };
+    useEditorStore.setState({
+      elements: [baseText, second],
+      selectedId: baseText.id,
+      selectedIds: [baseText.id, second.id],
+    });
+    renderPicker(<TextFontSelector element={baseText} />);
+    await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'لاليزار (Lalezar)' }));
+    expect(useEditorStore.getState().elements).toEqual([
+      expect.objectContaining({ id: baseText.id, fontWeight: 400 }),
+      expect.objectContaining({ id: second.id, fontWeight: 400 }),
+    ]);
+    await user.keyboard('{Escape}');
+    expect(useEditorStore.getState().elements).toEqual([baseText, second]);
+    expect(useEditorStore.getState().historyIndex).toBe(-1);
+  });
+
+  it('resolves each preview from the original weight rather than the previous preview', async () => {
+    const user = setupUser();
+    useEditorStore.setState({
+      elements: [baseText],
+      selectedId: baseText.id,
+      selectedIds: [baseText.id],
+    });
+    renderPicker(<TextFontSelector element={baseText} />);
+    await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'لاليزار (Lalezar)' }));
+    expect(useEditorStore.getState().elements[0]).toMatchObject({ fontWeight: 400 });
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+    expect(useEditorStore.getState().elements[0]).toMatchObject({ fontWeight: 700 });
+    await user.click(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+    expect(useEditorStore.getState().elements[0]).toMatchObject({
+      fontFamily: 'Tajawal, sans-serif',
+      fontWeight: 700,
+    });
+    expect(useEditorStore.getState().historyIndex).toBe(0);
+  });
+
   it('keeps favorites usable in memory if storage writes fail', async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     renderPicker(<FontSelector value="Cairo" onChange={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
     const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

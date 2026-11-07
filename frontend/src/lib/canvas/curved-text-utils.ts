@@ -5,6 +5,7 @@
 
 import { TEXT_COLOR_DEFAULT } from './canvas-colors';
 import { getCurvedTextMetrics } from './curved-text-metrics';
+import { normalizeCurvedText } from './text-helpers';
 import { warmTextStrokeFilter } from './text-stroke-filter';
 import { MAX_EXPORT_PIXELS } from '../export/export-limits';
 
@@ -68,6 +69,7 @@ const ARABIC_FORMS_MAP: Record<string, (string | null)[]> = {
   '\u0638': ['\uFEC5', '\uFEC7', '\uFEC8', '\uFEC6'], // Zah
   '\u0639': ['\uFEC9', '\uFECB', '\uFECC', '\uFECA'], // Ain
   '\u063A': ['\uFECD', '\uFECF', '\uFED0', '\uFECE'], // Ghain
+  '\u0640': ['\u0640', '\u0640', '\u0640', '\u0640'], // Tatweel: joins both sides, same glyph
   '\u0641': ['\uFED1', '\uFED3', '\uFED4', '\uFED2'], // Feh
   '\u0642': ['\uFED5', '\uFED7', '\uFED8', '\uFED6'], // Qaf
   '\u0643': ['\uFED9', '\uFEDB', '\uFEDC', '\uFEDA'], // Kaf
@@ -78,13 +80,17 @@ const ARABIC_FORMS_MAP: Record<string, (string | null)[]> = {
   '\u0648': ['\uFEED', null, null, '\uFEEE'], // Waw
   '\u0649': ['\uFEEF', null, null, '\uFEF0'], // Alef Maksura
   '\u064A': ['\uFEF1', '\uFEF3', '\uFEF4', '\uFEF2'], // Yeh
+  '\u0671': ['\uFB50', null, null, '\uFB51'], // Alef wasla: right-joining only
   '\u067E': ['\uFB56', '\uFB58', '\uFB59', '\uFB57'], // Peh
   '\u0686': ['\uFB7A', '\uFB7C', '\uFB7D', '\uFB7B'], // Tcheh
   '\u0698': ['\uFB8A', null, null, '\uFB8B'], // Jeh
+  '\u06A9': ['\uFB8E', '\uFB90', '\uFB91', '\uFB8F'], // Persian keheh, not Arabic kaf
   '\u06AF': ['\uFB92', '\uFB94', '\uFB95', '\uFB93'], // Gaf
+  '\u06CC': ['\uFBFC', '\uFBFE', '\uFBFF', '\uFBFD'], // Farsi yeh, not Arabic yeh
 };
 
-// Lam-Alef ligatures: [isolated, final]
+// Lam-Alef ligatures: [isolated, final]. Unicode has no lam-alef-wasla
+// presentation form; keep lam + wasla as two correctly joined glyphs.
 const LAM_ALEF_MAP: Record<string, [string, string]> = {
   '\u0622': ['\uFEF5', '\uFEF6'], // l + madda
   '\u0623': ['\uFEF7', '\uFEF8'], // l + hamza above
@@ -159,7 +165,9 @@ export function shapeArabicGraphemes(text: string): string[] {
     const prevShapes = prevChar && ARABIC_FORMS_MAP[prevChar];
     const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
     const nextShapes = nextChar && ARABIC_FORMS_MAP[nextChar];
-    const nextConnects = nextShapes && (nextShapes[0] || nextShapes[3]);
+    // A final form means the next letter accepts a connection from the right.
+    // An isolated form alone (e.g. standalone hamza) does not imply joining.
+    const nextConnects = nextShapes && nextShapes[3];
 
     let shaped: string;
     if (prevConnects && nextConnects && forms[2]) {
@@ -409,7 +417,7 @@ function getContextRenderScale(ctx: CanvasRenderingContext2D): number {
 
 export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTextOptions) {
   const {
-    text,
+    text: rawText,
     width,
     height,
     fontSize,
@@ -424,7 +432,10 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
     letterSpacing = 0,
   } = options;
 
-  if (!text || curve === 0) return;
+  if (!rawText || curve === 0) return;
+  // Direct callers use the same display normalization as fitting/render state.
+  // Do not reapply numeral/case/word-spacing transforms to already rendered text.
+  const text = normalizeCurvedText(rawText);
 
   ctx.save();
   const fontStylePrefix = fontStyle === 'italic' ? 'italic ' : '';

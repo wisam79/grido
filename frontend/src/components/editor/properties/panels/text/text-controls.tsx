@@ -40,6 +40,7 @@ export function ToggleItem({
   onClick,
   label,
   title,
+  disabled = false,
   className,
   children,
 }: {
@@ -48,6 +49,7 @@ export function ToggleItem({
   /** اسم الوصول — إلزامي لأن بعض الأزرار أيقونة فقط */
   label: string;
   title?: string;
+  disabled?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -57,9 +59,10 @@ export function ToggleItem({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
+      disabled={disabled}
       title={title ?? label}
       className={cn(
-        'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded-sm text-xs transition-colors duration-150 cursor-pointer select-none',
+        'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded-sm text-xs transition-colors duration-150 cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50',
         focusRing,
         active
           ? 'bg-card font-bold text-primary shadow-2xs'

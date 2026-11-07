@@ -18,7 +18,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { isArabicText } from '@/lib/canvas/text-helpers';
 import { useEditorStore, type TextElement } from '@/lib/editor-store';
-import { loadGoogleFont } from '@/lib/io/fonts';
+import {
+  getSupportedFontWeights,
+  loadGoogleFont,
+  resolveSupportedFontWeight,
+} from '@/lib/io/fonts';
 
 import { FontSizeField } from './font-size-field';
 import { ControlRow, ToggleGroup, ToggleItem } from './text-controls';
@@ -53,7 +57,10 @@ const selectContentClassName =
   'z-(--z-popover) max-h-[min(16rem,var(--radix-select-content-available-height))] font-cairo';
 
 export function TextTypeTab({ element, onUpdate }: TextTabProps) {
-  const isBold = (element.fontWeight || 400) >= 700;
+  const fontFamily = element.fontFamily || 'Cairo';
+  const supportedWeights = getSupportedFontWeights(fontFamily);
+  const currentWeight = resolveSupportedFontWeight(fontFamily, element.fontWeight);
+  const isBold = currentWeight >= 700;
   const isItalic = element.fontStyle === 'italic';
   const isUnderline = element.textDecoration === 'underline';
   const isLineThrough = element.textDecoration === 'line-through';
@@ -101,8 +108,9 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
     commit({ textSizing: 'fixed' });
   };
 
-  const setWeight = (weight: number) => {
-    void loadGoogleFont(element.fontFamily || 'Cairo', weight, element.fontStyle);
+  const setWeight = (requested: number) => {
+    const weight = resolveSupportedFontWeight(fontFamily, requested);
+    void loadGoogleFont(fontFamily, weight, element.fontStyle);
     commit({ fontWeight: weight });
   };
 
@@ -115,7 +123,7 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
           <div className="flex items-center gap-1.5">
             <Select
               dir="rtl"
-              value={String(element.fontWeight ?? 400)}
+              value={String(currentWeight)}
               onValueChange={(value) => setWeight(Number(value))}
             >
               <SelectTrigger
@@ -125,7 +133,7 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={selectContentClassName}>
-                {WEIGHT_OPTIONS.map((opt) => (
+                {WEIGHT_OPTIONS.filter((opt) => supportedWeights.includes(opt.value)).map((opt) => (
                   <SelectItem key={opt.value} value={String(opt.value)} className="h-8">
                     {opt.label}
                   </SelectItem>
@@ -144,9 +152,10 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
             <ToggleGroup label="نمط الخط" className="flex-[4]">
               <ToggleItem
                 active={isBold}
+                disabled={supportedWeights.length === 1}
                 onClick={() => setWeight(isBold ? 400 : 700)}
                 label="خط عريض"
-                title="عريض"
+                title={supportedWeights.length === 1 ? 'هذا الخط يدعم وزناً واحداً' : 'عريض'}
               >
                 <TextB className="w-4 h-4" weight={isBold ? 'bold' : 'regular'} />
               </ToggleItem>

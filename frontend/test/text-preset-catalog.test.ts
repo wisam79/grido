@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { getSupportedFontWeights } from '../src/lib/io/fonts';
 import {
   INSERT_TEXT_PRESETS,
   TEXT_INSERT_GROUPS,
@@ -50,6 +51,12 @@ describe('text preset catalog', () => {
       expect(item.config.lineHeight).toBeGreaterThan(0);
       expect(item.config.fontFamily.trim().length).toBeGreaterThan(0);
       expect(item.config.getText().trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('uses a real available weight in every preset and preview', () => {
+    for (const preset of Object.values(TEXT_PRESETS)) {
+      expect(getSupportedFontWeights(preset.fontFamily)).toContain(preset.fontWeight);
     }
   });
 

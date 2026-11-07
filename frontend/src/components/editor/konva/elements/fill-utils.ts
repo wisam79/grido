@@ -1,5 +1,6 @@
 import { gradientStart, gradientEnd, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { computeShapePattern, toLocalPattern } from '@/lib/canvas/shape-pattern';
+import { resolveTextDecorationColor } from '@/lib/canvas/text-helpers';
 
 import type { CanvasElement } from '@/lib/editor-store';
 
@@ -16,6 +17,10 @@ export function getFillProps(
   patternImage?: HTMLImageElement | null,
   patternSpace?: { scaleX: number; scaleY: number },
 ) {
+  const textDecorationFill =
+    element.type === 'text'
+      ? { fill: resolveTextDecorationColor(element) ?? element.color ?? TEXT_COLOR_DEFAULT }
+      : {};
   if (element.fillType === 'image') {
     if (element.fillImageSrc && patternImage) {
       const computed = computeShapePattern({
@@ -34,6 +39,7 @@ export function getFillProps(
         ? toLocalPattern(computed, patternSpace.scaleX, patternSpace.scaleY)
         : computed;
       return {
+        ...textDecorationFill,
         fillPriority: 'pattern',
         fillPatternImage: patternImage,
         fillPatternRepeat: t.repeat,
@@ -81,6 +87,7 @@ export function getFillProps(
     const rEnd =
       element.fillRadialGradientEndRadius !== undefined ? element.fillRadialGradientEndRadius : 0.5;
     return {
+      ...textDecorationFill,
       fillPriority: 'radial-gradient',
       fillRadialGradientStartPoint: { x: start.x * w, y: start.y * h },
       fillRadialGradientStartRadius: rStart * Math.max(w, h),

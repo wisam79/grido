@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useRef } from 'react';
 
 import { FontSelector } from '@/components/ui/font-selector';
 import { useEditorStore } from '@/lib/editor-store';
-import { loadGoogleFont } from '@/lib/io/fonts';
+import { loadGoogleFont, resolveSupportedFontWeight } from '@/lib/io/fonts';
 
 import type { TextElement } from '@/lib/editor-store';
 import type { FontOption } from '@/lib/io/fonts';
 
 type FontSnapshot = Pick<
   TextElement,
-  'id' | 'fontFamily' | 'x' | 'y' | 'width' | 'height' | 'textResizeAnchor'
+  'id' | 'fontFamily' | 'fontWeight' | 'x' | 'y' | 'width' | 'height' | 'textResizeAnchor'
 >;
 
 export const TextFontSelector = React.memo(function TextFontSelector({
@@ -38,8 +38,14 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     const patches = snapshotsRef.current.flatMap(({ id, ...geometry }) => {
       const current = elements.find((item) => item.id === id);
       if (current?.type !== 'text' || current.locked) return [];
-      void loadGoogleFont(font.family, current.fontWeight, current.fontStyle);
-      return [{ id, patch: { ...geometry, fontFamily: font.family, textResizeAnchor: undefined } }];
+      const fontWeight = resolveSupportedFontWeight(font.family, geometry.fontWeight);
+      void loadGoogleFont(font.family, fontWeight, current.fontStyle);
+      return [
+        {
+          id,
+          patch: { ...geometry, fontFamily: font.family, fontWeight, textResizeAnchor: undefined },
+        },
+      ];
     });
     updateElements(patches);
   };
@@ -57,9 +63,10 @@ export const TextFontSelector = React.memo(function TextFontSelector({
             (item): item is TextElement =>
               item.type === 'text' && !item.locked && targets.includes(item.id),
           )
-          .map(({ id, fontFamily, x, y, width, height, textResizeAnchor }) => ({
+          .map(({ id, fontFamily, fontWeight, x, y, width, height, textResizeAnchor }) => ({
             id,
             fontFamily,
+            fontWeight,
             x,
             y,
             width,

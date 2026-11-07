@@ -1,6 +1,7 @@
+import { createLogger } from '@/lib/logger';
+
 export type FontCategory =
   'all' | 'kufi' | 'naskh' | 'calligraphy' | 'modern' | 'display' | 'latin';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('fonts');
 
@@ -13,8 +14,13 @@ export interface FontOption {
   googleFontName?: string;
   category: FontCategory;
   isOffline?: boolean;
+  weights: readonly number[];
+  offlineWeights?: readonly number[];
   sampleText?: string;
 }
+
+const STANDARD_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
+const REGULAR_BOLD = [400, 700] as const;
 
 export const ARABIC_FONTS: FontOption[] = [
   // 🏛️ كوفي وهندسي (Kufi & Geometric)
@@ -26,6 +32,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Cairo, sans-serif',
     category: 'kufi',
     isOffline: true,
+    weights: [200, 300, 400, 500, 600, 700, 800, 900, 1000],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'أبجد هوز 123',
   },
   {
@@ -36,6 +44,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Tajawal, sans-serif',
     category: 'kufi',
     isOffline: true,
+    weights: [200, 300, 400, 500, 700, 800, 900],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'استوديو تصوير فخم',
   },
   {
@@ -46,6 +56,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Alexandria, sans-serif',
     category: 'kufi',
     isOffline: true,
+    weights: STANDARD_WEIGHTS,
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'تصميم عصري هندسي',
   },
   {
@@ -56,6 +68,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Reem Kufi, sans-serif',
     category: 'kufi',
     isOffline: true,
+    weights: [400, 500, 600, 700],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'خط كوفي أصيل',
   },
   {
@@ -67,6 +81,8 @@ export const ARABIC_FONTS: FontOption[] = [
     googleFontName: 'Readex+Pro',
     category: 'kufi',
     isOffline: true,
+    weights: [200, 300, 400, 500, 600, 700],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'وضوح فائق ومقروئية',
   },
 
@@ -79,6 +95,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Noto Naskh Arabic", serif',
     category: 'naskh',
     isOffline: true,
+    weights: [400, 500, 600, 700],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'بسم الله الرحمن الرحيم',
   },
   {
@@ -89,6 +107,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Amiri, serif',
     category: 'naskh',
     isOffline: true,
+    weights: REGULAR_BOLD,
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'خط الطباعة الكلاسيكي',
   },
   {
@@ -99,6 +119,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Scheherazade New", serif',
     googleFontName: 'Scheherazade+New',
     category: 'naskh',
+    weights: [400, 500, 600, 700],
     sampleText: 'وثائق ومطبوعات رسمية',
   },
   {
@@ -109,6 +130,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Lateef, serif',
     googleFontName: 'Lateef',
     category: 'naskh',
+    weights: [200, 300, 400, 500, 600, 700, 800],
     sampleText: 'انسيابية نسخي جميلة',
   },
 
@@ -121,6 +143,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Aref Ruqaa", cursive, serif',
     googleFontName: 'Aref+Ruqaa',
     category: 'calligraphy',
+    weights: REGULAR_BOLD,
     sampleText: 'خط الرقعة التراثي',
   },
   {
@@ -131,6 +154,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"IBM Plex Sans Arabic", sans-serif',
     category: 'calligraphy',
     isOffline: true,
+    weights: [100, 200, 300, 400, 500, 600, 700],
+    offlineWeights: [400, 500, 600, 700],
     sampleText: 'فخامة وأناقة الخط',
   },
   {
@@ -141,6 +166,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Marhey, cursive, sans-serif',
     googleFontName: 'Marhey',
     category: 'calligraphy',
+    weights: [300, 400, 500, 600, 700],
     sampleText: 'حيوي ومناسب للمناسبات',
   },
   {
@@ -151,6 +177,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Lemonada, cursive',
     category: 'calligraphy',
     isOffline: true,
+    weights: [300, 400, 500, 600, 700],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'نص بهيج ولطيف',
   },
   {
@@ -161,6 +189,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Katibeh, cursive, serif',
     googleFontName: 'Katibeh',
     category: 'calligraphy',
+    weights: [400],
     sampleText: 'عناوين مزخرفة نادرة',
   },
   {
@@ -171,6 +200,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Lalezar, cursive, display',
     googleFontName: 'Lalezar',
     category: 'calligraphy',
+    weights: [400],
     sampleText: 'عريض جداً للشعارات',
   },
 
@@ -183,6 +213,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Almarai, sans-serif',
     category: 'modern',
     isOffline: true,
+    weights: [300, 400, 700, 800],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'هوية مؤسسية وبطاقات',
   },
   {
@@ -193,6 +225,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Rubik, sans-serif',
     category: 'modern',
     isOffline: true,
+    weights: [300, 400, 500, 600, 700, 800, 900],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'حواف ناعمة دائرية',
   },
   {
@@ -203,6 +237,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Vazirmatn, sans-serif',
     googleFontName: 'Vazirmatn',
     category: 'modern',
+    weights: STANDARD_WEIGHTS,
     sampleText: 'واضح جداً في الطباعة',
   },
   {
@@ -213,6 +248,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Baloo Bhaijaan 2", sans-serif',
     googleFontName: 'Baloo+Bhaijaan+2',
     category: 'modern',
+    weights: [400, 500, 600, 700, 800],
     sampleText: 'شارات وعناوين مرحة',
   },
 
@@ -225,6 +261,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Changa, sans-serif',
     category: 'display',
     isOffline: true,
+    weights: [200, 300, 400, 500, 600, 700, 800],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'عنوان عريض وقوي',
   },
   {
@@ -235,6 +273,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"El Messiri", sans-serif',
     category: 'display',
     isOffline: true,
+    weights: [400, 500, 600, 700],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'أناقة وزخرفة مميزة',
   },
   {
@@ -245,6 +285,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Gulzar, serif',
     googleFontName: 'Gulzar',
     category: 'display',
+    weights: [400],
     sampleText: 'شعر واقتباسات فخمة',
   },
 
@@ -257,6 +298,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Inter, sans-serif',
     category: 'latin',
     isOffline: true,
+    weights: STANDARD_WEIGHTS,
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'Grido Studio Pro Design',
   },
   {
@@ -267,6 +310,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Outfit, sans-serif',
     category: 'latin',
     isOffline: true,
+    weights: STANDARD_WEIGHTS,
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'Modern Geometry 2026',
   },
   {
@@ -277,6 +322,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Montserrat, sans-serif',
     category: 'latin',
     isOffline: true,
+    weights: STANDARD_WEIGHTS,
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'HEADLINE & POSTERS',
   },
   {
@@ -287,6 +334,8 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Playfair Display", serif',
     category: 'latin',
     isOffline: true,
+    weights: [400, 500, 600, 700, 800, 900],
+    offlineWeights: REGULAR_BOLD,
     sampleText: 'Luxury Photography',
   },
   {
@@ -297,6 +346,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Poppins, sans-serif',
     googleFontName: 'Poppins',
     category: 'latin',
+    weights: STANDARD_WEIGHTS,
     sampleText: 'Clean Minimalist Look',
   },
   {
@@ -307,6 +357,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: 'Oswald, sans-serif',
     googleFontName: 'Oswald',
     category: 'latin',
+    weights: [200, 300, 400, 500, 600, 700],
     sampleText: 'BOLD STUDIO STAMP',
   },
 ];
@@ -341,24 +392,37 @@ function cleanFamilyName(fontFamily: string): string {
   return fontFamily.split(',')[0].trim().replace(/['"]/g, '');
 }
 
-function normalizeWeight(fontWeight?: number): number {
-  if (!fontWeight || !Number.isFinite(fontWeight)) return 400;
-  return Math.min(900, Math.max(100, Math.round(fontWeight / 100) * 100));
+export function findFontOption(fontFamily: string): FontOption | undefined {
+  const name = cleanFamilyName(fontFamily).toLowerCase();
+  return ARABIC_FONTS.find(
+    (font) =>
+      cleanFamilyName(font.family).toLowerCase() === name ||
+      font.id === name ||
+      font.arabicName === name,
+  );
 }
 
-/** المفتاح يشمل الوزن: تحميل 400 لا يعني جاهزية 800 لنفس العائلة. */
-const fontLoads = new Map<string, Promise<boolean>>();
+/** المحلي لا يستعير وزناً سحابياً: القائمة والقياس والتحميل تستخدم الوجوه المشحونة نفسها. */
+export function getSupportedFontWeights(fontFamily: string): readonly number[] {
+  const font = findFontOption(fontFamily);
+  return (font?.isOffline ? font.offlineWeights : font?.weights) ?? STANDARD_WEIGHTS;
+}
 
-/**
- * Callbacks to invoke when a font face finishes loading.
- * Konva text nodes register here to trigger a re-measure + layer.batchDraw()
- * so text layout uses the real font metrics instead of the fallback font —
- * per Konva's official guidance.
- */
+export function resolveSupportedFontWeight(fontFamily: string, fontWeight?: number): number {
+  const requested = Number.isFinite(fontWeight) && fontWeight ? fontWeight : 400;
+  return getSupportedFontWeights(fontFamily).reduce((nearest, weight) =>
+    Math.abs(weight - requested) < Math.abs(nearest - requested) ? weight : nearest,
+  );
+}
+
+/** المفتاح يشمل الوزن والنمط: تحميل 400 لا يعني جاهزية 700 لنفس العائلة. */
+const fontLoads = new Map<string, Promise<boolean>>();
+const stylesheetLoads = new WeakMap<HTMLLinkElement, Promise<void>>();
+
+/** Konva listeners re-measure after a font request settles, including a failed request. */
 type FontReadyCallback = (fontFamily: string, fontWeight?: number) => void;
 const fontReadyCallbacks = new Set<FontReadyCallback>();
 
-/** Register a callback that fires whenever a font face finishes loading. */
 export function onFontReady(cb: FontReadyCallback): () => void {
   fontReadyCallbacks.add(cb);
   return () => {
@@ -376,34 +440,38 @@ function notifyFontReady(cleanName: string, fontWeight: number): void {
   }
 }
 
-/**
- * ينتظر تفعيل ورقة الأنماط قبل طلب الوجه. ملف الـ CSS يُحمَّل لا synchronously،
- * و`document.fonts.load` يحلّ فوراً بقائمة فارغة إن لم تكن @font-face معلنة
- * بعد — فيُقاس النص بخط بديل بلا أي إعادة قياس لاحقة. لا انتظار أبدي إن فشلت
- * الشبكة: المهلة القصوى تكفي لتُظهر المعاينة بالخط البديل.
- */
+/** لا نطلب الوجه قبل تفعيل CSS، ولا نحتفظ بورقة فاشلة تمنع إعادة المحاولة. */
 function waitForStylesheet(link: HTMLLinkElement): Promise<void> {
   if (link.sheet) return Promise.resolve();
-  return new Promise((resolve) => {
-    let settled = false;
-    const done = () => {
-      if (settled) return;
-      settled = true;
-      resolve();
+  const existing = stylesheetLoads.get(link);
+  if (existing) return existing;
+
+  const promise = new Promise<void>((resolve, reject) => {
+    const finish = (error?: Error) => {
+      clearTimeout(timeout);
+      link.removeEventListener('load', onLoad);
+      link.removeEventListener('error', onError);
+      if (error) {
+        stylesheetLoads.delete(link);
+        link.remove();
+        reject(error);
+      } else {
+        resolve();
+      }
     };
-    link.addEventListener('load', done, { once: true });
-    link.addEventListener('error', done, { once: true });
-    setTimeout(done, 3000);
+    const onLoad = () => finish();
+    const onError = () => finish(new Error('Font stylesheet failed to load'));
+    const timeout = setTimeout(() => finish(new Error('Font stylesheet timed out')), 3000);
+    link.addEventListener('load', onLoad, { once: true });
+    link.addEventListener('error', onError, { once: true });
   });
+  stylesheetLoads.set(link, promise);
+  return promise;
 }
 
 /**
- * Loads a font face on demand (Google stylesheet أو خط مضمّن) وينتظر جاهزية
- * الوجه المطلوب فعلياً عبر `document.fonts.load` — لا `document.fonts.ready`
- * وحدها، لأنها قد تحل قبل أن يكتشف المتصفح الوجه الجديد أصلاً.
- *
- * يُرجع Promise يحلّ true عند اكتمال التحميل (أو تعذّره) — المتصل يعيد القياس
- * حينها. الطلبات المتكررة لنفس (العائلة، الوزن) تتشارك نفس الوعد.
+ * ينتظر الوجه الفعلي بوزنه المتاح، محلياً أو من Google، ويشارك الطلبات المتطابقة.
+ * false تعني فشل التحميل؛ لا تُخزَّن كجاهزية دائمة ويظل الخط البديل قابلاً للعرض.
  */
 export function loadGoogleFont(
   fontFamily: string,
@@ -412,13 +480,15 @@ export function loadGoogleFont(
 ): Promise<boolean> {
   if (typeof document === 'undefined' || !fontFamily) return Promise.resolve(false);
 
-  const cleanName = cleanFamilyName(fontFamily);
-  const weight = normalizeWeight(fontWeight);
+  const fontObj = findFontOption(fontFamily);
+  const cleanName = fontObj?.englishName ?? cleanFamilyName(fontFamily);
+  const weight = resolveSupportedFontWeight(fontFamily, fontWeight);
 
-  if (!cleanName || GENERIC_FAMILIES.has(cleanName.toLowerCase())) {
-    return Promise.resolve(true);
-  }
-  if (SYSTEM_FAMILIES.has(cleanName.toLowerCase())) {
+  if (
+    !cleanName ||
+    GENERIC_FAMILIES.has(cleanName.toLowerCase()) ||
+    SYSTEM_FAMILIES.has(cleanName.toLowerCase())
+  ) {
     return Promise.resolve(true);
   }
 
@@ -427,39 +497,36 @@ export function loadGoogleFont(
   if (existing) return existing;
 
   const promise = (async () => {
+    let stylesheet: HTMLLinkElement | null = null;
     try {
-      const fontObj = ARABIC_FONTS.find(
-        (f) =>
-          f.family.includes(cleanName) ||
-          f.englishName.toLowerCase() === cleanName.toLowerCase() ||
-          f.id === cleanName.toLowerCase(),
-      );
-
-      // Offline fonts are already declared in offline-fonts.css — don't inject Google CSS.
-      // But they still need an explicit load + notification so Konva re-measures.
-      let stylesheet: HTMLLinkElement | null = null;
+      // Offline faces are declared in offline-fonts.css but still need an explicit load.
       if (!fontObj?.isOffline) {
-        const googleName = fontObj?.googleFontName || cleanName.replace(/ /g, '+');
-        const linkId = `google-font-${googleName.toLowerCase().replace(/\s+/g, '-')}`;
+        const googleName =
+          fontObj?.googleFontName || encodeURIComponent(cleanName).replace(/%20/g, '+');
+        const weights = fontObj?.weights ?? [weight];
+        const linkId = `google-font-${googleName.toLowerCase()}${fontObj ? '' : `-${weight}`}`;
         stylesheet = document.getElementById(linkId) as HTMLLinkElement | null;
         if (!stylesheet) {
-          const link = document.createElement('link');
-          link.id = linkId;
-          link.rel = 'stylesheet';
-          link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
-          document.head.appendChild(link);
-          stylesheet = link;
+          stylesheet = document.createElement('link');
+          stylesheet.id = linkId;
+          stylesheet.rel = 'stylesheet';
+          stylesheet.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@${weights.join(';')}&display=swap`;
         }
+        const ready = waitForStylesheet(stylesheet);
+        if (!stylesheet.isConnected) document.head.appendChild(stylesheet);
+        await ready;
       }
 
-      // الوجه لا يمكن أن يوجد قبل تفعيل الورقة — الانتظار هنا هو ما يجعل
-      // `document.fonts.load` تقيس الوجه المطلوب فعلاً بدل قائمة فارغة.
-      if (stylesheet) await waitForStylesheet(stylesheet);
-
-      const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
+      const fonts = document.fonts;
       if (fonts?.load) {
         const stylePrefix = fontStyle === 'italic' ? 'italic ' : '';
-        await fonts.load(`${stylePrefix}${weight} 16px "${cleanName}"`);
+        // space alone only warms the Latin subset; Arabic must be ready before canvas measures it.
+        const sample =
+          fontObj && fontObj.category !== 'latin'
+            ? 'أبجد هوز Grido 0123456789'
+            : 'Grido 0123456789';
+        const faces = await fonts.load(`${stylePrefix}${weight} 16px "${cleanName}"`, sample);
+        if (faces.length === 0) throw new Error('No matching font face was loaded');
       } else if (fonts?.ready) {
         await fonts.ready;
       }
@@ -467,25 +534,32 @@ export function loadGoogleFont(
       notifyFontReady(cleanName, weight);
       return true;
     } catch (err) {
+      // A CSS FontFace in error state cannot retry its binary until its owning sheet is replaced.
+      if (stylesheet?.isConnected && document.getElementById(stylesheet.id) === stylesheet) {
+        stylesheet.remove();
+        stylesheetLoads.delete(stylesheet);
+        for (const loadKey of fontLoads.keys()) {
+          if (loadKey.startsWith(`${cleanName.toLowerCase()}::`)) fontLoads.delete(loadKey);
+        }
+      }
       logger.warn('Failed to load font:', cleanName, weight, err);
-      // أبلغ المراقبين رغم الفشل كي لا يبقى المحرر مخفياً أو القياس معلّقاً
       notifyFontReady(cleanName, weight);
-      fontLoads.delete(key);
       return false;
     }
   })();
 
   fontLoads.set(key, promise);
+  void promise.then((loaded) => {
+    if (!loaded && fontLoads.get(key) === promise) fontLoads.delete(key);
+  });
   return promise;
 }
 
-/**
- * Checks if a matching face is actually loaded (not just "nothing pending").
- */
+/** Checks if a matching face is actually loaded (not just "nothing pending"). */
 export function isFontLoaded(fontFamily: string): boolean {
   if (typeof document === 'undefined' || !document.fonts) return true;
   const cleanName = cleanFamilyName(fontFamily).toLowerCase();
-  if (GENERIC_FAMILIES.has(cleanName)) return true;
+  if (GENERIC_FAMILIES.has(cleanName) || SYSTEM_FAMILIES.has(cleanName)) return true;
   for (const face of Array.from(document.fonts)) {
     if (face.family.replace(/['"]/g, '').toLowerCase() === cleanName && face.status === 'loaded') {
       return true;

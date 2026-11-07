@@ -54,6 +54,40 @@ describe('resolveTextRenderState', () => {
     expect(state.isArabic).toBe(false);
   });
 
+  it.each([45, -45])('flattens line breaks only for a nonzero curve (%s)', (curve) => {
+    const text = 'grido\r\nstudio\n\n2026\rnext\u2028line\u2029end';
+    const source = { text, curve, textTransform: 'uppercase' as const };
+    expect(resolveTextRenderState(source).text).toBe('GRIDO STUDIO  2026 NEXT LINE END');
+    expect(source.text).toBe(text);
+    expect(resolveTextRenderState({ ...source, curve: 0 }).text).toBe(text.toUpperCase());
+  });
+
+  it('treats curved newlines exactly like word spaces before Arabic spacing and numerals', () => {
+    const source = { text: 'بِـسم\nGrido 2026', curve: 50, letterSpacing: 7, arabicNumerals: true };
+    const state = resolveTextRenderState(source);
+    expect(state).toEqual(resolveTextRenderState({ ...source, text: 'بِـسم Grido 2026' }));
+    expect(state.text).toBe('بِـسم  Grido  ٢٠٢٦');
+    expect(state.direction).toBe('rtl');
+    expect(state.letterSpacing).toBe(0);
+    expect(source.text).toBe('بِـسم\nGrido 2026');
+  });
+
+  it('keeps raw line breaks for straight text with positive or negative Arabic spacing', () => {
+    for (const letterSpacing of [-4, 7]) {
+      const state = resolveTextRenderState({ text: 'مرحبا\nبكم\n', letterSpacing });
+      expect(state.text).toBe('مرحبا\nبكم\n');
+      expect(state.letterSpacing).toBe(0);
+    }
+  });
+
+  it('resolves the available font face without rewriting a legacy stored weight', () => {
+    const source = { text: 'بسم', fontFamily: 'Cairo, sans-serif', fontWeight: 800 };
+    expect(resolveTextRenderState(source).fontWeight).toBe(700);
+    expect(source.fontWeight).toBe(800);
+    expect(resolveTextRenderState({ ...source, fontFamily: 'Lalezar' }).fontWeight).toBe(400);
+    expect(resolveTextRenderState({ ...source, fontFamily: 'Arial' }).fontWeight).toBe(800);
+  });
+
   it('capitalizes Latin words only and leaves Arabic text unchanged', () => {
     expect(resolveTextRenderState({ text: 'grido studio', textTransform: 'capitalize' }).text).toBe(
       'Grido Studio',

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useMemo, useId } from 'react';
 
 import { TEXT_COLOR_DEFAULT, gradientEnd, gradientStart } from '@/lib/canvas/canvas-colors';
 import {
@@ -130,6 +130,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
 }: TextEditingOverlayProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const focusedIdRef = useRef<string | null>(null);
+  const committedRef = useRef(false);
+  const curveHintId = useId();
   // P0: انتظار تحميل الخط قبل إظهار المحرر — يمنع قفزة الخط البديل
   const [fontReady, setFontReady] = useState(false);
   // مسودة حيّة أثناء الكتابة: تسمح للصندوق بالتوسع مع النص قبل الحفظ،
@@ -140,6 +142,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   // عند إعادة تحرير العنصر بعد تراجع أو بعد إغلاق المحرر، فتكتب نصاً ملغياً.
   useEffect(() => {
     setDraft(null);
+    committedRef.current = false;
   }, [editingTextId]);
 
   const found = elements.find((e) => e.id === editingTextId);
@@ -150,6 +153,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const elementNumerals = textEl?.arabicNumerals;
   const elementLetterSpacing = textEl?.letterSpacing;
   const elementTransform = textEl?.textTransform;
+  const elementCurve = textEl?.curve;
+  const isCurved = typeof elementCurve === 'number' && elementCurve !== 0;
   const isValid = !printMode && !!editingTextId && !!textEl;
   const fontFamily = textEl?.fontFamily;
   const fontWeight = textEl?.fontWeight;
@@ -200,8 +205,19 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         arabicNumerals: elementNumerals,
         letterSpacing: elementLetterSpacing,
         textTransform: elementTransform,
+        curve: elementCurve,
+        fontFamily,
+        fontWeight,
       }),
-    [liveText, elementNumerals, elementLetterSpacing, elementTransform],
+    [
+      liveText,
+      elementNumerals,
+      elementLetterSpacing,
+      elementTransform,
+      elementCurve,
+      fontFamily,
+      fontWeight,
+    ],
   );
 
   const isAuto = textEl?.textSizing === 'auto';
@@ -237,6 +253,26 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     return measureTextContentHeightPx(displaySource, widthPx) ?? storedHeightPx;
   }, [displaySource, widthPx, storedHeightPx]);
 
+  // The content editor keeps raw newlines, even though the arc displays spaces.
+  // Its straight-line height is only a DOM inset, never the element's fitted height.
+  const editorContentHeightPx = useMemo(() => {
+    if (!isCurved || !displaySource) return contentHeightPx;
+    return (
+      measureTextContentHeightPx({ ...displaySource, curve: 0 }, widthPx) ??
+      displaySource.fontSize * (displaySource.lineHeight ?? 1.2) * displayText.split('\n').length
+    );
+  }, [isCurved, displaySource, widthPx, contentHeightPx, displayText]);
+  const editorOffsetYPx = isCurved ? Math.max(0, (contentHeightPx - editorContentHeightPx) / 2) : 0;
+
+  // Resize after React has applied the new text and symmetric curve insets, not
+  // inside onChange against the previous padding/width (which can clip the draft).
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea || !fontReady) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [displayText, fontReady, widthPx, contentHeightPx, editorOffsetYPx]);
+
   // Auto-focus and select once per editing session — بعد جاهزية الخط فقط
   useEffect(() => {
     if (!isValid || !fontReady || !textareaRef.current) return;
@@ -252,8 +288,6 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     } else {
       textarea.select();
     }
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
   }, [isValid, fontReady, editingTextId]);
 
   if (!isValid || !textEl || !renderState) return null;
@@ -266,9 +300,6 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   // محتوى النص بعرض w تماماً كما في عقدة الكانفس.
   const insetXPx = Math.max(0, paddingXPx - borderWidthPx);
   const insetYPx = Math.max(0, paddingYPx - borderWidthPx);
-
-  // الارتفاع دائماً بارتفاع المحتوى، فلا حاجة لإزاحة محاذاة عمودية
-  const offsetY = 0;
 
   const isArabicSpacing = renderState.isArabic && (textEl.letterSpacing || 0) > 0;
   const fillStyle = buildFillStyle(textEl, widthPx, contentHeightPx);
@@ -296,6 +327,9 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const boxTopPx = textEl.y * displayH + anchorOffset.dyPx;
 
   const handleCommit = (newText: string) => {
+    // Enter/Escape may be followed by blur while the same render is mounted.
+    if (committedRef.current) return;
+    committedRef.current = true;
     // P0: تعقيم + قصّ عند الحد الأقصى عبر الوحدة المركزية
     const capped = sanitizeText(fromEditorDisplayText(newText, textEl.arabicNumerals));
     const textChanged = capped !== textEl.text;
@@ -355,16 +389,16 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     transform: `scale(${flippedX ? -1 : 1}, ${flippedY ? -1 : 1})`,
     transformOrigin: 'center',
     backgroundColor: 'transparent',
-    padding: `${insetYPx + offsetY}px ${insetXPx}px ${insetYPx}px ${insetXPx}px`,
+    padding: `${insetYPx + editorOffsetYPx}px ${insetXPx}px`,
     minHeight: `${contentHeightPx + paddingYPx * 2 - borderWidthPx * 2}px`,
     fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
     fontFamily: textEl.fontFamily || '"IBM Plex Sans Arabic", Cairo, sans-serif',
-    fontWeight: textEl.fontWeight || 400,
+    fontWeight: renderState.fontWeight,
     fontStyle: textEl.fontStyle || 'normal',
     textDecoration: textEl.textDecoration || 'none',
     textDecorationColor: textEl.color || TEXT_COLOR_DEFAULT,
     textTransform: textEl.textTransform || 'none',
-    textAlign: textEl.textAlign || 'center',
+    textAlign: isCurved ? 'center' : textEl.textAlign || 'center',
     lineHeight: textEl.lineHeight || 1.2,
     // التباعد قيمة منطقية على الكانفس — يجب تحجيمها مثل fontSize لتطابق
     // ما سيُرسم فعلياً (إصلاح Bug#12). العربي: Konva يصفّر letterSpacing
@@ -391,7 +425,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         minHeight: `${contentHeightPx + paddingYPx * 2}px`,
         transform: `rotate(${textEl.rotation || 0}deg)`,
         transformOrigin: `${paddingXPx}px ${paddingYPx}px`,
-        backgroundColor: bgColor,
+        // An opaque DOM badge would hide the faint Konva arc underneath it.
+        backgroundColor: isCurved ? 'transparent' : bgColor,
         borderRadius: radiusPx > 0 ? `${radiusPx}px` : '4px',
         border:
           borderWidthPx > 0
@@ -403,12 +438,22 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         visibility: fontReady ? 'visible' : 'hidden',
       }}
     >
+      {isCurved && (
+        <span
+          id={curveHintId}
+          dir="rtl"
+          className="absolute bottom-full start-0 mb-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground pointer-events-none whitespace-nowrap"
+        >
+          نص منحني
+        </span>
+      )}
       <textarea
         key={textEl.id}
         ref={textareaRef}
         data-testid="text-editing-textarea"
         // P0: هوية منطوقة لقارئ الشاشة
         aria-label={accessibleName}
+        aria-describedby={isCurved ? curveHintId : undefined}
         maxLength={TEXT_MAX_LENGTH}
         dir={renderState.direction}
         wrap={!isAuto && textEl.wrap === 'none' ? 'off' : 'soft'}
@@ -416,10 +461,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         style={textareaStyle}
         value={displayText}
         onChange={(e) => {
-          const target = e.currentTarget;
-          setDraft({ id: textEl.id, value: target.value });
-          target.style.height = 'auto';
-          target.style.height = `${target.scrollHeight}px`;
+          setDraft({ id: textEl.id, value: e.currentTarget.value });
         }}
         onBlur={(e) => {
           handleCommit(e.target.value);

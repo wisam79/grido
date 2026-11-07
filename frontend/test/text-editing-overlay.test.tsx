@@ -1,8 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { TextEditingOverlay } from '../src/components/editor/canvas/text-editing-overlay';
+import * as textFit from '../src/lib/canvas/text-fit';
+
+afterEach(() => vi.restoreAllMocks());
 
 import type { TextElement } from '../src/lib/store/types';
 
@@ -180,6 +183,107 @@ describe('TextEditingOverlay Component Tests', () => {
     );
 
     expect(screen.getByRole('textbox')).toHaveValue('Restored');
+  });
+
+  it.each([50, -50])(
+    'labels and vertically centres curved content without changing fitted geometry (%s)',
+    (curve) => {
+      vi.spyOn(textFit, 'measureTextContentHeightPx').mockImplementation((source) =>
+        source.curve ? 100 : source.text.split('\n').length * 24,
+      );
+      const updateElement = vi.fn();
+      const pushHistory = vi.fn();
+      render(
+        <TextEditingOverlay
+          {...baseProps}
+          elements={[{ ...textElement, curve, textAlign: 'left', textBgColor: '#ffffff' }]}
+          updateElement={updateElement}
+          pushHistory={pushHistory}
+          setEditingTextId={vi.fn()}
+        />,
+      );
+      const textarea = screen.getByRole('textbox');
+      const box = textarea.parentElement as HTMLElement;
+      expect(screen.getByText('نص منحني')).toBeInTheDocument();
+      expect(textarea).toHaveAccessibleDescription('نص منحني');
+      expect(textarea.style.paddingTop).toBe('38px');
+      expect(textarea.style.paddingBottom).toBe('38px');
+      expect(textarea.style.textAlign).toBe('center');
+      expect(box.style.top).toBe('200px');
+      expect(box.style.minHeight).toBe('100px');
+      // الخلفية المعتمة للمحرر لا تحجب القوس الخافت في Konva.
+      expect(box.style.backgroundColor).toBe('transparent');
+
+      fireEvent.change(textarea, { target: { value: 'First\nSecond' } });
+      expect(textarea).toHaveValue('First\nSecond');
+      expect(textarea.style.paddingTop).toBe('26px');
+      expect(textarea.style.paddingBottom).toBe('26px');
+      expect(updateElement).not.toHaveBeenCalled();
+      expect(pushHistory).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps straight text at the top without a curve badge', () => {
+    render(
+      <TextEditingOverlay
+        {...baseProps}
+        elements={[{ ...textElement, text: 'First\nSecond', textAlign: 'left' }]}
+        updateElement={vi.fn()}
+        pushHistory={vi.fn()}
+        setEditingTextId={vi.fn()}
+      />,
+    );
+    const textarea = screen.getByRole('textbox');
+    expect(screen.queryByText('نص منحني')).not.toBeInTheDocument();
+    expect(textarea.style.paddingTop).toBe('0px');
+    expect(textarea.style.textAlign).toBe('left');
+    expect(textarea).toHaveValue('First\nSecond');
+  });
+
+  it('keeps curved raw newlines through one commit, blur and undo/reopen', () => {
+    const updateElement = vi.fn();
+    const pushHistory = vi.fn();
+    const props = {
+      ...baseProps,
+      elements: [{ ...textElement, text: 'First\nSecond', curve: 50 }],
+      updateElement,
+      pushHistory,
+      setEditingTextId: vi.fn(),
+    };
+    const { rerender } = render(<TextEditingOverlay {...props} />);
+    const textarea = screen.getByRole('textbox');
+    expect(textarea).toHaveValue('First\nSecond');
+    fireEvent.change(textarea, { target: { value: 'Edited\nSecond' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
+    expect(updateElement).not.toHaveBeenCalled();
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+    fireEvent.blur(textarea);
+    expect(updateElement).toHaveBeenCalledTimes(1);
+    expect(updateElement).toHaveBeenCalledWith(
+      'text-1',
+      expect.objectContaining({ text: 'Edited\nSecond' }),
+    );
+    expect(pushHistory).toHaveBeenCalledTimes(1);
+    rerender(<TextEditingOverlay {...props} editingTextId={null} />);
+    rerender(<TextEditingOverlay {...props} />);
+    expect(screen.getByRole('textbox')).toHaveValue('First\nSecond');
+  });
+
+  it('uses the supported display weight without overwriting the stored weight', () => {
+    const updateElement = vi.fn();
+    const source = { ...textElement, fontFamily: 'Cairo', fontWeight: 800 };
+    render(
+      <TextEditingOverlay
+        {...baseProps}
+        elements={[source]}
+        updateElement={updateElement}
+        pushHistory={vi.fn()}
+        setEditingTextId={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('textbox').style.fontWeight).toBe('700');
+    expect(source.fontWeight).toBe(800);
+    expect(updateElement).not.toHaveBeenCalled();
   });
 
   it('expands the badge around the text box and keeps content width equal to Konva', () => {

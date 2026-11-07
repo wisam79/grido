@@ -9,7 +9,7 @@ import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geome
 import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
 import { measureTextContentHeightPx } from '@/lib/canvas/text-fit';
-import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
+import { resolveTextDecorationColor, resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { wrapTextLines } from '@/lib/canvas/text-layout';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
@@ -198,7 +198,7 @@ export async function renderFittedBranch(
     } else if (el.type === 'text') {
       const fontSize = el.fontSize || 32;
       // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)
-      const { text: rawText, direction, letterSpacing } = resolveTextRenderState(el);
+      const { text: rawText, direction, letterSpacing, fontWeight } = resolveTextRenderState(el);
       const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
       const fontFamily = el.fontFamily || 'Cairo, Tajawal, sans-serif';
       const isCurved = typeof el.curve === 'number' && el.curve !== 0;
@@ -207,7 +207,7 @@ export async function renderFittedBranch(
       let wrappedLines: string[] = [];
       let contentHeight = 0;
       if (!isCurved) {
-        ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`;
+        ctx.font = `${fontStyle}${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.direction = direction;
         // letterSpacing: متاح في Chromium/Electron (بيئة Wails) — يُضبط صراحةً لكل
         // عنصر نص (0px عند غيابه) فلا يتسرب تباعد العنصر السابق إلى التالي على
@@ -261,7 +261,7 @@ export async function renderFittedBranch(
           height: layoutH,
           fontSize,
           fontFamily,
-          fontWeight: el.fontWeight || 400, // #6 — موحَّد مع المعاينة
+          fontWeight,
           fontStyle: el.fontStyle || 'normal',
           color: el.color || TEXT_COLOR_DEFAULT,
           // تدرج/صورة في فضاء العنصر رغم دوران كل حرف على القوس
@@ -324,8 +324,9 @@ export async function renderFittedBranch(
 
         if (decoSegments.length > 0) {
           ctx.save();
-          // نفس تعبئة النص (تدرج/نقش) بدل السقوط للون المصمت فقط
-          ctx.strokeStyle = ctx.fillStyle;
+          // Match Konva.Text: linear follows the fill; radial/image use the
+          // shared solid decoration color without altering the glyph paint.
+          ctx.strokeStyle = resolveTextDecorationColor(el) ?? ctx.fillStyle;
           ctx.lineWidth = decoThickness;
           ctx.beginPath();
           for (const seg of decoSegments) {

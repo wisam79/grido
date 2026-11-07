@@ -3,7 +3,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { CaretDown, Check, MagnifyingGlass, Star, X } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ARABIC_FONTS, loadGoogleFont } from '@/lib/io/fonts';
+import { ARABIC_FONTS, findFontOption, loadGoogleFont } from '@/lib/io/fonts';
 import { readStoredList, writeStoredList } from '@/lib/local-prefs';
 import { cn } from '@/lib/utils';
 
@@ -23,16 +23,6 @@ const focusClassName =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 const iconClassName =
   'size-8 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150 motion-reduce:transition-none cursor-pointer';
-
-function findFont(value: string) {
-  const name = value.split(',')[0].trim().replace(/['"]/g, '').toLowerCase();
-  return ARABIC_FONTS.find(
-    (font) =>
-      font.family.split(',')[0].trim().replace(/['"]/g, '').toLowerCase() === name ||
-      font.id === name ||
-      font.arabicName === name,
-  );
-}
 
 function fontLabel(font: FontOption) {
   return font.category === 'latin' ? font.englishName : font.arabicName;
@@ -55,7 +45,7 @@ export const FontSelector = React.memo(function FontSelector({
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
   const listId = useId();
-  const currentFont = findFont(isOpen ? committedValue : value);
+  const currentFont = findFontOption(isOpen ? committedValue : value);
 
   const fonts = useMemo(() => {
     const search = query.trim().toLowerCase();

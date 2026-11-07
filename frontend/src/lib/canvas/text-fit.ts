@@ -109,17 +109,12 @@ export function clampAutoTextWidthPx(widthPx: number, canvasWidth: number): numb
 }
 
 function buildMeasureSpec(source: TextStyleSource, text: string): TextMeasureSpec {
-  const state = resolveTextRenderState({
-    text,
-    arabicNumerals: source.arabicNumerals,
-    letterSpacing: source.letterSpacing,
-    textTransform: source.textTransform,
-  });
+  const state = resolveTextRenderState({ ...source, text });
   return {
     text: state.text,
     fontFamily: source.fontFamily || 'sans-serif',
     fontSize: source.fontSize || 16,
-    fontWeight: source.fontWeight,
+    fontWeight: state.fontWeight,
     fontStyle: source.fontStyle,
     lineHeight: source.lineHeight ?? 1.2,
     letterSpacing: state.letterSpacing,

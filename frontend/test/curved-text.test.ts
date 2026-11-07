@@ -130,6 +130,71 @@ describe('Curved Text Drawing Tests', () => {
     expect(drawn.slice(-2)).toEqual(['d', 'C']);
   });
 
+  it.each([45, -45])(
+    'renders raw newlines as spaces with identical arc transforms (%s)',
+    (curve) => {
+      const record = (text: string) => {
+        const ctx = {
+          save: vi.fn(),
+          restore: vi.fn(),
+          translate: vi.fn(),
+          rotate: vi.fn(),
+          fillText: vi.fn(),
+          measureText: vi.fn((glyph: string) => ({ width: glyph === ' ' ? 5 : 15 })),
+          font: '',
+        };
+        drawCurvedText(ctx as unknown as CanvasRenderingContext2D, {
+          text,
+          x: 0,
+          y: 0,
+          width: 300,
+          height: 150,
+          fontSize: 24,
+          fontFamily: 'Arial',
+          curve,
+          direction: 'ltr',
+        });
+        return ctx;
+      };
+      const raw = record('A\r\nB\n\nC\rD\u2028E\u2029F');
+      const flat = record('A B  C D E F');
+      expect(raw.fillText.mock.calls).toEqual(flat.fillText.mock.calls);
+      expect(raw.translate.mock.calls).toEqual(flat.translate.mock.calls);
+      expect(raw.rotate.mock.calls).toEqual(flat.rotate.mock.calls);
+      expect(raw.measureText.mock.calls.every(([glyph]) => !/[\r\n\u2028\u2029]/.test(glyph))).toBe(
+        true,
+      );
+    },
+  );
+
+  it('keeps joined Arabic, diacritics and embedded digits/Latin ordered after flattening', () => {
+    const fillText = vi.fn();
+    drawCurvedText(
+      {
+        save: vi.fn(),
+        restore: vi.fn(),
+        translate: vi.fn(),
+        rotate: vi.fn(),
+        fillText,
+        measureText: vi.fn(() => ({ width: 12 })),
+      } as unknown as CanvasRenderingContext2D,
+      {
+        text: 'بِـسم\nAB 12',
+        x: 0,
+        y: 0,
+        width: 300,
+        height: 150,
+        fontSize: 24,
+        fontFamily: 'Cairo',
+        curve: 40,
+        direction: 'rtl',
+      },
+    );
+    const drawn = fillText.mock.calls.map(([glyph]) => glyph);
+    expect(drawn.slice(0, 6)).toEqual(['\uFE91', '\u0650', '\u0640', '\uFEB4', '\uFEE2', ' ']);
+    expect(drawn.slice(-5)).toEqual(['2', '1', ' ', 'B', 'A']);
+  });
+
   it('resolves a per-glyph fill for gradient/pattern paints', () => {
     const fillTextSpy = vi.fn();
     const fillStyleForGlyph = vi.fn(() => '#ff0000');

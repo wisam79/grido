@@ -69,7 +69,7 @@ describe('FreeformTextTab', () => {
       type: 'text',
       text: 'عنوان رئيسي',
       fontSize: 48,
-      fontWeight: 800,
+      fontWeight: 700,
     });
     expect(state.editingTextId).toBeNull();
   });

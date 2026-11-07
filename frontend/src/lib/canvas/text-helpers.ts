@@ -3,6 +3,10 @@
  * يُستورد منها كل من: text-editing-overlay, text-elements, crud, clipboard-utils, project-serializer
  */
 
+import { resolveSupportedFontWeight } from '@/lib/io/fonts';
+
+import { TEXT_COLOR_DEFAULT } from './canvas-colors';
+
 /** الحد الأقصى لطول النص — يمنع تجميد Konva عند لصق مقال كامل (P0) */
 export const TEXT_MAX_LENGTH = 2000;
 
@@ -85,11 +89,16 @@ export interface TextRenderSource {
   arabicNumerals?: boolean;
   letterSpacing?: number;
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  curve?: number;
+  fontFamily?: string;
+  fontWeight?: number;
 }
 
 export interface TextRenderState {
-  /** النص النهائي بعد الأرقام المشرقية وتحويلات الحالة وتباعد الكلمات العربي */
+  /** النص النهائي بعد تطبيع عرض القوس والأرقام المشرقية وتحويلات الحالة والتباعد */
   text: string;
+  /** وزن الوجه المتاح للرسم والقياس؛ لا يُكتب فوق الوزن الخام في المستند. */
+  fontWeight: number;
   isArabic: boolean;
   /** اتجاه الفقرة الفعلي (أول محرف قوي) — بديل فحص «يحتوي عربي» */
   direction: 'rtl' | 'ltr';
@@ -120,6 +129,24 @@ export function fromEditorDisplayText(text: string, arabicNumerals?: boolean): s
 }
 
 /**
+ * Decoration paint policy shared by Konva and fallback export: a linear gradient
+ * follows the glyph fill (null), all other fills use the explicit text color.
+ * Konva.Text does not paint radial/image decorations; do not silently make the
+ * fallback richer than the preview. The glyphs retain their radial/pattern fill.
+ */
+export function resolveTextDecorationColor(source: {
+  fillType?: 'solid' | 'linear' | 'radial' | 'image';
+  color?: string;
+}): string | null {
+  return source.fillType === 'linear' ? null : source.color || TEXT_COLOR_DEFAULT;
+}
+
+/** A curve has one display line. Keep this out of sanitizeText/editor storage. */
+export function normalizeCurvedText(text: string): string {
+  return text.replace(/\r\n|[\r\n\u2028\u2029]/g, ' ');
+}
+
+/**
  * تجهيز النص المشترك بين المعاينة والتصدير ومحرر النص:
  * - الأرقام المشرقية (٠-٩)
  * - تحويلات الحالة للاتيني فقط (تطبيقها على العربي يخرب التشكيل)
@@ -129,6 +156,11 @@ export function fromEditorDisplayText(text: string, arabicNumerals?: boolean): s
  */
 export function resolveTextRenderState(source: TextRenderSource): TextRenderState {
   let text = source.text || '';
+  if (source.curve) text = normalizeCurvedText(text);
+  const fontWeight = resolveSupportedFontWeight(
+    source.fontFamily || 'sans-serif',
+    source.fontWeight,
+  );
 
   if (source.arabicNumerals) {
     text = toEasternArabicDigits(text);
@@ -162,5 +194,5 @@ export function resolveTextRenderState(source: TextRenderSource): TextRenderStat
     }
   }
 
-  return { text, isArabic, direction, letterSpacing: effectiveLetterSpacing };
+  return { text, fontWeight, isArabic, direction, letterSpacing: effectiveLetterSpacing };
 }

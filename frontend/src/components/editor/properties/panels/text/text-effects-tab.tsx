@@ -69,6 +69,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       shadowOffsetX: p.ox,
       shadowOffsetY: p.oy,
       shadowOpacity: p.opacity,
+      shadowGlow: p.id === 'neon',
     });
 
   const applyBackground = (mode: TextBackgroundMode) => {
@@ -130,6 +131,30 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 onChange={(val) => update({ shadowBlur: val })}
                 onCommit={pushHistory}
               />
+              {!element.shadowGlow && shadowPreset !== 'neon' && (
+                <>
+                  <FluentSliderField
+                    label="إزاحة X"
+                    value={element.shadowOffsetX ?? 0}
+                    min={-25}
+                    max={25}
+                    step={1}
+                    unit="px"
+                    onChange={(val) => update({ shadowOffsetX: val })}
+                    onCommit={pushHistory}
+                  />
+                  <FluentSliderField
+                    label="إزاحة Y"
+                    value={element.shadowOffsetY ?? 0}
+                    min={-25}
+                    max={25}
+                    step={1}
+                    unit="px"
+                    onChange={(val) => update({ shadowOffsetY: val })}
+                    onCommit={pushHistory}
+                  />
+                </>
+              )}
               <FluentSliderField
                 label="الكثافة"
                 value={Math.round((element.shadowOpacity ?? 0.5) * 100)}
@@ -176,6 +201,33 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                   onCommit={pushHistory}
                   swatchOnly
                   ariaLabel="لون خلفية النص"
+                />
+              </ControlRow>
+              <FluentSliderField
+                label="سمك الإطار"
+                value={element.textBgBorderWidth ?? 0}
+                min={0}
+                max={20}
+                step={0.5}
+                unit="px"
+                onChange={(val) =>
+                  update({
+                    textBgBorderWidth: val,
+                    // Konva يحتاج لوناً صريحاً حتى يظهر الإطار عند تفعيل سمكه لأول مرة.
+                    ...(!element.textBgBorderColor && val > 0
+                      ? { textBgBorderColor: '#000000' }
+                      : {}),
+                  })
+                }
+                onCommit={pushHistory}
+              />
+              <ControlRow label="لون الإطار">
+                <ColorField
+                  color={element.textBgBorderColor || '#000000'}
+                  onChange={(val) => update({ textBgBorderColor: val })}
+                  onCommit={pushHistory}
+                  swatchOnly
+                  ariaLabel="لون إطار الشارة"
                 />
               </ControlRow>
               <FluentSliderField

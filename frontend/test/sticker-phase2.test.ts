@@ -68,6 +68,130 @@ describe('phase2: portable SVG + vector source + mm sheet', () => {
     }
   });
 
+  it('embeds cloud subsets from unreadable Google CSS, allowing only Google font assets', async () => {
+    const href = 'https://fonts.googleapis.com/css2?family=Lalezar:wght@400&display=swap';
+    const sheet = {
+      href,
+      get cssRules(): CSSRuleList {
+        throw new DOMException('Cross origin', 'SecurityError');
+      },
+    } as CSSStyleSheet;
+    const sheets = vi
+      .spyOn(document, 'styleSheets', 'get')
+      .mockReturnValue([sheet] as unknown as StyleSheetList);
+    const css = [
+      "@font-face{font-family:'Lalezar';font-weight:400;unicode-range:U+0600-06FF;src:url(https://fonts.gstatic.com/s/lalezar/test-arabic.woff2) format('woff2');}",
+      "@font-face{font-family:'Lalezar';font-weight:400;unicode-range:U+0000-00FF;src:url(https://fonts.gstatic.com/s/lalezar/test-latin.woff2) format('woff2');}",
+      "@font-face{font-family:'Lalezar';src:url(https://fonts.gstatic.com.evil.test/font.woff2);}",
+      "@font-face{font-family:'Unrelated';src:url(https://fonts.gstatic.com/s/unrelated.woff2);}",
+    ].join('');
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      return {
+        ok: true,
+        url,
+        headers: new Headers({ 'content-type': url === href ? 'text/css' : 'font/woff2' }),
+        text: async () => css,
+        arrayBuffer: async () => new Uint8Array([119, 79, 70, 50]).buffer,
+      } as Response;
+    });
+    try {
+      const out = await embedStickerFonts(
+        '<svg><text font-family="Lalezar">مرحبا ABC</text></svg>',
+        ['Lalezar'],
+      );
+      expect(out.match(/@font-face/g)).toHaveLength(2);
+      expect(out).toContain('unicode-range:U+0600-06FF;');
+      expect(out).toContain('unicode-range:U+0000-00FF;');
+      expect(out).toContain('src:url(data:font/woff2;base64,');
+      expect(out).not.toContain('https:');
+      expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
+        href,
+        'https://fonts.gstatic.com/s/lalezar/test-arabic.woff2',
+        'https://fonts.gstatic.com/s/lalezar/test-latin.woff2',
+      ]);
+    } finally {
+      sheets.mockRestore();
+      fetchMock.mockRestore();
+    }
+  });
+
+  it('resolves local font assets relative to the stylesheet rather than the document', async () => {
+    const sheet = {
+      href: `${window.location.origin}/assets/styles/fonts.css`,
+      cssRules: [
+        {
+          type: 5,
+          cssText:
+            "@font-face{font-family:'RelativeFontTest';src:url('../relative-test.woff2') format('woff2');}",
+        },
+      ],
+    } as unknown as CSSStyleSheet;
+    const sheets = vi
+      .spyOn(document, 'styleSheets', 'get')
+      .mockReturnValue([sheet] as unknown as StyleSheetList);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'font/woff2' }),
+      arrayBuffer: async () => new Uint8Array([119, 79, 70, 50]).buffer,
+    } as Response);
+    try {
+      const out = await embedStickerFonts('<svg><text>Text</text></svg>', ['RelativeFontTest']);
+      expect(out).toContain('@font-face');
+      expect(String(fetchMock.mock.calls[0][0])).toBe(
+        `${window.location.origin}/assets/relative-test.woff2`,
+      );
+    } finally {
+      sheets.mockRestore();
+      fetchMock.mockRestore();
+    }
+  });
+
+  it('does not fetch arbitrary or protocol-relative stylesheet/font origins', async () => {
+    const sheet = {
+      href: 'https://fonts.googleapis.com.evil.test/fonts.css',
+      cssRules: [
+        {
+          type: 5,
+          cssText: "@font-face{font-family:'BlockedFontTest';src:url('//evil.test/font.woff2');}",
+        },
+      ],
+    } as unknown as CSSStyleSheet;
+    const sheets = vi
+      .spyOn(document, 'styleSheets', 'get')
+      .mockReturnValue([sheet] as unknown as StyleSheetList);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false } as Response);
+    try {
+      const svg = '<svg><text>Text</text></svg>';
+      expect(await embedStickerFonts(svg, ['BlockedFontTest'])).toBe(svg);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      sheets.mockRestore();
+      fetchMock.mockRestore();
+    }
+  });
+
+  it('does not fetch a cloud stylesheet warmed by the picker for another family', async () => {
+    const sheet = {
+      href: 'https://fonts.googleapis.com/css2?family=Katibeh:wght@400&display=swap',
+      get cssRules(): CSSRuleList {
+        throw new DOMException('Cross origin', 'SecurityError');
+      },
+    } as CSSStyleSheet;
+    const sheets = vi
+      .spyOn(document, 'styleSheets', 'get')
+      .mockReturnValue([sheet] as unknown as StyleSheetList);
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    try {
+      const svg = '<svg><text>Text</text></svg>';
+      expect(await embedStickerFonts(svg, ['Cairo'])).toBe(svg);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      sheets.mockRestore();
+      fetchMock.mockRestore();
+    }
+  });
+
   it('schema accepts vector svg in stickerSource (back-compat)', () => {
     const el = {
       id: 'a',

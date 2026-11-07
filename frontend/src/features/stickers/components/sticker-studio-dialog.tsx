@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -38,11 +38,17 @@ import { StickerCatalog } from './sticker-catalog';
 import { StickerPreview } from './sticker-preview';
 import { StickerProperties } from './sticker-properties';
 import { VdpImportDialog } from './vdp-import-dialog';
+import { buildStickerSvg } from '../lib/sticker-design/build-svg';
 import { useStickerCustomization } from '../lib/use-sticker-customization';
 import { useStickerExportActions } from '../lib/use-sticker-export-actions';
 import { resolveStickerSheetMm, useStickerInsertActions } from '../lib/use-sticker-insert-actions';
 import { ALL_STICKER_TEMPLATES } from '../templates';
-import type { StickerCategory, StickerCategoryGroupId, StickerShape } from '../types';
+import type {
+  StickerCategory,
+  StickerCategoryGroupId,
+  StickerParams,
+  StickerShape,
+} from '../types';
 import type { StickerElementSource } from '@/lib/store/types';
 
 export interface StickerStudioDialogProps {
@@ -94,6 +100,41 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     exportableSvg,
     hiddenFieldIds,
   } = useStickerCustomization({ open, initialCategory, editingElement, cancelledRef });
+
+  // المعاينة طبقة عرض فقط: الحفظ/الإدراج/VDP والتصدير أدناه تستقبل params الأصلية.
+  const [fontPreview, setFontPreview] = useState<{
+    family: string;
+    templateId: string;
+    params: StickerParams;
+  } | null>(null);
+  const cancelFontPreview = useCallback(() => setFontPreview(null), []);
+  useEffect(() => {
+    cancelFontPreview();
+    return cancelFontPreview;
+  }, [open, view, selectedTemplate.id, editingElement?.id, cancelFontPreview]);
+  const previewFont = useCallback(
+    (family: string) => setFontPreview({ family, templateId: selectedTemplate.id, params }),
+    [selectedTemplate.id, params],
+  );
+  const previewParams = useMemo(
+    () =>
+      open &&
+      view === 'customize' &&
+      fontPreview?.templateId === selectedTemplate.id &&
+      fontPreview.params === params
+        ? { ...params, fontFamily: fontPreview.family }
+        : params,
+    [open, view, fontPreview, selectedTemplate.id, params],
+  );
+  const previewSvg = useMemo(
+    () =>
+      previewParams === params
+        ? svgString
+        : buildStickerSvg(selectedTemplate, previewParams, {
+            namespace: `live-${selectedTemplate.id}`,
+          }),
+    [previewParams, params, svgString, selectedTemplate],
+  );
 
   const {
     isInserting,
@@ -243,8 +284,8 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden border-e border-border/40">
               <StickerPreview
                 template={selectedTemplate}
-                params={params}
-                svgString={svgString}
+                params={previewParams}
+                svgString={previewSvg}
                 onChangeField={handleChangeField}
                 onChangeColor={handleChangeColor}
                 onResetField={handleResetField}
@@ -258,10 +299,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             {/* Left Side (RTL End): Streamlined Inspector */}
             <div className="w-[330px] xl:w-[350px] shrink-0 h-full flex flex-col overflow-hidden">
               <StickerProperties
+                key={`${editingElement?.id ?? 'new'}-${selectedTemplate.id}-${open}`}
                 template={selectedTemplate}
                 params={params}
                 onChangeParams={setParams}
                 onCommitParams={commitParams}
+                onPreviewFont={previewFont}
+                onCancelFontPreview={cancelFontPreview}
                 gridConfig={gridConfig}
                 onChangeGridConfig={setGridConfig}
                 hiddenFieldIds={hiddenFieldIds}

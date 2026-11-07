@@ -62,6 +62,9 @@ export interface StickerDesignTabProps {
   onChangeParams: (updater: (prev: StickerParams) => StickerParams) => void;
   /** التزام صريح كخطوة تراجع مستقلة (لوحات جاهزة، تبديل الخط) */
   commit: (updater: (prev: StickerParams) => StickerParams) => void;
+  fontWeights?: readonly number[];
+  onPreviewFont?: (family: string) => void;
+  onCancelFontPreview?: () => void;
   contrastWarning: string | null;
   onFieldChange: (fieldId: string, value: string) => void;
   onColorChange: (
@@ -76,6 +79,9 @@ export function StickerDesignTab({
   params,
   onChangeParams,
   commit,
+  fontWeights,
+  onPreviewFont,
+  onCancelFontPreview,
   contrastWarning,
   onFieldChange,
   onColorChange,
@@ -245,7 +251,11 @@ export function StickerDesignTab({
       <FluentSection title="المظهر" collapsible defaultOpen>
         {/* Font Selector */}
         <StickerFontSelector
+          key={template.id}
           value={params.fontFamily || 'Cairo'}
+          fontWeights={fontWeights}
+          onPreview={onPreviewFont}
+          onCancel={onCancelFontPreview}
           onChange={(family) => {
             commit((prev) => ({ ...prev, fontFamily: family }));
           }}

@@ -14,6 +14,7 @@ import {
 import { autoFitSheetGrid } from '../lib/sheet-generator';
 import { contrastRatio, textColorRoles } from '../lib/sticker-a11y';
 import { buildStickerSvg } from '../lib/sticker-design/build-svg';
+import { getStickerFontWeights } from '../lib/sticker-font-embed';
 
 import type { StickerTemplate, StickerParams, SheetGridConfig, StickerUserPreset } from '../types';
 
@@ -23,6 +24,8 @@ export interface StickerPropertiesProps {
   onChangeParams: (updater: (prev: StickerParams) => StickerParams) => void;
   /** التزام صريح كخطوة تراجع مستقلة (لوحات جاهزة، قوالب محفوظة، تبديل الخط) */
   onCommitParams?: (updater: (prev: StickerParams) => StickerParams) => void;
+  onPreviewFont?: (family: string) => void;
+  onCancelFontPreview?: () => void;
   gridConfig: SheetGridConfig;
   onChangeGridConfig: (
     config: SheetGridConfig | ((prev: SheetGridConfig) => SheetGridConfig),
@@ -38,15 +41,17 @@ export const StickerProperties = React.memo(function StickerProperties({
   params,
   onChangeParams,
   onCommitParams,
+  onPreviewFont,
+  onCancelFontPreview,
   gridConfig,
   onChangeGridConfig,
   sheetMm,
 }: StickerPropertiesProps) {
   // تحذير التباين المنخفض: نص باهت يُطبع مقروءاً بصعوبة — يُحسب حياً بلا مكتبات
-  const textRoles = useMemo(
-    () => textColorRoles(buildStickerSvg(template, params), params),
-    [template, params],
-  );
+  const { textRoles, fontWeights } = useMemo(() => {
+    const svg = buildStickerSvg(template, params);
+    return { textRoles: textColorRoles(svg, params), fontWeights: getStickerFontWeights(svg) };
+  }, [template, params]);
   const contrastWarning = useMemo(() => {
     if (params.isTransparent) return null;
     const pairs: { role: 'primary' | 'secondary'; label: string; ratio: number | null }[] = [
@@ -196,6 +201,9 @@ export const StickerProperties = React.memo(function StickerProperties({
             params={params}
             onChangeParams={onChangeParams}
             commit={commit}
+            fontWeights={fontWeights}
+            onPreviewFont={onPreviewFont}
+            onCancelFontPreview={onCancelFontPreview}
             contrastWarning={contrastWarning}
             onFieldChange={handleFieldChange}
             onColorChange={handleColorChange}

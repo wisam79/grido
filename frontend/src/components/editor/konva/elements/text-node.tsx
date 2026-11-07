@@ -50,6 +50,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   // لبقية العقدات يظلّ الناتج false ثابتاً فلا يعلمها Zustand → لا إعادة رسم
   // جماعية عند بدء/إنهاء تحرير عقدة واحدة (100+ عقدة في المستندات الكثيفة).
   const isEditing = useEditorStore((state) => state.editingTextId === element.id);
+  const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
+  // Keep the original arc visible as context for content-only editing, respecting
+  // the element's own transparency. Straight text is still hidden beneath its editor.
+  const sharedOpacity = element.opacity * (isEditing ? (hasCurve ? 0.22 : 0) : 1);
   const hasAnimatedRef = React.useRef(false);
   const textRef = useRef<Konva.Text | null>(null);
   // صورة تعبئة النص — يُعاد استخدام نفس كاش الصور ونفس رياضيات نقش الأشكال
@@ -71,18 +75,17 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     const node = elementRef.current;
     if (node && !hasAnimatedRef.current) {
       hasAnimatedRef.current = true;
-      const targetOpacity = isEditing ? 0 : element.opacity;
       node.opacity(0);
       node.scale({ x: 0.8, y: 0.8 });
       node.to({
-        opacity: targetOpacity,
+        opacity: sharedOpacity,
         scaleX: 1,
         scaleY: 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut,
       });
     }
-  }, [elementRef, element.opacity, isEditing, element.id]);
+  }, [elementRef, sharedOpacity, element.id]);
 
   // Ensure font and weight variants are loaded dynamically.
   // Re-measure when the exact face arrives: canvas silently substitutes a
@@ -136,15 +139,9 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const {
     text: renderText,
     direction,
+    fontWeight: renderFontWeight,
     letterSpacing: effectiveLetterSpacing,
-  } = resolveTextRenderState({
-    text: element.text,
-    arabicNumerals: element.arabicNumerals,
-    letterSpacing: element.letterSpacing,
-    textTransform: element.textTransform,
-  });
-
-  const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
+  } = resolveTextRenderState(element);
 
   // العرض الطبيعي (أطول سطر) في وضع الملاءمة التلقائية — يُقاس على محرك
   // الكانفس نفسه، ويُقصّ عند حد الورقة كي لا يخرج النص عنها.
@@ -312,7 +309,6 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 
   const nodeX = element.x * stageCanvasWidth + renderAnchorOffset.dxPx;
   const nodeY = element.y * canvasHeight + renderAnchorOffset.dyPx;
-  const sharedOpacity = isEditing ? 0 : element.opacity;
 
   const strokeW = element.strokeWidth || 0;
   const strokeColor = element.stroke || TEXT_COLOR_DEFAULT;
@@ -391,7 +387,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
                 height: layoutHeightPx,
                 fontSize: element.fontSize || 16,
                 fontFamily: element.fontFamily || 'Cairo, sans-serif',
-                fontWeight: element.fontWeight || 400,
+                fontWeight: renderFontWeight,
                 fontStyle: element.fontStyle || 'normal',
                 color: element.color || TEXT_COLOR_DEFAULT,
                 // تدرج/صورة في فضاء العنصر رغم دوران كل حرف على القوس
@@ -438,7 +434,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             shadowOffsetY={element.shadowGlow ? 0 : element.shadowOffsetY || 0}
             shadowOpacity={element.shadowOpacity ?? 0}
             fontSize={element.fontSize || 16}
-            fontStyle={buildKonvaFontStyle(element.fontWeight, element.fontStyle)}
+            fontStyle={buildKonvaFontStyle(renderFontWeight, element.fontStyle)}
             {...getFillProps(element, renderWidthPx, layoutHeightPx, fillImage ?? null)}
             fontFamily={element.fontFamily || 'sans-serif'}
             align={element.textAlign || 'center'}

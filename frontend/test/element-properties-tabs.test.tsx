@@ -155,6 +155,46 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     });
   });
 
+  it('shows only bundled weights and resolves a legacy unsupported value in the selector', async () => {
+    const scrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = vi.fn();
+    try {
+      render(
+        <TooltipProvider>
+          <ElementProperties
+            element={{ ...textElement, fontWeight: 800 }}
+            onUpdate={mockOnUpdate}
+          />
+        </TooltipProvider>,
+      );
+      const weight = screen.getByRole('combobox', { name: 'وزن الخط' });
+      expect(weight).toHaveTextContent('عريض 700');
+      fireEvent.keyDown(weight, { key: 'ArrowDown' });
+      expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual([
+        'عادي 400',
+        'عريض 700',
+      ]);
+    } finally {
+      Element.prototype.scrollIntoView = scrollIntoView;
+    }
+  });
+
+  it('disables the bold toggle for a single-weight font without recording a change', () => {
+    mockOnUpdate.mockClear();
+    render(
+      <TooltipProvider>
+        <ElementProperties
+          element={{ ...textElement, fontFamily: 'Lalezar', fontWeight: 400 }}
+          onUpdate={mockOnUpdate}
+        />
+      </TooltipProvider>,
+    );
+    const bold = screen.getByRole('button', { name: 'خط عريض' });
+    expect(bold).toBeDisabled();
+    fireEvent.click(bold);
+    expect(mockOnUpdate).not.toHaveBeenCalled();
+  });
+
   it('renders Image element properties with opacity in Colors tab and corner radius in Style tab', () => {
     render(
       <TooltipProvider>

@@ -1,13 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 
+import { curvedTextNaturalHeightPx } from '../src/lib/canvas/curved-text-metrics';
 import {
   AUTO_TEXT_MAX_WIDTH_RATIO,
   AUTO_TEXT_MIN_WIDTH_PX,
   clampAutoTextWidthPx,
+  fitTextGeometry,
+  measureTextContentHeightPx,
+  measureTextNaturalWidthPx,
   resolveTextBoxAnchorOffsetPx,
   resolveTextSizing,
 } from '../src/lib/canvas/text-fit';
+import * as textMeasure from '../src/lib/canvas/text-measure';
 import { constrainTransformerBox } from '../src/lib/canvas/transform-anchors';
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('text-fit — sizing rules', () => {
   it('treats legacy elements as fixed and only an explicit auto as auto', () => {
@@ -25,6 +32,62 @@ describe('text-fit — sizing rules', () => {
   it('never exceeds the canvas even for tiny canvases', () => {
     const width = clampAutoTextWidthPx(50, 20);
     expect(width).toBe(AUTO_TEXT_MIN_WIDTH_PX);
+  });
+});
+
+describe('text-fit — curved multiline measurement', () => {
+  const source = {
+    text: 'AB\nCD',
+    fontFamily: 'Arial',
+    fontSize: 20,
+    width: 0.1,
+    height: 0.1,
+    x: 0.2,
+    y: 0.3,
+    rotation: 30,
+    textSizing: 'auto' as const,
+    curve: 55,
+  };
+
+  it.each([55, -55])('measures the whole flattened arc and preserves raw text (%s)', (curve) => {
+    const width = vi
+      .spyOn(textMeasure, 'measureTextWidthPx')
+      .mockImplementation(({ text }) =>
+        Math.max(...text.split('\n').map((line) => line.length * 10)),
+      );
+    const element = { ...source, curve };
+    expect(measureTextNaturalWidthPx(element)).toBe(52);
+    expect(measureTextContentHeightPx(element, 52)).toBeCloseTo(
+      curvedTextNaturalHeightPx(50, 52, 20, curve),
+      8,
+    );
+    expect(width.mock.calls.every(([spec]) => spec.text === 'AB CD')).toBe(true);
+    expect(fitTextGeometry(element, 1000, 1000)).toEqual(
+      fitTextGeometry({ ...element, text: 'AB CD' }, 1000, 1000),
+    );
+    expect(element.text).toBe('AB\nCD');
+  });
+
+  it('measures with the same supported weight as the loaded face', () => {
+    const width = vi.spyOn(textMeasure, 'measureTextWidthPx').mockReturnValue(50);
+    const height = vi.spyOn(textMeasure, 'measureTextHeightPx').mockReturnValue(24);
+    fitTextGeometry({ ...source, curve: 0, fontFamily: 'Cairo', fontWeight: 800 }, 1000, 1000);
+    expect(width).toHaveBeenCalledWith(expect.objectContaining({ fontWeight: 700 }));
+    expect(height).toHaveBeenCalledWith(expect.objectContaining({ fontWeight: 700 }), 52);
+  });
+
+  it('leaves straight content multiline and measures height from all its lines', () => {
+    vi.spyOn(textMeasure, 'measureTextWidthPx').mockImplementation(({ text }) =>
+      Math.max(...text.split('\n').map((line) => line.length * 10)),
+    );
+    const height = vi
+      .spyOn(textMeasure, 'measureTextHeightPx')
+      .mockImplementation(({ text }) => text.split('\n').length * 24);
+    const straight = { ...source, curve: 0 };
+    const fit = fitTextGeometry(straight, 1000, 1000);
+    expect(fit?.widthPx).toBe(24);
+    expect(fit?.heightPx).toBe(48);
+    expect(height).toHaveBeenCalledWith(expect.objectContaining({ text: 'AB\nCD' }), 24);
   });
 });
 

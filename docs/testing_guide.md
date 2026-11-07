@@ -4,6 +4,22 @@
 
 ---
 
+## النصوص والخطوط F1–F10 — 7 نوفمبر 2026
+
+- مرجع النطاق ونتائج كل بند: `docs/plans/2026-11-07-text-and-fonts-review-plan.md`؛ أضيف `frontend/test/text-node.test.tsx` للتحقق من إبقاء القوس خافتاً أثناء التحرير، والبقية توسعة ملفات قائمة. لا اختبارات Go أو عقود IPC جديدة.
+- تحقق الخطوط: `frontend/test/fonts.test.ts` يطابق `weights/offlineWeights` مع CSS والملفات المحلية وتوقيع WOFF2، ويختبر URLs السحابية الصحيحة، دقة الوزن والنمط، مشاركة الطلبات، الخطأ والمهلة وإعادة المحاولة، ورفض نتيجة وجه فارغة. عينة التحميل تشمل مجموعتي العربية واللاتينية، لا المسافة الافتراضية فقط.
+- تحقق الواجهة: `font-selector.test.tsx` يثبت استعادة وزن كل نص عند Escape/unmount واستخدام الوزن الأصلي عبر عدة معاينات؛ `element-properties-tabs.test.tsx` يختبر قائمة الأوزان الفعلية وB المعطل؛ `text-preset-catalog.test.ts` يمنع نمطاً جاهزاً يطلب وزناً غير متاح. فحص قائمة Radix يستخدم لوحة المفاتيح في jsdom، دون تغيير مكوّن الإنتاج لتجاوز غياب Pointer Capture في المحاكي.
+- الأوامر تُشغَّل **ملفاً واحداً مستقلاً** في كل مرة بعامل واحد ودون تغطية؛ النتائج والأعداد النهائية محفوظة في الخطة. مثال الأمر الفعلي:
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/fonts.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false
+```
+
+- النتيجة النهائية: **219/219** في **17 ملفاً مستهدفاً**، شُغّل كل منها مستقلاً، مع `typecheck` و`lint` و`format:check` ناجحة. تفصيل الملفات والأرقام في الخطة؛ لا تُعمّم هذه النتيجة على الحزمة الكاملة.
+- لا تشغيل للحزمة الكاملة أو E2E أو بناء محلي؛ المعاينة التفاعلية في متصفح محلي معزول ليست اختبار WebView2 الأصلي أو الطباعة أو خدمات السحابة. تحذير Wails عن بيئة المتصفح متوقع؛ عولجت تحذيرات React/Radix `act` في منتقي الخطوط والاستوديو بانتظار التفاعلات داخل `act` دون إخفاء stderr.
+
+---
+
 ## جلسة التصحيح الشاملة red→green — 6 نوفمبر 2026
 
 - ملف اختبار جديد واحد: `frontend/test/image-dialog-lifecycle.test.tsx` (12 حالة) لملكية نتائج القص والتعديل اليدوي (حفظ ناجح يغلق بعد الالتزام، إلغاء/استبدال صورة/جلسة جديدة/unmount ترفض النتيجة) — رفع عداد Vitest في بلوك `docs-metrics` إلى **158**. باقي الإضافات توسعة ملفات قائمة: `use-autosave.test.ts` (+14→19)، `export-dialog.test.tsx` (+5→26)، `print-export-payload.test.ts` (+5→43)، `projects-dialog-backup.test.tsx` (+3→6)، `use-workspace-panels.test.ts` (+3→10)، `fluent-blocks.test.tsx` (+2→22)، `App.test.tsx` (+3→26)، ومجموعتا Go المسماة في تقرير `docs/reviews/22-app-debugging-2026-11-06.md`.

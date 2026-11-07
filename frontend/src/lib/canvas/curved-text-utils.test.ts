@@ -45,3 +45,65 @@ describe('shapeArabicGraphemes — #14 التشكيل لا يقطع الاتصا
     expect(shapeArabicGraphemes('لا')).toEqual(['\uFEFB']);
   });
 });
+
+describe('shapeArabicGraphemes — tatweel, wasla and Persian forms', () => {
+  it.each([
+    ['بـسم', '\uFE91\u0640\uFEB4\uFEE2'],
+    ['بــب', '\uFE91\u0640\u0640\uFE90'],
+    ['بَـِب', '\uFE91\u064E\u0640\u0650\uFE90'],
+    ['بـ ب', '\uFE91\u0640 \uFE8F'],
+  ])('keeps tatweel connected without dropping marks in %s', (text, expected) => {
+    expect(shapeArabicGraphemes(text).join('')).toBe(expected);
+  });
+
+  it.each([
+    ['ٱ', '\uFB50'],
+    ['بٱب', '\uFE91\uFB51\uFE8F'],
+    ['لٱ', '\uFEDF\uFB51'],
+    ['لَٱِ', '\uFEDF\u064E\uFB51\u0650'],
+  ])('uses only real wasla forms, not a fabricated lam-wasla ligature: %s', (text, expected) => {
+    const shaped = shapeArabicGraphemes(text).join('');
+    expect(shaped).toBe(expected);
+    expect(shaped.normalize('NFKC')).toBe(text);
+  });
+
+  it.each([
+    ['ک', ['\uFB8E', '\uFB90', '\uFB91', '\uFB8F']],
+    ['ی', ['\uFBFC', '\uFBFE', '\uFBFF', '\uFBFD']],
+  ])(
+    'maps isolated/initial/medial/final forms of %s to the correct Unicode letter',
+    (letter, forms) => {
+      const cases = [
+        [letter, forms[0]],
+        [`${letter}ب`, `${forms[1]}\uFE90`],
+        [`ب${letter}ب`, `\uFE91${forms[2]}\uFE90`],
+        [`ب${letter}`, `\uFE91${forms[3]}`],
+      ];
+      for (const [text, expected] of cases) {
+        const shaped = shapeArabicGraphemes(text).join('');
+        expect(shaped).toBe(expected);
+        expect(shaped.normalize('NFKC')).toBe(text);
+      }
+    },
+  );
+
+  it.each([' ', '\u200C', 'ء'])(
+    'does not join across the non-joining character %s',
+    (separator) => {
+      expect(shapeArabicGraphemes(`ب${separator}ب`)).toEqual([
+        '\uFE8F',
+        separator === 'ء' ? '\uFE80' : separator,
+        '\uFE8F',
+      ]);
+    },
+  );
+
+  it.each([
+    ['لَا', '\uFEFB\u064E'],
+    ['بِلَأُ', '\uFE91\u0650\uFEF8\u064E\u064F'],
+    ['لآ', '\uFEF5'],
+    ['لإ', '\uFEF9'],
+  ])('preserves the existing lam-alef ligatures and diacritics: %s', (text, expected) => {
+    expect(shapeArabicGraphemes(text).join('')).toBe(expected);
+  });
+});
