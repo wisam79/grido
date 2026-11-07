@@ -2388,3 +2388,17 @@
 
 ### Fixed
 - verification patch for silent background update flow
+
+
+## [v1.31.0] - 2026-11-05
+
+### Added
+- make default collage state for new projects a single top-left cell of civil id dimensions
+- transform tool launcher into a direct-access floating command palette with dedicated top toolbar trigger
+- promote freeform collage to top-level rail section, streamline presets to user-saved only, and relocate launcher and zen controls
+
+### Fixed
+- handle escape key to dismiss floating command palette modal and adjust e2e assertions
+- enlarge rows and columns counter buttons and typography for effortless clicking
+- soften vector shape glyph contrast and adjust thumbnail dimensions for visual comfort
+- sync e2e and unit tests with promoted freeform rail, bottom quick bar zen toggle, toolbar launcher, and user-saved presets

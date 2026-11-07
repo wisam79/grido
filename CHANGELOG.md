@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.31.5] - 2026-11-07
+
+### Fixed
+- توحيد مقياس الطباعة المصغر واستبدال فئة الحجم العشوائي text-[9px] بفئة text-2xs الدلالية الموحدة في زاوية المساطر وشارة عداد صور جسر الهاتف للتوافق الصارم مع حارس UI Compliance.
 ## [v1.31.4] - 2026-11-07
 
 ### Added
@@ -35,15 +39,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - import missing useEffect hook in workspace panel rail
-## [v1.31.0] - 2026-11-05
-
-### Added
-- make default collage state for new projects a single top-left cell of civil id dimensions
-- transform tool launcher into a direct-access floating command palette with dedicated top toolbar trigger
-- promote freeform collage to top-level rail section, streamline presets to user-saved only, and relocate launcher and zen controls
-
-### Fixed
-- handle escape key to dismiss floating command palette modal and adjust e2e assertions
-- enlarge rows and columns counter buttons and typography for effortless clicking
-- soften vector shape glyph contrast and adjust thumbnail dimensions for visual comfort
-- sync e2e and unit tests with promoted freeform rail, bottom quick bar zen toggle, toolbar launcher, and user-saved presets
