@@ -132,7 +132,10 @@ describe('ProjectsDialog backup export result handling', () => {
 
     await exportBackup();
 
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('تم تصدير النسخة الاحتياطية'));
+    // مهلة صريحة: الموك يفور فوراً، لكن عامل CI المثقل بالتغطية قد يأخر الجدولة أكثر من الثانية الافتراضية
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('تم تصدير النسخة الاحتياطية'), {
+      timeout: 4000,
+    });
   });
 
   it('shows a cancel toast when the user dismisses the save dialog', async () => {
@@ -140,7 +143,9 @@ describe('ProjectsDialog backup export result handling', () => {
 
     await exportBackup();
 
-    await waitFor(() => expect(toast.info).toHaveBeenCalledWith('تم إلغاء التصدير'));
+    await waitFor(() => expect(toast.info).toHaveBeenCalledWith('تم إلغاء التصدير'), {
+      timeout: 4000,
+    });
     expect(toast.success).not.toHaveBeenCalled();
   });
 
@@ -149,7 +154,9 @@ describe('ProjectsDialog backup export result handling', () => {
 
     await exportBackup();
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Access is denied.'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Access is denied.'), {
+      timeout: 4000,
+    });
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.info).not.toHaveBeenCalled();
   });
