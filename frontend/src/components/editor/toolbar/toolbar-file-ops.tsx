@@ -322,7 +322,7 @@ export function ToolbarFileOps() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
               {phoneBridgeReceivedCount > 0 && (
-                <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-[9px] font-bold leading-none">
+                <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-2xs font-bold leading-none">
                   {phoneBridgeReceivedCount}
                 </span>
               )}

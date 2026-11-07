@@ -105,7 +105,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
               aria-label="خيارات وحدة قياس المسطرة"
               className="w-[16px] h-[16px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
             >
-              <span className="text-[9px] font-bold text-primary font-mono leading-none tracking-tighter uppercase">
+              <span className="text-2xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
                 {rulerUnit}
               </span>
             </button>
