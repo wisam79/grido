@@ -147,9 +147,11 @@ export const EditorCanvas = React.memo(
       stageScale,
       resolvedFitMode,
       leftoverRatio,
+      viewIntent,
       isPanning,
       setStagePos,
       resetPan,
+      flushViewport,
     } = useCanvasViewport(containerRef, innerRef);
 
     // 🧭 معالجات التمرير للأشرطة الجانبية والسفلية
@@ -179,8 +181,8 @@ export const EditorCanvas = React.memo(
 
     // يُنشر الوضع الفعّل ونسبة الفراغ لشريط العرض في التذييل (خارج شجرة الكانفاس)
     useEffect(() => {
-      publishCanvasFitStatus({ resolved: resolvedFitMode, leftoverRatio });
-    }, [resolvedFitMode, leftoverRatio]);
+      publishCanvasFitStatus({ resolved: resolvedFitMode, leftoverRatio, intent: viewIntent });
+    }, [resolvedFitMode, leftoverRatio, viewIntent]);
 
     // 🧭 الخطوط الإرشادية (كانت مضمّنة في هذا الملف)
     const { dragGuideState, setDragGuideState, handleStartDragHGuide, handleStartDragVGuide } =
@@ -258,10 +260,19 @@ export const EditorCanvas = React.memo(
             setIsLoading(false);
           }
         } else if (el.type === 'text') {
+          flushViewport();
           setEditingTextId(el.id);
         }
       },
-      [printMode, isLoading, updateElement, pushHistory, setEditingTextId, setIsLoading],
+      [
+        printMode,
+        isLoading,
+        updateElement,
+        pushHistory,
+        setEditingTextId,
+        setIsLoading,
+        flushViewport,
+      ],
     );
 
     const handleSlotClick = useCallback(
@@ -448,13 +459,15 @@ export const EditorCanvas = React.memo(
               ref={innerRef}
               id="canvas-area"
               data-fit-mode={resolvedFitMode}
+              data-view-intent={viewIntent}
               className="absolute pointer-events-none"
               style={{
                 left: 0,
                 top: 0,
                 width: displayW,
                 height: displayH,
-                transform: `translate3d(${stagePos.x}px, ${stagePos.y}px, 0)`,
+                transform: `translate3d(${stagePos.x}px, ${stagePos.y}px, 0) scale(1)`,
+                transformOrigin: '0 0',
                 willChange: isPanning ? 'transform' : 'auto',
               }}
             >
@@ -611,6 +624,8 @@ export const EditorCanvas = React.memo(
           {!printMode && showRuler && (
             <CanvasVerticalScrollbar
               viewportHeight={viewportSize.h}
+              viewportWidth={viewportSize.w}
+              displayW={displayW}
               displayH={displayH}
               stagePosY={stagePos.y}
               onScrollY={handleScrollY}
@@ -622,7 +637,9 @@ export const EditorCanvas = React.memo(
         {!printMode && showRuler && (
           <CanvasScrollbarsBottomBar
             viewportWidth={viewportSize.w}
+            viewportHeight={viewportSize.h}
             displayW={displayW}
+            displayH={displayH}
             stagePosX={stagePos.x}
             onScrollX={handleScrollX}
             onResetPan={handleResetPan}

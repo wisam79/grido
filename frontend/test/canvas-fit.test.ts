@@ -15,12 +15,7 @@ import {
   writeStoredFitMode,
 } from '../src/lib/canvas/fit';
 
-/**
- * نموذج ملاءمة الورقة — كان الحساب مضمّناً في editor-canvas ويلائم على
- * الارتفاع دائماً، فورقة هوية رأسية تُعرض بعرض 361px داخل منطقة عرض 940px.
- * الاختبار الأول هنا يقفل أرقام المنطق القديم حرفياً (اختبار انحدار) قبل
- * فحص الأوضاع الجديدة.
- */
+/** Display metrics retain subpixel precision; stage and DOM share one scale. */
 
 /** ورقة هوية 35×45مم */
 const ID_ASPECT = 35 / 45;
@@ -44,7 +39,7 @@ describe('lib/canvas/fit — انحدار: وضع الملاءمة الكامل�
     });
 
     expect(result.resolved).toBe('height');
-    expect(result.displayW).toBe(361);
+    expect(result.displayW).toBeCloseTo(464 * ID_ASPECT, 10);
     expect(result.displayH).toBe(464);
   });
 
@@ -57,7 +52,7 @@ describe('lib/canvas/fit — انحدار: وضع الملاءمة الكامل�
       fitMode: 'height',
     });
     // 0.5 × (908×464 صندوق) → 464/2 = 232 ارتفاعاً، والعرض 232×0.7778 = 180.4
-    expect(half.displayW).toBe(180);
+    expect(half.displayW).toBeCloseTo(232 * ID_ASPECT, 10);
     expect(half.displayH).toBe(232);
 
     const double = computeCanvasDisplay({
@@ -68,29 +63,32 @@ describe('lib/canvas/fit — انحدار: وضع الملاءمة الكامل�
       fitMode: 'height',
     });
     // 2 × 361×464 → الصندوق 1816×928، والملاءمة تُقيَّد بالارتفاع
-    expect(double.displayW).toBe(722);
+    expect(double.displayW).toBeCloseTo(928 * ID_ASPECT, 10);
     expect(double.displayH).toBe(928);
   });
 
-  it('يقيّد الحد الأدنى للعرض قبل التكبير (100 × الزوم)', () => {
-    const tiny = computeCanvasDisplay({
-      containerW: 120,
-      containerH: 90,
-      aspect: ID_ASPECT,
-      zoom: 1,
-      fitMode: 'height',
-    });
-    expect(tiny.displayW).toBe(100);
-    expect(tiny.displayH).toBeGreaterThanOrEqual(100);
-
-    const tinyZoomed = computeCanvasDisplay({
-      containerW: 120,
-      containerH: 90,
-      aspect: ID_ASPECT,
-      zoom: 2,
-      fitMode: 'height',
-    });
-    expect(tinyZoomed.displayW).toBeGreaterThanOrEqual(200);
+  it('contains the entire paper in tiny containers without a minimum display floor', () => {
+    for (const aspect of [ID_ASPECT, A4_ASPECT, 1, 3, 0.01]) {
+      const tiny = computeCanvasDisplay({
+        containerW: 120,
+        containerH: 90,
+        aspect,
+        zoom: 1,
+        fitMode: 'height',
+      });
+      expect(tiny.displayW).toBeLessThanOrEqual(120 - CANVAS_FIT_PADDING);
+      expect(tiny.displayH).toBeLessThanOrEqual(90 - CANVAS_FIT_PADDING);
+      expect(tiny.displayW / tiny.displayH).toBeCloseTo(aspect, 10);
+      const zoomed = computeCanvasDisplay({
+        containerW: 120,
+        containerH: 90,
+        aspect,
+        zoom: 2,
+        fitMode: 'height',
+      });
+      expect(zoomed.displayW).toBeCloseTo(tiny.displayW * 2, 10);
+      expect(zoomed.displayH).toBeCloseTo(tiny.displayH * 2, 10);
+    }
   });
 });
 
@@ -105,9 +103,9 @@ describe('lib/canvas/fit — وضع ملاءمة العرض', () => {
     });
 
     expect(result.resolved).toBe('width');
-    expect(result.displayW).toBe(DESKTOP.w - CANVAS_FIT_PADDING);
+    expect(result.displayW).toBeCloseTo(DESKTOP.w - CANVAS_FIT_PADDING, 10);
     // 884 / 0.7778 = 1136.57 → 1137 ارتفاعاً مقابل 656 متاحة: الورقة تُمرَّر
-    expect(result.displayH).toBe(1137);
+    expect(result.displayH).toBeCloseTo((DESKTOP.w - CANVAS_FIT_PADDING) / ID_ASPECT, 10);
     expect(result.displayH).toBeGreaterThan(DESKTOP.h - CANVAS_FIT_PADDING);
   });
 
@@ -127,7 +125,7 @@ describe('lib/canvas/fit — وضع ملاءمة العرض', () => {
       fitMode: 'width',
     });
 
-    expect(full.displayW).toBe(485);
+    expect(full.displayW).toBeCloseTo((DESKTOP.h - CANVAS_FIT_PADDING) * ID_ASPECT, 10);
     expect(wide.displayW / full.displayW).toBeGreaterThan(1.8);
   });
 
@@ -232,7 +230,7 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
     });
 
     expect(result.resolved).toBe('width');
-    expect(result.displayW).toBe(SMALL.w - CANVAS_FIT_PADDING);
+    expect(result.displayW).toBeCloseTo(SMALL.w - CANVAS_FIT_PADDING, 10);
     expect(result.displayW).toBeGreaterThan(900);
   });
 
@@ -350,8 +348,9 @@ describe('lib/canvas/fit — حمايات القيم الشاذة', () => {
       aspect: ID_ASPECT,
       zoom: 1,
     });
-    expect(result.displayW).toBeGreaterThanOrEqual(100);
-    expect(result.displayH).toBeGreaterThanOrEqual(100);
+    expect(result.displayW).toBeGreaterThan(0);
+    expect(result.displayH).toBeGreaterThan(0);
+    expect(result.displayW / result.displayH).toBeCloseTo(ID_ASPECT, 10);
   });
 
   it('يتجاهل الزوم غير الصالح ويعود إلى 1', () => {
@@ -378,7 +377,12 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
     localStorage.clear();
   });
 
-  it('يعيد auto عندما لا يوجد تفضيل مخزّن', () => {
+  it('defaults missing preference to full-paper height fit', () => {
+    expect(readStoredFitMode()).toBe('height');
+  });
+
+  it('preserves an explicitly saved auto preference', () => {
+    writeStoredFitMode('auto');
     expect(readStoredFitMode()).toBe('auto');
   });
 
@@ -390,7 +394,7 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
 
   it('يتجاهل قيمة مخزّنة غير صالحة بدل تعطيل الواجهة', () => {
     localStorage.setItem(CANVAS_FIT_STORAGE_KEY, 'diagonal');
-    expect(readStoredFitMode()).toBe('auto');
+    expect(readStoredFitMode()).toBe('height');
     expect(isCanvasFitMode('diagonal')).toBe(false);
     expect(isCanvasFitMode('height')).toBe(true);
   });

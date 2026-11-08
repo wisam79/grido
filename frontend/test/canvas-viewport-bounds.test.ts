@@ -15,8 +15,13 @@ import {
   autoFitZoomStore,
   actualSizeZoomStore,
   resetZoomStore,
+  zoomInStore,
 } from '../src/hooks/use-canvas-zoom';
+import { createCanvasCamera, reconcileCanvasCamera } from '../src/lib/canvas/viewport-geometry';
+import { stepZoom } from '../src/lib/canvas/zoom';
 import { useEditorStore } from '../src/lib/editor-store';
+import { getDocumentSession } from '../src/lib/io/document-session';
+import { serializeEditorState } from '../src/lib/io/project-serializer';
 
 import type Konva from 'konva';
 
@@ -298,6 +303,7 @@ describe('use-canvas-viewport — تراكم زوم العجلة عبر الهد
   beforeEach(() => {
     installCanvasMock();
     useEditorStore.getState().reset();
+    useEditorStore.setState({ canvasFitMode: 'height' });
     vi.useFakeTimers();
     rafCallbacks.length = 0;
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
@@ -309,23 +315,57 @@ describe('use-canvas-viewport — تراكم زوم العجلة عبر الهد
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     useEditorStore.getState().reset();
   });
 
-  function mountViewport() {
+  function mountViewport(uiScale = 1) {
+    let width = 800;
+    let height = 600;
+    let observeResize: ResizeObserverCallback;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          observeResize = callback;
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
     const container = document.createElement('div');
     const inner = document.createElement('div');
+    Object.defineProperties(container, {
+      clientWidth: { get: () => width },
+      clientHeight: { get: () => height },
+    });
+    vi.spyOn(container, 'getBoundingClientRect').mockImplementation(() => ({
+      left: 20,
+      top: 30,
+      width: width * uiScale,
+      height: height * uiScale,
+      right: 20 + width * uiScale,
+      bottom: 30 + height * uiScale,
+      x: 20,
+      y: 30,
+      toJSON: () => {},
+    }));
     document.body.appendChild(container);
     document.body.appendChild(inner);
-    const view = renderHook(() =>
-      useCanvasViewport(
-        { current: container } as React.RefObject<HTMLDivElement | null>,
-        { current: inner } as React.RefObject<HTMLDivElement | null>,
-      ),
-    );
+    const containerRef = { current: container };
+    const innerRef = { current: inner };
+    const view = renderHook(() => useCanvasViewport(containerRef, innerRef));
     return {
+      ...view,
       container,
+      inner,
+      resize: (w: number, h: number, notify = true) => {
+        width = w;
+        height = h;
+        if (notify) act(() => observeResize([], {} as ResizeObserver));
+      },
       unmount: () => {
         view.unmount();
         container.remove();
@@ -334,11 +374,16 @@ describe('use-canvas-viewport — تراكم زوم العجلة عبر الهد
     };
   }
 
-  function dispatchWheel(node: HTMLElement, opts: { x?: number; y?: number; ctrl?: boolean }) {
+  function dispatchWheel(
+    node: HTMLElement,
+    opts: { x?: number; y?: number; ctrl?: boolean; clientX?: number; clientY?: number },
+  ) {
     const event = new MouseEvent('wheel', {
       bubbles: true,
       cancelable: true,
       ctrlKey: opts.ctrl ?? false,
+      clientX: opts.clientX ?? 0,
+      clientY: opts.clientY ?? 0,
     });
     Object.defineProperty(event, 'deltaX', { value: opts.x ?? 0 });
     Object.defineProperty(event, 'deltaY', { value: opts.y ?? 0 });
@@ -387,5 +432,247 @@ describe('use-canvas-viewport — تراكم زوم العجلة عبر الهد
     // الزوم المطبَّق على المسرح فعلياً يُثبَّت فوراً بكتابة واحدة عند التبديل
     expect(useEditorStore.getState().canvasZoom).toBeCloseTo(2 * Math.exp(0.3), 9);
     unmount();
+  });
+
+  it('does not wipe a pending wheel target when unrelated state rerenders the parent', () => {
+    const view = mountViewport();
+    dispatchWheel(view.container, { y: -100, ctrl: true });
+    flushLatestFrame();
+    const transform = view.inner.style.transform;
+    act(() => useEditorStore.getState().setSelectedIds(['unrelated-selection']));
+    view.rerender();
+    expect(view.inner.style.transform).toBe(transform);
+    dispatchWheel(view.container, { y: -100, ctrl: true });
+    flushLatestFrame();
+    act(() => vi.advanceTimersByTime(150));
+    expect(useEditorStore.getState().canvasZoom).toBeCloseTo(Math.exp(0.6), 9);
+    view.unmount();
+  });
+
+  it('reset100 cancels an already queued wheel frame even if the cancelled callback runs', () => {
+    const view = mountViewport();
+    dispatchWheel(view.container, { y: -100, ctrl: true });
+    const staleFrame = rafCallbacks[rafCallbacks.length - 1];
+    act(() => resetZoomStore());
+    const origin = view.result.current.stagePos;
+    act(() => {
+      staleFrame(16);
+      vi.advanceTimersByTime(150);
+    });
+    expect(useEditorStore.getState().canvasZoom).toBe(1);
+    expect(view.result.current.stagePos).toEqual(origin);
+    expect(view.result.current.viewIntent).toBe('fit');
+    view.unmount();
+  });
+
+  it.each(['reset', 'load'] as const)(
+    'same-sized document %s invalidates wheel/pan and resets zoom',
+    (action) => {
+      const project = serializeEditorState(useEditorStore.getState());
+      const view = mountViewport();
+      const session = getDocumentSession();
+      act(() => view.result.current.setStagePos({ x: -50, y: -80 }));
+      dispatchWheel(view.container, { y: -100, ctrl: true });
+      flushLatestFrame();
+      dispatchWheel(view.container, { y: -80, ctrl: true });
+      const staleFrame = rafCallbacks[rafCallbacks.length - 1];
+      act(() => {
+        if (action === 'reset') useEditorStore.getState().reset();
+        else useEditorStore.getState().loadProject(project);
+      });
+      expect(getDocumentSession()).toBeGreaterThan(session);
+      const reset = view.result.current;
+      act(() => {
+        staleFrame(16);
+        vi.advanceTimersByTime(150);
+      });
+      expect(useEditorStore.getState().canvasZoom).toBe(1);
+      expect(view.result.current.stagePos).toEqual(
+        computeDefaultStageOrigin(
+          reset.displayW,
+          reset.displayH,
+          reset.viewportSize.w,
+          reset.viewportSize.h,
+        ),
+      );
+      expect(view.result.current.viewIntent).toBe('fit');
+      view.unmount();
+    },
+  );
+
+  it('flushes live zoom before text entry and button zoom steps', () => {
+    const view = mountViewport();
+    dispatchWheel(view.container, { y: -100, ctrl: true });
+    flushLatestFrame();
+    act(() => useEditorStore.getState().setEditingTextId('text'));
+    expect(view.result.current.effectiveZoom).toBeCloseTo(Math.exp(0.3), 9);
+    expect(useEditorStore.getState().editingTextId).toBe('text');
+    dispatchWheel(view.container, { y: -100, ctrl: true });
+    act(() => zoomInStore()); // flushes even an unpainted wheel frame
+    expect(view.result.current.effectiveZoom).toBeCloseTo(stepZoom(Math.exp(0.6), 1), 9);
+    view.unmount();
+  });
+
+  it('live manual resize holds center/scale, while reset100 remeasures the real container', () => {
+    const view = mountViewport();
+    act(() => zoomInStore());
+    const before = view.result.current;
+    const anchorX = (before.viewportSize.w / 2 - before.stagePos.x) / before.stageScale;
+    const anchorY = (before.viewportSize.h / 2 - before.stagePos.y) / before.stageScale;
+    view.resize(1100, 740);
+    flushLatestFrame();
+    const after = view.result.current;
+    expect(after.stageScale).toBe(before.stageScale);
+    expect((after.viewportSize.w / 2 - after.stagePos.x) / after.stageScale).toBeCloseTo(
+      anchorX,
+      9,
+    );
+    expect((after.viewportSize.h / 2 - after.stagePos.y) / after.stageScale).toBeCloseTo(
+      anchorY,
+      9,
+    );
+    view.resize(1300, 900, false); // RO has not settled yet
+    act(() => resetZoomStore());
+    expect(view.result.current.viewportSize).toEqual({ w: 1300, h: 900 });
+    expect(view.result.current.effectiveZoom).toBe(1);
+    expect(view.result.current.stageScale).not.toBe(after.stageScale);
+    expect(view.result.current.viewIntent).toBe('fit');
+    expect(view.result.current.displayH).toBeCloseTo(900 - 32, 9);
+    view.unmount();
+  });
+
+  it('CSS zoom converts wheel pointer and pan distances to local CSS pixels', () => {
+    const view = mountViewport(1.5);
+    const before = view.result.current;
+    const localPointer = { x: 350, y: 250 };
+    const anchorX = (localPointer.x - before.stagePos.x) / before.stageScale;
+    const anchorY = (localPointer.y - before.stagePos.y) / before.stageScale;
+    dispatchWheel(view.container, {
+      y: -100,
+      ctrl: true,
+      clientX: 20 + localPointer.x * 1.5,
+      clientY: 30 + localPointer.y * 1.5,
+    });
+    flushLatestFrame();
+    act(() => vi.advanceTimersByTime(150));
+    const zoomed = view.result.current;
+    expect((localPointer.x - zoomed.stagePos.x) / zoomed.stageScale).toBeCloseTo(anchorX, 9);
+    expect((localPointer.y - zoomed.stagePos.y) / zoomed.stageScale).toBeCloseTo(anchorY, 9);
+    dispatchWheel(view.container, { x: 45, y: 30 });
+    flushLatestFrame();
+    act(() => vi.advanceTimersByTime(100));
+    expect(view.result.current.stagePos.x).toBeCloseTo(zoomed.stagePos.x - 30, 9);
+    expect(view.result.current.stagePos.y).toBeCloseTo(zoomed.stagePos.y - 20, 9);
+    view.unmount();
+  });
+
+  it('pointer pan uses CSS-local deltas and a document reset cancels its listeners', () => {
+    const view = mountViewport(1.5);
+    const initial = view.result.current;
+    const pointer = (target: EventTarget, type: string, x: number, y: number) => {
+      const event = new MouseEvent(type, {
+        clientX: x,
+        clientY: y,
+        button: 1,
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, 'pointerId', { value: 9 });
+      act(() => target.dispatchEvent(event));
+    };
+    pointer(view.container, 'pointerdown', 400, 300);
+    pointer(window, 'pointermove', 445, 330);
+    pointer(window, 'pointerup', 445, 330);
+    expect(view.result.current.stagePos.x).toBeCloseTo(initial.stagePos.x + 30, 9);
+    expect(view.result.current.stagePos.y).toBeCloseTo(initial.stagePos.y + 20, 9);
+    pointer(view.container, 'pointerdown', 445, 330);
+    act(() => useEditorStore.getState().reset());
+    const reset = view.result.current.stagePos;
+    pointer(window, 'pointermove', 900, 650);
+    pointer(window, 'pointerup', 900, 650);
+    expect(view.result.current.stagePos).toEqual(reset);
+    expect(view.result.current.isPanning).toBe(false);
+    view.unmount();
+  });
+
+  it('loadProject resets zoom even without a mounted canvas', () => {
+    const project = serializeEditorState(useEditorStore.getState());
+    useEditorStore.setState({ canvasZoom: 3 });
+    useEditorStore.getState().loadProject(project);
+    expect(useEditorStore.getState().canvasZoom).toBe(1);
+  });
+});
+
+describe('transient camera geometry', () => {
+  const input = {
+    session: 1,
+    canvasW: 2480,
+    canvasH: 3508,
+    fitMode: 'auto' as const,
+    zoom: 1,
+    viewport: { w: 620, h: 571 },
+  };
+  const anchor = (camera: ReturnType<typeof createCanvasCamera>) => ({
+    x: (camera.viewport.w / 2 - camera.pos.x) / camera.metrics.scale,
+    y: (camera.viewport.h / 2 - camera.pos.y) / camera.metrics.scale,
+  });
+  it('refits only fit intent on resize, preserving the auto width/height heuristic', () => {
+    const initial = createCanvasCamera(input);
+    expect(initial.metrics.resolved).toBe('height');
+    const wide = reconcileCanvasCamera(initial, { ...input, viewport: { w: 1236, h: 756 } });
+    expect(wide.metrics.resolved).toBe('width');
+    expect(wide.metrics.scale).not.toBe(initial.metrics.scale);
+    expect(reconcileCanvasCamera(wide, { ...input, viewport: wide.viewport })).toBe(wide);
+  });
+  it('manual resize/panel/ruler changes preserve effective scale and center world point', () => {
+    let manual = reconcileCanvasCamera(createCanvasCamera(input), { ...input, zoom: 2 });
+    manual = { ...manual, pos: { x: manual.pos.x - 60, y: manual.pos.y - 80 } };
+    const start = anchor(manual);
+    for (const viewport of [
+      { w: 908, h: 571 },
+      { w: 948, h: 611 },
+      { w: 620, h: 571 },
+    ]) {
+      manual = reconcileCanvasCamera(manual, { ...input, zoom: 2, viewport });
+      expect(manual.metrics.scale).toBe(createCanvasCamera(input).metrics.scale * 2);
+      expect(anchor(manual).x).toBeCloseTo(start.x, 9);
+      expect(anchor(manual).y).toBeCloseTo(start.y, 9);
+    }
+  });
+  it('clamps an extreme pan after resize while preserving the in-bounds center anchor', () => {
+    const originalInput = {
+      ...input,
+      canvasW: 400,
+      canvasH: 600,
+      fitMode: 'actual' as const,
+      viewport: { w: 1000, h: 800 },
+    };
+    const manual = {
+      ...createCanvasCamera(originalInput),
+      intent: 'manual' as const,
+      pos: { x: 850, y: 100 },
+    };
+    const resized = reconcileCanvasCamera(manual, {
+      ...originalInput,
+      viewport: { w: 500, h: 800 },
+    });
+    // Center preservation alone gives x=600: the paper would be wholly hidden.
+    expect(resized.pos.x).toBe(350);
+    expect(resized.viewport.w - resized.pos.x).toBe(150);
+    expect(resized.metrics.scale).toBe(manual.metrics.scale);
+    expect(resized.intent).toBe('manual');
+    expect(anchor(resized).y).toBe(anchor(manual).y);
+  });
+  it('paper geometry refits in fit intent but preserves manual scale/center without pan reset', () => {
+    const fitted = createCanvasCamera(input);
+    const resizedInput = { ...input, canvasW: 3508, canvasH: 2480 };
+    expect(reconcileCanvasCamera(fitted, resizedInput).metrics.scale).not.toBe(
+      fitted.metrics.scale,
+    );
+    const manual = { ...fitted, intent: 'manual' as const, pos: { x: -70, y: -50 } };
+    const changed = reconcileCanvasCamera(manual, resizedInput);
+    expect(changed.metrics.scale).toBe(manual.metrics.scale);
+    expect(anchor(changed)).toEqual(anchor(manual));
+    expect(changed.pos).toEqual(manual.pos);
   });
 });

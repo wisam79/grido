@@ -9,6 +9,20 @@
 
 ---
 
+## ترقية محرك الكانفاس بهندسة Viewport المستقلة والمصفوفات المتزامنة — 8 نوفمبر 2026
+
+| المحور | ما نُفّذ | دليل التنفيذ |
+|---|---|---|
+| فصل كاميرا العرض المؤقتة (`CanvasCamera`) | عزل حالة الزوم والتنقل المؤقتة عن سجل المستند والـ Undo/Redo، وتصفير الزوم تلقائياً عند تحميل مشروع جديد | `frontend/src/lib/canvas/viewport-geometry.ts:28`، `frontend/src/lib/store/slices/core-slice.ts:513` |
+| ثبات نقطة المركز عند تغيير الحجم واللوحات (`reconcileCanvasCamera`) | تثبيت إحداثيات النقطة العالمية المرئية في مركز الكانفاس عند تغيير مقاس النافذة أو فتح وإغلاق اللوحات لمنع قفز الورقة | `frontend/src/lib/canvas/viewport-geometry.ts:109`، `frontend/src/components/editor/canvas/use-canvas-viewport.ts:413` |
+| تزامن المصفوفات اللحظي للمساطر والأغلفة والشريط السريع | تطبيق تحويل المصفوفات (`matrix`) لحظياً أثناء إيماءات العجلة واللمس لتزامن المساطر وغلاف عناصر HTML والشريط السريع مع مسرح Konva بلا تأخير وبلا إعادات تصيير في React | `frontend/src/components/editor/canvas/use-canvas-viewport.ts:140`، `frontend/src/components/editor/canvas/canvas-quick-bar.tsx:170` |
+| تطبيع تكبير Windows و CSS Zoom (`clientToLocal`) | تصحيح قياسات مؤشر الفأرة والتمرير مع نسبة تكبير الشاشة في Windows عبر دالة `clientToLocal` لمنع الضبابية وانحراف خطوط المساطر | `frontend/src/lib/canvas/viewport-geometry.ts:168`، `frontend/src/components/editor/canvas/use-ruler-metrics.ts:51` |
+| أمان شريط التمرير والتنظيف عند إلغاء التحميل (`useThumbDrag`) | إدارة التقاط المؤشر وإلغاء إطارات rAF ومستمعي الأحداث عند تصفير المستند أو فك التركيب لمنع تسريب الذاكرة | `frontend/src/components/editor/canvas/canvas-scrollbars.tsx:16` |
+
+**التحقق:** اختبارات مستهدفة: `canvas-viewport-bounds.test.ts` (**23/23 ناجحة**)، `canvas-fit.test.ts` (**31/31 ناجحة**)، `canvas-scrollbars.test.tsx` (**9/9 ناجحة**)، `use-stable-viewport-size.test.tsx` (**5/5 ناجحة**)، `App.test.tsx` (**26/26 ناجحة**)؛ واجتياز `npm run typecheck` و`npm run lint` بنسبة 100% وPrettier `format:check`، وبوابة التوثيق `docs-gate.mjs --strict-refs` ناجحة.
+
+---
+
 ## حزمة إصلاحات تدقيق وضع التعديل الحر (Freeform / Single Mode Audit Fixes) — 8 نوفمبر 2026
 
 | المحور | ما نُفّذ | دليل التنفيذ |

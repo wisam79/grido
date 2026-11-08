@@ -1,4 +1,9 @@
-import { useCallback, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type RefObject } from 'react';
+
+import { clientToLocal } from '@/lib/canvas/viewport-geometry';
+import { getDocumentSession } from '@/lib/io/document-session';
+
+import { readLocalViewportSize } from './use-stable-viewport-size';
 
 interface RulerPreviewOptions {
   showRuler: boolean;
@@ -14,7 +19,17 @@ export function useRulerMetricsPreview(
     clientX: number;
     clientY: number;
     target: EventTarget | null;
+    session: number;
   } | null>(null);
+
+  useEffect(
+    () => () => {
+      if (mouseMoveRafId.current !== null) cancelAnimationFrame(mouseMoveRafId.current);
+      mouseMoveRafId.current = null;
+      pendingEventRef.current = null;
+    },
+    [showRuler, printMode],
+  );
 
   const handleWorkspaceMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -23,6 +38,7 @@ export function useRulerMetricsPreview(
         clientX: e.clientX,
         clientY: e.clientY,
         target: e.target,
+        session: getDocumentSession(),
       };
 
       if (mouseMoveRafId.current !== null) return;
@@ -30,15 +46,19 @@ export function useRulerMetricsPreview(
       mouseMoveRafId.current = requestAnimationFrame(() => {
         mouseMoveRafId.current = null;
         const pending = pendingEventRef.current;
-        if (!pending || !containerRef.current) return;
+        if (!pending || !containerRef.current || pending.session !== getDocumentSession()) return;
 
         const containerRect = containerRef.current.getBoundingClientRect();
-        // تثبيت الإحداثي على حافة بكسل مادية (device pixel) — بدون التثبيت تقع
-        // خطوط المؤشر على كسور بكسل فتُوزَّع على بكسلين وتظهر ضبابية بسمك متغير.
+        const local = clientToLocal(
+          containerRect,
+          readLocalViewportSize(containerRef.current),
+          pending.clientX,
+          pending.clientY,
+        );
+        // Snap in physical pixels, then return to local CSS coordinates.
         const dpr = window.devicePixelRatio || 1;
-        const snapToPixelEdge = (v: number) => Math.round(v * dpr) / dpr;
-        const x = snapToPixelEdge(pending.clientX - containerRect.left);
-        const y = snapToPixelEdge(pending.clientY - containerRect.top);
+        const x = Math.round(local.x * local.scaleX * dpr) / (local.scaleX * dpr);
+        const y = Math.round(local.y * local.scaleY * dpr) / (local.scaleY * dpr);
 
         const scope =
           (pending.target as HTMLElement | null)?.closest?.(
@@ -60,26 +80,25 @@ export function useRulerMetricsPreview(
         }
       });
     },
-    [showRuler, printMode, containerRef],
+    [containerRef, showRuler, printMode],
   );
 
-  const handleWorkspaceMouseLeave = useCallback((e?: React.MouseEvent<HTMLDivElement>) => {
-    if (mouseMoveRafId.current !== null) {
-      cancelAnimationFrame(mouseMoveRafId.current);
-      mouseMoveRafId.current = null;
-    }
-    const scope =
-      (e?.currentTarget as HTMLElement | null)?.closest?.(
-        '[data-testid="workspace-canvas-shell"]',
-      ) ?? document;
-    const hCursor = scope.querySelector('#h-ruler-cursor');
-    const vCursor = scope.querySelector('#v-ruler-cursor');
-    if (hCursor) (hCursor as SVGLineElement).style.display = 'none';
-    if (vCursor) (vCursor as SVGLineElement).style.display = 'none';
-  }, []);
+  const handleWorkspaceMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!showRuler || printMode) return;
+      const scope =
+        (e.currentTarget as HTMLElement | null)?.closest?.(
+          '[data-testid="workspace-canvas-shell"]',
+        ) ?? document;
 
-  return {
-    handleWorkspaceMouseMove,
-    handleWorkspaceMouseLeave,
-  };
+      const hCursor = scope.querySelector('#h-ruler-cursor') as SVGLineElement | null;
+      const vCursor = scope.querySelector('#v-ruler-cursor') as SVGLineElement | null;
+
+      if (hCursor) hCursor.style.display = 'none';
+      if (vCursor) vCursor.style.display = 'none';
+    },
+    [showRuler, printMode],
+  );
+
+  return { handleWorkspaceMouseMove, handleWorkspaceMouseLeave };
 }

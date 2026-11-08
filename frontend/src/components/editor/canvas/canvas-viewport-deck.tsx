@@ -67,6 +67,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
   const resolvedFit = useCanvasFitStatus((s) => s.resolved);
   const fitLeftoverRatio = useCanvasFitStatus((s) => s.leftoverRatio);
+  const viewIntent = useCanvasFitStatus((s) => s.intent);
   const {
     percentLabel,
     zoomIn,
@@ -102,7 +103,13 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   ];
   const leftoverPercent = Math.round(fitLeftoverRatio * 100);
   const fitStatusLabel =
-    resolvedFit === 'width' ? 'عرض' : resolvedFit === 'actual' ? '1:1' : 'الكل';
+    viewIntent === 'manual'
+      ? 'يدوي'
+      : resolvedFit === 'width'
+        ? 'عرض'
+        : resolvedFit === 'actual'
+          ? '1:1'
+          : 'الكل';
 
   const isLandscape = canvasWidth > canvasHeight;
 
@@ -448,6 +455,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   <span
                     data-testid="canvas-fit-status"
                     data-fit-mode={resolvedFit}
+                    data-view-intent={viewIntent}
                     className="sr-only"
                   >
                     {fitStatusLabel}
@@ -462,13 +470,15 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               >
                 <div className="flex items-center gap-1.5">
                   <span>
-                    {canvasFitMode === 'auto'
-                      ? `ملاءمة تلقائية (${resolvedFit === 'width' ? 'ملاءمة العرض' : 'ملاءمة الكل'})`
-                      : resolvedFit === 'actual'
-                        ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
-                        : resolvedFit === 'width'
-                          ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
-                          : 'ملاءمة الكل — الورقة كاملة على الشاشة'}
+                    {viewIntent === 'manual'
+                      ? 'عرض يدوي — انقر لملاءمة الكل'
+                      : canvasFitMode === 'auto'
+                        ? `ملاءمة تلقائية (${resolvedFit === 'width' ? 'ملاءمة العرض' : 'ملاءمة الكل'})`
+                        : resolvedFit === 'actual'
+                          ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
+                          : resolvedFit === 'width'
+                            ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
+                            : 'ملاءمة الكل — الورقة كاملة على الشاشة'}
                   </span>
                   <FluentKbd keys="Ctrl+0" />
                 </div>

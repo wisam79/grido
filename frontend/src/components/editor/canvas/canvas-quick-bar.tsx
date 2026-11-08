@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -13,6 +13,7 @@ import {
   isBakedCollageLayout,
 } from '@/lib/canvas/collage-geometry';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
+import { CANVAS_VIEW_TRANSFORM_EVENT, clientToLocal } from '@/lib/canvas/viewport-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
 import { isAutoFillGridEnabled } from '@/lib/local-prefs';
@@ -127,6 +128,13 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // 📐 موضع الورقة (#canvas-area) داخل حاوية العناصر العائمة — الحاوية تغطي
   // قشرة الكانفس كاملة بما فيها المساطر، فلا بد من إزاحة الورقة داخلها.
   const [canvasBox, setCanvasBox] = useState<AnchorBox | null>(null);
+  const committedBoxRef = useRef(canvasBox);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const transformRef = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    committedBoxRef.current = canvasBox;
+    transformRef.current?.();
+  }, [canvasBox]);
   // 📏 مقاس الشريط الفعلي بعد الرسم (يتغير بين الأقسام: خلية/عنصر/تحديد متعدد)
   const barObserverRef = useRef<ResizeObserver | null>(null);
   const [barSize, setBarSize] = useState({ w: 190, h: 30 });
@@ -142,16 +150,41 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     // التمرير داخل مساحة العمل يحرّك الورقة دون تغيير مقاسها — لا يلتقطه
     // ResizeObserver، فنستمع له مباشرة على الحاوية القابلة للتمرير.
     const scroller = canvasEl.closest('.workspace-grid');
-    const measure = () => {
+    const readBox = () => {
       const hostRect = overlayHost.getBoundingClientRect();
       const rect = canvasEl.getBoundingClientRect();
+      const local = clientToLocal(
+        hostRect,
+        { w: overlayHost.clientWidth, h: overlayHost.clientHeight },
+        rect.left,
+        rect.top,
+      );
+      return {
+        left: local.x,
+        top: local.y,
+        width: rect.width / local.scaleX,
+        height: rect.height / local.scaleY,
+      };
+    };
+    // During wheel/pan move the portal imperatively, with the same uniform
+    // transform as the paper. No React state writes on animation frames.
+    const transform = () => {
+      const base = committedBoxRef.current;
+      const bar = barRef.current;
+      if (!base || !bar || base.width <= 0) return;
+      const next = readBox();
+      const ratio = next.width / base.width;
+      const left = Number.parseFloat(bar.style.left) || 0;
+      const top = Number.parseFloat(bar.style.top) || 0;
+      const dx = next.left + (left - base.left) * ratio - left;
+      const dy = next.top + (top - base.top) * ratio - top;
+      bar.style.transformOrigin = '0 0';
+      bar.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${ratio})`;
+    };
+    transformRef.current = transform;
+    const measure = () => {
+      const next = readBox();
       setCanvasBox((prev) => {
-        const next = {
-          left: rect.left - hostRect.left,
-          top: rect.top - hostRect.top,
-          width: rect.width,
-          height: rect.height,
-        };
         if (
           prev &&
           Math.abs(prev.left - next.left) < 0.5 &&
@@ -164,16 +197,23 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         return next;
       });
     };
+    const onTransform = (event: Event) => {
+      if ((event as CustomEvent<{ settled: boolean }>).detail.settled) measure();
+      else transform();
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(canvasEl);
     ro.observe(overlayHost);
     window.addEventListener('resize', measure);
     scroller?.addEventListener('scroll', measure, { passive: true });
+    scroller?.addEventListener(CANVAS_VIEW_TRANSFORM_EVENT, onTransform);
     return () => {
       ro.disconnect();
+      transformRef.current = null;
       window.removeEventListener('resize', measure);
       scroller?.removeEventListener('scroll', measure);
+      scroller?.removeEventListener(CANVAS_VIEW_TRANSFORM_EVENT, onTransform);
     };
   }, [overlayHost]);
 
@@ -188,6 +228,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   const attachBar = useCallback(
     (node: HTMLDivElement | null) => {
+      barRef.current = node;
       barObserverRef.current?.disconnect();
       barObserverRef.current = null;
       if (!node) return;
@@ -408,7 +449,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       ref={attachBar}
       dir="rtl"
       data-testid="canvas-quick-bar"
-      className="absolute z-(--z-quick-bar) pointer-events-auto no-print font-cairo select-none animate-in fade-in-50 zoom-in-95 duration-150 transition-[left,top] ease-out"
+      className="absolute z-(--z-quick-bar) pointer-events-auto no-print font-cairo select-none animate-in fade-in-50 duration-150"
       style={{
         left: `${barLeft}px`,
         top: `${barTop}px`,

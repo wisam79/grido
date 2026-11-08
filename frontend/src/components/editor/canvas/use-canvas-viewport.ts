@@ -1,18 +1,32 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
-import { RESET_CANVAS_PAN_EVENT } from '@/hooks/use-canvas-zoom';
-import { computeCanvasDisplay, CANVAS_FIT_PADDING } from '@/lib/canvas/fit';
+import { FLUSH_CANVAS_VIEW_EVENT, RESET_CANVAS_PAN_EVENT } from '@/hooks/use-canvas-zoom';
+import { computeCanvasDisplay } from '@/lib/canvas/fit';
 import { useStageRef } from '@/lib/canvas/stage-context';
+import {
+  CANVAS_VIEW_TRANSFORM_EVENT,
+  clampStagePos,
+  clientToLocal,
+  computeDefaultStageOrigin,
+  computeScrollbarMetrics,
+  createCanvasCamera,
+  getStageClampBounds,
+  reconcileCanvasCamera,
+} from '@/lib/canvas/viewport-geometry';
 import { clampZoomRaw } from '@/lib/canvas/zoom';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 
-import { useStableViewportSize } from './use-stable-viewport-size';
+import { readLocalViewportSize, useStableViewportSize } from './use-stable-viewport-size';
 
-/**
- * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
- * والأزرار/الروابط (تُفعَّل بالنقر على المسافة). ابتلاعها بـ preventDefault
- * كان يمنع المسافة داخل نص أو يُلغي تفعيل زر بعد النقر عليه.
- */
+import type { ViewportPoint, ViewportSize } from '@/lib/canvas/viewport-geometry';
+
+export {
+  clampStagePos,
+  computeDefaultStageOrigin,
+  getStageClampBounds,
+} from '@/lib/canvas/viewport-geometry';
+
 const SPACE_CONSUMED_TAGS = new Set([
   'INPUT',
   'TEXTAREA',
@@ -29,683 +43,510 @@ export function isSpaceHandledByTarget(target: EventTarget | null): boolean {
   return SPACE_CONSUMED_TAGS.has(el.tagName) || el.isContentEditable === true;
 }
 
-/**
- * حساب الموضع الافتراضي غير المزاح (Origin) لمسرح الكانفاس:
- * - إذا كان البُعد أصغر من أو يساوي النافذة، يُوسَّط تماماً.
- * - إذا كان البُعد أكبر من النافذة (مثل الارتفاع في ملاءمة العرض أو الحجم الفعلي 1:1)،
- *   يبدأ من هامش الحماية العلوي/الجانبي (padding / 2) حتى لا يُقطع رأس أو جانب الورقة.
- */
-export function computeDefaultStageOrigin(
-  displayW: number,
-  displayH: number,
-  viewportW: number,
-  viewportH: number,
-  padding = CANVAS_FIT_PADDING,
-): { x: number; y: number } {
-  const margin = Math.round(padding / 2);
-  const x = displayW <= viewportW ? Math.round((viewportW - displayW) / 2) : margin;
-  const y = displayH <= viewportH ? Math.round((viewportH - displayH) / 2) : margin;
-  return { x, y };
-}
-
-/**
- * تقييد موضع الورقة لمنع التمرير اللانهائي وضياع الورقة في الفراغ:
- * يسمح بالتحريك الحر على المحورين (عجلة / لوحة لمس / مسافة / الزر الأوسط)
- * مع ضمان بقاء جزء مريح (40–150px) من الورقة ظاهراً داخل الشاشة دائماً.
- * لا يوجد وضع Wheel منفصل يفرض التوسيط، لأن فرضه كان يسبب snap-back مزعجاً
- * على لوحات اللمس عند محاولة التمرير.
- */
-export function getStageClampBounds(
-  displayW: number,
-  displayH: number,
-  viewportW: number,
-  viewportH: number,
-): { minX: number; maxX: number; minY: number; maxY: number; minVisible: number } {
-  const minVisible = Math.max(40, Math.min(150, Math.min(displayW, displayH) * 0.4));
-  const minX = minVisible - displayW;
-  const maxX = viewportW - minVisible;
-  const minY = minVisible - displayH;
-  const maxY = viewportH - minVisible;
-
-  return { minX, maxX, minY, maxY, minVisible };
-}
-
-export function clampStagePos(
-  pos: { x: number; y: number },
-  displayW: number,
-  displayH: number,
-  viewportW: number,
-  viewportH: number,
-): { x: number; y: number } {
-  const { minX, maxX, minY, maxY } = getStageClampBounds(displayW, displayH, viewportW, viewportH);
-
+function cameraInput(viewport: ViewportSize) {
+  const state = useEditorStore.getState();
   return {
-    x: Math.max(minX, Math.min(maxX, pos.x)),
-    y: Math.max(minY, Math.min(maxY, pos.y)),
+    session: getDocumentSession(),
+    canvasW: state.canvasWidth,
+    canvasH: state.canvasHeight,
+    fitMode: state.canvasFitMode,
+    zoom: state.canvasZoom,
+    viewport,
   };
 }
 
+type StagePositionUpdate = ViewportPoint | ((prev: ViewportPoint) => ViewportPoint);
+interface ViewportController {
+  apply: () => void;
+  resize: (size: ViewportSize) => void;
+  flush: () => void;
+  setPos: (pos: StagePositionUpdate) => void;
+  resetPan: () => void;
+}
+
 /**
- * 🧭 useCanvasViewport — محرك Viewport الكانفاس الحقيقي (Figma-grade Canvas Engine)
- *
- * يدير إحداثيات وموضع مسرح الكانفاس (Stage Position & Scale) نسبةً لنافذة العرض الكاملة:
- * 1. الـ Stage يملأ 100% من الحاوية ولا تتغير أبعاده مع الزوم (حماية VRAM من إعادة التخصيص).
- * 2. التكبير والتصغير نسبي لنقطة المؤشر (Zooming Relative to Pointer) بتراكم أسي لحظي.
- * 3. التحريك الحر عبر مفتاح المسافة أو الزر الأوسط مقيّد بحدود ذكية تمنع هروب الورقة نهائياً.
- * 4. عجلة الفأرة ولوحة اللمس تمرران الورقة على المحورين بلا snap-back أو فرض توسيط.
- * 5. التوسيط مشتق رياضياً (Centered by Construction): الورقة تتوسط النافذة طبيعياً وبلا شلالات رندر.
+ * Viewport-sized backing buffers + a transient camera. React receives only
+ * settled camera/geometry snapshots; wheel targets accumulate imperatively.
+ * Fit is an intent, not an effect of rendering or selecting/editing an element.
  */
 export function useCanvasViewport(
   containerRef: RefObject<HTMLDivElement | null>,
   innerRef?: RefObject<HTMLDivElement | null>,
 ) {
-  const canvasWidth = useEditorStore((s) => s.canvasWidth);
-  const canvasHeight = useEditorStore((s) => s.canvasHeight);
-  const canvasZoom = useEditorStore((s) => s.canvasZoom);
-  const setCanvasZoom = useEditorStore((s) => s.setCanvasZoom);
-  const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
-
+  const measuredSize = useStableViewportSize(containerRef);
   const stageRef = useStageRef();
-  const viewportSize = useStableViewportSize(containerRef);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [camera, setCamera] = useState(() => createCanvasCamera(cameraInput(measuredSize)));
   const [isPanning, setIsPanning] = useState(false);
-  const [prevGeomKey, setPrevGeomKey] = useState(
-    () => `${canvasFitMode}:${canvasWidth}:${canvasHeight}`,
-  );
-  const currentGeomKey = `${canvasFitMode}:${canvasWidth}:${canvasHeight}`;
+  const liveRef = useRef(camera);
+  const committedRef = useRef(camera);
+  const controllerRef = useRef<ViewportController | null>(null);
 
-  // تصفير إزاحة التحريك عند تغيّر وضع الملاءمة أو أبعاد الورقة أثناء التصيير
-  if (prevGeomKey !== currentGeomKey) {
-    setPrevGeomKey(currentGeomKey);
-    setPan({ x: 0, y: 0 });
-  }
-
-  const aspect = canvasWidth / (canvasHeight || 1);
-
-  // أبعاد الورقة المعروضة حالياً وفق الوضع والزوم
-  const displayMetrics = computeCanvasDisplay({
-    containerW: viewportSize.w,
-    containerH: viewportSize.h,
-    aspect,
-    zoom: canvasZoom,
-    fitMode: canvasFitMode,
-    canvasW: canvasWidth,
-    canvasH: canvasHeight,
-  });
-
-  const { displayW, displayH, resolved: resolvedFitMode, leftoverRatio } = displayMetrics;
-
-  // إحداثيات الورقة في مساحة العمل مشتقة رياضياً: المركز/البداية التلقائية + إزاحة المستخدم (Pan)
-  const defaultOrigin = computeDefaultStageOrigin(
-    displayW,
-    displayH,
-    viewportSize.w,
-    viewportSize.h,
-  );
-
-  const rawStagePos = {
-    x: defaultOrigin.x + pan.x,
-    y: defaultOrigin.y + pan.y,
-  };
-
-  // تقييد إحداثيات الورقة حتى لا تضيع في الفضاء الخارجي أبداً
-  const stagePos = clampStagePos(rawStagePos, displayW, displayH, viewportSize.w, viewportSize.h);
-
-  const viewportSizeRef = useRef(viewportSize);
-  const displayWRef = useRef(displayW);
-  const displayHRef = useRef(displayH);
-  const stagePosRef = useRef(stagePos);
-  const wheelCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // زوم العجلة يُطبَّق على المسرح فوراً ويُثبَّت في المتجر بعد هدوء الإيماءة.
-  // الهدف المعلق هو أساس تراكم إطارات الإيماءة نفسها، ويُصرَّف عند: اكتمال
-  // مؤقت التثبيت، تبديل نوع الإيماءة (زوم↔تحريك)، إعادة التوسيط، وإلغاء المكون —
-  // بتركه معلقاً كان الإطار التالي يعود لقيمة ملتزمة قديمة فيفقد التراكم (إصلاح Bug#2).
-  const pendingZoomRef = useRef<number | null>(null);
-  const initialPanPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  useEffect(() => {
-    viewportSizeRef.current = viewportSize;
-    displayWRef.current = displayW;
-    displayHRef.current = displayH;
-    stagePosRef.current = stagePos;
-  });
-
-  // 1. معالجة أحداث الفأرة (Wheel Zoom & Panning)
-  useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    const spacePressedRef = { current: false };
-    const isPointerPanningRef = { current: false };
-
-    let wheelRafId: number | null = null;
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const node: HTMLDivElement = containerRef.current;
+    let disposed = false;
+    let generation = 0;
+    let writingZoom = false;
+    let wheelRaf: number | null = null;
+    let commitTimer: ReturnType<typeof setTimeout> | null = null;
     let wheelPanX = 0;
     let wheelPanY = 0;
     let wheelZoomDelta = 0;
     let wheelClientX = 0;
     let wheelClientY = 0;
-    let wheelIsZoom = false;
+    let spacePressed = false;
+    let pointerId: number | null = null;
+    let pointerX = 0;
+    let pointerY = 0;
 
-    // 🚀 كاش مراجع عناصر DOM المحيطة (Shell والمساطر وعصي التمرير) لتفادي استعلامات DOM المتكررة في كل إطار
-    let cachedShell: HTMLElement | null = null;
-    let cachedHContent: SVGGElement | null = null;
-    let cachedVContent: SVGGElement | null = null;
-    let cachedHThumb: HTMLElement | null = null;
-    let cachedVThumb: HTMLElement | null = null;
+    let shell: HTMLElement | null = null;
+    let hContent: SVGGElement | null = null;
+    let vContent: SVGGElement | null = null;
+    let hThumb: HTMLElement | null = null;
+    let vThumb: HTMLElement | null = null;
 
-    const getShellDom = () => {
-      if (!cachedShell || !cachedShell.isConnected) {
-        cachedShell = node.closest('[data-testid="workspace-canvas-shell"]');
-        cachedHContent = cachedShell?.querySelector('#h-ruler-content') ?? null;
-        cachedVContent = cachedShell?.querySelector('#v-ruler-content') ?? null;
-        cachedHThumb = cachedShell?.querySelector('[data-canvas-h-thumb]') ?? null;
-        cachedVThumb = cachedShell?.querySelector('[data-canvas-v-thumb]') ?? null;
-      }
-      return {
-        shell: cachedShell,
-        hContent: cachedHContent,
-        vContent: cachedVContent,
-        hThumb: cachedHThumb,
-        vThumb: cachedVThumb,
-      };
+    const currentSize = () => {
+      const size = readLocalViewportSize(node);
+      return size.w > 0 && size.h > 0 ? size : liveRef.current.viewport;
     };
+    const isCurrent = (epoch: number) =>
+      !disposed && epoch === generation && liveRef.current.session === getDocumentSession();
 
-    const applyImperativeTransform = (pos: { x: number; y: number }) => {
-      // 1. مسرح Konva وتصيير بكسلاته على الـ GPU فورياً
-      if (stageRef.current) {
-        stageRef.current.position(pos);
-        stageRef.current.batchDraw();
+    const apply = () => {
+      const live = liveRef.current;
+      const committed = committedRef.current;
+      const { metrics, pos, viewport } = live;
+      const stage = stageRef.current;
+      if (stage) {
+        stage.scale({ x: metrics.scale, y: metrics.scale });
+        stage.position(pos);
+        stage.batchDraw();
       }
-      // 2. غلاف عناصر الـ HTML الطافية بالـ GPU Compositor
+      // Keep the committed overlay geometry and scale its entire contents. Just
+      // resizing the wrapper leaves the textarea's pixel geometry at old zoom.
+      const ratio = metrics.scale / committed.metrics.scale;
       if (innerRef?.current) {
-        innerRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+        innerRef.current.style.transformOrigin = '0 0';
+        innerRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) scale(${ratio})`;
+        innerRef.current.dataset.viewIntent = live.intent;
       }
-      // 3. تدريج المساطر وعصي التمرير فلوينت
-      const { shell, hContent, vContent, hThumb, vThumb } = getShellDom();
-      if (shell) {
-        const dx = pos.x - initialPanPosRef.current.x;
-        const dy = pos.y - initialPanPosRef.current.y;
-        if (hContent) hContent.style.transform = `translate3d(${dx}px, 0, 0)`;
-        if (vContent) vContent.style.transform = `translate3d(0, ${dy}px, 0)`;
-
-        // 🧭 تزامن عصي التمرير فلوينت بالـ GPU Compositor فورياً (Zero-Latency Scrollbars)
-        const vW = viewportSizeRef.current.w;
-        const vH = viewportSizeRef.current.h;
-        const curW = displayWRef.current;
-        const curH = displayHRef.current;
-        const bounds = getStageClampBounds(curW, curH, vW, vH);
-
-        if (hThumb) {
-          const spanX = bounds.maxX - bounds.minX;
-          const tx = spanX > 0 ? Math.max(0, Math.min(1, (bounds.maxX - pos.x) / spanX)) : 0.5;
-          const totalRangeX = spanX + vW;
-          const ratioX = totalRangeX > 0 ? Math.min(1, vW / totalRangeX) : 1;
-          const trackLength = Math.max(40, vW);
-          const thumbLength = Math.max(28, Math.min(trackLength, Math.round(trackLength * ratioX)));
-          const maxOffset = Math.max(0, trackLength - thumbLength);
-          const offset = Math.round(tx * maxOffset);
-          hThumb.style.width = `${thumbLength}px`;
-          hThumb.style.transform = `translate3d(${offset}px, 0, 0)`;
-          hThumb.dataset.maxOffset = maxOffset.toString();
-        }
-
-        if (vThumb) {
-          const spanY = bounds.maxY - bounds.minY;
-          const ty = spanY > 0 ? Math.max(0, Math.min(1, (bounds.maxY - pos.y) / spanY)) : 0.5;
-          const totalRangeY = spanY + vH;
-          const ratioY = totalRangeY > 0 ? Math.min(1, vH / totalRangeY) : 1;
-          const trackLength = Math.max(40, vH);
-          const thumbLength = Math.max(28, Math.min(trackLength, Math.round(trackLength * ratioY)));
-          const maxOffset = Math.max(0, trackLength - thumbLength);
-          const offset = Math.round(ty * maxOffset);
-          vThumb.style.height = `${thumbLength}px`;
-          vThumb.style.transform = `translate3d(0, ${offset}px, 0)`;
-          vThumb.dataset.maxOffset = maxOffset.toString();
-        }
+      if (!shell?.isConnected) shell = node.closest('[data-testid="workspace-canvas-shell"]');
+      // Ruler toggles can replace these nodes without replacing the shell.
+      if (!hContent?.isConnected) hContent = shell?.querySelector('#h-ruler-content') ?? null;
+      if (!vContent?.isConnected) vContent = shell?.querySelector('#v-ruler-content') ?? null;
+      if (!hThumb?.isConnected) hThumb = shell?.querySelector('[data-canvas-h-thumb]') ?? null;
+      if (!vThumb?.isConnected) vThumb = shell?.querySelector('[data-canvas-v-thumb]') ?? null;
+      if (hContent) {
+        hContent.style.transformOrigin = '0 0';
+        hContent.style.transform = `matrix(${ratio}, 0, 0, 1, ${pos.x - committed.pos.x * ratio}, 0)`;
       }
+      if (vContent) {
+        vContent.style.transformOrigin = '0 0';
+        vContent.style.transform = `matrix(1, 0, 0, ${ratio}, 0, ${pos.y - committed.pos.y * ratio})`;
+      }
+      const bounds = getStageClampBounds(
+        metrics.displayW,
+        metrics.displayH,
+        viewport.w,
+        viewport.h,
+      );
+      const syncThumb = (thumb: HTMLElement | null, horizontal: boolean) => {
+        if (!thumb) return;
+        const m = horizontal
+          ? computeScrollbarMetrics(viewport.w, bounds.minX, bounds.maxX, pos.x)
+          : computeScrollbarMetrics(viewport.h, bounds.minY, bounds.maxY, pos.y);
+        thumb.style[horizontal ? 'width' : 'height'] = `${m.thumbLength}px`;
+        thumb.style.transform = horizontal
+          ? `translate3d(${m.thumbOffset}px, 0, 0)`
+          : `translate3d(0, ${m.thumbOffset}px, 0)`;
+        thumb.dataset.maxOffset = String(m.maxOffset);
+      };
+      syncThumb(hThumb, true);
+      syncThumb(vThumb, false);
+      node.dispatchEvent(
+        new CustomEvent(CANVAS_VIEW_TRANSFORM_EVENT, {
+          detail: { settled: live === committed },
+        }),
+      );
     };
 
-    const resetRulerTransforms = () => {
-      const { hContent, vContent } = getShellDom();
-      if (hContent) hContent.style.transform = '';
-      if (vContent) vContent.style.transform = '';
+    const writeZoom = () => {
+      const live = liveRef.current;
+      if (
+        live.session !== getDocumentSession() ||
+        useEditorStore.getState().canvasZoom === live.zoom
+      )
+        return;
+      writingZoom = true;
+      try {
+        useEditorStore.getState().setCanvasZoom(live.zoom);
+      } finally {
+        writingZoom = false;
+      }
     };
-
-    const normalizeWheelDelta = (
-      axis: 'x' | 'y',
-      delta: number,
-      deltaMode: number,
-      vW: number,
-      vH: number,
-    ) => {
-      if (deltaMode === 1) return delta * 16;
-      if (deltaMode === 2) return delta * (axis === 'x' ? vW : vH);
-      return delta;
+    const publish = () => {
+      if (!isCurrent(generation)) return;
+      writeZoom();
+      setCamera(liveRef.current);
+    };
+    const clearCommit = () => {
+      if (commitTimer !== null) clearTimeout(commitTimer);
+      commitTimer = null;
+    };
+    const scheduleCommit = (delay: number) => {
+      clearCommit();
+      const epoch = generation;
+      commitTimer = setTimeout(() => {
+        commitTimer = null;
+        if (isCurrent(epoch)) publish();
+      }, delay);
+    };
+    const clearWheel = () => {
+      if (wheelRaf !== null) cancelAnimationFrame(wheelRaf);
+      wheelRaf = null;
+      wheelPanX = wheelPanY = wheelZoomDelta = 0;
+    };
+    const detachPointer = () => {
+      pointerId = null;
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      node.style.cursor = spacePressed ? 'grab' : '';
+    };
+    const cancelGestures = () => {
+      generation += 1;
+      clearWheel();
+      clearCommit();
+      detachPointer();
+      spacePressed = false;
+      node.style.cursor = '';
+      if (!disposed) setIsPanning(false);
     };
 
     const flushWheel = () => {
-      wheelRafId = null;
-      const vW = viewportSizeRef.current.w;
-      const vH = viewportSizeRef.current.h;
-
-      // هل هذا زوم مقصود؟ في التاتش باد نرفض الرعشات الدقيقة (< 0.5px) لمنع تعطيل التمرير
-      const hasDeliberateZoom = wheelIsZoom && Math.abs(wheelZoomDelta) >= 0.5;
-
-      if (hasDeliberateZoom) {
-        if (wheelCommitTimerRef.current !== null) {
-          clearTimeout(wheelCommitTimerRef.current);
-          wheelCommitTimerRef.current = null;
-        }
-        resetRulerTransforms();
-
-        // زوم تتبع المؤشر (Zooming Relative to Pointer)
-        const rect = node.getBoundingClientRect();
-        const pointerX = wheelClientX - rect.left;
-        const pointerY = wheelClientY - rect.top;
-
-        const currentStagePos = stagePosRef.current;
-        const currentDisplayW = displayWRef.current || 1;
-        const currentDisplayH = displayHRef.current || 1;
-
-        const paperFracX = (pointerX - currentStagePos.x) / currentDisplayW;
-        const paperFracY = (pointerY - currentStagePos.y) / currentDisplayH;
-
-        const factor = Math.exp(-wheelZoomDelta * 0.003);
-        const state = useEditorStore.getState();
-        // 🚀 أساس التراكم: الهدف المعلق للإطار السابق (إن وجد) وليس الزوم الملتزم
-        // في المتجر — state.canvasZoom لا يتحدّث إلا عند التثبيت بعد هدوء الإيماءة،
-        // فكان إطاران بعاملي f1 وf2 ينتجان z0*f2 بدل z0*f1*f2 (إصلاح Bug#2).
-        const currentZ = pendingZoomRef.current ?? state.canvasZoom;
-        const nextZ = clampZoomRaw(currentZ * factor);
-
+      wheelRaf = null;
+      if (!isCurrent(generation)) {
+        clearWheel();
+        return;
+      }
+      const live = liveRef.current;
+      const { viewport, metrics } = live;
+      const zooming = Math.abs(wheelZoomDelta) >= 0.5;
+      if (zooming) {
+        const pointer = clientToLocal(
+          node.getBoundingClientRect(),
+          currentSize(),
+          wheelClientX,
+          wheelClientY,
+        );
+        const zoom = clampZoomRaw(live.zoom * Math.exp(-wheelZoomDelta * 0.003));
         const nextMetrics = computeCanvasDisplay({
-          containerW: vW,
-          containerH: vH,
-          aspect: state.canvasWidth / (state.canvasHeight || 1),
-          zoom: nextZ,
-          fitMode: state.canvasFitMode,
-          canvasW: state.canvasWidth,
-          canvasH: state.canvasHeight,
+          containerW: viewport.w,
+          containerH: viewport.h,
+          canvasW: live.canvasW,
+          canvasH: live.canvasH,
+          aspect: live.canvasW / live.canvasH,
+          zoom,
+          fitMode: live.fitMode,
+          fitBasis: metrics,
         });
-
-        // دمج أي إزاحة تحريك مصاحبة لحركة القرص في نفس الإطار
-        const nextPaperX = pointerX - paperFracX * nextMetrics.displayW - wheelPanX;
-        const nextPaperY = pointerY - paperFracY * nextMetrics.displayH - wheelPanY;
-
-        const clamped = clampStagePos(
-          { x: nextPaperX, y: nextPaperY },
+        const scaleRatio = nextMetrics.scale / metrics.scale;
+        const pos = clampStagePos(
+          {
+            x: pointer.x - (pointer.x - live.pos.x) * scaleRatio - wheelPanX,
+            y: pointer.y - (pointer.y - live.pos.y) * scaleRatio - wheelPanY,
+          },
           nextMetrics.displayW,
           nextMetrics.displayH,
-          vW,
-          vH,
+          viewport.w,
+          viewport.h,
         );
-
-        stagePosRef.current = clamped;
-        // حدّث مراجع الهندسة فوراً: الإطارات التالية في نفس الإيماءة تقرأ
-        // المقاس الجديد بدل مقاس ما قبل الزوم.
-        displayWRef.current = nextMetrics.displayW;
-        displayHRef.current = nextMetrics.displayH;
-        pendingZoomRef.current = nextZ;
-
-        // 🚀 مسار إجرائي: مقياس المسرح وموضعه يُطبَّقان مباشرة على Konva.
-        // كان setCanvasZoom + setPan في كل إطار يعيدان تصيير المحرر والمساطر
-        // والكانفاس كاملاً — الآن React لا يرى الزوم إلا عند نهاية الإيماءة.
-        const nextScale = state.canvasWidth > 0 ? nextMetrics.displayW / state.canvasWidth : 1;
-        if (stageRef.current) {
-          stageRef.current.scale({ x: nextScale, y: nextScale });
-          stageRef.current.position(clamped);
-          stageRef.current.batchDraw();
-        }
-        if (innerRef?.current) {
-          innerRef.current.style.transform = `translate3d(${clamped.x}px, ${clamped.y}px, 0)`;
-          innerRef.current.style.width = `${nextMetrics.displayW}px`;
-          innerRef.current.style.height = `${nextMetrics.displayH}px`;
-        }
-
-        // تثبيت الحالة بعد هدوء العجلة (100ms) — كتابة واحدة بدل كل إطار.
-        if (wheelCommitTimerRef.current !== null) {
-          clearTimeout(wheelCommitTimerRef.current);
-        }
-        wheelCommitTimerRef.current = setTimeout(() => {
-          wheelCommitTimerRef.current = null;
-          const pendingZoom = pendingZoomRef.current;
-          pendingZoomRef.current = null;
-          const curW = displayWRef.current;
-          const curH = displayHRef.current;
-          const curOrigin = computeDefaultStageOrigin(
-            curW,
-            curH,
-            viewportSizeRef.current.w,
-            viewportSizeRef.current.h,
-          );
-          resetRulerTransforms();
-          if (pendingZoom !== null) setCanvasZoom(pendingZoom);
-          setPan({
-            x: stagePosRef.current.x - curOrigin.x,
-            y: stagePosRef.current.y - curOrigin.y,
-          });
-        }, 100);
-
-        // 🧭 تزامن مقاس وموضع عصي التمرير فلوينت فورياً عند التكبير/التصغير
-        const { shell, hThumb, vThumb } = getShellDom();
-        if (shell) {
-          if (hThumb) {
-            const ratioX = Math.min(1, vW / Math.max(vW, nextMetrics.displayW));
-            const trackLenX = Math.max(40, vW);
-            const thumbLenX = Math.max(
-              28,
-              Math.min(trackLenX, Math.round(trackLenX * Math.max(0.12, ratioX * 0.85))),
-            );
-            const maxOffX = Math.max(0, trackLenX - thumbLenX);
-            const { minX, maxX } = getStageClampBounds(nextMetrics.displayW, 100, vW, 100);
-            const spanX = maxX - minX;
-            const tx = spanX > 0 ? Math.max(0, Math.min(1, (maxX - clamped.x) / spanX)) : 0.5;
-            const offX = Math.round(tx * maxOffX);
-            hThumb.style.width = `${thumbLenX}px`;
-            hThumb.style.transform = `translate3d(${offX}px, 0, 0)`;
-            hThumb.dataset.maxOffset = String(maxOffX);
-          }
-          if (vThumb) {
-            const ratioY = Math.min(1, vH / Math.max(vH, nextMetrics.displayH));
-            const trackLenY = Math.max(40, vH);
-            const thumbLenY = Math.max(
-              28,
-              Math.min(trackLenY, Math.round(trackLenY * Math.max(0.12, ratioY * 0.85))),
-            );
-            const maxOffY = Math.max(0, trackLenY - thumbLenY);
-            const { minY, maxY } = getStageClampBounds(100, nextMetrics.displayH, 100, vH);
-            const spanY = maxY - minY;
-            const ty = spanY > 0 ? Math.max(0, Math.min(1, (maxY - clamped.y) / spanY)) : 0.5;
-            const offY = Math.round(ty * maxOffY);
-            vThumb.style.height = `${thumbLenY}px`;
-            vThumb.style.transform = `translate3d(0, ${offY}px, 0)`;
-            vThumb.dataset.maxOffset = String(maxOffY);
-          }
-        }
+        liveRef.current = { ...live, intent: 'manual', zoom, metrics: nextMetrics, pos };
+        apply();
+        scheduleCommit(100);
       } else if (wheelPanX !== 0 || wheelPanY !== 0) {
-        // 🧭 تبديل نوع الإيماءة (زوم ← تحريك): صرّف الهدف المعلق بكتابة واحدة —
-        // مؤقت تثبيت الزوم كان يُستبدل بمؤقت التمرير هنا فلا يُثبَّت الزوم
-        // أبداً ويبقى الهدف المعلق قديماً كأساس للإيماءة التالية.
-        if (pendingZoomRef.current !== null) {
-          const settledZoom = pendingZoomRef.current;
-          pendingZoomRef.current = null;
-          setCanvasZoom(settledZoom);
-        }
-        // تمرير إجرائي فوري وسلس (Konva Fast-Path) بلا ارتعاش وبلا رندر متكرر
-        const currentStagePos = stagePosRef.current;
-        const curW = displayWRef.current;
-        const curH = displayHRef.current;
-
-        const targetX = currentStagePos.x - wheelPanX;
-        const targetY = currentStagePos.y - wheelPanY;
-
-        const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH);
-
-        stagePosRef.current = clamped;
-        applyImperativeTransform(clamped);
-
-        // تثبيت الحالة في React فقط بعد هدوء التمرير (Debounced Commit)
-        if (wheelCommitTimerRef.current !== null) {
-          clearTimeout(wheelCommitTimerRef.current);
-        }
-        wheelCommitTimerRef.current = setTimeout(() => {
-          wheelCommitTimerRef.current = null;
-          const vW = viewportSizeRef.current.w;
-          const vH = viewportSizeRef.current.h;
-          const curW = displayWRef.current;
-          const curH = displayHRef.current;
-          const curOrigin = computeDefaultStageOrigin(curW, curH, vW, vH);
-          resetRulerTransforms();
-          setPan({
-            x: stagePosRef.current.x - curOrigin.x,
-            y: stagePosRef.current.y - curOrigin.y,
-          });
-        }, 80);
+        // A zoom→pan switch must not lose the uncommitted accumulated zoom.
+        writeZoom();
+        liveRef.current = {
+          ...live,
+          intent: 'manual',
+          pos: clampStagePos(
+            { x: live.pos.x - wheelPanX, y: live.pos.y - wheelPanY },
+            metrics.displayW,
+            metrics.displayH,
+            viewport.w,
+            viewport.h,
+          ),
+        };
+        apply();
+        scheduleCommit(80);
       }
-
-      wheelPanX = 0;
-      wheelPanY = 0;
-      wheelZoomDelta = 0;
-      wheelIsZoom = false;
+      wheelPanX = wheelPanY = wheelZoomDelta = 0;
     };
-
+    const flushQueuedWheel = () => {
+      if (wheelRaf !== null) {
+        cancelAnimationFrame(wheelRaf);
+        flushWheel();
+      }
+    };
+    const flush = () => {
+      flushQueuedWheel();
+      clearCommit();
+      publish();
+    };
+    const freezeFit = () => {
+      const live = liveRef.current;
+      if (live.intent !== 'manual') liveRef.current = { ...live, intent: 'manual' };
+    };
     const handleWheel = (e: WheelEvent) => {
+      // Text scrolling/composition keeps its normal focus and input behavior.
+      if ((e.target as HTMLElement | null)?.closest?.('textarea,input,[contenteditable="true"]'))
+        return;
       e.preventDefault();
-
-      const vW = viewportSizeRef.current.w;
-      const vH = viewportSizeRef.current.h;
-      const dx = normalizeWheelDelta('x', e.deltaX, e.deltaMode, vW, vH);
-      const dy = normalizeWheelDelta('y', e.deltaY, e.deltaMode, vW, vH);
-
+      const local = clientToLocal(
+        node.getBoundingClientRect(),
+        currentSize(),
+        e.clientX,
+        e.clientY,
+      );
+      const { viewport } = liveRef.current;
+      const normalize = (delta: number, axis: 'x' | 'y') =>
+        e.deltaMode === 1
+          ? delta * 16
+          : e.deltaMode === 2
+            ? delta * (axis === 'x' ? viewport.w : viewport.h)
+            : delta / (axis === 'x' ? local.scaleX : local.scaleY);
+      const dx = normalize(e.deltaX, 'x');
+      const dy = normalize(e.deltaY, 'y');
       if (e.ctrlKey || e.metaKey) {
-        wheelIsZoom = true;
-        wheelZoomDelta += dy;
+        // Zoom sensitivity is not a client distance; CSS zoom must not change it.
+        wheelZoomDelta += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
         wheelClientX = e.clientX;
         wheelClientY = e.clientY;
+        if (Math.abs(wheelZoomDelta) >= 0.5) freezeFit();
       } else {
         wheelPanX += dx;
         wheelPanY += dy;
-        if (wheelCommitTimerRef.current === null) {
-          initialPanPosRef.current = { ...stagePosRef.current };
-        }
+        if (dx !== 0 || dy !== 0) freezeFit();
       }
-
-      if (wheelRafId === null) {
-        wheelRafId = requestAnimationFrame(flushWheel);
+      if (wheelRaf === null) {
+        const epoch = generation;
+        wheelRaf = requestAnimationFrame(() => {
+          if (isCurrent(epoch)) flushWheel();
+        });
       }
     };
 
+    function handlePointerMove(e: PointerEvent) {
+      if (pointerId === null || e.pointerId !== pointerId || !isCurrent(generation)) return;
+      e.preventDefault();
+      const local = clientToLocal(
+        node.getBoundingClientRect(),
+        currentSize(),
+        e.clientX,
+        e.clientY,
+      );
+      const live = liveRef.current;
+      const pos = clampStagePos(
+        {
+          x: live.pos.x + (e.clientX - pointerX) / local.scaleX,
+          y: live.pos.y + (e.clientY - pointerY) / local.scaleY,
+        },
+        live.metrics.displayW,
+        live.metrics.displayH,
+        live.viewport.w,
+        live.viewport.h,
+      );
+      pointerX = e.clientX;
+      pointerY = e.clientY;
+      liveRef.current = { ...live, intent: 'manual', pos };
+      apply();
+    }
+    function handlePointerUp(e?: PointerEvent) {
+      if (pointerId === null || (e && e.pointerId !== pointerId)) return;
+      detachPointer();
+      setIsPanning(false);
+      publish();
+    }
     const handlePointerDown = (e: PointerEvent) => {
-      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
-        e.preventDefault();
-        isPointerPanningRef.current = true;
-        setIsPanning(true);
-        initialPanPosRef.current = { ...stagePosRef.current };
-        node.style.cursor = 'grabbing';
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', handlePointerUp, { once: true });
-      }
+      if (isSpaceHandledByTarget(e.target)) return;
+      if (e.button !== 1 && !(e.button === 0 && spacePressed)) return;
+      e.preventDefault();
+      flush();
+      freezeFit();
+      pointerId = e.pointerId;
+      pointerX = e.clientX;
+      pointerY = e.clientY;
+      setIsPanning(true);
+      node.style.cursor = 'grabbing';
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointercancel', handlePointerUp);
     };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (isPointerPanningRef.current) {
-        e.preventDefault();
-        const vW = viewportSizeRef.current.w;
-        const vH = viewportSizeRef.current.h;
-        const curW = displayWRef.current;
-        const curH = displayHRef.current;
-        const currentStagePos = stagePosRef.current;
-
-        const targetX = currentStagePos.x + e.movementX;
-        const targetY = currentStagePos.y + e.movementY;
-
-        const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH);
-
-        stagePosRef.current = clamped;
-        applyImperativeTransform(clamped);
-      }
-    };
-
-    const handlePointerUp = () => {
-      isPointerPanningRef.current = false;
-      setIsPanning(false);
-      node.style.cursor = spacePressedRef.current ? 'grab' : '';
-      window.removeEventListener('pointermove', handlePointerMove);
-
-      const vW = viewportSizeRef.current.w;
-      const vH = viewportSizeRef.current.h;
-      const curW = displayWRef.current;
-      const curH = displayHRef.current;
-      const curOrigin = computeDefaultStageOrigin(curW, curH, vW, vH);
-      resetRulerTransforms();
-      setPan({
-        x: stagePosRef.current.x - curOrigin.x,
-        y: stagePosRef.current.y - curOrigin.y,
-      });
-    };
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isSpaceHandledByTarget(e.target)) {
+      if (e.code === 'Space' && !e.isComposing && !isSpaceHandledByTarget(e.target)) {
         e.preventDefault();
-        if (!spacePressedRef.current) {
-          spacePressedRef.current = true;
-          node.style.cursor = 'grab';
-        }
+        spacePressed = true;
+        node.style.cursor = pointerId === null ? 'grab' : 'grabbing';
       }
     };
-
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        spacePressedRef.current = false;
-        if (!isPointerPanningRef.current) {
-          node.style.cursor = '';
-        }
-      }
+      if (e.code !== 'Space') return;
+      spacePressed = false;
+      if (pointerId === null) node.style.cursor = '';
     };
-
     const handleBlur = () => {
-      spacePressedRef.current = false;
-      isPointerPanningRef.current = false;
-      setIsPanning(false);
-      node.style.cursor = '';
+      flush();
+      cancelGestures();
+    };
+    const resetFit = () => {
+      cancelGestures();
+      liveRef.current = createCanvasCamera({ ...cameraInput(currentSize()), zoom: 1 });
+      apply();
+      publish();
+    };
+    const resize = (viewport: ViewportSize) => {
+      const live = liveRef.current;
+      if (live.viewport.w === viewport.w && live.viewport.h === viewport.h) return;
+      flushQueuedWheel();
+      clearCommit();
+      liveRef.current = reconcileCanvasCamera(liveRef.current, {
+        ...cameraInput(viewport),
+        zoom: liveRef.current.zoom,
+      });
+      apply();
+      publish();
+    };
+    controllerRef.current = {
+      apply,
+      resize,
+      flush,
+      setPos: (update) => {
+        flushQueuedWheel();
+        const live = liveRef.current;
+        const pos = typeof update === 'function' ? update(live.pos) : update;
+        liveRef.current = {
+          ...live,
+          intent: 'manual',
+          pos: clampStagePos(
+            pos,
+            live.metrics.displayW,
+            live.metrics.displayH,
+            live.viewport.w,
+            live.viewport.h,
+          ),
+        };
+        apply();
+        scheduleCommit(80);
+      },
+      resetPan: () => {
+        flushQueuedWheel();
+        cancelGestures();
+        const live = liveRef.current;
+        liveRef.current = {
+          ...live,
+          pos: computeDefaultStageOrigin(
+            live.metrics.displayW,
+            live.metrics.displayH,
+            live.viewport.w,
+            live.viewport.h,
+          ),
+        };
+        apply();
+        publish();
+      },
     };
 
+    const unsubscribe = useEditorStore.subscribe((state, prev) => {
+      if (writingZoom) return;
+      if (liveRef.current.session !== getDocumentSession()) {
+        // Session advances before the store write, even for same-sized documents.
+        // Cancel synchronously, before an old rAF/timer/pointerup can write back.
+        resetFit();
+        return;
+      }
+      if (
+        state.canvasWidth !== prev.canvasWidth ||
+        state.canvasHeight !== prev.canvasHeight ||
+        state.canvasFitMode !== prev.canvasFitMode ||
+        state.canvasZoom !== prev.canvasZoom
+      ) {
+        const zoom = state.canvasZoom === prev.canvasZoom ? liveRef.current.zoom : state.canvasZoom;
+        cancelGestures();
+        liveRef.current = reconcileCanvasCamera(liveRef.current, {
+          ...cameraInput(liveRef.current.viewport),
+          zoom,
+        });
+        apply();
+        publish();
+      } else if (state.editingTextId && state.editingTextId !== prev.editingTextId) {
+        // Keyboard/tool entry as well as direct double-click sees the live zoom.
+        flush();
+      }
+    });
     node.addEventListener('wheel', handleWheel, { passive: false });
     node.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener(RESET_CANVAS_PAN_EVENT, resetFit);
+    window.addEventListener(FLUSH_CANVAS_VIEW_EVENT, flush);
+    liveRef.current = reconcileCanvasCamera(liveRef.current, cameraInput(currentSize()));
+    publish();
+    apply();
 
     return () => {
-      if (wheelRafId !== null) cancelAnimationFrame(wheelRafId);
-      if (wheelCommitTimerRef.current !== null) {
-        clearTimeout(wheelCommitTimerRef.current);
-        wheelCommitTimerRef.current = null;
-      }
-      // إلغاء المكون: تصفير الهدف المعلق كي لا يتسرب أساس زوم قديم لمثيل جديد.
-      pendingZoomRef.current = null;
-      resetRulerTransforms();
+      disposed = true;
+      cancelGestures();
+      unsubscribe();
+      controllerRef.current = null;
       node.removeEventListener('wheel', handleWheel);
       node.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('pointermove', handlePointerMove);
-      // 🛡️ فكّ التركيب أثناء السحب كان يُبقي pointerup معلقاً (once) يغلق
-      // على node ميتة مع بقاء راية السحب — التنظيف ينهي الحالة بقوة.
-      window.removeEventListener('pointerup', handlePointerUp);
-      isPointerPanningRef.current = false;
+      window.removeEventListener(RESET_CANVAS_PAN_EVENT, resetFit);
+      window.removeEventListener(FLUSH_CANVAS_VIEW_EVENT, flush);
+      if (hContent) hContent.style.transform = '';
+      if (vContent) vContent.style.transform = '';
     };
-  }, [containerRef, innerRef, setCanvasZoom, stageRef]);
-
-  // الاستماع لحدث إعادة توسيط الكانفاس الصادر من أزرار الملاءمة والزوم
-  useEffect(() => {
-    const handleResetPan = () => {
-      if (wheelCommitTimerRef.current !== null) {
-        clearTimeout(wheelCommitTimerRef.current);
-        wheelCommitTimerRef.current = null;
-      }
-      // إعادة التعيين تتكفل بالزوم والملاءمة — الهدف المعلق المعطّل يجب تصفيره
-      // حتى لا يعود أساساً قديماً لإيماءة عجلة تالية.
-      pendingZoomRef.current = null;
-      const vW = viewportSizeRef.current.w;
-      const vH = viewportSizeRef.current.h;
-      const curW = displayWRef.current;
-      const curH = displayHRef.current;
-      const curOrigin = computeDefaultStageOrigin(curW, curH, vW, vH);
-      stagePosRef.current = curOrigin;
-      if (stageRef.current) {
-        stageRef.current.position(curOrigin);
-        stageRef.current.batchDraw();
-      }
-      if (innerRef?.current) {
-        innerRef.current.style.transform = `translate3d(${curOrigin.x}px, ${curOrigin.y}px, 0)`;
-      }
-      const shell = containerRef.current?.closest('[data-testid="workspace-canvas-shell"]');
-      if (shell) {
-        const hContent = shell.querySelector('#h-ruler-content') as SVGGElement | null;
-        const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
-        if (hContent) hContent.style.transform = '';
-        if (vContent) vContent.style.transform = '';
-      }
-      setPan({ x: 0, y: 0 });
-    };
-    window.addEventListener(RESET_CANVAS_PAN_EVENT, handleResetPan);
-    return () => window.removeEventListener(RESET_CANVAS_PAN_EVENT, handleResetPan);
   }, [containerRef, innerRef, stageRef]);
 
+  useLayoutEffect(() => {
+    controllerRef.current?.resize(measuredSize);
+  }, [measuredSize]);
+
+  // Only committed camera changes establish a new DOM/ruler basis. An unrelated
+  // selection/text render must never copy stale props over an accumulated wheel.
+  useLayoutEffect(() => {
+    committedRef.current = camera;
+  }, [camera]);
+  useLayoutEffect(() => {
+    // A ruler toggle can mount fresh DOM while the RO resize is still gated.
+    // Reapply the live transform, but never overwrite it from render props.
+    controllerRef.current?.apply();
+  });
+
+  const setStagePos = useCallback(
+    (pos: StagePositionUpdate) => controllerRef.current?.setPos(pos),
+    [],
+  );
+  const resetPan = useCallback(() => controllerRef.current?.resetPan(), []);
+  const flushViewport = useCallback(() => controllerRef.current?.flush(), []);
+
   return {
-    viewportSize,
-    stagePos,
-    displayW,
-    displayH,
-    effectiveZoom: canvasZoom,
-    stageScale: canvasWidth > 0 ? displayW / canvasWidth : 1,
-    resolvedFitMode,
-    leftoverRatio,
+    viewportSize: camera.viewport,
+    stagePos: camera.pos,
+    displayW: camera.metrics.displayW,
+    displayH: camera.metrics.displayH,
+    stageScale: camera.metrics.scale,
+    effectiveZoom: camera.zoom,
+    resolvedFitMode: camera.metrics.resolved,
+    leftoverRatio: camera.metrics.leftoverRatio,
+    viewIntent: camera.intent,
     isPanning,
-    setStagePos: (
-      pos:
-        { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number }),
-    ) => {
-      if (wheelCommitTimerRef.current !== null) {
-        clearTimeout(wheelCommitTimerRef.current);
-        wheelCommitTimerRef.current = null;
-      }
-      pendingZoomRef.current = null;
-      const vW = viewportSize.w;
-      const vH = viewportSize.h;
-      const target = typeof pos === 'function' ? pos(stagePos) : pos;
-      const clamped = clampStagePos(target, displayW, displayH, vW, vH);
-      const curOrigin = computeDefaultStageOrigin(displayW, displayH, vW, vH);
-      stagePosRef.current = clamped;
-      if (stageRef.current) {
-        stageRef.current.position(clamped);
-        stageRef.current.batchDraw();
-      }
-      if (innerRef?.current) {
-        innerRef.current.style.transform = `translate3d(${clamped.x}px, ${clamped.y}px, 0)`;
-      }
-      const shell = containerRef.current?.closest('[data-testid="workspace-canvas-shell"]');
-      if (shell) {
-        const hContent = shell.querySelector('#h-ruler-content') as SVGGElement | null;
-        const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
-        if (hContent) hContent.style.transform = '';
-        if (vContent) vContent.style.transform = '';
-      }
-      setPan({
-        x: clamped.x - curOrigin.x,
-        y: clamped.y - curOrigin.y,
-      });
-    },
-    resetPan: () => {
-      if (wheelCommitTimerRef.current !== null) {
-        clearTimeout(wheelCommitTimerRef.current);
-        wheelCommitTimerRef.current = null;
-      }
-      pendingZoomRef.current = null;
-      const curOrigin = computeDefaultStageOrigin(
-        displayWRef.current,
-        displayHRef.current,
-        viewportSizeRef.current.w,
-        viewportSizeRef.current.h,
-      );
-      stagePosRef.current = curOrigin;
-      if (stageRef.current) {
-        stageRef.current.position(curOrigin);
-        stageRef.current.batchDraw();
-      }
-      if (innerRef?.current) {
-        innerRef.current.style.transform = `translate3d(${curOrigin.x}px, ${curOrigin.y}px, 0)`;
-      }
-      const shell = containerRef.current?.closest('[data-testid="workspace-canvas-shell"]');
-      if (shell) {
-        const hContent = shell.querySelector('#h-ruler-content') as SVGGElement | null;
-        const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
-        if (hContent) hContent.style.transform = '';
-        if (vContent) vContent.style.transform = '';
-      }
-      setPan({ x: 0, y: 0 });
-    },
+    setStagePos,
+    resetPan,
+    flushViewport,
   };
 }

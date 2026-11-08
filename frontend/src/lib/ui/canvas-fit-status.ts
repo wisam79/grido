@@ -15,11 +15,14 @@ export interface CanvasFitStatus {
   resolved: ResolvedFitMode | null;
   /** نسبة عرض منطقة العمل المهدورة جانب الورقة في ملاءمة الارتفاع */
   leftoverRatio: number;
+  /** Display-only reflection of the canvas-owned transient camera intent. */
+  intent: 'fit' | 'manual';
 }
 
 export const useCanvasFitStatus = create<CanvasFitStatus>(() => ({
   resolved: null,
   leftoverRatio: 0,
+  intent: 'fit',
 }));
 
 /** نشر نتيجة القياس — كتابة متساوية لا تُنتج إعادة تصيير جديدة */
@@ -27,6 +30,7 @@ export function publishCanvasFitStatus(status: CanvasFitStatus): void {
   const current = useCanvasFitStatus.getState();
   if (
     current.resolved === status.resolved &&
+    current.intent === status.intent &&
     Math.abs(current.leftoverRatio - status.leftoverRatio) < 0.001
   ) {
     return;

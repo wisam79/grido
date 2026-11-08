@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 export interface StableViewportSize {
   w: number;
@@ -11,6 +11,12 @@ export function notifyPanelTransition() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(PANEL_TRANSITION_EVENT));
   }
+}
+
+export function readLocalViewportSize(node: HTMLElement): StableViewportSize {
+  // clientWidth/Height are unzoomed CSS pixels. A bounding rect includes CSS
+  // zoom (and transforms), which would multiply the camera scale a second time.
+  return { w: node.clientWidth, h: node.clientHeight };
 }
 
 const DEFAULT_VIEWPORT_SIZE: StableViewportSize = { w: 800, h: 600 };
@@ -29,7 +35,7 @@ export function useStableViewportSize(
   const [size, setSize] = useState<StableViewportSize>(DEFAULT_VIEWPORT_SIZE);
   const committedRef = useRef<StableViewportSize>(DEFAULT_VIEWPORT_SIZE);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = containerRef.current;
     if (!node) return;
 
@@ -48,9 +54,14 @@ export function useStableViewportSize(
       setSize(next);
     };
 
-    const commitCurrentRect = () => {
-      const rect = node.getBoundingClientRect();
-      commit(rect.width, rect.height);
+    const commitCurrentSize = () => {
+      const { w, h } = readLocalViewportSize(node);
+      commit(w, h);
+    };
+
+    const cancelResizeFrame = () => {
+      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
+      resizeRafId = null;
     };
 
     const clearFallbackTimer = () => {
@@ -63,11 +74,13 @@ export function useStableViewportSize(
     const settleTransition = () => {
       isTransitioning = false;
       clearFallbackTimer();
-      commitCurrentRect();
+      cancelResizeFrame();
+      commitCurrentSize();
     };
 
     const startTransition = () => {
       isTransitioning = true;
+      cancelResizeFrame();
       clearFallbackTimer();
       fallbackTimer = setTimeout(settleTransition, PANEL_TRANSITION_SETTLE_MS);
     };
@@ -93,18 +106,22 @@ export function useStableViewportSize(
       }
     };
 
-    const ro = new ResizeObserver(() => {
+    const ro = new ResizeObserver((entries) => {
       if (isTransitioning) return;
-
-      if (resizeRafId !== null) cancelAnimationFrame(resizeRafId);
+      const entry = entries.find((item) => item.target === node);
+      // RO content boxes are also local CSS pixels, including fractional layout.
+      const next = entry
+        ? { w: entry.contentRect.width, h: entry.contentRect.height }
+        : readLocalViewportSize(node);
+      cancelResizeFrame();
       resizeRafId = requestAnimationFrame(() => {
         resizeRafId = null;
-        commitCurrentRect();
+        if (!isTransitioning) commit(next.w, next.h);
       });
     });
 
     ro.observe(node);
-    commitCurrentRect();
+    commitCurrentSize();
 
     window.addEventListener(PANEL_TRANSITION_EVENT, handleTransitionEvent);
     window.addEventListener('transitionrun', handleTransitionEvent);

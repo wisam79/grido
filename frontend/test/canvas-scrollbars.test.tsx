@@ -29,6 +29,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       render(
         <CanvasHorizontalScrollbar
           viewportWidth={1000}
+          viewportHeight={800}
+          displayH={600}
           displayW={800}
           stagePosX={100}
           onScrollX={handleScroll}
@@ -46,6 +48,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       render(
         <CanvasHorizontalScrollbar
           viewportWidth={1000}
+          viewportHeight={800}
+          displayH={600}
           displayW={800}
           stagePosX={100}
           onScrollX={handleScroll}
@@ -68,6 +72,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       const { container } = render(
         <CanvasHorizontalScrollbar
           viewportWidth={1000}
+          viewportHeight={800}
+          displayH={600}
           displayW={800}
           stagePosX={0}
           onScrollX={handleScroll}
@@ -90,6 +96,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       const handleScroll = vi.fn();
       render(
         <CanvasVerticalScrollbar
+          viewportWidth={1000}
+          displayW={800}
           viewportHeight={800}
           displayH={600}
           stagePosY={100}
@@ -107,6 +115,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       const handleScroll = vi.fn();
       render(
         <CanvasVerticalScrollbar
+          viewportWidth={1000}
+          displayW={800}
           viewportHeight={800}
           displayH={600}
           stagePosY={100}
@@ -129,6 +139,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
       const handleScroll = vi.fn();
       const { container } = render(
         <CanvasVerticalScrollbar
+          viewportWidth={1000}
+          displayW={800}
           viewportHeight={800}
           displayH={600}
           stagePosY={0}
@@ -171,6 +183,8 @@ describe('Canvas Scrollbars & Viewport Framing Tests', () => {
         <TooltipProvider>
           <CanvasScrollbarsBottomBar
             viewportWidth={1000}
+            viewportHeight={800}
+            displayH={600}
             displayW={800}
             stagePosX={100}
             onScrollX={handleScroll}

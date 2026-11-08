@@ -17,6 +17,14 @@ import { useEditorStore } from '@/lib/editor-store';
  */
 
 export const RESET_CANVAS_PAN_EVENT = 'grido:reset-canvas-pan';
+export const FLUSH_CANVAS_VIEW_EVENT = 'grido:flush-canvas-view';
+
+/** Buttons step from the live wheel target, not the last debounced store value. */
+function flushCanvasView(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(FLUSH_CANVAS_VIEW_EVENT));
+  }
+}
 
 export function dispatchResetCanvasPan(): void {
   if (typeof window !== 'undefined') {
@@ -25,10 +33,12 @@ export function dispatchResetCanvasPan(): void {
 }
 
 export function zoomInStore(): void {
+  flushCanvasView();
   useEditorStore.getState().setCanvasZoom((z) => stepZoom(z, 1));
 }
 
 export function zoomOutStore(): void {
+  flushCanvasView();
   useEditorStore.getState().setCanvasZoom((z) => stepZoom(z, -1));
 }
 

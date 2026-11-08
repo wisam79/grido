@@ -23,8 +23,6 @@ export type ResolvedFitMode = 'height' | 'width' | 'actual';
 
 /** الحشو المطلوب حول الورقة داخل منطقة العمل (p-4 من كل جهة) */
 export const CANVAS_FIT_PADDING = 32;
-/** أدنى بُعد معروض للورقة قبل مضاعف الزوم */
-export const CANVAS_MIN_DISPLAY = 100;
 /**
  * عتبة «الفراغ الجانبي المبالغ به» لوضع auto: لا تُفعَّل ملاءمة العرض
  * تلقائياً إلا عندما تشغل الورقة أقل من 45% من عرض منطقة العمل (فراغ
@@ -73,26 +71,25 @@ export interface CanvasDisplayInput {
   canvasW?: number;
   /** ارتفاع الورقة بالبكسل الحقيقي — مطلوب لوضع «الحجم الفعلي» */
   canvasH?: number;
+  /** Manual navigation retains this fit basis until an explicit fit/reset. */
+  fitBasis?: CanvasFitBasis;
 }
 
-export interface CanvasDisplay {
+export interface CanvasFitBasis {
+  /** Local CSS pixels per logical paper pixel at 100%. */
+  baseScale: number;
+  resolved: ResolvedFitMode;
+  leftoverRatio: number;
+}
+
+export interface CanvasDisplay extends CanvasFitBasis {
   displayW: number;
   displayH: number;
-  /**
-   * مقاس عنصر الـ Stage (الثابت عبر كل قيم الزوم).
-   * 🛡️ M15 من تدقيق 2026-10-08: كان الزوم يُطبَّق بتغيير `displayW/H` نفسه
-   * فيمرّره المستهلك إلى `<Stage width height>` ⇒ Konva يعيد تخصيص backing
-   * store لكل طبقة ويستدعي `layer.draw()` متزامناً في كل التزام (إطار كامل
-   * لكل ضغطة عجلة). الآن `displayW/H` تبقى المقاس المرئي على الشاشة (يقرؤه
-   * المساطر والشريط السفلي كما هو)، و`stageW/stageH` هما المقاس الثابت الذي
-   * يُبنى عليه الـ Stage — والزوم يُطبَّق بـ CSS transform فوقه.
-   */
+  /** Uniform local CSS/logical scale; never independently round the two axes. */
+  scale: number;
+  /** Unzoomed paper dimensions, not the viewport-sized Konva backing buffers. */
   stageW: number;
   stageH: number;
-  /** الوضع الفعلي المستخدم في الحساب */
-  resolved: ResolvedFitMode;
-  /** نسبة عرض منطقة العمل الفارغ جانب الورقة في ملاءمة الارتفاع (0 = لا فراغ) */
-  leftoverRatio: number;
 }
 
 /**
@@ -162,10 +159,9 @@ export function resolveFitMode(input: {
 }
 
 /**
- * أبعاد الورقة المعروضة. وضع `height` يعيد نفس أرقام المنطق القديم
- * حرفياً (بما فيها ترتيب عمليات min والتصحيح النهائي)، ووضع `width`
- * يملأ العرض ويسمح بتجاوز الارتفاع — حاوية العمل `overflow-auto` تتولى
- * التمرير، والتحريك (Space/الزر الأوسط) يعمل سلفاً.
+ * Single display authority for fit and manual navigation. A fit basis is a scale,
+ * not rounded W/H: the stage, rulers, DOM overlays and logical export agree even
+ * for tiny papers. Contain is never enlarged by a minimum display dimension.
  */
 export function computeCanvasDisplay({
   containerW,
@@ -175,67 +171,46 @@ export function computeCanvasDisplay({
   fitMode = 'auto',
   canvasW,
   canvasH,
+  fitBasis,
 }: CanvasDisplayInput): CanvasDisplay {
-  const a = safeAspect(aspect);
-  const z = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
-
-  let resolved = resolveFitMode({ containerW, containerH, aspect: a, fitMode });
-
-  // «الحجم الفعلي» يحتاج مقاس الورقة الحقيقي؛ بلا قياس صالح نرجع إلى ملاءمة
-  // الكل بدل عرض مزيّف يدّعي 1:1 — فالوعد بلا بيانات أسوأ من البديل الآمن.
   const hasRealSize =
     Number.isFinite(canvasW) &&
     (canvasW as number) > 0 &&
     Number.isFinite(canvasH) &&
     (canvasH as number) > 0;
-  if (resolved === 'actual' && !hasRealSize) {
-    resolved = 'height';
-  }
+  const paperW = hasRealSize ? (canvasW as number) : safeAspect(aspect);
+  const paperH = hasRealSize ? (canvasH as number) : 1;
+  const a = paperW / paperH;
+  const z = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  let resolved: ResolvedFitMode;
+  let baseScale: number;
+  let leftoverRatio: number;
 
-  // ── الأساس: مقاس الورقة عند zoom = 1 ─────────────────────────────────────
-  // هذا هو مقاس عنصر الـ Stage. ثابت عبر كل قيم الزوم، فلا يعيد Konva تخصيص
-  // backing store لكل طبقة ولا يستدعي layer.draw() متزامناً أثناء التكبير
-  // (M15 — تدقيق 2026-10-08).
-  const { boxW, boxH } = fitBox(containerW, containerH);
-
-  let baseW: number;
-  let baseH: number;
-
-  if (resolved === 'actual') {
-    // 1:1 حقيقي: بكسل الورقة = بكسل CSS. لا تقييد بالصندوق عن قصد: تجاوز
-    // العرض والارتفاع هو ما يُظهر عصا التمرير الأفقية التي لا وجود لها في
-    // باقي الأوضاع لأنها كلها تُصغّر الورقة لتناسب العرض.
-    baseW = canvasW as number;
-    baseH = canvasH as number;
+  if (fitBasis && Number.isFinite(fitBasis.baseScale) && fitBasis.baseScale > 0) {
+    ({ resolved, baseScale, leftoverRatio } = fitBasis);
   } else {
-    baseW = boxW;
-    baseH = baseW / a;
-    // في وضع العرض لا نُقيّد بالارتفاع: تجاوزه هو المقصود (تمرير رأسي)
-    if (resolved === 'height' && baseH > boxH) {
-      baseH = boxH;
-      baseW = baseH * a;
-    }
+    resolved = resolveFitMode({ containerW, containerH, aspect: a, fitMode });
+    if (resolved === 'actual' && !hasRealSize) resolved = 'height';
+    const { boxW, boxH } = fitBox(containerW, containerH);
+    baseScale =
+      resolved === 'actual'
+        ? 1
+        : resolved === 'width'
+          ? boxW / paperW
+          : Math.min(boxW / paperW, boxH / paperH);
+    leftoverRatio = lateralLeftoverRatio(containerW, containerH, a);
   }
 
-  // الحد الأدنى للمقاس المعروض ثابت لا يتأثر بالزوم (z ينقسم على الطرفين)
-  const minDim = CANVAS_MIN_DISPLAY;
-  if (baseW < minDim || baseH < minDim) {
-    const minScale = Math.max(minDim / (baseW || 1), minDim / (baseH || 1));
-    baseW *= minScale;
-    baseH *= minScale;
-  }
-
-  // المقاس المرئي = الأساس × الزوم — هو ما تقرؤه المساطر والشريط السفلي.
-  const displayW = Math.max(1, Math.round(baseW * z));
-  const displayH = Math.max(1, Math.round(baseH * z));
-
+  const scale = baseScale * z;
   return {
-    displayW,
-    displayH,
-    stageW: Math.max(1, Math.round(baseW)),
-    stageH: Math.max(1, Math.round(baseH)),
+    displayW: paperW * scale,
+    displayH: paperH * scale,
+    stageW: paperW * baseScale,
+    stageH: paperH * baseScale,
+    scale,
+    baseScale,
     resolved,
-    leftoverRatio: lateralLeftoverRatio(containerW, containerH, a),
+    leftoverRatio,
   };
 }
 
@@ -248,9 +223,9 @@ export function isCanvasFitMode(value: unknown): value is CanvasFitMode {
 export function readStoredFitMode(): CanvasFitMode {
   try {
     const raw = localStorage.getItem(CANVAS_FIT_STORAGE_KEY);
-    return isCanvasFitMode(raw) ? raw : 'auto';
+    return isCanvasFitMode(raw) ? raw : 'height';
   } catch {
-    return 'auto';
+    return 'height';
   }
 }
 

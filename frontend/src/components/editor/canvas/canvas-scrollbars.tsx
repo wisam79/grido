@@ -1,12 +1,84 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import { Crosshair } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-
-import { getStageClampBounds } from './use-canvas-viewport';
+import { RESET_CANVAS_PAN_EVENT } from '@/hooks/use-canvas-zoom';
+import {
+  clientToLocal,
+  computeScrollbarMetrics,
+  getStageClampBounds,
+} from '@/lib/canvas/viewport-geometry';
+import { getDocumentSession } from '@/lib/io/document-session';
 
 const STEP_DELTA_PX = 40;
-const MIN_THUMB_PX = 28;
+
+/** Pending thumb frames/listeners may not outlive a reset, document or component. */
+function useThumbDrag() {
+  const cleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    const cancel = () => cleanupRef.current?.();
+    window.addEventListener(RESET_CANVAS_PAN_EVENT, cancel);
+    return () => {
+      cancel();
+      window.removeEventListener(RESET_CANVAS_PAN_EVENT, cancel);
+    };
+  }, []);
+  return useCallback(
+    (
+      e: React.PointerEvent<HTMLDivElement>,
+      horizontal: boolean,
+      maxOffset: number,
+      span: number,
+      startPos: number,
+      scroll: (pos: number) => void,
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cleanupRef.current?.();
+      const target = e.currentTarget;
+      const track = target.parentElement;
+      if (!track) return;
+      target.setPointerCapture(e.pointerId);
+      const session = getDocumentSession();
+      const local = clientToLocal(
+        track.getBoundingClientRect(),
+        { w: track.clientWidth, h: track.clientHeight },
+        e.clientX,
+        e.clientY,
+      );
+      const scale = horizontal ? local.scaleX : local.scaleY;
+      const startCoord = horizontal ? e.clientX : e.clientY;
+      let rafId: number | null = null;
+      let active = true;
+      const cancel = () => {
+        active = false;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (target.hasPointerCapture(e.pointerId)) target.releasePointerCapture(e.pointerId);
+        target.removeEventListener('pointermove', move);
+        target.removeEventListener('pointerup', cancel);
+        target.removeEventListener('pointercancel', cancel);
+      };
+      const move = (event: PointerEvent) => {
+        if (getDocumentSession() !== session) {
+          cancel();
+          return;
+        }
+        const delta = ((horizontal ? event.clientX : event.clientY) - startCoord) / scale;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          if (!active || getDocumentSession() !== session || maxOffset <= 0 || span <= 0) return;
+          scroll(startPos - (delta / maxOffset) * span);
+        });
+      };
+      cleanupRef.current = cancel;
+      target.addEventListener('pointermove', move);
+      target.addEventListener('pointerup', cancel);
+      target.addEventListener('pointercancel', cancel);
+    },
+    [],
+  );
+}
 
 /** موضع التمرير الجديد من نقرة على المسار — نفس معادلة المحورين. */
 function scrollPosFromTrackClick(
@@ -23,7 +95,9 @@ function scrollPosFromTrackClick(
 
 export interface CanvasHorizontalScrollbarProps {
   viewportWidth: number;
+  viewportHeight: number;
   displayW: number;
+  displayH: number;
   stagePosX: number;
   onScrollX: (newStagePosX: number) => void;
   className?: string;
@@ -31,7 +105,9 @@ export interface CanvasHorizontalScrollbarProps {
 
 export interface CanvasVerticalScrollbarProps {
   viewportHeight: number;
+  viewportWidth: number;
   displayH: number;
+  displayW: number;
   stagePosY: number;
   onScrollY: (newStagePosY: number) => void;
   className?: string;
@@ -44,7 +120,9 @@ export interface CanvasCornerResetButtonProps {
 
 export interface CanvasScrollbarsBottomBarProps {
   viewportWidth: number;
+  viewportHeight: number;
   displayW: number;
+  displayH: number;
   stagePosX: number;
   onScrollX: (newStagePosX: number) => void;
   onResetPan: () => void;
@@ -59,76 +137,27 @@ export interface CanvasScrollbarsBottomBarProps {
  */
 export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScrollbar({
   viewportWidth,
+  viewportHeight,
   displayW,
+  displayH,
   stagePosX,
   onScrollX,
   className = '',
 }: CanvasHorizontalScrollbarProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-
-  // حساب حدود التحريك والأبعاد المشتركة مع Viewport
-  const { minX, maxX } = getStageClampBounds(displayW, 100, viewportWidth, 100);
-  const spanX = maxX - minX;
-
-  // نسبة التقدم t: من 0 (أقصى اليسار) إلى 1 (أقصى اليمين)
-  const tx = spanX > 0 ? Math.max(0, Math.min(1, (maxX - stagePosX) / spanX)) : 0.5;
-
-  // حجم المقبض (Thumb): يتناسب مع نسبة نافذة العرض إلى المدى الكلي الفعلي لمساحة العمل
-  const totalRangeX = spanX + viewportWidth;
-  const ratio = totalRangeX > 0 ? Math.min(1, viewportWidth / totalRangeX) : 1;
-  const trackLength = Math.max(40, viewportWidth);
-  const thumbLength = Math.max(
-    MIN_THUMB_PX,
-    Math.min(trackLength, Math.round(trackLength * ratio)),
-  );
-  const maxOffset = Math.max(0, trackLength - thumbLength);
-  const thumbOffset = Math.round(tx * maxOffset);
-
-  // سحب المقبض (Dragging Thumb)
+  const startThumbDrag = useThumbDrag();
+  const { minX, maxX } = getStageClampBounds(displayW, displayH, viewportWidth, viewportHeight);
+  const {
+    span: spanX,
+    progress: tx,
+    thumbLength,
+    maxOffset,
+    thumbOffset,
+  } = computeScrollbarMetrics(viewportWidth, minX, maxX, stagePosX);
   const handleThumbPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const target = e.currentTarget;
-      target.setPointerCapture(e.pointerId);
-
-      const startCoord = e.clientX;
-      const startPos = stagePosX;
-
-      const onPointerMove = (moveEvt: PointerEvent) => {
-        const deltaPx = moveEvt.clientX - startCoord;
-        if (rafIdRef.current !== null) {
-          cancelAnimationFrame(rafIdRef.current);
-        }
-        rafIdRef.current = requestAnimationFrame(() => {
-          rafIdRef.current = null;
-          if (maxOffset <= 0 || spanX <= 0) return;
-          const deltaT = deltaPx / maxOffset;
-          // سحب المقبض يميناً يعني انتقال الرؤية لليمين (انخفاض stagePosX)
-          const newPos = startPos - deltaT * spanX;
-          onScrollX(newPos);
-        });
-      };
-
-      const onPointerUp = (upEvt: PointerEvent) => {
-        if (target.hasPointerCapture(upEvt.pointerId)) {
-          target.releasePointerCapture(upEvt.pointerId);
-        }
-        target.removeEventListener('pointermove', onPointerMove);
-        target.removeEventListener('pointerup', onPointerUp);
-        target.removeEventListener('pointercancel', onPointerUp);
-        if (rafIdRef.current !== null) {
-          cancelAnimationFrame(rafIdRef.current);
-          rafIdRef.current = null;
-        }
-      };
-
-      target.addEventListener('pointermove', onPointerMove);
-      target.addEventListener('pointerup', onPointerUp);
-      target.addEventListener('pointercancel', onPointerUp);
-    },
-    [stagePosX, maxOffset, spanX, onScrollX],
+    (e: React.PointerEvent<HTMLDivElement>) =>
+      startThumbDrag(e, true, maxOffset, spanX, stagePosX, onScrollX),
+    [startThumbDrag, maxOffset, spanX, stagePosX, onScrollX],
   );
 
   // النقر على المسار للقفز إلى موضع المؤشر
@@ -139,10 +168,13 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       }
       const track = trackRef.current;
       if (!track || maxOffset <= 0 || spanX <= 0) return;
-      const rect = track.getBoundingClientRect();
-      onScrollX(
-        scrollPosFromTrackClick(e.clientX - rect.left, thumbLength, maxOffset, spanX, maxX),
+      const local = clientToLocal(
+        track.getBoundingClientRect(),
+        { w: track.clientWidth, h: track.clientHeight },
+        e.clientX,
+        e.clientY,
       );
+      onScrollX(scrollPosFromTrackClick(local.x, thumbLength, maxOffset, spanX, maxX));
     },
     [maxOffset, spanX, thumbLength, maxX, onScrollX],
   );
@@ -185,7 +217,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`h-[16px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden ${className}`}
+      className={`h-[20px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل العرض */}
@@ -206,7 +238,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
             width: `${thumbLength}px`,
             transform: `translate3d(${thumbOffset}px, 0, 0)`,
           }}
-          className="h-[6px] group-hover:h-[8px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[height,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
+          className="h-[8px] group-hover:h-[10px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[height,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
         />
       </div>
     </div>
@@ -221,76 +253,27 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
  */
 export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollbar({
   viewportHeight,
+  viewportWidth,
   displayH,
+  displayW,
   stagePosY,
   onScrollY,
   className = '',
 }: CanvasVerticalScrollbarProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-
-  // حساب حدود التحريك والأبعاد المشتركة مع Viewport
-  const { minY, maxY } = getStageClampBounds(100, displayH, 100, viewportHeight);
-  const spanY = maxY - minY;
-
-  // نسبة التقدم t: من 0 (أعلى) إلى 1 (أسفل)
-  const ty = spanY > 0 ? Math.max(0, Math.min(1, (maxY - stagePosY) / spanY)) : 0.5;
-
-  // حجم المقبض (Thumb): يتناسب مع نسبة نافذة العرض إلى المدى الكلي الفعلي لمساحة العمل
-  const totalRangeY = spanY + viewportHeight;
-  const ratio = totalRangeY > 0 ? Math.min(1, viewportHeight / totalRangeY) : 1;
-  const trackLength = Math.max(40, viewportHeight);
-  const thumbLength = Math.max(
-    MIN_THUMB_PX,
-    Math.min(trackLength, Math.round(trackLength * ratio)),
-  );
-  const maxOffset = Math.max(0, trackLength - thumbLength);
-  const thumbOffset = Math.round(ty * maxOffset);
-
-  // سحب المقبض (Dragging Thumb)
+  const startThumbDrag = useThumbDrag();
+  const { minY, maxY } = getStageClampBounds(displayW, displayH, viewportWidth, viewportHeight);
+  const {
+    span: spanY,
+    progress: ty,
+    thumbLength,
+    maxOffset,
+    thumbOffset,
+  } = computeScrollbarMetrics(viewportHeight, minY, maxY, stagePosY);
   const handleThumbPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const target = e.currentTarget;
-      target.setPointerCapture(e.pointerId);
-
-      const startCoord = e.clientY;
-      const startPos = stagePosY;
-
-      const onPointerMove = (moveEvt: PointerEvent) => {
-        const deltaPx = moveEvt.clientY - startCoord;
-        if (rafIdRef.current !== null) {
-          cancelAnimationFrame(rafIdRef.current);
-        }
-        rafIdRef.current = requestAnimationFrame(() => {
-          rafIdRef.current = null;
-          if (maxOffset <= 0 || spanY <= 0) return;
-          const deltaT = deltaPx / maxOffset;
-          // سحب المقبض لأسفل يعني انتقال الرؤية لأسفل (انخفاض stagePosY)
-          const newPos = startPos - deltaT * spanY;
-          onScrollY(newPos);
-        });
-      };
-
-      const onPointerUp = (upEvt: PointerEvent) => {
-        if (target.hasPointerCapture(upEvt.pointerId)) {
-          target.releasePointerCapture(upEvt.pointerId);
-        }
-        target.removeEventListener('pointermove', onPointerMove);
-        target.removeEventListener('pointerup', onPointerUp);
-        target.removeEventListener('pointercancel', onPointerUp);
-        if (rafIdRef.current !== null) {
-          cancelAnimationFrame(rafIdRef.current);
-          rafIdRef.current = null;
-        }
-      };
-
-      target.addEventListener('pointermove', onPointerMove);
-      target.addEventListener('pointerup', onPointerUp);
-      target.addEventListener('pointercancel', onPointerUp);
-    },
-    [stagePosY, maxOffset, spanY, onScrollY],
+    (e: React.PointerEvent<HTMLDivElement>) =>
+      startThumbDrag(e, false, maxOffset, spanY, stagePosY, onScrollY),
+    [startThumbDrag, maxOffset, spanY, stagePosY, onScrollY],
   );
 
   // النقر على المسار للقفز إلى موضع المؤشر
@@ -301,8 +284,13 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       }
       const track = trackRef.current;
       if (!track || maxOffset <= 0 || spanY <= 0) return;
-      const rect = track.getBoundingClientRect();
-      onScrollY(scrollPosFromTrackClick(e.clientY - rect.top, thumbLength, maxOffset, spanY, maxY));
+      const local = clientToLocal(
+        track.getBoundingClientRect(),
+        { w: track.clientWidth, h: track.clientHeight },
+        e.clientX,
+        e.clientY,
+      );
+      onScrollY(scrollPosFromTrackClick(local.y, thumbLength, maxOffset, spanY, maxY));
     },
     [maxOffset, spanY, thumbLength, maxY, onScrollY],
   );
@@ -345,7 +333,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`w-[16px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden ${className}`}
+      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل الارتفاع */}
@@ -366,7 +354,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
             height: `${thumbLength}px`,
             transform: `translate3d(0, ${thumbOffset}px, 0)`,
           }}
-          className="w-[6px] group-hover:w-[8px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[width,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
+          className="w-[8px] group-hover:w-[10px] rounded-full bg-black/15 hover:bg-black/25 active:bg-black/40 dark:bg-white/12 dark:hover:bg-white/22 dark:active:bg-white/35 transition-[width,background-color] duration-150 cursor-grab active:cursor-grabbing select-none relative z-10"
         />
       </div>
     </div>
@@ -384,7 +372,7 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
 }: CanvasCornerResetButtonProps) {
   return (
     <div
-      className={`w-[16px] h-[16px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none ${className}`}
+      className={`w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none ${className}`}
       dir="ltr"
     >
       <Tooltip>
@@ -394,9 +382,9 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
             onClick={onResetPan}
             title="إعادة توسيط الكانفاس (Home)"
             aria-label="إعادة توسيط الكانفاس"
-            className="w-[16px] h-[16px] shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
+            className="w-6 h-6 -m-0.5 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
           >
-            <Crosshair className="w-2.5 h-2.5" weight="regular" />
+            <Crosshair className="w-3 h-3" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" align="end" className="text-micro font-cairo">
@@ -412,7 +400,9 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
  */
 export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBottomBar({
   viewportWidth,
+  viewportHeight,
   displayW,
+  displayH,
   stagePosX,
   onScrollX,
   onResetPan,
@@ -420,12 +410,12 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
 }: CanvasScrollbarsBottomBarProps) {
   return (
     <div
-      className={`flex h-[16px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
+      className={`flex h-[20px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
       dir="ltr"
     >
-      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (16x16px) */}
+      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (20x20px) */}
       <div
-        className="w-[16px] h-[16px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none"
+        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none"
         aria-hidden="true"
       />
 
@@ -433,13 +423,15 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
       <div className="flex-1 overflow-hidden relative">
         <CanvasHorizontalScrollbar
           viewportWidth={viewportWidth}
+          viewportHeight={viewportHeight}
           displayW={displayW}
+          displayH={displayH}
           stagePosX={stagePosX}
           onScrollX={onScrollX}
         />
       </div>
 
-      {/* 🧭 زر الزاوية السفلية اليمنى لإعادة التوسيط (16x16px) */}
+      {/* 🧭 زر الزاوية السفلية اليمنى لإعادة التوسيط (20x20px) */}
       <CanvasCornerResetButton onResetPan={onResetPan} />
     </div>
   );

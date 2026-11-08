@@ -510,7 +510,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     if (!hydrated) return;
     advanceDocumentSession();
     // مشروع محمّل = نقطة حفظ نظيفة: لا تعديلات معلّقة فوق محتواه
-    set({ ...hydrated, projectName, isDirty: false });
+    set({ ...hydrated, projectName, isDirty: false, canvasZoom: 1 });
     set(seedHistorySnapshot(get()));
   },
 
