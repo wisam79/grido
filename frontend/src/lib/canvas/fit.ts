@@ -223,9 +223,9 @@ export function isCanvasFitMode(value: unknown): value is CanvasFitMode {
 export function readStoredFitMode(): CanvasFitMode {
   try {
     const raw = localStorage.getItem(CANVAS_FIT_STORAGE_KEY);
-    return isCanvasFitMode(raw) ? raw : 'height';
+    return isCanvasFitMode(raw) ? raw : 'auto';
   } catch {
-    return 'height';
+    return 'auto';
   }
 }
 

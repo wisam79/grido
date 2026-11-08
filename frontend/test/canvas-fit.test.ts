@@ -377,12 +377,7 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
     localStorage.clear();
   });
 
-  it('defaults missing preference to full-paper height fit', () => {
-    expect(readStoredFitMode()).toBe('height');
-  });
-
-  it('preserves an explicitly saved auto preference', () => {
-    writeStoredFitMode('auto');
+  it('يعيد auto عندما لا يوجد تفضيل مخزّن', () => {
     expect(readStoredFitMode()).toBe('auto');
   });
 
@@ -394,7 +389,7 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
 
   it('يتجاهل قيمة مخزّنة غير صالحة بدل تعطيل الواجهة', () => {
     localStorage.setItem(CANVAS_FIT_STORAGE_KEY, 'diagonal');
-    expect(readStoredFitMode()).toBe('height');
+    expect(readStoredFitMode()).toBe('auto');
     expect(isCanvasFitMode('diagonal')).toBe(false);
     expect(isCanvasFitMode('height')).toBe(true);
   });
