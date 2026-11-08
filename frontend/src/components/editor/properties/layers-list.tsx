@@ -683,18 +683,15 @@ export function LayersList({
 
   // ── Empty ───────────────────────────────────────────────────────────────
   if (elements.length === 0) {
-    // أيقونة باهتة مع سطر إرشادي وحيد يخدم التعلّم الأول ويختفي بعد أول عنصر.
+    // أيقونة باهتة نظيفة كعلامة مائية خالية من أي حشو نصي
     return (
-      <div className="min-h-[60vh] w-full select-none flex flex-col items-center justify-center gap-6 animate-in fade-in duration-100 text-center px-4">
+      <div className="min-h-[60vh] w-full select-none flex flex-col items-center justify-center animate-in fade-in duration-100 text-center px-4">
         <TooltipBtn
           content="لا توجد طبقات بعد — أضف من الملصقات أو الأشكال أو النصوص"
           side="bottom"
         >
           <Layer className="h-6 w-6 scale-500 text-muted-foreground/20" />
         </TooltipBtn>
-        <p className="text-xs font-medium text-foreground/75 leading-relaxed">
-          لا توجد طبقات بعد — أضف ملصقاً أو شكلاً أو نصاً من اللوحة الجانبية
-        </p>
       </div>
     );
   }
