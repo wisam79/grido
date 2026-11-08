@@ -25,7 +25,7 @@
 | أمان مستمعي السحب وتفريغ التاريخ (audit-14) | تنظيف مستمعي الأمان عند انتهاء السحب الطبيعي في `use-konva-drag`، وتفريغ مؤقت التاريخ المعلق عند unmount في `use-keyboard-shortcuts`، وcatch موحد لوعود الحافظة | `frontend/src/hooks/use-konva-drag.ts:200,395`، `frontend/src/hooks/use-keyboard-shortcuts.ts:786`، `frontend/src/lib/store/slices/element/clipboard.ts:30,62` |
 | صقل الواجهة وميزانية الأيقونات وحالات الخطأ (audit-7, 8, 9, 16) | تحسين تباين حالة الفراغ في الطبقات وتوحيد صياغتها، حذف الأيقونات المكررة مع النص (`Plus` و`Stamp`)، معالجة خطأ التحميل الكسول للملصقات بزر إعادة محاولة، واختصار نصوص عمليات الدمج | `frontend/src/components/editor/properties/layers-list.tsx:689`، `frontend/src/components/editor/panels/freeform/freeform-text-tab.tsx:165`، `frontend/src/components/editor/panels/freeform/freeform-elements-tab.tsx:102,233,260`، `frontend/src/components/editor/panels/freeform/freeform-layers-tab.tsx:109` |
 
-**التحقق:** اختبارات مستهدفة: `element-geometry.test.ts` (**13/13 ناجحة**)، `element-slice-clipboard.test.ts` (**4/4 ناجحة**)؛ واجتياز `npm run typecheck` و`npm run lint` صفر أخطاء وتحذيرات، و`npm run format:check` نظيف تماماً، وبوابة التوثيق `docs-gate.mjs --strict-refs` ناجحة.
+**التحقق:** اختبارات مستهدفة: `element-geometry.test.ts` (**13/13 ناجحة**)، `element-slice-clipboard.test.ts` (**4/4 ناجحة**)، `layers-list.test.tsx` (**7/7 ناجحة**)؛ واجتياز `npm run typecheck` و`npm run lint` صفر أخطاء وتحذيرات، و`npm run format:check` نظيف تماماً، وبوابة التوثيق `docs-gate.mjs --strict-refs` ناجحة.
 
 ---
 
