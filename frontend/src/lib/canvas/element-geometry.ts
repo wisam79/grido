@@ -186,8 +186,8 @@ export function clampElementPositionToCanvas(
   const minX = Math.max(bounds.minX, Math.min(bounds.maxX, box.minX));
   const minY = Math.max(bounds.minY, Math.min(bounds.maxY, box.minY));
   return {
-    x: (minX - box.offsetX) / cw,
-    y: (minY - box.offsetY) / ch,
+    x: minX === box.minX ? element.x : (minX - box.offsetX) / cw,
+    y: minY === box.minY ? element.y : (minY - box.offsetY) / ch,
   };
 }
 
