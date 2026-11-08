@@ -10,7 +10,7 @@ Unicode true
 
 # Product metadata (source of truth — must mirror the git tag / build.ps1)
 !define INFO_PROJECTNAME "GridoStudio"
-!define INFO_PRODUCTVERSION "1.31.6"
+!define INFO_PRODUCTVERSION "1.32.0"
 !define INFO_COPYRIGHT "© 2026 Grido Studio"
 
 !ifndef WAILS_INSTALL_SCOPE
