@@ -2402,3 +2402,9 @@
 - enlarge rows and columns counter buttons and typography for effortless clicking
 - soften vector shape glyph contrast and adjust thumbnail dimensions for visual comfort
 - sync e2e and unit tests with promoted freeform rail, bottom quick bar zen toggle, toolbar launcher, and user-saved presets
+
+
+## [v1.31.1] - 2026-11-05
+
+### Fixed
+- import missing useEffect hook in workspace panel rail
