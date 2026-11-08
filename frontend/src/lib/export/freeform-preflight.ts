@@ -1,3 +1,4 @@
+import { isElementFullyOutsideCanvas } from '@/lib/canvas/element-geometry';
 import { resolveBatchImageDimensions } from '@/lib/canvas/image-dimensions';
 import { MM_PER_INCH } from '@/lib/canvas/units';
 
@@ -50,7 +51,15 @@ function printableImageElements(elements: CanvasElement[]): ImageElement[] {
 
 /** فحص متزامن نقي — الأبعاد تُمرَّر جاهزة من المستدعي أو من المحلل الدفعي أدناه */
 export function runFreeformPreflight(input: FreeformPreflightInput): FreeformPreflightResult {
-  const { elements, canvasWidthMM, canvasHeightMM, imageDimensions, minDpi = 250 } = input;
+  const {
+    elements,
+    canvasWidthMM,
+    canvasHeightMM,
+    canvasWidthPx,
+    canvasHeightPx,
+    imageDimensions,
+    minDpi = 250,
+  } = input;
   const blocking: FreeformPreflightIssue[] = [];
   const warnings: FreeformPreflightIssue[] = [];
 
@@ -65,6 +74,11 @@ export function runFreeformPreflight(input: FreeformPreflightInput): FreeformPre
   }
 
   for (const el of printableImageElements(elements)) {
+    // عنصر خارج الورقة بالكامل لا يظهر في المخرج (قص الإطار في مسار الالتقاط،
+    // وتجاوز الحدود يعيد التوجيه للالتقاط في المسار السريع) — فلا يحجب الطباعة
+    // ولا يُحتسب تحذير دقة (audit-12).
+    if (isElementFullyOutsideCanvas(el, canvasWidthPx, canvasHeightPx)) continue;
+
     const src = el.imageSrc!;
     const dims = imageDimensions?.get(src);
     if (

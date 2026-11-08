@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  clampElementPositionToCanvas,
   getElementPixelVisualBox,
   getElementVisualBox,
   getQuarterTurnRotationPatch,
+  isElementFullyOutsideCanvas,
+  resizeElementAroundCenter,
   rotateElementAroundCenter,
 } from './element-geometry';
 
@@ -218,6 +221,48 @@ describe('element-geometry', () => {
         marquee.y <= elBox.y + elBox.height &&
         marquee.y + marquee.height >= elBox.y;
       expect(intersects).toBe(true);
+    });
+  });
+
+  describe('resizeElementAroundCenter (audit-4)', () => {
+    it('maintains the visual center when scaling rotated elements', () => {
+      const canvasW = 1000;
+      const canvasH = 1000;
+      const el = { x: 0.2, y: 0.2, width: 0.2, height: 0.2, rotation: 45 };
+
+      const beforeBox = getElementVisualBox(el, canvasW, canvasH);
+      const newPos = resizeElementAroundCenter(el, 0.4, 0.4, canvasW, canvasH);
+      const afterBox = getElementVisualBox(
+        { ...el, ...newPos, width: 0.4, height: 0.4 },
+        canvasW,
+        canvasH,
+      );
+
+      expect(afterBox.centerX).toBeCloseTo(beforeBox.centerX, 4);
+      expect(afterBox.centerY).toBeCloseTo(beforeBox.centerY, 4);
+    });
+  });
+
+  describe('clampElementPositionToCanvas (audit-3)', () => {
+    it('prevents element visual box from being moved completely out of canvas', () => {
+      const canvasW = 1000;
+      const canvasH = 1000;
+      // Move far off left
+      const el = { x: -2.0, y: 0.5, width: 0.2, height: 0.2, rotation: 0 };
+      const clamped = clampElementPositionToCanvas(el, canvasW, canvasH);
+      expect(clamped.x).toBeGreaterThan(-1.0);
+    });
+  });
+
+  describe('isElementFullyOutsideCanvas (audit-12)', () => {
+    it('identifies elements completely outside with margins vs elements inside', () => {
+      const canvasW = 1000;
+      const canvasH = 1000;
+      const insideEl = { x: 0.1, y: 0.1, width: 0.2, height: 0.2 };
+      expect(isElementFullyOutsideCanvas(insideEl, canvasW, canvasH)).toBe(false);
+
+      const outsideEl = { x: 2.0, y: 2.0, width: 0.2, height: 0.2 };
+      expect(isElementFullyOutsideCanvas(outsideEl, canvasW, canvasH)).toBe(true);
     });
   });
 });

@@ -130,6 +130,121 @@ export function getElementVisualBox(
 }
 
 /**
+ * حدود الصندوق المرئي المسموح بها حول الورقة بهامش 25% — القاعدة المشتركة
+ * بين سحب المؤشر وإزاحة الأسهم. للعناصر الأكبر من الورقة يُسمح بتمرير كامل
+ * المساحة بحرية (تأطير الوجوه) مع إبقاء 25% من الورقة مغطاة على الأقل.
+ */
+export function getCanvasVisualBounds(
+  boundWidth: number,
+  boundHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  margin = 0.25,
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  let minX = -canvasWidth * margin;
+  let maxX = canvasWidth * (1 + margin) - boundWidth;
+  if (minX > maxX) {
+    minX = canvasWidth * margin - boundWidth;
+    maxX = canvasWidth * (1 - margin);
+  } else if (boundWidth > canvasWidth) {
+    minX = Math.min(minX, canvasWidth * margin - boundWidth);
+    maxX = Math.max(maxX, canvasWidth * (1 - margin));
+  }
+
+  let minY = -canvasHeight * margin;
+  let maxY = canvasHeight * (1 + margin) - boundHeight;
+  if (minY > maxY) {
+    minY = canvasHeight * margin - boundHeight;
+    maxY = canvasHeight * (1 - margin);
+  } else if (boundHeight > canvasHeight) {
+    minY = Math.min(minY, canvasHeight * margin - boundHeight);
+    maxY = Math.max(maxY, canvasHeight * (1 - margin));
+  }
+
+  return { minX, maxX, minY, maxY };
+}
+
+/**
+ * قص موضع العنصر على حدود الورقة بالصندوق المرئي (AABB المدوّر) لا بالأصل —
+ * نفس قاعدة السحب، كي لا تدفع الأسهم عنصراً مدوّراً بالكامل خارج منطقة الرؤية.
+ */
+export function clampElementPositionToCanvas(
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
+  canvasWidth: number,
+  canvasHeight: number,
+): { x: number; y: number } {
+  const cw = canvasWidth > 0 ? canvasWidth : 1;
+  const ch = canvasHeight > 0 ? canvasHeight : 1;
+  const box = getElementPixelVisualBox(
+    element.x * cw,
+    element.y * ch,
+    element.width * cw,
+    element.height * ch,
+    element.rotation || 0,
+  );
+  const bounds = getCanvasVisualBounds(box.width, box.height, cw, ch);
+  const minX = Math.max(bounds.minX, Math.min(bounds.maxX, box.minX));
+  const minY = Math.max(bounds.minY, Math.min(bounds.maxY, box.minY));
+  return {
+    x: (minX - box.offsetX) / cw,
+    y: (minY - box.offsetY) / ch,
+  };
+}
+
+/**
+ * هل العنصر خارج الورقة بالكامل (صندوقه المرئي + هامش الظل)؟ نفس قاعدة
+ * الحذف البصري في طبقة المحتوى — تُستخدم أيضاً في فحوص ما قبل الطباعة كي
+ * لا تُحجب الطباعة بسبب عنصر لا يظهر في المخرج أصلاً (audit-12).
+ */
+export function isElementFullyOutsideCanvas(
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & {
+    rotation?: number;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
+  },
+  canvasWidth: number,
+  canvasHeight: number,
+): boolean {
+  const box = getElementVisualBox(element, canvasWidth, canvasHeight);
+  const shadowPadPxX = (element.shadowBlur || 0) * 2 + Math.abs(element.shadowOffsetX || 0) + 32;
+  const shadowPadPxY = (element.shadowBlur || 0) * 2 + Math.abs(element.shadowOffsetY || 0) + 32;
+  const padX = Math.max(0.25, shadowPadPxX / Math.max(1, canvasWidth));
+  const padY = Math.max(0.25, shadowPadPxY / Math.max(1, canvasHeight));
+  return (
+    box.x > 1 + padX || box.y > 1 + padY || box.x + box.width < -padX || box.y + box.height < -padY
+  );
+}
+
+/**
+ * موضع الأصل الجديد عند تغيير الأبعاد مع بقاء المركز المرئي ثابتاً.
+ * كل أنواع العقد في Grido تدور حول أصلها العلوي الأيسر (x, y)، فيُحسب
+ * المركز الحالي ثم يُطرح منه مركز الصندوق الجديد بالنسبة للأصل نفسه.
+ */
+export function resizeElementAroundCenter(
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
+  newWidth: number,
+  newHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): { x: number; y: number } {
+  const cw = canvasWidth > 0 ? canvasWidth : 1;
+  const ch = canvasHeight > 0 ? canvasHeight : 1;
+  const cur = getElementPixelVisualBox(
+    element.x * cw,
+    element.y * ch,
+    element.width * cw,
+    element.height * ch,
+    element.rotation || 0,
+  );
+  const next = getElementPixelVisualBox(0, 0, newWidth * cw, newHeight * ch, element.rotation || 0);
+  return {
+    x: (cur.centerX - next.centerX) / cw,
+    y: (cur.centerY - next.centerY) / ch,
+  };
+}
+
+/**
  * تحسب موضع الأصل الجديد (x, y) عند تغيير زاوية التدوير للحفاظ على ثبات مركز العنصر المرئي في مكانه.
  */
 export function rotateElementAroundCenter(

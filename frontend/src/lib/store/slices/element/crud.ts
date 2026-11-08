@@ -199,8 +199,7 @@ export const createElementCrudSlice: StateCreator<
       let newGroupId = el.groupId;
       if (el.groupId) {
         if (!groupMappings[el.groupId]) {
-          groupMappings[el.groupId] =
-            `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          groupMappings[el.groupId] = uid();
         }
         newGroupId = groupMappings[el.groupId];
       }
@@ -213,6 +212,9 @@ export const createElementCrudSlice: StateCreator<
         y: Math.min(el.y + 0.05, 0.9),
         // تزايد رتيب لكل نسخة لضمان ترتيب فريد حتى مع التكرار الجماعي
         zIndex: nextZIndex(nextElements),
+        // تحييد القفل والإخفاء: العنصر المكرر يولد مرئياً وحراً للتحرير
+        locked: false,
+        visible: true,
       };
       nextElements.push(copy);
       newSelectedIds.push(newId);

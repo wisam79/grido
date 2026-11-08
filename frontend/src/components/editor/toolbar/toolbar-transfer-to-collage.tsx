@@ -28,7 +28,10 @@ const logger = createLogger('transfer-to-collage');
  */
 export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCollage() {
   const mode = useEditorStore((s) => s.mode);
-  const elementsCount = useEditorStore((s) => s.elements.length);
+  // البوابة تعدّ العناصر الظاهرة فقط — تصميم كله مخفي لا يستحق النقل (audit-6)
+  const elementsCount = useEditorStore(
+    (s) => s.elements.filter((el) => el.visible !== false).length,
+  );
   const stageRef = useStageRef();
   const [isTransferring, setIsTransferring] = useState(false);
 
@@ -75,14 +78,19 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
         }
       }
 
-      // 4. الانتقال لوضع الكولاج عبر المسار القياسي — بلا setCanvasSize وبلا
-      //    تبديل اتجاه: مقاس كانفاس الكولاج ووضعه يبقيان كما هما تماماً
-      useEditorStore.getState().setMode('collage');
+      // 4. الانتقال لوضع الكولاج بلا دفع تاريخ هنا — تُدمج الخطوة مع إدراج
+      //    اللقطة في خطوة تراجع واحدة يدفعها setSlotImagesBatch (audit-6).
+      useEditorStore.getState().setMode('collage', { recordHistory: false });
 
       // 5. إدراج اللقطة كصورة عادية في الخانات الحالية (تُقرأ الحالة الطازجة
-      //    بعد تبديل الوضع لأن setMode قد يعيد بناء الخانات)
+      //    بعد تبديل الوضع لأن setMode قد يعيد بناء الخانات). أي فشل هنا يرتد
+      //    بالوضع الحر كما كان قبل النقل — بلا خطوة تاريخ وسيطة.
       const collage = useEditorStore.getState();
+      const rollbackToSingle = () =>
+        useEditorStore.getState().setMode('single', { recordHistory: false });
+
       if (collage.slots.length === 0) {
+        rollbackToSingle();
         toast.error('لا توجد خانات في الكولاج الحالي');
         return;
       }
@@ -94,12 +102,14 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
         isBakedCollageLayout(collage.collageTemplate),
       );
       if (assignments.length === 0) {
+        rollbackToSingle();
         toast.error('تعذر إدراج التصميم في الكولاج');
         return;
       }
 
-      // دفعة واحدة بخطوة تراجع واحدة (داخل setSlotImagesBatch)
-      collage.setSlotImagesBatch(assignments, finalSrc);
+      // دفعة واحدة بخطوة تراجع واحدة (داخل setSlotImagesBatch) تلتقط الوضع
+      // النهائي معاً: Ctrl+Z واحد يعيد التصميم للوضع الحر كما كان.
+      await collage.setSlotImagesBatch(assignments, finalSrc);
 
       toast.success(
         assignments.length === 1

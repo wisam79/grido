@@ -683,17 +683,12 @@ export function LayersList({
 
   // ── Empty ───────────────────────────────────────────────────────────────
   if (elements.length === 0) {
-    // أيقونة باهتة مع سطر إرشادي وحيد يخدم التعلّم الأول (P2-03) ويختفي بعد أول عنصر.
+    // أيقونة باهتة مع سطر إرشادي وحيد يخدم التعلّم الأول ويختفي بعد أول عنصر.
     return (
-      <div className="min-h-[60vh] w-full select-none flex flex-col items-center justify-center gap-8 animate-in fade-in duration-100 text-center px-4">
-        <TooltipBtn
-          content="لا توجد طبقات بعد — أضف من الملصقات أو الأشكال أو النصوص"
-          side="bottom"
-        >
-          <Layer className="h-6 w-6 scale-500 text-muted-foreground/20" />
-        </TooltipBtn>
-        <p className="text-mini text-muted-foreground">
-          لا توجد عناصر بعد — أضف شكلاً أو نصاً من اللوح الأيسر
+      <div className="min-h-[60vh] w-full select-none flex flex-col items-center justify-center gap-6 animate-in fade-in duration-100 text-center px-4">
+        <Layer className="h-6 w-6 scale-500 text-muted-foreground/20" aria-hidden="true" />
+        <p className="text-xs font-medium text-foreground/75 leading-relaxed">
+          لا توجد طبقات بعد — أضف ملصقاً أو شكلاً أو نصاً من اللوحة الجانبية
         </p>
       </div>
     );

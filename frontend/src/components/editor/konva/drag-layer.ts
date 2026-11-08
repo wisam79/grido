@@ -108,10 +108,13 @@ export function liftToDragLayer(nodes: (Konva.Node | null | undefined)[]): boole
  */
 export function dropFromDragLayer(): void {
   if (home.size === 0) return;
-  home.forEach((h, n) => {
+  // تصاعدياً حسب الفهرس المحفوظ: إدراج عقدة عند فهرس منخفض يُزاح كل ما
+  // فوقه، فاستعادة الأعلى أولاً كانت تفسد ترتيب الأشقاء المستعادين قبله.
+  const entries = [...home.entries()].sort((a, b) => a[1].index - b[1].index);
+  for (const [n, h] of entries) {
     try {
       // عقدة بلا مسرح تعني unmount أثناء السحب — لا تعيد إضافتها أبداً.
-      if (typeof n.getStage !== 'function' || !n.getStage()) return;
+      if (typeof n.getStage !== 'function' || !n.getStage()) continue;
       n.moveTo(h.parent);
       n.zIndex(h.index);
       const layer = n.getLayer();
@@ -119,7 +122,7 @@ export function dropFromDragLayer(): void {
     } catch {
       // تجاهل آمن لعقدة ميتة
     }
-  });
+  }
   home.clear();
   redrawTouched();
 }

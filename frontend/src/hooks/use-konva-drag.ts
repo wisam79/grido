@@ -5,7 +5,11 @@ import {
   useCanvasInteraction,
   resetCanvasInteraction,
 } from '@/lib/canvas/canvas-interaction-store';
-import { getElementPixelVisualBox, getElementVisualBox } from '@/lib/canvas/element-geometry';
+import {
+  getCanvasVisualBounds,
+  getElementPixelVisualBox,
+  getElementVisualBox,
+} from '@/lib/canvas/element-geometry';
 import { getSnapPositionsWithTargets } from '@/lib/canvas/snap-utils';
 import { useEditorStore } from '@/lib/editor-store';
 
@@ -53,6 +57,9 @@ export function useKonvaDrag({
     height: number;
   } | null>(null);
   const prevGuidesRef = React.useRef<SnapGuide[]>([]);
+  // تنظيف مستمعي أمان السحب — يُستدعى عند انتهاء السحب الطبيعي أيضاً،
+  // وإلا تراكم مستمع blur/pointercancel معلّق لكل سحب (audit-14).
+  const dragSafetyCleanupRef = React.useRef<(() => void) | null>(null);
   // 🚀 أدلة آخر تمريرة سناب — dragBoundFunc تحسب الموضع والأدلة معاً،
   // وonDragMove يعيد استخدامها بدل إعادة الحساب المكلفة لكل حدث.
   const pendingGuidesRef = React.useRef<SnapGuide[] | null>(null);
@@ -190,14 +197,24 @@ export function useKonvaDrag({
     // نهائياً. نفس نمط drag-shadow.ts: مستمعون لمرة واحدة يعيدون العقد ويُلغون
     // تسجيل أنفسهم.
     if (typeof window !== 'undefined') {
-      const restoreDragLayer = () => {
+      // أزل أي مستمعين معلّقين من سحب سابق قبل تسجيل الجدد
+      dragSafetyCleanupRef.current?.();
+      function cleanupSafetyListeners() {
+        window.removeEventListener('pointerup', restoreDragLayer);
+        window.removeEventListener('pointercancel', restoreDragLayer);
+        window.removeEventListener('blur', restoreDragLayer);
+        dragSafetyCleanupRef.current = null;
+      }
+      function restoreDragLayer() {
+        cleanupSafetyListeners();
         try {
           dropFromDragLayer();
         } catch {
           // تجاهل آمن
         }
         resetCanvasInteraction();
-      };
+      }
+      dragSafetyCleanupRef.current = cleanupSafetyListeners;
       window.addEventListener('pointerup', restoreDragLayer, { once: true });
       window.addEventListener('pointercancel', restoreDragLayer, { once: true });
       window.addEventListener('blur', restoreDragLayer, { once: true });
@@ -288,32 +305,18 @@ export function useKonvaDrag({
     const currentVisualY = yLogical + boundOffsetY;
 
     // 🎯 حدود السحب الحر لعناصر التصميم (أو الكتلة الموحدة للتحديد المتعدد):
-    // للعناصر العادية (أصغر من الورقة): احترام هامش 25% حول الورقة لمنع ضياع العنصر.
-    // للعناصر المكبرة (W > canvasWidth أو H > canvasHeight — مثل صورة شخصية مكبرة لتأطير الوجه):
-    // السماح بتمرير كامل مساحة الصورة بحرية عبر الكانفاس ليتمكن المصمم من إظهار أي جزء مطلوب
-    // دون أن تُحبس الصورة أو تُجمَّد الحركة نتيجة انعكاس حدود Math.min/max:
-    let minVisualX = -canvasWidth * margin;
-    let maxVisualX = canvasWidth * (1 + margin) - boundWidth;
-    if (minVisualX > maxVisualX) {
-      minVisualX = canvasWidth * margin - boundWidth;
-      maxVisualX = canvasWidth * (1 - margin);
-    } else if (boundWidth > canvasWidth) {
-      minVisualX = Math.min(minVisualX, canvasWidth * margin - boundWidth);
-      maxVisualX = Math.max(maxVisualX, canvasWidth * (1 - margin));
-    }
+    // القاعدة المشتركة مع إزاحة الأسهم في getCanvasVisualBounds — هامش 25%
+    // للعناصر العادية، وتمرير حر للعناصر الأكبر من الورقة (تأطير الوجه).
+    const bounds = getCanvasVisualBounds(
+      boundWidth,
+      boundHeight,
+      canvasWidth,
+      canvasHeight,
+      margin,
+    );
 
-    let minVisualY = -canvasHeight * margin;
-    let maxVisualY = canvasHeight * (1 + margin) - boundHeight;
-    if (minVisualY > maxVisualY) {
-      minVisualY = canvasHeight * margin - boundHeight;
-      maxVisualY = canvasHeight * (1 - margin);
-    } else if (boundHeight > canvasHeight) {
-      minVisualY = Math.min(minVisualY, canvasHeight * margin - boundHeight);
-      maxVisualY = Math.max(maxVisualY, canvasHeight * (1 - margin));
-    }
-
-    const clampedVisualX = Math.max(minVisualX, Math.min(maxVisualX, currentVisualX));
-    const clampedVisualY = Math.max(minVisualY, Math.min(maxVisualY, currentVisualY));
+    const clampedVisualX = Math.max(bounds.minX, Math.min(bounds.maxX, currentVisualX));
+    const clampedVisualY = Math.max(bounds.minY, Math.min(bounds.maxY, currentVisualY));
     xLogical = clampedVisualX - boundOffsetX;
     yLogical = clampedVisualY - boundOffsetY;
 
@@ -395,6 +398,8 @@ export function useKonvaDrag({
     } catch {
       // تجاهل آمن
     }
+    // انتهاء طبيعي — أزل مستمعي الأمان الثلاثة كي لا يتراكموا لكل سحب
+    dragSafetyCleanupRef.current?.();
     const { selectedIds, updateElements, pushHistory } = useEditorStore.getState();
     const draggedId = element.id;
     const startPos = dragStartPositionsRef.current[draggedId];

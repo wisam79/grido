@@ -158,11 +158,10 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
         data-testid="element-add-text-plain"
         onClick={handleAddPlain}
         className={cn(
-          'flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-primary-action px-3 text-control font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
+          'flex h-8 w-full items-center justify-center rounded-md bg-primary-action px-3 text-control font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
           focusRing,
         )}
       >
-        <Plus className="w-3.5 h-3.5" weight="bold" />
         <span>إضافة نص</span>
       </button>
 

@@ -84,10 +84,11 @@ export const createElementSelectionSlice: StateCreator<
   },
 
   selectAllElements: () => {
-    const visibleIds = get()
-      .elements.filter((el) => el.visible !== false)
+    // مطابقة تحديد المستطيل في الكانفاس: استبعاد العناصر المقفلة والمخفية (audit-11)
+    const selectableIds = get()
+      .elements.filter((el) => !el.locked && el.visible !== false)
       .map((el) => el.id);
-    set(normalizeSelection(visibleIds));
+    set(normalizeSelection(selectableIds));
   },
 
   setSelectedIds: (ids: string[]) => {

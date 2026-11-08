@@ -97,12 +97,12 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
     greeting: StickerTemplate[];
     seasonal: StickerTemplate[];
   } | null>(null);
+  const [stickerLoadError, setStickerLoadError] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadStickers = useCallback(() => {
+    setStickerLoadError(false);
     import('@/features/stickers/templates')
       .then((m) => {
-        if (cancelled) return;
         setStickerGroups({
           badges: m.BADGE_TEMPLATES,
           frames: m.FRAME_TEMPLATES,
@@ -113,11 +113,13 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
       })
       .catch((err) => {
         logger.warn('Failed to load sticker templates', err);
+        setStickerLoadError(true);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    loadStickers();
+  }, [loadStickers]);
 
   const displayedStickers = useMemo(() => {
     if (!stickerGroups) return [];
@@ -230,7 +232,6 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             className="w-full h-8 px-2.5 rounded-md text-control font-semibold transition-colors flex items-center justify-between cursor-pointer select-none"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Stamp className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               <span className="truncate">استوديو الملصقات</span>
             </div>
             <CaretRight
@@ -254,9 +255,21 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
           />
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة ورشيقة */}
           <div className="grid grid-cols-2 gap-1.5 px-0.5">
-            {!stickerGroups && (
+            {!stickerGroups && !stickerLoadError && (
               <div className="col-span-2 flex items-center justify-center py-6 text-xs text-muted-foreground">
-                جارٍ تحميل الملصقات…
+                جاري تحميل الملصقات...
+              </div>
+            )}
+            {stickerLoadError && (
+              <div className="col-span-2 flex flex-col items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+                <span>تعذر تحميل الملصقات</span>
+                <button
+                  type="button"
+                  onClick={loadStickers}
+                  className="rounded px-2.5 py-1 text-mini font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  إعادة المحاولة
+                </button>
               </div>
             )}
             {displayedStickers.map((tmpl) => {

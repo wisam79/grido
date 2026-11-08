@@ -12,6 +12,10 @@ import {
   zoomInStore,
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
+import {
+  clampElementPositionToCanvas,
+  resizeElementAroundCenter,
+} from '@/lib/canvas/element-geometry';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
@@ -585,26 +589,31 @@ export function useKeyboardShortcuts() {
       // Alt + ArrowUp / ArrowDown = Smooth scaling of selected element (توسيع / تقليص ناعم للعنصر)
       if (selectedIds.length > 0 && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         e.preventDefault();
-        const { elements, updateElements, updateElement } = useEditorStore.getState();
+        const { elements, updateElements, updateElement, canvasWidth, canvasHeight } =
+          useEditorStore.getState();
         const isGrow = e.key === 'ArrowUp';
         const factor = e.shiftKey ? (isGrow ? 1.05 : 0.95) : isGrow ? 1.015 : 0.985;
+        // نفس أرضية مقابض المحوّل (10 بكسل) بلا سقف اعتباطي يخالفه
+        const minW = 10 / Math.max(1, canvasWidth);
+        const minH = 10 / Math.max(1, canvasHeight);
 
         const patches = selectedIds
           .map((id) => {
             const el = elements.find((x) => x.id === id);
             if (!el || el.locked) return null;
 
-            const newW = Math.max(0.01, Math.min(2.0, el.width * factor));
-            const newH = Math.max(0.01, Math.min(2.0, el.height * factor));
-            const dw = newW - el.width;
-            const dh = newH - el.height;
+            const newW = Math.max(minW, el.width * factor);
+            const newH = Math.max(minH, el.height * factor);
+            if (newW === el.width && newH === el.height) return null;
 
-            // الحفاظ على مركز العنصر ثابتاً أثناء التكبير/التصغير
+            // المركز المرئي يبقى ثابتاً ولو كان العنصر مدوّراً — كل العقد
+            // تدور حول أصلها العلوي الأيسر، فالإزاحة تُشتق من صندوق الدوران.
+            const { x, y } = resizeElementAroundCenter(el, newW, newH, canvasWidth, canvasHeight);
             const patch: Partial<CanvasElement> = {
               width: newW,
               height: newH,
-              x: el.x - dw / 2,
-              y: el.y - dh / 2,
+              x,
+              y,
             };
 
             if (el.type === 'text' && typeof (el as { fontSize?: number }).fontSize === 'number') {
@@ -640,7 +649,8 @@ export function useKeyboardShortcuts() {
         ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
       ) {
         e.preventDefault();
-        const { elements, updateElements, updateElement } = useEditorStore.getState();
+        const { elements, updateElements, updateElement, canvasWidth, canvasHeight } =
+          useEditorStore.getState();
         const step = e.shiftKey ? 0.015 : 0.002;
         let dx = 0;
         let dy = 0;
@@ -653,12 +663,15 @@ export function useKeyboardShortcuts() {
           .map((id) => {
             const el = elements.find((x) => x.id === id);
             if (el && !el.locked) {
+              // نفس قص السحب على الصندوق المرئي المدوّر — الأصل وحده كان
+              // يسمح بدفع عنصر مدوّر بالكامل خارج الكانفس فيختفي (audit-3).
               return {
                 id,
-                patch: {
-                  x: Math.max(-0.5, Math.min(1, el.x + dx)),
-                  y: Math.max(-0.5, Math.min(1, el.y + dy)),
-                },
+                patch: clampElementPositionToCanvas(
+                  { ...el, x: el.x + dx, y: el.y + dy },
+                  canvasWidth,
+                  canvasHeight,
+                ),
               };
             }
             return null;
@@ -770,7 +783,13 @@ export function useKeyboardShortcuts() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('paste', handlePaste);
-      if (nudgeTimeout) clearTimeout(nudgeTimeout);
+      // تفريغ خطوة التراجع المعلقة قبل إلغاء المؤقت وإلا ضاعت إزاحة/تحجيم
+      // الأسهم الأخير من سجل التراجع عند فك التركيب (audit-14).
+      if (nudgeTimeout) {
+        clearTimeout(nudgeTimeout);
+        nudgeTimeout = null;
+        useEditorStore.getState().pushHistory();
+      }
     };
   }, []);
 }

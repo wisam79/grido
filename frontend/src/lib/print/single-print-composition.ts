@@ -131,6 +131,11 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
     if (el.filter && !GO_SUPPORTED_FILTERS.has(el.filter)) {
       return fail(`مرشح غير مدعوم في الخدمة (${el.filter})`);
     }
+    // قناع القص المتجهي (دائرة/نجمة/قلب) يُرسم في Konva عبر clipFunc — حمولة
+    // المسار السريع لا تحمل القناع فيطبع Go الصورة مستطيلًا كاملًا (audit-2).
+    if ((el as ImageElement).maskShape && (el as ImageElement).maskShape !== 'none') {
+      return fail('عنصر مقنّع (المسار السريع يرسم مستطيلاً كاملاً بلا قص)');
+    }
     // 🛡️ إذا كان العنصر يتجاوز حدود الكانفاس (مثل صورة مكبرة أو مزاحة لتأطير الوجه)،
     // فإن رسم العنصر مباشرة كـ PrintItem مستقل في Go سيتجاوز بطاقة الورقة أو يرفضه
     // حارس الحدود (invalid item geometry أو overflowItem). يتطلب هذا قَصّاً دقيقاً

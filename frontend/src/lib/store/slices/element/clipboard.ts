@@ -27,11 +27,13 @@ export const createElementClipboardSlice: StateCreator<
       try {
         if (cloned.length === 1 && cloned[0].type === 'text') {
           const textVal = (cloned[0] as TextElement).text || '';
-          navigator.clipboard.writeText(textVal);
+          void navigator.clipboard?.writeText(textVal)?.catch(() => {});
         } else {
-          navigator.clipboard.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned));
+          void navigator.clipboard
+            ?.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned))
+            ?.catch(() => {});
         }
-      } catch (e) {
+      } catch {
         // Safe fallback if clipboard write API fails or is restricted
       }
     }
@@ -57,11 +59,13 @@ export const createElementClipboardSlice: StateCreator<
     try {
       if (cloned.length === 1 && cloned[0].type === 'text') {
         const textVal = (cloned[0] as TextElement).text || '';
-        navigator.clipboard.writeText(textVal);
+        void navigator.clipboard?.writeText(textVal)?.catch(() => {});
       } else {
-        navigator.clipboard.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned));
+        void navigator.clipboard
+          ?.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned))
+          ?.catch(() => {});
       }
-    } catch (e) {
+    } catch {
       // Safe fallback if clipboard write API fails
     }
 
@@ -86,8 +90,7 @@ export const createElementClipboardSlice: StateCreator<
       let newGroupId = el.groupId;
       if (el.groupId) {
         if (!groupMappings[el.groupId]) {
-          groupMappings[el.groupId] =
-            `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          groupMappings[el.groupId] = uid();
         }
         newGroupId = groupMappings[el.groupId];
       }
@@ -99,6 +102,9 @@ export const createElementClipboardSlice: StateCreator<
         x: Math.min(el.x + 0.03, 0.9),
         y: Math.min(el.y + 0.03, 0.9),
         zIndex: nextZIndex(nextElements),
+        // تحييد القفل والإخفاء: العنصر الملصوق يولد مرئياً وحراً للتحرير
+        locked: false,
+        visible: true,
       };
 
       nextElements.push(pasted);

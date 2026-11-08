@@ -104,21 +104,9 @@ const RASTERIZE_MESSAGES: Record<Exclude<RasterizeResult, 'ok'>, string> = {
 
 const MERGE_OPS: { op: BooleanOp; label: string; icon: React.ReactNode }[] = [
   { op: 'union', label: 'اتحاد', icon: <ShapeUnion className="w-3.5 h-3.5" /> },
-  {
-    op: 'subtract',
-    label: 'طرح (الأمامية تقطع الخلفية)',
-    icon: <ShapeSubtract className="w-3.5 h-3.5" />,
-  },
-  {
-    op: 'intersect',
-    label: 'تقاطع (التداخل فقط)',
-    icon: <ShapeIntersect className="w-3.5 h-3.5" />,
-  },
-  {
-    op: 'exclude',
-    label: 'استثناء (ما عدا التداخل)',
-    icon: <ShapeExclude className="w-3.5 h-3.5" />,
-  },
+  { op: 'subtract', label: 'طرح', icon: <ShapeSubtract className="w-3.5 h-3.5" /> },
+  { op: 'intersect', label: 'تقاطع', icon: <ShapeIntersect className="w-3.5 h-3.5" /> },
+  { op: 'exclude', label: 'استثناء', icon: <ShapeExclude className="w-3.5 h-3.5" /> },
 ];
 
 export const FreeformLayersTab = React.memo(function FreeformLayersTab() {

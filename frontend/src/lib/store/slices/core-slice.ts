@@ -57,7 +57,7 @@ export interface CoreSlice {
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
 
-  setMode: (mode: EditorMode) => void;
+  setMode: (mode: EditorMode, options?: { recordHistory?: boolean }) => void;
   setCanvasSize: (w: number, h: number) => void;
   setBackgroundColor: (c: string) => void;
   /** تعيين لون نهاية تدرج الخلفية — null يزيل التدرج ويعيد التعبئة المصمتة */
@@ -161,7 +161,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   // تفضيل عرض محفوظ محلياً (مثل حجم الألواح) — يُقرأ مرة واحدة عند إنشاء المتجر
   canvasFitMode: readStoredFitMode(),
 
-  setMode: (mode) => {
+  setMode: (mode, options) => {
     if (get().mode === mode) return;
 
     set((s) => {
@@ -212,6 +212,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         backgroundGradientAngle: targetGradientAngle,
         selectedId: null,
         selectedIds: [],
+        // تبديل الوضع يغلق محرر النص — وإلا أعاد overlay فتح نفسه وسرق التركيز
+        // عند العودة للوضع الحر (audit-13).
+        editingTextId: null,
       };
 
       // إذا تم الانتقال لوضع الكولاج وكانت الخانات فارغة، نقوم بإعادة بناء الخلايا لتجنب ظهور الكانفس فارغاً
@@ -298,8 +301,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
       return nextState;
     });
-    // تبديل الوضع قابل للتراجع — اللقطة الآن تتضمن mode (إصلاح E-4)
-    get().pushHistory();
+    // تبديل الوضع قابل للتراجع — اللقطة الآن تتضمن mode (إصلاح E-4).
+    // recordHistory:false يدمج التبديل في خطوة تاريخ واحدة يدفعها المستدعي
+    // لاحقاً (نقل التصميم للكولاج — audit-6).
+    if (options?.recordHistory !== false) get().pushHistory();
   },
 
   setCanvasSize: (w, h) => {
