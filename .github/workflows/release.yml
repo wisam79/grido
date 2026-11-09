@@ -186,7 +186,11 @@ jobs:
           }
           if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") -and -not (Test-Path "C:\Program Files\NSIS\makensis.exe")) {
             Write-Host "Attempting choco install nsis..."
-            choco install nsis -y --retry 3
+            try {
+              choco install nsis -y --no-progress
+            } catch {
+              Write-Warning "choco failed: $_"
+            }
           }
           if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") -and -not (Test-Path "C:\Program Files\NSIS\makensis.exe")) {
             Write-Host "Attempting direct download of NSIS..."
@@ -200,6 +204,7 @@ jobs:
           }
           Write-Host "Found NSIS at: $nsisDir"
           $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $global:LASTEXITCODE = 0
 
       - name: Check & Generate Installer Assets
         shell: pwsh
