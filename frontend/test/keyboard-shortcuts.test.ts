@@ -24,6 +24,37 @@ describe('useKeyboardShortcuts - Keyboard Shortcuts Hook Tests', () => {
     user = userEvent.setup();
   });
 
+  it('keeps Tab for native focus navigation and toggles Zen only with Ctrl+.', async () => {
+    const listener = vi.fn();
+    const first = document.createElement('button');
+    const second = document.createElement('button');
+    document.body.append(first, second);
+    first.focus();
+    window.addEventListener('grido:toggle-zen-mode', listener);
+
+    renderHook(() => useKeyboardShortcuts());
+
+    await user.tab();
+    expect(document.activeElement).toBe(second);
+    expect(listener).not.toHaveBeenCalled();
+
+    second.blur();
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: '.',
+        code: 'Period',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener('grido:toggle-zen-mode', listener);
+    first.remove();
+    second.remove();
+  });
+
   it('should trigger undo on Ctrl+Z and redo on Ctrl+Shift+Z / Ctrl+Y', async () => {
     const undoSpy = vi.spyOn(useEditorStore.getState(), 'undo');
     const redoSpy = vi.spyOn(useEditorStore.getState(), 'redo');

@@ -391,6 +391,7 @@ export async function detectDocumentAuto(
   originalWidth: number,
   originalHeight: number,
   mode: DetectionMode = 'single',
+  signal?: AbortSignal,
 ): Promise<DetectionResult> {
   const fallbackCorners = defaultInsetCorners(originalWidth, originalHeight);
   const fallbackDoc: DetectedDocument = {
@@ -404,7 +405,7 @@ export async function detectDocumentAuto(
   try {
     // 🚀 المسار الأصلي في Go أولاً: كشف فائق الدقة بـ FastViT-SA24 مع أركان Heatmap دقيقة
     if (!engineOverride && typeof window !== 'undefined' && 'src' in src && src.src) {
-      const nativeResult = await detectDocumentViaGo(src as HTMLImageElement);
+      const nativeResult = await detectDocumentViaGo(src as HTMLImageElement, signal);
       if (
         nativeResult &&
         nativeResult.confidence >= ML_STANDALONE_MIN &&
@@ -519,6 +520,7 @@ export async function detectDocumentAuto(
       releaseIngestCanvas(ingest);
     }
   } catch (error) {
+    if (signal?.aborted) throw error;
     logger.warn('ML detection failed:', error);
     if (typeof process === 'undefined' || process.env?.NODE_ENV !== 'test') {
       toast.error(

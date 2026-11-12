@@ -64,9 +64,7 @@ test.describe('Transformer box follows store geometry', () => {
 
     // تكبير ناعم (عامل 1.015 لكل ضغطة) — تغيّر أبعاد من المتجر
     await page.keyboard.press('Alt+ArrowUp');
-    await page.waitForTimeout(50);
     await page.keyboard.press('Alt+ArrowUp');
-    await page.waitForTimeout(50);
     await expect
       .poll(
         async () => {
@@ -84,7 +82,6 @@ test.describe('Transformer box follows store geometry', () => {
 
     // إزاحة يميناً — تغيّر موضع من المتجر
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(50);
     await page.keyboard.press('ArrowRight');
     await expect
       .poll(

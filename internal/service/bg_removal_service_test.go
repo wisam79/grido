@@ -78,6 +78,23 @@ func TestBgRemovalService_EndToEnd(t *testing.T) {
 	}
 }
 
+func TestBgRemovalService_CloseIsIdempotentAndRejectsReuse(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("native lifecycle is Windows-only")
+	}
+	mediaSvc := NewMediaService()
+	svc := NewBgRemovalService(NewImageProcessorService(mediaSvc), mediaSvc)
+	if err := svc.Close(); err != nil {
+		t.Fatalf("first close: %v", err)
+	}
+	if err := svc.Close(); err != nil {
+		t.Fatalf("second close: %v", err)
+	}
+	if err := svc.Warmup(); err == nil {
+		t.Fatal("closed service must reject reuse")
+	}
+}
+
 func TestBgRemovalService_InvalidPath(t *testing.T) {
 	mediaSvc := NewMediaService()
 	imgProc := NewImageProcessorService(mediaSvc)

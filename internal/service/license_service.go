@@ -33,6 +33,7 @@ import (
 // token وحفظه في المخزن قبل ندائنا (SEC-08) — نتبنّى الحالة الجديدة من المخزن
 // بدل مسح الجلسة، فالتدوير من نداء أخ لا يعني أن جلستنا باطلة.
 var ErrRefreshTokenRotated = errors.New("refresh token rotated by a concurrent session call")
+var ErrSessionTransitionStale = errors.New("ERR_SESSION_TRANSITION_STALE: session transition superseded")
 
 type LicenseService struct {
 	repo domain.LicenseRepository
@@ -44,6 +45,10 @@ type LicenseService struct {
 	// الجلسة فقط (CheckStatus/ActivateKey/Logout) — المساعدات الداخلية بلا قفل
 	// لأن sync.Mutex غير قابل لإعادة الدخول (re-entrancy).
 	sessionMu sync.Mutex
+	// transitionGeneration يحدد مالك آخر انتقال مصادقة. لا يُحتجز قفل أثناء الشبكة؛
+	// النتيجة تفحص الجيل قبل commit، وLogout يبطل كل النتائج المنتظرة فوراً.
+	transitionMu         sync.Mutex
+	transitionGeneration uint64
 	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي — منفذ محقون
 	// (MAINT-06). الافتراضي جسر الرنتايم (بلا تطبيق Wails يفشل بخطأ واضح)،
 	// ويُستبدل في الاختبارات بـ SetBrowserOpener أو مباشرةً بالحقل.
@@ -55,6 +60,45 @@ func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 		repo:        repo,
 		browserOpen: NewWailsRuntimeBridge().OpenURL,
 	}
+}
+
+func (s *LicenseService) beginSessionTransition() uint64 {
+	s.transitionMu.Lock()
+	defer s.transitionMu.Unlock()
+	s.transitionGeneration++
+	return s.transitionGeneration
+}
+
+func (s *LicenseService) isCurrentSessionTransition(generation uint64) bool {
+	s.transitionMu.Lock()
+	defer s.transitionMu.Unlock()
+	return s.transitionGeneration == generation
+}
+
+func (s *LicenseService) commitAuthenticatedSession(generation uint64, profile *domain.UserProfile) error {
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+	if !s.isCurrentSessionTransition(generation) {
+		return ErrSessionTransitionStale
+	}
+	if err := s.repo.Clear(); err != nil {
+		slog.Warn("Failed to clear previous local session", "error", err)
+	}
+	if err := s.repo.Save(profile); err != nil {
+		return fmt.Errorf("failed to save local session: %w", err)
+	}
+	if !s.isCurrentSessionTransition(generation) {
+		_ = s.repo.Clear()
+		return ErrSessionTransitionStale
+	}
+	// claimSession قد ينتظر الشبكة؛ transitionMu يبقى متاحاً لـLogout كي يبطل الجيل.
+	s.claimSession(profile.Token)
+	if !s.isCurrentSessionTransition(generation) {
+		_ = s.repo.Clear()
+		_ = utils.ClearSessionID()
+		return ErrSessionTransitionStale
+	}
+	return nil
 }
 
 // SetBrowserOpener يستبدل منفذ فتح المتصفح المحقون (اختبارات/بيئات أخرى) — nil يُتجاهل
@@ -376,6 +420,8 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 }
 
 func (s *LicenseService) Logout() error {
+	// يبطل كل Login/OTP/OAuth/Recovery معلّق قبل انتظار الشبكة أو قفل الجلسة.
+	s.beginSessionTransition()
 	// 🛡️ (SEC-08) تمسّ الجلسة (repo.Clear) — تُسلسَل مع CheckStatus كي لا يحفظ
 	// فحص متزامن جلسة فوق مسحها بعد الخروج
 	s.sessionMu.Lock()

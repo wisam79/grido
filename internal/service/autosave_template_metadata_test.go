@@ -64,6 +64,28 @@ func TestSaveCustomTemplateWithMetadata_RejectsInvalid(t *testing.T) {
 	}
 }
 
+func TestSaveCustomTemplate_RejectsMalformedPayloadBeforeWrite(t *testing.T) {
+	svc := newMetadataTestService(t)
+	cases := []struct {
+		name  string
+		slots int
+		cells string
+	}{
+		{"", 1, `[]`},
+		{"bad-json", 1, `{broken`},
+		{"too-many-slots", 201, `[]`},
+	}
+	for _, tc := range cases {
+		if _, err := svc.SaveCustomTemplate(tc.name, tc.slots, tc.cells); err == nil {
+			t.Fatalf("expected malformed template %q to be rejected", tc.name)
+		}
+	}
+	found, err := svc.GetCustomTemplates()
+	if err != nil || len(found) != 0 {
+		t.Fatalf("malformed templates reached persistence: count=%d err=%v", len(found), err)
+	}
+}
+
 func TestSaveCustomTemplate_LegacyPathStillWorks(t *testing.T) {
 	svc := newMetadataTestService(t)
 	tmpl, err := svc.SaveCustomTemplate("بدون metadata", 2, `[]`)

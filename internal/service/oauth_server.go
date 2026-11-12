@@ -228,6 +228,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	if SupabaseURL == "" {
 		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة")
 	}
+	generation := s.beginSessionTransition()
 
 	callbackURL, tokenChan, errChan, shutdown, _, err := startOAuthLocalServer()
 	if err != nil {
@@ -301,13 +302,8 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		UpdatedAt:    time.Now(),
 	}
 
-	if err := s.repo.Clear(); err != nil {
-		slog.Warn("Failed to clear repo", "error", err)
+	if err := s.commitAuthenticatedSession(generation, userProfile); err != nil {
+		return nil, err
 	}
-	if err := s.repo.Save(userProfile); err != nil {
-		return nil, fmt.Errorf("failed to save session: %w", err)
-	}
-	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
-	s.claimSession(userProfile.Token)
 	return userProfile, nil
 }

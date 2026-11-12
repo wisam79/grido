@@ -11,6 +11,25 @@ import type Konva from 'konva';
 
 const logger = createLogger('konva-export-utils');
 const activeStageCaptures = new WeakMap<object, number>();
+const stageCaptureTails = new WeakMap<object, Promise<void>>();
+
+async function withSerializedStageCapture<T>(stage: object, capture: () => Promise<T>): Promise<T> {
+  const previous = stageCaptureTails.get(stage) ?? Promise.resolve();
+  let release!: () => void;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const tail = previous.catch(() => {}).then(() => current);
+  stageCaptureTails.set(stage, tail);
+
+  await previous.catch(() => {});
+  try {
+    return await capture();
+  } finally {
+    release();
+    if (stageCaptureTails.get(stage) === tail) stageCaptureTails.delete(stage);
+  }
+}
 
 /** يحمي كاش الالتقاط من مؤقتات التحرير وتغييرات القص المؤقتة. */
 export function isStageCaptureActive(stage: object | null | undefined): boolean {
@@ -516,58 +535,60 @@ export async function captureStageBlob(
   captureRect?: { x: number; y: number; width: number; height: number },
   options?: CaptureStageOptions,
 ): Promise<Blob | null> {
-  const captureCount = activeStageCaptures.get(stage) ?? 0;
-  activeStageCaptures.set(stage, captureCount + 1);
-  const prevPos = { x: stage.x(), y: stage.y() };
-  const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
-  let upgradedImages: UpgradedImageRecord[] = [];
-  let cachedNodes: ExportCacheNode[] = [];
+  return withSerializedStageCapture(stage, async () => {
+    const captureCount = activeStageCaptures.get(stage) ?? 0;
+    activeStageCaptures.set(stage, captureCount + 1);
+    const prevPos = { x: stage.x(), y: stage.y() };
+    const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
+    let upgradedImages: UpgradedImageRecord[] = [];
+    let cachedNodes: ExportCacheNode[] = [];
 
-  try {
-    // ملكية الصور: عناصر العرض المشتقة (2048px من Go) تجلب أصولها الكاملة
-    // انتظاراً أولاً (captureStageBlob غير متزامنة أصلاً فالانتظار ممكن)
-    // ثم تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
-    if (options?.useFullResolution) {
-      await preloadImagesForFullResolution(stage);
-    }
-    upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
-    cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
-    stage.position({ x: 0, y: 0 });
-    stage.scale({ x: 1, y: 1 });
-    stage.batchDraw();
-
-    const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
-      // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
-      // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
-      // المؤقت فقط. أوراق 300DPI كبيرة (A4/A3) تحتاج نسبة 6×+ مع معاينة 400px،
-      // وقسرها على 4× كان يلتقط الكانفاس بدقة مصغرة تُرسم مشوهة عند التسطيح.
-      const MAX_EXPORT_RATIO = 8;
-      const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
-      // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل دقة التصدير
-      // ثابتة مهما كان مستوى التكبير على الشاشة.
-      const exportCanvas = captureRect
-        ? stage.toCanvas({ ...captureRect, pixelRatio: safePixelRatio })
-        : stage.toCanvas({ pixelRatio: safePixelRatio });
-      return await new Promise<Blob | null>((resolve) => {
-        exportCanvas.toBlob(resolve, mimeType, quality);
-      });
-    });
-
-    return blob;
-  } finally {
     try {
-      stage.position(prevPos);
-      stage.scale(prevScale);
-      restoreImageNodes(upgradedImages);
-      restoreScreenCache(cachedNodes);
+      // ملكية الصور: عناصر العرض المشتقة (2048px من Go) تجلب أصولها الكاملة
+      // انتظاراً أولاً (captureStageBlob غير متزامنة أصلاً فالانتظار ممكن)
+      // ثم تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
+      if (options?.useFullResolution) {
+        await preloadImagesForFullResolution(stage);
+      }
+      upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
+      cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+      stage.position({ x: 0, y: 0 });
+      stage.scale({ x: 1, y: 1 });
       stage.batchDraw();
+
+      const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
+        // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
+        // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
+        // المؤقت فقط. أوراق 300DPI كبيرة (A4/A3) تحتاج نسبة 6×+ مع معاينة 400px،
+        // وقسرها على 4× كان يلتقط الكانفاس بدقة مصغرة تُرسم مشوهة عند التسطيح.
+        const MAX_EXPORT_RATIO = 8;
+        const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
+        // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل دقة التصدير
+        // ثابتة مهما كان مستوى التكبير على الشاشة.
+        const exportCanvas = captureRect
+          ? stage.toCanvas({ ...captureRect, pixelRatio: safePixelRatio })
+          : stage.toCanvas({ pixelRatio: safePixelRatio });
+        return await new Promise<Blob | null>((resolve) => {
+          exportCanvas.toBlob(resolve, mimeType, quality);
+        });
+      });
+
+      return blob;
     } finally {
-      // 🛡️ الأصول الكاملة المجلوبة للالتقاط لا تبقى حية بعده — تفريغ جسر
-      // الالتقاط وكاش العود يحرر الذاكرة فوراً ويحفظ مكسب ملكية الصور.
-      releaseCaptureOriginals();
-      const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
-      if (remaining > 0) activeStageCaptures.set(stage, remaining);
-      else activeStageCaptures.delete(stage);
+      try {
+        stage.position(prevPos);
+        stage.scale(prevScale);
+        restoreImageNodes(upgradedImages);
+        restoreScreenCache(cachedNodes);
+        stage.batchDraw();
+      } finally {
+        // 🛡️ الأصول الكاملة المجلوبة للالتقاط لا تبقى حية بعده — تفريغ جسر
+        // الالتقاط وكاش العود يحرر الذاكرة فوراً ويحفظ مكسب ملكية الصور.
+        releaseCaptureOriginals();
+        const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
+        if (remaining > 0) activeStageCaptures.set(stage, remaining);
+        else activeStageCaptures.delete(stage);
+      }
     }
-  }
+  });
 }

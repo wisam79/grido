@@ -4,15 +4,12 @@ package service
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/disintegration/imaging"
 	ort "github.com/yalue/onnxruntime_go"
-
-	"grido/internal/utils"
 )
 
 //go:embed ai_assets/fastvit_sa24.onnx
@@ -24,6 +21,8 @@ type ScannerDetectorService struct {
 
 	mu           sync.Mutex
 	initErr      error
+	closed       bool
+	runtimeOwned bool
 	session      *ort.AdvancedSession
 	inputTensor  *ort.Tensor[float32]
 	outputTensor *ort.Tensor[float32]
@@ -38,6 +37,9 @@ func NewScannerDetectorService(imageProc *ImageProcessorService, mediaService *M
 }
 
 func (s *ScannerDetectorService) ensureInitializedLocked() error {
+	if s.closed {
+		return errors.New("scanner detector service is closed")
+	}
 	if s.isReady {
 		return nil
 	}
@@ -55,31 +57,19 @@ func (s *ScannerDetectorService) initEngine() error {
 		return fmt.Errorf("embedded fastvit_sa24.onnx is empty")
 	}
 
-	// 1. Ensure onnxruntime.dll is initialized (extracted by bg_removal or here)
-	binDir := filepath.Join(utils.GetAppDir(), "bin")
-	_ = os.MkdirAll(binDir, 0o755)
-	targetDllPath := filepath.Join(binDir, "onnxruntime.dll")
-
-	if len(embeddedOnnxRuntimeDLL) > 0 {
-		extractNeeded := true
-		if stat, err := os.Stat(targetDllPath); err == nil {
-			if stat.Size() == int64(len(embeddedOnnxRuntimeDLL)) {
-				extractNeeded = false
-			}
-		}
-		if extractNeeded {
-			_ = utils.AtomicWriteFile(targetDllPath, embeddedOnnxRuntimeDLL, 0o755)
-		}
+	if err := acquireONNXRuntime(); err != nil {
+		return err
 	}
-
-	ort.SetSharedLibraryPath(targetDllPath)
-	if !ort.IsInitialized() {
-		if err := ort.InitializeEnvironment(); err != nil {
-			return fmt.Errorf("failed to initialize onnxruntime environment: %w", err)
+	s.runtimeOwned = true
+	initialized := false
+	defer func() {
+		if !initialized && s.runtimeOwned {
+			s.runtimeOwned = false
+			_ = releaseONNXRuntime()
 		}
-	}
+	}()
 
-	// 2. Pre-allocate reusable input [1, 3, 256, 256] and output [1, 4, 128, 128] tensors
+	// Pre-allocate reusable input [1, 3, 256, 256] and output [1, 4, 128, 128] tensors
 	inputShape := ort.NewShape(1, 3, 256, 256)
 	inTensor, err := ort.NewEmptyTensor[float32](inputShape)
 	if err != nil {
@@ -112,6 +102,7 @@ func (s *ScannerDetectorService) initEngine() error {
 	s.outputTensor = outTensor
 	s.session = session
 	s.isReady = true
+	initialized = true
 	return nil
 }
 
@@ -285,5 +276,10 @@ func (s *ScannerDetectorService) Close() error {
 		s.outputTensor = nil
 	}
 	s.isReady = false
+	s.closed = true
+	if s.runtimeOwned {
+		s.runtimeOwned = false
+		return releaseONNXRuntime()
+	}
 	return nil
 }

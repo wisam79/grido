@@ -35,11 +35,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { usePrintLayout } from '@/hooks/use-print-layout';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
-import {
-  upgradeImagesToFullResolution,
-  restoreImageNodes,
-  type UpgradedImageRecord,
-} from '@/lib/canvas/konva-export-utils';
+import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
@@ -57,7 +53,6 @@ import {
 import { SheetPreview } from '../print/print-preview';
 import { usePrintExport } from '../print/use-print-export';
 import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
-import type Konva from 'konva';
 
 const logger = createLogger('print-dialog');
 
@@ -518,81 +513,49 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     let attempts = 0;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const generatePreview = () => {
+    const generatePreview = async () => {
       if (cancelled) return;
       const stage = stageRef.current;
       if (!stage || stage.width() <= 0) {
         if (attempts < 3) {
           attempts++;
-          retryTimer = setTimeout(generatePreview, 80);
+          retryTimer = setTimeout(() => void generatePreview(), 80);
         } else {
           const freshElements = useEditorStore.getState().elements;
           const firstImg = freshElements.find(
             (el): el is import('@/lib/store/types').ImageElement =>
               el.type === 'image' && Boolean(el.imageSrc),
           );
-          if (firstImg?.imageSrc) {
-            setPreviewImageSrc(firstImg.imageSrc);
-          }
+          if (!cancelled && firstImg?.imageSrc) setPreviewImageSrc(firstImg.imageSrc);
         }
         return;
       }
 
-      const transformers = stage.find('Transformer');
-      const gridLayers = stage.find('.grid-layer');
-      const columnsLayers = stage.find('.columns-layer');
-      const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
-      const paperShadows = stage.find('.paper-shadow-rect');
-      const overlayTools = stage.find('.overlay-tools-layer');
-      const slotPlaceholders = stage.find('.slot-placeholder');
-      const slotAddHandles = stage.find('.slot-add-handles');
-      const collageSelectionRings = stage.find('.collage-selection-ring');
-
-      const prevPos = { x: stage.x(), y: stage.y() };
-      const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
-      stage.position({ x: 0, y: 0 });
-      stage.scale({ x: 1, y: 1 });
-
-      let upgradedImages: UpgradedImageRecord[] = [];
-
+      let previewUrl = '';
       try {
         const { canvasWidth: cw, canvasHeight: ch } = useEditorStore.getState();
         const paperW = Math.max(cw || 1, 1);
         const paperH = Math.max(ch || 1, 1);
-        // 🖨️ RV-Print-WYSIWYG: معاينة الوضع الحر تعكس الدقة الحقيقية الكاملة للكانفاس (1:1 وبجودة PNG نقية)
-        // مع ترقية مصادر الصور للأصلية الكاملة، بدل تقليصها إلى 400 بكسل ومطّها ضبابياً.
-        // سقف أمان 4096 بكسل يمنع OOM في الكانفسات الفائقة مع ضمان 100% دقة للأحجام القياسية.
         const maxPreviewDim = 4096;
         const maxDim = Math.max(paperW, paperH);
         const pRatio = maxDim > maxPreviewDim ? maxPreviewDim / maxDim : 1;
-
-        upgradedImages = upgradeImagesToFullResolution(stage);
-
-        transformers.forEach((tr: Konva.Node) => tr.hide());
-        gridLayers.forEach((gl: Konva.Node) => gl.hide());
-        columnsLayers.forEach((cl: Konva.Node) => cl.hide());
-        guideLayers.forEach((gl: Konva.Node) => gl.hide());
-        paperShadows.forEach((ps: Konva.Node) => ps.hide());
-        overlayTools.forEach((ot: Konva.Node) => ot.hide());
-        slotPlaceholders.forEach((ph: Konva.Node) => ph.hide());
-        slotAddHandles.forEach((ah: Konva.Node) => ah.hide());
-        collageSelectionRings.forEach((ring: Konva.Node) => ring.hide());
-        stage.batchDraw();
-
-        const previewUrl = stage.toDataURL({
-          x: 0,
-          y: 0,
-          width: paperW,
-          height: paperH,
-          pixelRatio: pRatio,
-          mimeType: 'image/png',
+        const blob = await captureStageBlob(
+          stage,
+          pRatio,
+          'image/png',
+          undefined,
+          { x: 0, y: 0, width: paperW, height: paperH },
+          { useFullResolution: true },
+        );
+        if (cancelled || !blob) return;
+        previewUrl = URL.createObjectURL(blob);
+        setPreviewImageSrc((previous) => {
+          if (previous.startsWith('blob:')) URL.revokeObjectURL(previous);
+          return previewUrl;
         });
-
-        if (cancelled) return;
-        if (previewUrl) {
-          setPreviewImageSrc(previewUrl);
-        }
+        previewUrl = '';
       } catch (err) {
+        if (cancelled) return;
         logger.error('Failed to generate print preview image:', err);
         const freshElements = useEditorStore.getState().elements;
         const firstImg = freshElements.find(
@@ -600,32 +563,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             el.type === 'image' && Boolean(el.imageSrc),
         );
         if (firstImg?.imageSrc) {
-          setPreviewImageSrc(firstImg.imageSrc);
+          setPreviewImageSrc((previous) => {
+            if (previous.startsWith('blob:')) URL.revokeObjectURL(previous);
+            return firstImg.imageSrc;
+          });
         }
       } finally {
-        restoreImageNodes(upgradedImages);
-        transformers.forEach((tr: Konva.Node) => tr.show());
-        gridLayers.forEach((gl: Konva.Node) => gl.show());
-        columnsLayers.forEach((cl: Konva.Node) => cl.show());
-        guideLayers.forEach((gl: Konva.Node) => gl.show());
-        paperShadows.forEach((ps: Konva.Node) => ps.show());
-        overlayTools.forEach((ot: Konva.Node) => ot.show());
-        slotPlaceholders.forEach((ph: Konva.Node) => ph.show());
-        slotAddHandles.forEach((ah: Konva.Node) => ah.show());
-        collageSelectionRings.forEach((ring: Konva.Node) => ring.show());
-        stage.position(prevPos);
-        stage.scale(prevScale);
-        stage.batchDraw();
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
       }
     };
 
-    const timer = setTimeout(generatePreview, 30);
+    const timer = setTimeout(() => void generatePreview(), 30);
     return () => {
       cancelled = true;
       clearTimeout(timer);
       if (retryTimer) clearTimeout(retryTimer);
     };
   }, [open, stageRef, mode]);
+
+  useEffect(
+    () => () => {
+      if (previewImageSrc.startsWith('blob:')) URL.revokeObjectURL(previewImageSrc);
+    },
+    [previewImageSrc],
+  );
 
   const spaceUsedPercent = Math.round(
     ((actualCopies * imageWidthMM * imageHeightMM) / (availableWidthMM * availableHeightMM)) * 100,

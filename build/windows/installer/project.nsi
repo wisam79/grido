@@ -1,4 +1,4 @@
-Unicode true
+﻿Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
@@ -104,6 +104,69 @@ Function CreateDesktopShortcut
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 FunctionEnd
 
+# يحمي بيانات المستخدم من uninstallers القديمة التي كانت تحذف AppData أثناء
+# ترحيل التثبيت من machine-scope. النقل داخل المجلد الأب نفسه ذري ولا ينسخ DB/WAL.
+Function PreserveLegacyUserData
+    ClearErrors
+    IfFileExists "$APPDATA\GridoStudio.__migration_backup" 0 preserve_roaming_source
+    IfFileExists "$APPDATA\GridoStudio" preserve_conflict 0
+    Rename "$APPDATA\GridoStudio.__migration_backup" "$APPDATA\GridoStudio"
+    IfErrors preserve_failed
+
+    preserve_roaming_source:
+    IfFileExists "$APPDATA\GridoStudio" 0 preserve_local_backup
+    Rename "$APPDATA\GridoStudio" "$APPDATA\GridoStudio.__migration_backup"
+    IfErrors preserve_failed
+
+    preserve_local_backup:
+    IfFileExists "$LOCALAPPDATA\GridoStudio.__migration_backup" 0 preserve_local_source
+    IfFileExists "$LOCALAPPDATA\GridoStudio" preserve_conflict 0
+    Rename "$LOCALAPPDATA\GridoStudio.__migration_backup" "$LOCALAPPDATA\GridoStudio"
+    IfErrors preserve_failed
+
+    preserve_local_source:
+    IfFileExists "$LOCALAPPDATA\GridoStudio" 0 preserve_done
+    Rename "$LOCALAPPDATA\GridoStudio" "$LOCALAPPDATA\GridoStudio.__migration_backup"
+    IfErrors preserve_failed
+
+    preserve_done:
+    Return
+
+    preserve_conflict:
+    MessageBox MB_OK|MB_ICONSTOP "تعذر تأمين بيانات Grido قبل الترقية لوجود نسخة احتياطية متعارضة. لم تُحذف البيانات؛ أعد تسمية مجلد GridoStudio.__migration_backup ثم أعد المحاولة." /SD IDOK
+    Abort
+
+    preserve_failed:
+    Call RestoreLegacyUserData
+    MessageBox MB_OK|MB_ICONSTOP "تعذر تأمين بيانات Grido قبل تشغيل أداة الإزالة القديمة. أُوقفت الترقية لحماية المشاريع والوسائط." /SD IDOK
+    Abort
+FunctionEnd
+
+Function RestoreLegacyUserData
+    ClearErrors
+    IfFileExists "$APPDATA\GridoStudio.__migration_backup" 0 restore_local
+    IfFileExists "$APPDATA\GridoStudio" restore_conflict 0
+    Rename "$APPDATA\GridoStudio.__migration_backup" "$APPDATA\GridoStudio"
+    IfErrors restore_failed
+
+    restore_local:
+    IfFileExists "$LOCALAPPDATA\GridoStudio.__migration_backup" 0 restore_done
+    IfFileExists "$LOCALAPPDATA\GridoStudio" restore_conflict 0
+    Rename "$LOCALAPPDATA\GridoStudio.__migration_backup" "$LOCALAPPDATA\GridoStudio"
+    IfErrors restore_failed
+
+    restore_done:
+    Return
+
+    restore_conflict:
+    MessageBox MB_OK|MB_ICONSTOP "لم تُستعد بيانات Grido تلقائياً لأن مجلد الهدف أُعيد إنشاؤه. بياناتك محفوظة في GridoStudio.__migration_backup؛ أُوقفت الترقية دون حذفها." /SD IDOK
+    Abort
+
+    restore_failed:
+    MessageBox MB_OK|MB_ICONSTOP "فشلت استعادة بيانات Grido تلقائياً. بياناتك محفوظة في مجلد GridoStudio.__migration_backup؛ أُوقفت الترقية دون حذفها." /SD IDOK
+    Abort
+FunctionEnd
+
 Section
     !insertmacro wails.setShellContext
 
@@ -122,12 +185,27 @@ Section
     !insertmacro wails.setShellContext
 
     ReadRegStr $R0 HKLM "${UNINST_KEY}" "QuietUninstallString"
-    StrCmp $R0 "" +3
+    StrCmp $R0 "" legacy_read_normal
+        Call PreserveLegacyUserData
         nsExec::ExecToStack '$R0'
-        Goto legacy_migration_done
+        Pop $R1
+        Pop $R2
+        Call RestoreLegacyUserData
+        StrCmp $R1 "0" legacy_migration_done
+        MessageBox MB_OK|MB_ICONSTOP "فشلت إزالة النسخة القديمة (رمز $R1). أُعيدت بياناتك، وأُوقفت الترقية دون استبدال البرنامج." /SD IDOK
+        Abort
+
+    legacy_read_normal:
     ReadRegStr $R0 HKLM "${UNINST_KEY}" "UninstallString"
     StrCmp $R0 "" legacy_migration_done
+        Call PreserveLegacyUserData
         nsExec::ExecToStack '$R0 /S'
+        Pop $R1
+        Pop $R2
+        Call RestoreLegacyUserData
+        StrCmp $R1 "0" legacy_migration_done
+        MessageBox MB_OK|MB_ICONSTOP "فشلت إزالة النسخة القديمة (رمز $R1). أُعيدت بياناتك، وأُوقفت الترقية دون استبدال البرنامج." /SD IDOK
+        Abort
     legacy_migration_done:
 
     # Clean up legacy binaries if present to avoid dual-binary confusion
@@ -150,10 +228,10 @@ SectionEnd
 Section "uninstall"
     !insertmacro wails.setShellContext
 
-    # Clean up user's data from AppData\Roaming and LocalAppData
+    # بيانات المستخدم (المشاريع، القوالب، الحفظ التلقائي والوسائط) تبقى محفوظة
+    # افتراضياً لإتاحة إعادة التثبيت أو الترقية من دون فقدان العمل.
+    # حذف البيانات يحتاج إجراءً صريحاً مستقلاً داخل التطبيق، لا uninstall صامتاً.
     SetShellVarContext current
-    RMDir /r "$APPDATA\GridoStudio"
-    RMDir /r "$LOCALAPPDATA\GridoStudio"
 
     RMDir /r $INSTDIR
 

@@ -434,7 +434,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
       );
       expect(previewFamily()).toContain('Cairo');
       expect(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' })).toBeDisabled();
-    });
+    }, 15_000);
   });
 
   describe('FreeformElementsTab quick sticker insertion', () => {

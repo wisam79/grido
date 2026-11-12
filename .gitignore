@@ -110,6 +110,7 @@ promo/
 # Temporary caches & attachments
 .cache/
 .cloud-attachments/
+.video_agent/
 skills-lock.json
 
 # Audit screenshots (local only)

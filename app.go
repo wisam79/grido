@@ -27,6 +27,7 @@ type App struct {
 	crashGuardSvc  *service.CrashGuardService
 	memorySvc      *service.MemoryService
 	bgRemovalSvc   *service.BgRemovalService
+	scannerSvc     *service.ScannerDetectorService
 	startupFile    string
 }
 
@@ -37,12 +38,14 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 	memorySvc := service.NewMemoryService()
 	imageProc := service.NewImageProcessorService(mediaSvc)
 	bgRemovalSvc := service.NewBgRemovalService(imageProc, mediaSvc)
+	scannerDetector := service.NewScannerDetectorService(imageProc, mediaSvc)
 	return &App{
 		mediaSvc:       mediaSvc,
 		phoneBridgeSvc: phoneBridgeSvc,
 		aiSvc:          service.NewAIService(),
 		imageProc:      imageProc,
 		bgRemovalSvc:   bgRemovalSvc,
+		scannerSvc:     scannerDetector,
 		autosaveSvc:    service.NewAutosaveService(templates),
 		aiLogsSvc:      service.NewAiLogsService(),
 		desktopSvc:     desktopSvc,
@@ -79,15 +82,10 @@ func (a *App) ServiceShutdown() error {
 	if a.bgRemovalSvc != nil {
 		_ = a.bgRemovalSvc.Close()
 	}
+	if a.scannerSvc != nil {
+		_ = a.scannerSvc.Close()
+	}
 	return nil
-}
-
-func (a *App) Startup(ctx context.Context) {
-	_ = a.ServiceStartup(ctx, application.ServiceOptions{})
-}
-
-func (a *App) Shutdown(ctx context.Context) {
-	_ = a.ServiceShutdown()
 }
 
 func (a *App) LogFrontendError(level, message, stackTrace string) {

@@ -316,6 +316,33 @@ func withSupabaseStub(t *testing.T, ts *httptest.Server) {
 	t.Cleanup(func() { SupabaseURL, SupabaseAnonKey = oldURL, oldKey })
 }
 
+func TestLicenseService_StaleAuthenticationCommitCannotReviveLoggedOutSession(t *testing.T) {
+	svc, repo := newRefreshRaceTestService(t)
+	generation := svc.beginSessionTransition()
+	if err := svc.commitAuthenticatedSession(generation, &domain.UserProfile{
+		ID: "first", Email: "first@example.com", Token: "AT1", RefreshToken: "RT1",
+		Plan: "free", Status: "active",
+	}); err != nil {
+		t.Fatalf("seed commit: %v", err)
+	}
+
+	staleGeneration := svc.beginSessionTransition()
+	// Logout يبدأ انتقالاً أحدث قبل أي انتظار شبكي، فيبطل نتيجة الدخول المعلقة.
+	svc.beginSessionTransition()
+	_ = repo.Clear()
+
+	err := svc.commitAuthenticatedSession(staleGeneration, &domain.UserProfile{
+		ID: "stale", Email: "stale@example.com", Token: "AT-stale", RefreshToken: "RT-stale",
+		Plan: "pro", Status: "active",
+	})
+	if !errors.Is(err, ErrSessionTransitionStale) {
+		t.Fatalf("expected stale transition rejection, got %v", err)
+	}
+	if stored, getErr := repo.Get(); getErr == nil || stored != nil {
+		t.Fatalf("stale login revived a cleared session: profile=%+v err=%v", stored, getErr)
+	}
+}
+
 // TestLicenseService_ConcurrentCheckStatus_RefreshRaceKeepsSession (SEC-08):
 // نداءان متزامنان لـ CheckStatus — الأول يدوّر التوكن (RT1→RT2)؛ الثاني لو قرأ
 // التوكن القديم لفشل تدويره بـ 400 وكان (قبل الإصلاح) يمسح الجلسة بـ repo.Clear

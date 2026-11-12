@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image"
 	"image/png"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -30,6 +32,26 @@ import (
 // MaxScannerWarpPixels سقف بكسل المخرج الموحّد (B5) — توازٍ إجباري مع
 // MAX_EXPORT_PIXELS في frontend/src/lib/export/export-limits.ts (بوابة توازٍ في م4).
 const MaxScannerWarpPixels = 50_000_000
+
+var scannerWarpAdmission = make(chan struct{}, max(1, min(2, runtime.NumCPU())))
+
+func acquireScannerWarp(ctx context.Context) error {
+	select {
+	case scannerWarpAdmission <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func releaseScannerWarp() { <-scannerWarpAdmission }
+
+func checkScannerWarpContext(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("scanner warp cancelled: %w", err)
+	}
+	return nil
+}
 
 const (
 	scannerWarpStripRows   = 256 // مثل WARP_STRIP_ROWS في warp-pipeline.ts:22
@@ -109,6 +131,19 @@ func NewScannerWarpService(mediaService *MediaService) *ScannerWarpService {
 // WarpFromMedia ينفّذ المسار الكامل من مسار وسيط محلي إلى PNG محفوظ ذرياً.
 // الأركان بفضاء العرض (بعد EXIF) — ما يراه المستخدم على الشاشة.
 func (s *ScannerWarpService) WarpFromMedia(req ScannerWarpRequest) (*ScannerWarpResult, error) {
+	return s.WarpFromMediaContext(context.Background(), req)
+}
+
+// WarpFromMediaContext يربط إلغاء طلب HTTP ببوابة القبول ومراحل المعالجة الثقيلة.
+func (s *ScannerWarpService) WarpFromMediaContext(ctx context.Context, req ScannerWarpRequest) (*ScannerWarpResult, error) {
+	if err := acquireScannerWarp(ctx); err != nil {
+		return nil, err
+	}
+	defer releaseScannerWarp()
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
+
 	filter, ok := ParseScannerFilterMode(string(req.Filter))
 	if !ok {
 		return nil, newWarpError(ErrScannerWarpPayload, "نمط فلتر غير معروف")
@@ -131,10 +166,23 @@ func (s *ScannerWarpService) WarpFromMedia(req ScannerWarpRequest) (*ScannerWarp
 	if err != nil {
 		return nil, newWarpError(ErrScannerWarpSource, "تعذّرت قراءة ملف المصدر")
 	}
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
+	config, _, err := image.DecodeConfig(bytes.NewReader(raw))
+	if err != nil {
+		return nil, newWarpError(ErrScannerWarpSource, "تعذّر قراءة أبعاد الصورة")
+	}
+	if int64(config.Width)*int64(config.Height) > MaxScannerWarpPixels {
+		return nil, newWarpError(ErrScannerWarpPixels, fmt.Sprintf("الصورة المصدر أكبر من السقف المسموح (%d ميغابكسل)", MaxScannerWarpPixels/1_000_000))
+	}
 
 	decoded, err := imaging.Decode(bytes.NewReader(raw))
 	if err != nil {
 		return nil, newWarpError(ErrScannerWarpSource, "تعذّر فك ترميز الصورة")
+	}
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
 	}
 	srcNRGBA, ok := decoded.(*image.NRGBA)
 	if !ok {
@@ -151,8 +199,11 @@ func (s *ScannerWarpService) WarpFromMedia(req ScannerWarpRequest) (*ScannerWarp
 	srcNRGBA = ApplyExifOrientation(srcNRGBA, ReadJPEGExifOrientation(raw))
 	raw = nil
 
-	out, err := WarpScannerDocument(srcNRGBA, req.Corners, req.TargetW, req.TargetH, filter, req.Rotation)
+	out, err := WarpScannerDocumentContext(ctx, srcNRGBA, req.Corners, req.TargetW, req.TargetH, filter, req.Rotation)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkScannerWarpContext(ctx); err != nil {
 		return nil, err
 	}
 
@@ -168,6 +219,9 @@ func (s *ScannerWarpService) WarpFromMedia(req ScannerWarpRequest) (*ScannerWarp
 	encoder := png.Encoder{CompressionLevel: png.BestSpeed}
 	if err := encoder.Encode(af, out); err != nil {
 		return nil, fmt.Errorf("encode final image: %w", err)
+	}
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
 	}
 	if err := af.Commit(); err != nil {
 		return nil, fmt.Errorf("save final image: %w", err)
@@ -208,6 +262,18 @@ func WarpScannerDocument(
 	filter ScannerFilterMode,
 	rotation int,
 ) (*image.NRGBA, error) {
+	return WarpScannerDocumentContext(context.Background(), src, corners, targetW, targetH, filter, rotation)
+}
+
+// WarpScannerDocumentContext هي النواة القابلة للإلغاء؛ الغلاف القديم يحفظ توافق الاختبارات.
+func WarpScannerDocumentContext(
+	ctx context.Context,
+	src *image.NRGBA,
+	corners []ScannerWarpPoint,
+	targetW, targetH int,
+	filter ScannerFilterMode,
+	rotation int,
+) (*image.NRGBA, error) {
 	srcW, srcH := src.Bounds().Dx(), src.Bounds().Dy()
 	outW := max(2, targetW)
 	outH := max(2, targetH)
@@ -221,12 +287,21 @@ func WarpScannerDocument(
 	localCorners := toScannerLocalCorners(sorted, crop)
 
 	cropImg := cropNRGBA(src, crop)
-	warped, err := warpPerspectiveBilinear(cropImg, localCorners, outW, outH)
+	warped, err := warpPerspectiveBilinearContext(ctx, cropImg, localCorners, outW, outH)
 	if err != nil {
 		return nil, err
 	}
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
 
-	filtered := applyScannerFilterMode(warped, filter)
+	filtered, err := applyScannerFilterModeContext(ctx, warped, filter)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
 
 	return rotateScannerNRGBA(filtered, rotation), nil
 }
@@ -405,10 +480,10 @@ func computeScannerPerspectiveTransform(src, dst []ScannerWarpPoint) ([9]float64
 	return h, nil
 }
 
-// warpPerspectiveBilinear الاستعدال بشرائح صفوف متوازية — نفس حلقة
+// warpPerspectiveBilinearContext الاستعدال بشرائح صفوف متوازية — نفس حلقة
 // warp-pipeline.ts (Homography عكسي + Bilinear بأوزان w00/w10/w01/w11).
 // البكسلات خارج المضلع تبقى شفافة (أصفار) كما في createImageData.
-func warpPerspectiveBilinear(src *image.NRGBA, localCorners []ScannerWarpPoint, outW, outH int) (*image.NRGBA, error) {
+func warpPerspectiveBilinearContext(ctx context.Context, src *image.NRGBA, localCorners []ScannerWarpPoint, outW, outH int) (*image.NRGBA, error) {
 	srcW := src.Bounds().Dx()
 	srcH := src.Bounds().Dy()
 	srcPix := src.Pix
@@ -427,8 +502,13 @@ func warpPerspectiveBilinear(src *image.NRGBA, localCorners []ScannerWarpPoint, 
 
 	dst := image.NewNRGBA(image.Rect(0, 0, outW, outH))
 
+	var cancelled atomic.Bool
 	warpRows := func(startY, endY int) {
 		for y := startY; y < endY; y++ {
+			if y%32 == 0 && ctx.Err() != nil {
+				cancelled.Store(true)
+				return
+			}
 			rowOff := y * dst.Stride
 			for x := 0; x < outW; x++ {
 				denom := h6*float64(x) + h7*float64(y) + h8
@@ -478,6 +558,9 @@ func warpPerspectiveBilinear(src *image.NRGBA, localCorners []ScannerWarpPoint, 
 	}
 	if workers < 2 || outH < scannerWarpStripRows {
 		warpRows(0, outH)
+		if cancelled.Load() {
+			return nil, checkScannerWarpContext(ctx)
+		}
 		return dst, nil
 	}
 
@@ -500,6 +583,9 @@ func warpPerspectiveBilinear(src *image.NRGBA, localCorners []ScannerWarpPoint, 
 		})
 	}
 	wg.Wait()
+	if cancelled.Load() {
+		return nil, checkScannerWarpContext(ctx)
+	}
 	return dst, nil
 }
 

@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 const UI_ZOOM_STORAGE_KEY = 'grido_ui_zoom_scale_v1';
 const MIN_ZOOM = 0.85; // 85%
-const MAX_ZOOM = 1.35; // 135%
+const MAX_ZOOM = 2; // 200% — الحد الأدنى المطلوب لمستخدمي ضعف البصر
 const ZOOM_STEP = 0.05; // 5% لكل خطوة
 
 function readInitialScale(): number {
