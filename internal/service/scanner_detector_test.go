@@ -22,6 +22,23 @@ func TestScannerDetectorService_Lifecycle(t *testing.T) {
 	}
 }
 
+func TestScannerDetectorService_CloseIsIdempotentAndRejectsReuse(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("native lifecycle is Windows-only")
+	}
+	mediaSvc := NewMediaService()
+	detector := NewScannerDetectorService(NewImageProcessorService(mediaSvc), mediaSvc)
+	if err := detector.Close(); err != nil {
+		t.Fatalf("first close: %v", err)
+	}
+	if err := detector.Close(); err != nil {
+		t.Fatalf("second close: %v", err)
+	}
+	if _, err := detector.DetectDocumentCorners("missing.png"); err == nil {
+		t.Fatal("closed detector must reject reuse")
+	}
+}
+
 func TestScannerDetectorService_DetectDocumentCorners(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("native document corner detection is currently only supported on Windows")

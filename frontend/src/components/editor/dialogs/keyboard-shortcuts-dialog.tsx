@@ -96,7 +96,7 @@ export function KeyboardShortcutsDialog() {
         { label: 'لوحة كل الأدوات', keys: ['Ctrl', 'K'] },
         { label: 'فتح أداة بالترتيب', keys: ['Alt', '1 … 9'] },
         { label: 'تبديل وضع العمل (كولاج / تعديل حر)', keys: ['Ctrl', 'Alt', '1 / 2'] },
-        { label: 'وضع التركيز', keys: ['Tab / Ctrl', '.'] },
+        { label: 'وضع التركيز', keys: ['Ctrl', '.'] },
         { label: 'لوحة الاختصارات', keys: ['Ctrl', '/'] },
       ],
     },

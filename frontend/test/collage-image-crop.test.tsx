@@ -464,6 +464,37 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     expect(node.isCached()).toBe(true);
   });
 
+  it('captureStageBlob: يسلّسل لقطات المسرح نفسه قبل تعديل حالته', async () => {
+    const node = await mountSlot({
+      srcW: 1200,
+      srcH: 1200,
+      slotW: 300,
+      slotH: 300,
+    });
+    const stage = node.getStage()!;
+    const callbacks: BlobCallback[] = [];
+    const toCanvas = vi.spyOn(stage, 'toCanvas').mockImplementation(() => {
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (callback) => callbacks.push(callback);
+      return canvas;
+    });
+
+    const first = captureStageBlob(stage, 2);
+    await vi.waitFor(() => expect(callbacks).toHaveLength(1));
+    const second = captureStageBlob(stage, 2);
+    await Promise.resolve();
+    expect(toCanvas).toHaveBeenCalledTimes(1);
+
+    callbacks[0](new Blob(['first']));
+    await first;
+    await vi.waitFor(() => expect(callbacks).toHaveLength(2));
+    callbacks[1](new Blob(['second']));
+    await second;
+
+    expect(toCanvas).toHaveBeenCalledTimes(2);
+    expect(isStageCaptureActive(stage)).toBe(false);
+  });
+
   it('captureStageBlob(useFullResolution): يحجّم cropX/cropWidth لأبعاد الأصل أثناء الالتقاط ثم يستعيدهما', async () => {
     const node = await mountSlot({
       srcW: 4096,

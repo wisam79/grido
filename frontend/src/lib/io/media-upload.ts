@@ -18,6 +18,7 @@ export interface UploadMediaResult {
 export async function uploadMediaBlob(
   blob: Blob,
   filename = 'image.png',
+  signal?: AbortSignal,
 ): Promise<UploadMediaResult> {
   if (isLocalApiAvailable()) {
     const formData = new FormData();
@@ -25,6 +26,7 @@ export async function uploadMediaBlob(
     const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {
       method: 'POST',
       body: formData,
+      signal,
     });
     if (resp.ok) {
       const data = (await resp.json()) as {
@@ -48,19 +50,33 @@ export async function uploadMediaBlob(
     }
   }
 
+  if (signal?.aborted) throw new DOMException('The operation was aborted', 'AbortError');
+
   // Fallback إلى المسار الاحتياطي: تحويل إلى DataURL ثم SaveImageFromBase64
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    const handleAbort = () => {
+      reader.abort();
+      reject(new DOMException('The operation was aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', handleAbort, { once: true });
     reader.onload = async () => {
       try {
+        if (signal?.aborted) throw new DOMException('The operation was aborted', 'AbortError');
         const dataUrl = reader.result as string;
         const localPath = await SaveImageFromBase64(dataUrl);
+        if (signal?.aborted) throw new DOMException('The operation was aborted', 'AbortError');
         resolve({ imageSrc: localPath });
       } catch (err) {
         reject(err);
+      } finally {
+        signal?.removeEventListener('abort', handleAbort);
       }
     };
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => {
+      signal?.removeEventListener('abort', handleAbort);
+      reject(reader.error);
+    };
     reader.readAsDataURL(blob);
   });
 }

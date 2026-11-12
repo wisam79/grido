@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import React, { useCallback, useEffect, useId, useMemo } from 'react';
+import React, { useCallback, useId, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Faders } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -522,17 +523,6 @@ export function CompactToolLauncher({
   );
   const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
 
-  useEffect(() => {
-    if (!isLauncherOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onLauncherOpenChange(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isLauncherOpen, onLauncherOpenChange]);
   const runGlobalCommand = useCallback(
     (command: WorkspaceCommand) => {
       dispatchWorkspaceCommand(command);
@@ -622,26 +612,18 @@ export function CompactToolLauncher({
         </Popover>
       )}
 
-      {/* لوحة الأوامر كـ Modal عائم مباشر عند الضغط على Ctrl+K أو زر اللوحة في سطح المكتب */}
-      {!isCompact && isLauncherOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="لوحة الأوامر والأدوات"
-          className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/40 backdrop-blur-xs animate-in fade-in-0 duration-100"
-        >
-          {/* خلفية للإغلاق عند النقر بالخارج */}
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label="إغلاق لوحة الأوامر"
-            className="fixed inset-0 h-full w-full bg-transparent cursor-default border-0 outline-none"
-            onClick={() => onLauncherOpenChange(false)}
-          />
-          <div
-            className="relative z-10 w-full max-w-xl mx-4 rounded-xl border border-border bg-popover shadow-fluent-16 fluent-specular overflow-hidden animate-in zoom-in-95 duration-100"
+      {!isCompact && (
+        <Dialog open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
+          <DialogContent
+            showCloseButton={false}
+            closeOnOutsideClick
+            className="top-[12vh] translate-y-0 w-[calc(100%-2rem)] max-w-xl p-0 rounded-xl border border-border bg-popover shadow-fluent-16 fluent-specular overflow-hidden"
             dir="rtl"
           >
+            <DialogTitle className="sr-only">لوحة الأوامر والأدوات</DialogTitle>
+            <DialogDescription className="sr-only">
+              ابحث عن أداة أو أمر ثم فعّله بلوحة المفاتيح أو المؤشر.
+            </DialogDescription>
             <ToolLauncherContent
               sections={sections}
               activeSectionId={activeSectionId}
@@ -652,8 +634,8 @@ export function CompactToolLauncher({
               onRunCommand={runGlobalCommand}
               commandGroups={commandGroups}
             />
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

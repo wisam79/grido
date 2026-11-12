@@ -4,15 +4,12 @@ package service
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/disintegration/imaging"
 	ort "github.com/yalue/onnxruntime_go"
-
-	"grido/internal/utils"
 )
 
 //go:embed ai_assets/onnxruntime.dll
@@ -27,8 +24,9 @@ type BgRemovalService struct {
 	mediaService *MediaService
 
 	mu           sync.Mutex
-	initOnce     sync.Once
 	initErr      error
+	closed       bool
+	runtimeOwned bool
 	session      *ort.AdvancedSession
 	inputTensor  *ort.Tensor[float32]
 	outputTensor *ort.Tensor[float32]
@@ -43,9 +41,13 @@ func NewBgRemovalService(imageProc *ImageProcessorService, mediaService *MediaSe
 }
 
 func (s *BgRemovalService) ensureInitialized() error {
-	s.initOnce.Do(func() {
-		s.initErr = s.initEngine()
-	})
+	if s.closed {
+		return errors.New("background removal service is closed")
+	}
+	if s.isReady {
+		return nil
+	}
+	s.initErr = s.initEngine()
 	return s.initErr
 }
 
@@ -57,33 +59,19 @@ func (s *BgRemovalService) initEngine() error {
 		return fmt.Errorf("embedded modnet.onnx is empty")
 	}
 
-	// 1. Ensure onnxruntime.dll is extracted atomically to AppData/bin
-	binDir := filepath.Join(utils.GetAppDir(), "bin")
-	_ = os.MkdirAll(binDir, 0o755)
-	targetDllPath := filepath.Join(binDir, "onnxruntime.dll")
-
-	extractNeeded := true
-	if stat, err := os.Stat(targetDllPath); err == nil {
-		if stat.Size() == int64(len(embeddedOnnxRuntimeDLL)) {
-			extractNeeded = false
-		}
+	if err := acquireONNXRuntime(); err != nil {
+		return err
 	}
-
-	if extractNeeded {
-		if err := utils.AtomicWriteFile(targetDllPath, embeddedOnnxRuntimeDLL, 0o755); err != nil {
-			return fmt.Errorf("failed to extract onnxruntime.dll: %w", err)
+	s.runtimeOwned = true
+	initialized := false
+	defer func() {
+		if !initialized && s.runtimeOwned {
+			s.runtimeOwned = false
+			_ = releaseONNXRuntime()
 		}
-	}
+	}()
 
-	// 2. Point ONNX Runtime to the shared library and initialize environment
-	ort.SetSharedLibraryPath(targetDllPath)
-	if !ort.IsInitialized() {
-		if err := ort.InitializeEnvironment(); err != nil {
-			return fmt.Errorf("failed to initialize onnxruntime environment: %w", err)
-		}
-	}
-
-	// 3. Pre-allocate reusable input [1, 3, 512, 512] and output [1, 1, 512, 512] tensors
+	// Pre-allocate reusable input [1, 3, 512, 512] and output [1, 1, 512, 512] tensors
 	inputShape := ort.NewShape(1, 3, 512, 512)
 	inTensor, err := ort.NewEmptyTensor[float32](inputShape)
 	if err != nil {
@@ -116,6 +104,7 @@ func (s *BgRemovalService) initEngine() error {
 	s.outputTensor = outTensor
 	s.session = session
 	s.isReady = true
+	initialized = true
 	return nil
 }
 
@@ -208,5 +197,10 @@ func (s *BgRemovalService) Close() error {
 		s.outputTensor = nil
 	}
 	s.isReady = false
+	s.closed = true
+	if s.runtimeOwned {
+		s.runtimeOwned = false
+		return releaseONNXRuntime()
+	}
 	return nil
 }

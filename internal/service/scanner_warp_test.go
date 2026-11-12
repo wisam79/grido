@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"image"
 	"image/png"
 	"math"
@@ -366,6 +368,30 @@ func TestScannerWarpFromMediaFailClosed(t *testing.T) {
 				t.Fatalf("توقّت كود %s وحصل %s (%s)", tc.code, warpErr.Code, warpErr.Message)
 			}
 		})
+	}
+}
+
+func TestScannerWarpContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	svc := NewScannerWarpService(NewMediaService())
+	_, err := svc.WarpFromMediaContext(ctx, ScannerWarpRequest{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("توقّع context.Canceled قبل القبول، حصل %v", err)
+	}
+
+	src := image.NewNRGBA(image.Rect(0, 0, 2048, 2048))
+	corners := []ScannerWarpPoint{{X: 0, Y: 0}, {X: 2047, Y: 0}, {X: 2047, Y: 2047}, {X: 0, Y: 2047}}
+	ctx, cancel = context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, warpErr := WarpScannerDocumentContext(ctx, src, corners, 4096, 4096, FilterMagic, 0)
+		done <- warpErr
+	}()
+	cancel()
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("توقّع إلغاء النواة أثناء العمل، حصل %v", err)
 	}
 }
 

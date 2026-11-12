@@ -39,6 +39,28 @@ export function useScannerProcessor(
   // إلغاء التصدير متعدد المستندات (R39: عملية >3s قابلة للإلغاء).
   const exportCancelRef = useRef(false);
 
+  const operationRef = useRef<{ generation: number; controller: AbortController } | null>(null);
+  const generationRef = useRef(0);
+
+  const beginOperation = useCallback(() => {
+    operationRef.current?.controller.abort();
+    const operation = {
+      generation: ++generationRef.current,
+      controller: new AbortController(),
+    };
+    operationRef.current = operation;
+    exportCancelRef.current = false;
+    return operation;
+  }, []);
+
+  const isCurrentOperation = useCallback(
+    (operation: { generation: number; controller: AbortController }) =>
+      operationRef.current === operation &&
+      generationRef.current === operation.generation &&
+      !operation.controller.signal.aborted,
+    [],
+  );
+
   // روابط نتائج الاستعدال (media URLs تُديرها خدمة Go — لا revokeObjectURL).
   const previewUrlRef = useRef<string | null>(null);
 
@@ -50,6 +72,12 @@ export function useScannerProcessor(
 
   const cancelExport = useCallback(() => {
     exportCancelRef.current = true;
+    generationRef.current++;
+    operationRef.current?.controller.abort();
+    operationRef.current = null;
+    setIsExporting(false);
+    setIsPreviewing(false);
+    setExportProgress(null);
   }, []);
 
   // 🔒 تنظيف وتصفير حالات التصدير والمعاينة عند إغلاق النافذة
@@ -83,6 +111,7 @@ export function useScannerProcessor(
       isPreview = false,
       docRotation?: number,
       docFilter?: ScannerFilterMode,
+      operation?: { generation: number; controller: AbortController },
     ): Promise<string | null> => {
       const img = imgRef.current;
       if (!img || docCorners.length !== 4) return null;
@@ -98,15 +127,18 @@ export function useScannerProcessor(
           isPreview,
           effectiveFilter,
           rotToApply,
+          operation?.controller.signal,
         );
+        if (operation && !isCurrentOperation(operation)) return null;
         return result.url;
       } catch (error) {
+        if (operation?.controller.signal.aborted) return null;
         if (!openRef.current || exportCancelRef.current) return null;
         toast.error(formatScannerWarpError(error));
         return null;
       }
     },
-    [imgRef, fallbackFilter, fallbackRotation],
+    [imgRef, fallbackFilter, fallbackRotation, isCurrentOperation],
   );
 
   const handleTogglePreview = useCallback(
@@ -117,10 +149,18 @@ export function useScannerProcessor(
       }
       if (isPreviewing) return;
 
+      const operation = beginOperation();
       setIsPreviewing(true);
       try {
-        const url = await generateWarpedUrlForDoc(corners, aspect, true);
-        if (!url || !openRef.current) {
+        const url = await generateWarpedUrlForDoc(
+          corners,
+          aspect,
+          true,
+          undefined,
+          undefined,
+          operation,
+        );
+        if (!url || !openRef.current || !isCurrentOperation(operation)) {
           if (!url && (corners.length !== 4 || !imgRef.current)) {
             toast.error('حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط');
           }
@@ -130,10 +170,20 @@ export function useScannerProcessor(
         setPreviewSrc(url);
         setIsPreviewMode(true);
       } finally {
-        setIsPreviewing(false);
+        if (isCurrentOperation(operation)) {
+          operationRef.current = null;
+          setIsPreviewing(false);
+        }
       }
     },
-    [isPreviewMode, isPreviewing, generateWarpedUrlForDoc, imgRef],
+    [
+      isPreviewMode,
+      isPreviewing,
+      beginOperation,
+      generateWarpedUrlForDoc,
+      imgRef,
+      isCurrentOperation,
+    ],
   );
 
   const handleApplyActive = useCallback(
@@ -143,12 +193,19 @@ export function useScannerProcessor(
       onSave: (url: string) => void,
       onDone: () => void,
     ) => {
-      exportCancelRef.current = false;
+      const operation = beginOperation();
       setIsExporting(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 0));
-        const url = await generateWarpedUrlForDoc(corners, aspect, false);
-        if (exportCancelRef.current || !openRef.current) return;
+        const url = await generateWarpedUrlForDoc(
+          corners,
+          aspect,
+          false,
+          undefined,
+          undefined,
+          operation,
+        );
+        if (!isCurrentOperation(operation) || !openRef.current) return;
         if (url) {
           onSave(url);
           onDone();
@@ -156,10 +213,13 @@ export function useScannerProcessor(
           toast.error('حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط');
         }
       } finally {
-        setIsExporting(false);
+        if (isCurrentOperation(operation)) {
+          operationRef.current = null;
+          setIsExporting(false);
+        }
       }
     },
-    [generateWarpedUrlForDoc, imgRef],
+    [beginOperation, generateWarpedUrlForDoc, imgRef, isCurrentOperation],
   );
 
   const handleApplySelected = useCallback(
@@ -178,13 +238,13 @@ export function useScannerProcessor(
         return;
       }
 
-      exportCancelRef.current = false;
+      const operation = beginOperation();
       setIsExporting(true);
       setExportProgress({ done: 0, total: docsToExport.length });
       try {
         const results: string[] = [];
         for (let i = 0; i < docsToExport.length; i++) {
-          if (exportCancelRef.current || !openRef.current) break;
+          if (!isCurrentOperation(operation) || !openRef.current) break;
           await new Promise((resolve) => setTimeout(resolve, 30)); // Yield to UI
           const doc = docsToExport[i];
           const url = await generateWarpedUrlForDoc(
@@ -193,15 +253,16 @@ export function useScannerProcessor(
             false,
             doc.rotation,
             doc.filterMode,
+            operation,
           );
-          if (exportCancelRef.current || !openRef.current) break;
+          if (!isCurrentOperation(operation) || !openRef.current) break;
           if (url) {
             results.push(url);
           }
           setExportProgress({ done: i + 1, total: docsToExport.length });
         }
 
-        if (exportCancelRef.current || !openRef.current) return;
+        if (!isCurrentOperation(operation) || !openRef.current) return;
         if (results.length > 0) {
           onSave(results.length === 1 ? results[0] : results);
           onDone();
@@ -209,11 +270,14 @@ export function useScannerProcessor(
           toast.error('فشل معالجة المستندات المحددة');
         }
       } finally {
-        setIsExporting(false);
-        setExportProgress(null);
+        if (isCurrentOperation(operation)) {
+          operationRef.current = null;
+          setIsExporting(false);
+          setExportProgress(null);
+        }
       }
     },
-    [generateWarpedUrlForDoc],
+    [beginOperation, generateWarpedUrlForDoc, isCurrentOperation],
   );
 
   const resetPreview = useCallback(() => {
@@ -223,14 +287,14 @@ export function useScannerProcessor(
   }, [revokePreviewUrl]);
 
   const resetProcessorState = useCallback(() => {
-    exportCancelRef.current = true;
+    cancelExport();
     setIsExporting(false);
     setIsPreviewMode(false);
     setIsPreviewing(false);
     setPreviewSrc(null);
     setExportProgress(null);
     revokePreviewUrl();
-  }, [revokePreviewUrl]);
+  }, [cancelExport, revokePreviewUrl]);
 
   return {
     isExporting,

@@ -50,6 +50,7 @@ export function useKonvaDrag({
     gridSnap?: { stepX: number; stepY: number };
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
+  const dragElementsByIdRef = React.useRef<Map<string, CanvasElement> | null>(null);
   const compositeBoundsOffsetRef = React.useRef<{
     minOffsetX: number;
     minOffsetY: number;
@@ -75,6 +76,8 @@ export function useKonvaDrag({
       gridSize: storeGridSize,
     } = useEditorStore.getState();
     const effectiveGridSize = gridSize ?? storeGridSize;
+    dragElementsByIdRef.current =
+      selectedIds.length > 1 ? new Map(currentElements.map((el) => [el.id, el])) : null;
 
     // 🎯 أهداف المحاذاة المغناطيسية: حواف ومركز مساحة العمل
     const vTargets: SnapTarget[] = [
@@ -334,17 +337,14 @@ export function useKonvaDrag({
     // 1. تحريك كافة العناصر المحددة الأخرى التابعة للمجموعة ككتلة صلبة بنفس الإزاحة (dx, dy)
     // بعد أن قيّدت dragBoundFunc الصندوق البصري الموحّد للمجموعة كاملة.
     if (startPos) {
-      const { selectedIds, elements: currentElements } = useEditorStore.getState();
-      // 🚀 التحديد المفرد: لا تابعين إطلاقاً — يخرج قبل بناء new Map() لكامل
-      // العناصر ومنطق التابعين بالكامل (كانت O(عناصر) تخصيصاً لكل إطار ×60/ث
-      // بلا أي استخدام). القائد يتحرك بواسطة Konva نفسه، والمحاذاة المغناطيسية
-      // أدناه كما هي دون أي تغيير.
+      const { selectedIds } = useEditorStore.getState();
+      // التحديد المفرد يخرج قبل منطق التابعين. فهرس العناصر المتعددة يُبنى مرة
+      // عند dragStart لأن عناصر المتجر لا تتغير أثناء الحركة الأمرية.
       if (selectedIds.length > 1) {
         const dx = draggedNode.x() - startPos.x;
         const dy = draggedNode.y() - startPos.y;
-        // 🚀 Map بالمعرفات مرة واحدة لكل إطار — find لكل محدد/إطار كان O(Selected×Elements)
-        // ×60/ث مع كثافة عناصر عالية
-        const elementsById = new Map(currentElements.map((e) => [e.id, e]));
+        const elementsById = dragElementsByIdRef.current;
+        if (!elementsById) return;
         selectedIds.forEach((id) => {
           if (id === draggedId) return;
           const node = getKonvaNode(id);
@@ -436,6 +436,7 @@ export function useKonvaDrag({
       pushHistory();
     }
     dragStartPositionsRef.current = {};
+    dragElementsByIdRef.current = null;
     compositeBoundsOffsetRef.current = null;
   };
 

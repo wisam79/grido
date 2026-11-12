@@ -120,6 +120,7 @@ export async function warpDocumentViaGo(
   isPreview: boolean,
   filter: ScannerFilterMode,
   rotation: number,
+  signal?: AbortSignal,
 ): Promise<{ url: string; width: number; height: number }> {
   if (!img || docCorners.length !== 4) {
     throw new ScannerWarpClientError('SCN-WARP-01', 'أركان المستند غير مكتملة');
@@ -135,14 +136,15 @@ export async function warpDocumentViaGo(
   ) {
     try {
       const srcToFetch = img.currentSrc || img.src;
-      const resp = await fetch(srcToFetch);
+      const resp = await fetch(srcToFetch, { signal });
       const blob = await resp.blob();
-      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
+      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png', signal);
       sourceUrl = extractLocalImagePath(uploaded.imageSrc);
       if (sourceUrl) {
         tagImageSourceUrl(img, sourceUrl);
       }
-    } catch {
+    } catch (error) {
+      if (signal?.aborted) throw error;
       // upload failed — falls through to error check
     }
   }
@@ -169,8 +171,10 @@ export async function warpDocumentViaGo(
         filter,
         rotation,
       }),
+      signal,
     });
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw error;
     throw new ScannerWarpClientError(
       'SCN-WARP-NET',
       'تعذّر الاتصال بمحرك الاستعدال المحلي — أعد المحاولة',
@@ -220,6 +224,7 @@ export interface NativeDetectResult {
 /** ينفّذ كشف المستند العصبي عالي الدقة عبر Go (FastViT-SA24) من مسار الصورة المحلي. */
 export async function detectDocumentViaGo(
   img: HTMLImageElement,
+  signal?: AbortSignal,
 ): Promise<NativeDetectResult | null> {
   let sourceUrl = resolveImageSourceUrl(img);
 
@@ -231,14 +236,15 @@ export async function detectDocumentViaGo(
   ) {
     try {
       const srcToFetch = img.currentSrc || img.src;
-      const resp = await fetch(srcToFetch);
+      const resp = await fetch(srcToFetch, { signal });
       const blob = await resp.blob();
-      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
+      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png', signal);
       sourceUrl = extractLocalImagePath(uploaded.imageSrc);
       if (sourceUrl) {
         tagImageSourceUrl(img, sourceUrl);
       }
-    } catch {
+    } catch (error) {
+      if (signal?.aborted) throw error;
       // upload failed
     }
   }
@@ -252,6 +258,7 @@ export async function detectDocumentViaGo(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sourceUrl }),
+      signal,
     });
 
     if (!response.ok) return null;
@@ -277,7 +284,8 @@ export async function detectDocumentViaGo(
       };
     }
     return null;
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw error;
     return null;
   }
 }

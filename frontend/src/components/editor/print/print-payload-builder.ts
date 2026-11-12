@@ -16,6 +16,7 @@ import { resolveImageDimensions } from '@/lib/canvas/image-dimensions';
 import { captureStageBlob, swapNodeImagesForCapture } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { computeSlotCrop } from '@/lib/export/export-primitives';
+import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
@@ -258,6 +259,7 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
   let singleImageSrc = '';
 
   if (!isSimpleRaster) {
+    await ensureElementsFontsLoaded(elements);
     // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل عرض المخرج
     // `printPixelW` بغضّ النظر عن مستوى التكبير على الشاشة. كان `stage.width()`
     // هو مقاس العرض المرئي فيتغير حجم الطباعة بمجرد تكبير المستخدم.

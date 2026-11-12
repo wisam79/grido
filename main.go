@@ -505,7 +505,7 @@ func createAssetHandler(app *App) http.Handler {
 		mediaSvc = app.mediaSvc
 		if mediaSvc != nil {
 			scannerWarp = service.NewScannerWarpService(mediaSvc)
-			scannerDetector = service.NewScannerDetectorService(imageProc, mediaSvc)
+			scannerDetector = app.scannerSvc
 		}
 	}
 

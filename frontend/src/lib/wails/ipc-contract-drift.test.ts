@@ -64,11 +64,6 @@ function collectBindingFunctions(dir: string, rel: string, out: BindingFunction[
 describe('IPC Contract Drift Guard (Wails v3)', () => {
   const bindingsDir = resolve(here, '../../../bindings/grido');
 
-  // معالجات دفاعية مسجلة عمداً في الجسر بلا تواقيع مولّدة (تُستدعى عند الحالات
-  // الحدية من الرنتايم): ServiceStartup و ServiceShutdown في app.go لا تُصدّر
-  // في الربطات لأن تواقيعهما (ctx, ServiceOptions) لا تدعم التسلسل.
-  const INTENTIONAL_FALLBACK_HANDLERS = new Set<number>([2987688963, 2154875234]);
-
   const bindingFunctions: BindingFunction[] = [];
 
   try {
@@ -94,6 +89,16 @@ describe('IPC Contract Drift Guard (Wails v3)', () => {
     expect(duplicates, `معرفات مكررة في الربطات: ${duplicates.join(', ')}`).toEqual([]);
   });
 
+  it('يجب ألا تُصدَّر أغلفة دورة حياة App كعقود IPC', () => {
+    const lifecycleBindings = bindingFunctions.filter(
+      (fn) => fn.file === 'app.ts' && (fn.name === 'Startup' || fn.name === 'Shutdown'),
+    );
+    expect(
+      lifecycleBindings,
+      'دورة حياة App يملكها Wails عبر ServiceStartup/ServiceShutdown ولا يجوز كشفها للـrenderer',
+    ).toEqual([]);
+  });
+
   it('لكل دالة في الربطات يجب وجود معالج Mock مسجل في wails-v3-bridge.ts', () => {
     const missing = bindingFunctions.filter((f) => !(f.id in WAILS_V3_METHOD_HANDLERS));
     const details = missing.map((f) => `  ${f.name} (${f.id}) ← ${f.file}`).join('\n');
@@ -109,7 +114,7 @@ describe('IPC Contract Drift Guard (Wails v3)', () => {
       .map(Number)
       .filter((id) => !bindingIds.has(id));
     // المعالجات اليتيمة غير قاتلة (تنشأ عادة بعد -clean=true) لكنها تشوش الصيانة
-    const unexpectedOrphans = orphans.filter((id) => !INTENTIONAL_FALLBACK_HANDLERS.has(id));
+    const unexpectedOrphans = orphans;
     expect(
       unexpectedOrphans,
       `معالجات يتيمة (لا دالة لها في الربطات الحالية): ${unexpectedOrphans.join(', ')} — احذفها أو حدّث الربطات`,

@@ -2,6 +2,7 @@ import Konva from 'konva';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { isSpaceHandledByTarget } from '../src/components/editor/canvas/use-canvas-viewport';
+import { withShadowlessDrag } from '../src/components/editor/konva/elements/drag-shadow';
 import { swapNodeImagesForCapture, withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
 import {
   RING_INNER_RATIO,
@@ -29,6 +30,33 @@ import { buildAdjustmentCSS, buildCSSFilter } from '../src/lib/utils';
 import type { Filter, FilterFunction } from 'konva/lib/Node';
 
 describe('Canvas Core Rendering & Image Algorithms', () => {
+  describe('Shadowless drag safety listeners', () => {
+    it('removes both safety listeners when drag ends normally', () => {
+      const shape = { shadowEnabled: vi.fn() };
+      const root = { find: vi.fn(() => [shape]) };
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      const removeSpy = vi.spyOn(window, 'removeEventListener');
+      const onStart = vi.fn();
+      const onEnd = vi.fn();
+      const drag = withShadowlessDrag(() => root as never, onStart, onEnd);
+
+      drag.handleStart('start');
+      drag.handleEnd('end');
+
+      expect(addSpy).toHaveBeenCalledWith('pointerup', expect.any(Function), { once: true });
+      expect(addSpy).toHaveBeenCalledWith('blur', expect.any(Function), { once: true });
+      expect(removeSpy).toHaveBeenCalledWith('pointerup', expect.any(Function));
+      expect(removeSpy).toHaveBeenCalledWith('blur', expect.any(Function));
+      expect(shape.shadowEnabled).toHaveBeenNthCalledWith(2, false);
+      expect(shape.shadowEnabled).toHaveBeenLastCalledWith(true);
+      expect(onStart).toHaveBeenCalledWith('start');
+      expect(onEnd).toHaveBeenCalledWith('end');
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    });
+  });
+
   describe('Morphological Text Stroke Filter (ensureTextStrokeFilter)', () => {
     beforeEach(() => {
       document.body.innerHTML = '';

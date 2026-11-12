@@ -31,16 +31,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     log.error('Uncaught error:', error, errorInfo);
-    // Send it to the backend log
-    try {
-      LogFrontendError(
-        'error',
-        `React ErrorBoundary: ${error.message}`,
-        error.stack + '\n\nComponent Stack:\n' + errorInfo.componentStack,
-      );
-    } catch (e) {
-      log.error('Failed to log to backend:', e);
-    }
+    void LogFrontendError(
+      'error',
+      `React ErrorBoundary: ${error.message}`,
+      error.stack + '\n\nComponent Stack:\n' + errorInfo.componentStack,
+    ).catch((backendError) => {
+      log.error('Failed to log to backend:', backendError);
+    });
   }
 
   private handleReset = () => {

@@ -34,7 +34,8 @@ interface ContextMenuProps {
 
 export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const focusIndexRef = React.useRef(0);
+  const focusIndexRef = React.useRef(-1);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
   const { updateSlot, updateElement, pushHistory } = useEditorStore(
     useShallow((state) => ({
@@ -80,6 +81,14 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     };
   }, [onClose]);
 
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    return () => {
+      const previous = previousFocusRef.current;
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, []);
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,7 +103,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        const next = (focusIndexRef.current + 1) % items.length;
+        const next = (focusIndexRef.current + 1 + items.length) % items.length;
         focusIndexRef.current = next;
         items[next]?.focus();
       } else if (e.key === 'ArrowUp') {
@@ -136,8 +145,12 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         w: menuRef.current.offsetWidth,
         h: menuRef.current.offsetHeight,
       });
+      const firstItem = menuRef.current.querySelector<HTMLElement>("[role='menuitem']");
+      focusIndexRef.current = firstItem ? 0 : -1;
+      requestAnimationFrame(() => firstItem?.focus({ preventScroll: true }));
+    } else {
+      focusIndexRef.current = -1;
     }
-    focusIndexRef.current = 0;
     // أعد القياس عندما يتغير محتوى القائمة أثناء فتحها (spinner ↔ نص) حتى لا تبقى المقاسات قديمة
   }, [target, position.x, position.y, isRemovingBg, isEnhancing]);
 

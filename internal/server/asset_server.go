@@ -294,7 +294,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		result, err := deps.ScannerWarp.WarpFromMedia(req)
+		result, err := deps.ScannerWarp.WarpFromMediaContext(r.Context(), req)
 		if err != nil {
 			var warpErr *service.ScannerWarpError
 			if errors.As(err, &warpErr) {

@@ -82,6 +82,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const activeReqIdRef = useRef<number>(0);
+  const detectionAbortRef = useRef<AbortController | null>(null);
 
   // 🧷 جلسة المالك (owner session): يزداد عند كل تركيب/مصدر صورة جديد وعند كل
   // تنظيف؛ كل النقاط غير المتزامنة تفحصها كي لا يعيد أي callback متأخر —
@@ -101,6 +102,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       cancelScheduledWarmupRef.current?.();
       cancelScheduledWarmupRef.current = null;
       activeReqIdRef.current += 1;
+      detectionAbortRef.current?.abort();
+      detectionAbortRef.current = null;
       terminateMlWorker();
     };
   }, []);
@@ -116,9 +119,18 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     const img = imgRef.current;
     if (!img) return;
     const reqId = ++activeReqIdRef.current;
+    detectionAbortRef.current?.abort();
+    const controller = new AbortController();
+    detectionAbortRef.current = controller;
     setIsDetecting(true);
     try {
-      const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight, mode);
+      const result = await detectDocumentAuto(
+        img,
+        img.naturalWidth,
+        img.naturalHeight,
+        mode,
+        controller.signal,
+      );
       if (reqId !== activeReqIdRef.current) return;
       if (result.documents && result.documents.length > 0) {
         setDetectedDocs(result.documents);
@@ -153,7 +165,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       } else {
         if (notify) toast.warning('لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي');
       }
-    } catch {
+    } catch (error) {
+      if (controller.signal.aborted) return;
       if (reqId === activeReqIdRef.current && notify) {
         toast.error(
           formatSolvableError({
@@ -165,6 +178,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       }
     } finally {
       if (reqId === activeReqIdRef.current) {
+        if (detectionAbortRef.current === controller) detectionAbortRef.current = null;
         setIsDetecting(false);
       }
     }

@@ -108,6 +108,28 @@ func TestProjectService_SaveValidation(t *testing.T) {
 	}
 }
 
+func TestProjectService_RejectsMalformedPayloadBeforeWrite(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+	repo := repository.NewProjectRepository(db)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
+
+	cases := []*domain.Project{
+		{ID: "bad-mode", Name: "Bad", Mode: "unknown", CanvasWidth: 100, CanvasHeight: 100},
+		{ID: "bad-size", Name: "Bad", Mode: "single", CanvasWidth: -1, CanvasHeight: 100},
+		{ID: "bad-json", Name: "Bad", Mode: "single", CanvasWidth: 100, CanvasHeight: 100, Elements: `{broken`},
+	}
+	for _, project := range cases {
+		if err := svc.SaveProject(project); err == nil {
+			t.Fatalf("expected malformed project %q to be rejected", project.ID)
+		}
+	}
+	count, err := repo.Count()
+	if err != nil || count != 0 {
+		t.Fatalf("malformed projects reached persistence: count=%d err=%v", count, err)
+	}
+}
+
 func TestProjectService_GetAll(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()

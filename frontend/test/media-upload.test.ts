@@ -35,6 +35,25 @@ describe('media-upload', () => {
     expect(imageDimensions.getCachedImageAspectRatio('/local-image/test-binary.png')).toBe(2.0);
   });
 
+  it('does not fall back to Base64 when an upload is aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetchSpy = vi
+      .spyOn(localApi, 'fetchLocalApi')
+      .mockRejectedValueOnce(new DOMException('The operation was aborted', 'AbortError'));
+    const readerSpy = vi.spyOn(FileReader.prototype, 'readAsDataURL');
+
+    await expect(
+      uploadMediaBlob(
+        new Blob(['cancelled'], { type: 'image/png' }),
+        'cancelled.png',
+        controller.signal,
+      ),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(readerSpy).not.toHaveBeenCalled();
+  });
+
   it('uploadCanvasBlob converts canvas to blob and uploads binary', async () => {
     vi.spyOn(localApi, 'fetchLocalApi').mockResolvedValueOnce(
       new Response(

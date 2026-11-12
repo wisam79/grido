@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"grido/internal/core/domain"
@@ -36,6 +37,23 @@ func (s *AutosaveService) SaveCustomTemplate(name string, slots int, cellsJSON s
 }
 
 func (s *AutosaveService) SaveCustomTemplateWithMetadata(name string, slots int, cellsJSON string, metadataJSON string) (domain.CustomTemplate, error) {
+	name = strings.TrimSpace(name)
+	if name == "" || len(name) > 512 {
+		return domain.CustomTemplate{}, fmt.Errorf("template name is required and must not exceed 512 bytes")
+	}
+	if slots < 0 || slots > 200 {
+		return domain.CustomTemplate{}, fmt.Errorf("template slot count must be between 0 and 200")
+	}
+	if len(cellsJSON)+len(metadataJSON) > 10*1024*1024 {
+		return domain.CustomTemplate{}, fmt.Errorf("template payload exceeds the 10MB limit")
+	}
+	cellsJSON = strings.TrimSpace(cellsJSON)
+	if cellsJSON == "" {
+		cellsJSON = "[]"
+	} else if !json.Valid([]byte(cellsJSON)) {
+		return domain.CustomTemplate{}, fmt.Errorf("invalid template cells JSON")
+	}
+	metadataJSON = strings.TrimSpace(metadataJSON)
 	if metadataJSON != "" {
 		var metadata struct {
 			Version       int     `json:"version"`

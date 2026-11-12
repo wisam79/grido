@@ -547,48 +547,49 @@ export function ProjectsDialog({
                       return (
                         <div
                           key={project.id}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleLoad(project);
-                            }
-                          }}
-                          onClick={() => handleLoad(project)}
-                          className="flex items-center justify-between p-2.5 rounded-md border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
+                          className="flex items-center justify-between rounded-md border border-border/60 bg-muted/20 hover:bg-accent/40 transition-colors duration-150 group relative overflow-hidden fluent-specular"
                         >
                           {isPinned && (
                             <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />
                           )}
-                          <div className="space-y-1 pl-2 pr-1">
-                            <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                              {isPinned && (
-                                <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />
-                              )}
-                              {project.name}
-                            </h4>
-                            <div className="flex items-center gap-3 text-micro text-muted-foreground">
-                              <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
-                                {project.mode === 'single' ? 'صورة مفردة' : 'كولاج مجمع'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3 shrink-0" />
-                                {project.updatedAt
-                                  ? new Date(project.updatedAt).toLocaleDateString(
-                                      'ar-EG-u-nu-latn',
-                                    )
-                                  : ''}
-                              </span>
+                          <button
+                            type="button"
+                            onClick={() => handleLoad(project)}
+                            className="min-w-0 flex-1 p-2.5 text-start cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                            aria-label={`فتح المشروع ${project.name}`}
+                          >
+                            <div className="space-y-1 pl-2 pr-1">
+                              <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                                {isPinned && (
+                                  <PushPin
+                                    className="text-primary w-3 h-3 shrink-0"
+                                    weight="fill"
+                                  />
+                                )}
+                                {project.name}
+                              </h4>
+                              <div className="flex items-center gap-3 text-micro text-muted-foreground">
+                                <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
+                                  {project.mode === 'single' ? 'صورة مفردة' : 'كولاج مجمع'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 shrink-0" />
+                                  {project.updatedAt
+                                    ? new Date(project.updatedAt).toLocaleDateString(
+                                        'ar-EG-u-nu-latn',
+                                      )
+                                    : ''}
+                                </span>
+                              </div>
                             </div>
-                          </div>
+                          </button>
 
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
+                          <div className="flex items-center px-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={(e) => togglePin(e, project.id)}
-                              className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                               title={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
                               aria-label={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
                             >
@@ -602,7 +603,7 @@ export function ProjectsDialog({
                               variant="ghost"
                               size="sm"
                               onClick={(e) => handleDelete(project.id, e)}
-                              className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               aria-label="حذف"
                             >
                               <Trash className="w-3.5 h-3.5 shrink-0" />

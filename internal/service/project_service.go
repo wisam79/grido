@@ -1,8 +1,10 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -10,6 +12,57 @@ import (
 
 	"gorm.io/gorm"
 )
+
+const (
+	maxProjectPayloadBytes = 100 * 1024 * 1024
+	maxProjectNameBytes    = 512
+	maxCanvasDimension     = 100_000
+)
+
+func validateProjectPayload(project *domain.Project) error {
+	if project == nil {
+		return errors.New("project cannot be nil")
+	}
+	project.ID = strings.TrimSpace(project.ID)
+	project.Name = strings.TrimSpace(project.Name)
+	if project.ID == "" {
+		return errors.New("project ID cannot be empty")
+	}
+	if len(project.ID) > 256 {
+		return errors.New("project ID is too long")
+	}
+	if len(project.Name) > maxProjectNameBytes {
+		return errors.New("project name is too long")
+	}
+	if project.Mode != "" && project.Mode != "single" && project.Mode != "collage" {
+		return errors.New("project mode must be single or collage")
+	}
+	if (project.CanvasWidth != 0 || project.CanvasHeight != 0) &&
+		(project.CanvasWidth <= 0 || project.CanvasHeight <= 0 ||
+			project.CanvasWidth > maxCanvasDimension || project.CanvasHeight > maxCanvasDimension) {
+		return errors.New("project canvas dimensions are invalid")
+	}
+	fields := []struct {
+		name  string
+		value domain.JSONText
+	}{
+		{"elements", project.Elements}, {"slots", project.Slots}, {"template", project.Template},
+		{"collageTemplate", project.CollageTemplate}, {"printSettings", project.PrintSettings},
+		{"editorState", project.EditorState}, {"userGuides", project.UserGuides},
+	}
+	total := 0
+	for _, field := range fields {
+		total += len(field.value)
+		trimmed := strings.TrimSpace(string(field.value))
+		if trimmed != "" && trimmed != "null" && !json.Valid([]byte(trimmed)) {
+			return fmt.Errorf("project %s is not valid JSON", field.name)
+		}
+	}
+	if total > maxProjectPayloadBytes {
+		return errors.New("project payload exceeds the 100MB limit")
+	}
+	return nil
+}
 
 type ProjectService struct {
 	repo        domain.ProjectRepository
@@ -27,8 +80,8 @@ func NewProjectService(repo domain.ProjectRepository, licenseRepo domain.License
 }
 
 func (s *ProjectService) SaveProject(project *domain.Project) error {
-	if project.ID == "" {
-		return errors.New("project ID cannot be empty")
+	if err := validateProjectPayload(project); err != nil {
+		return err
 	}
 	if project.Name == "" {
 		project.Name = "مشروع بدون عنوان"

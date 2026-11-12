@@ -54,6 +54,7 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 	if err := validatePasswordStrength(password); err != nil {
 		return nil, err
 	}
+	generation := s.beginSessionTransition()
 
 	payload, err := json.Marshal(SupabaseAuthRequest{
 		Email:    email,
@@ -73,14 +74,14 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		slog.Error("Network error during registration", "error", err, "email", email)
+		slog.Error("Network error during registration", "error", err)
 		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase signup error", "status", resp.StatusCode, "bytes", len(body), "email", email)
+		slog.Error("Supabase signup error", "status", resp.StatusCode, "bytes", len(body))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -114,8 +115,8 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 				Status:       "pending",
 				UpdatedAt:    time.Now(),
 			}
-			if saveErr := s.repo.Save(pending); saveErr != nil {
-				slog.Warn("Failed to save pending session", "error", saveErr)
+			if err := s.commitAuthenticatedSession(generation, pending); err != nil {
+				return nil, err
 			}
 			return pending, nil
 		}
@@ -138,14 +139,9 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 			Status:       prof.Status,
 			UpdatedAt:    time.Now(),
 		}
-		if err := s.repo.Clear(); err != nil {
-			slog.Warn("Failed to clear repo after registration", "error", err)
+		if err := s.commitAuthenticatedSession(generation, user); err != nil {
+			return nil, err
 		}
-		if err := s.repo.Save(user); err != nil {
-			return nil, fmt.Errorf("failed to save local session: %w", err)
-		}
-		// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
-		s.claimSession(user.Token)
 		return user, nil
 	}
 
@@ -175,14 +171,14 @@ func (s *LicenseService) ResendOTP(email string) (*domain.UserProfile, error) {
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		slog.Error("Network error during OTP resend", "error", err, "email", email)
+		slog.Error("Network error during OTP resend", "error", err)
 		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase resend OTP error", "status", resp.StatusCode, "bytes", len(body), "email", email)
+		slog.Error("Supabase resend OTP error", "status", resp.StatusCode, "bytes", len(body))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -198,6 +194,7 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 	if email == "" || token == "" {
 		return nil, errors.New("البريد الإلكتروني ورمز التحقق مطلوبان")
 	}
+	generation := s.beginSessionTransition()
 
 	// Extract token if user pasted a full magic link URL
 	if strings.Contains(token, "token=") || strings.Contains(token, "token_hash=") {
@@ -240,7 +237,7 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 
 		resp, err := sharedClient.Do(req)
 		if err != nil {
-			slog.Error("Network error during OTP verification", "error", err, "email", email)
+			slog.Error("Network error during OTP verification", "error", err)
 			return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 		}
 
@@ -295,14 +292,9 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 		UpdatedAt:    time.Now(),
 	}
 
-	if err := s.repo.Clear(); err != nil {
-		slog.Warn("Failed to clear repo", "error", err)
+	if err := s.commitAuthenticatedSession(generation, user); err != nil {
+		return nil, err
 	}
-	if err := s.repo.Save(user); err != nil {
-		return nil, fmt.Errorf("failed to save local session: %w", err)
-	}
-	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
-	s.claimSession(user.Token)
 	return user, nil
 }
 
@@ -317,6 +309,7 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	if len(password) > 128 {
 		return nil, errors.New("كلمة المرور يجب أن لا تتجاوز 128 حرفاً")
 	}
+	generation := s.beginSessionTransition()
 
 	payload, err := json.Marshal(SupabaseAuthRequest{
 		Email:    email,
@@ -335,14 +328,14 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		slog.Error("Network error during login", "error", err, "email", email)
+		slog.Error("Network error during login", "error", err)
 		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase login error", "status", resp.StatusCode, "bytes", len(body), "email", email)
+		slog.Error("Supabase login error", "status", resp.StatusCode, "bytes", len(body))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			if strings.Contains(errMsg, "تأكيد") || strings.Contains(string(body), "Email not confirmed") {
 				return nil, errors.New(errMsg) // Wails will just pass the error string
@@ -386,14 +379,9 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 		UpdatedAt:    time.Now(),
 	}
 
-	if err := s.repo.Clear(); err != nil {
-		slog.Warn("Failed to clear repo", "error", err)
+	if err := s.commitAuthenticatedSession(generation, user); err != nil {
+		return nil, err
 	}
-	if err := s.repo.Save(user); err != nil {
-		return nil, fmt.Errorf("failed to save session: %w", err)
-	}
-	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
-	s.claimSession(user.Token)
 	return user, nil
 }
 
@@ -444,6 +432,7 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 	if err := validatePasswordStrength(newPassword); err != nil {
 		return nil, err
 	}
+	generation := s.beginSessionTransition()
 
 	verifyTypes := []string{"recovery", "magiclink", "signup", "email"}
 	var lastErr error
@@ -518,7 +507,7 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 
 	if updateResp.StatusCode != http.StatusOK {
 		updateBody, _ := io.ReadAll(io.LimitReader(updateResp.Body, maxResponseSize))
-		slog.Error("Supabase update password failed", "status", updateResp.StatusCode, "body", string(updateBody))
+		slog.Error("Supabase update password failed", "status", updateResp.StatusCode, "bytes", len(updateBody))
 		if errMsg := parseSupabaseError(updateBody); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -550,15 +539,9 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 		RefreshToken: authRes.RefreshToken,
 	}
 
-	if err := s.repo.Clear(); err != nil {
-		slog.Warn("Failed to clear repo in VerifyRecoveryOTP", "error", err)
+	if err := s.commitAuthenticatedSession(generation, profile); err != nil {
+		return nil, err
 	}
-	if err := s.repo.Save(profile); err != nil {
-		slog.Error("Failed to persist user profile after password reset", "error", err)
-	}
-
-	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
-	s.claimSession(profile.Token)
 
 	return profile, nil
 }

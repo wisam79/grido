@@ -133,6 +133,11 @@ tasks:
     cmds:
       - node scripts/release.mjs --check
 
+  installer:check:
+    summary: Verifies that NSIS uninstall preserves user projects and media
+    cmds:
+      - node scripts/installer-policy-check.mjs
+
   docs:check:
     summary: Runs the mandatory documentation sync gate (metrics, inventory, doc coverage)
     desc: |

@@ -107,8 +107,6 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
     isRunning: true,
   }), // StartPhoneBridge
   1433752998: async () => undefined, // StopPhoneBridge
-  2987688963: async () => undefined, // Startup / fallback
-  2154875234: async () => undefined, // Shutdown / fallback
 
   // ── LicenseHandler bindings (frontend/bindings/grido/internal/handlers/licensehandler.ts) ──
   1507354738: async () => MOCK_USER_PROFILE, // ActivateLicenseKey

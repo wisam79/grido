@@ -366,36 +366,15 @@ export function useKeyboardShortcuts() {
     tabGuard,
   );
 
-  // Toggle Zen Mode (Canvas focus): Tab key or Ctrl+. / Cmd+.
+  // Toggle Zen Mode (Canvas focus): Ctrl+. / Cmd+.
   useHotkeys(
-    'tab, mod+.',
+    'mod+period',
     (e) => {
       if (shouldIgnoreCanvasAction(e)) return;
-      if (e.key === 'Tab') {
-        const target = (e.target || document.activeElement) as HTMLElement | null;
-        if (
-          target?.closest?.(
-            'button, [role="button"], a, input, textarea, select, [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], [tabindex]:not([tabindex="-1"])',
-          )
-        ) {
-          return;
-        }
-      }
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'));
     },
-    {
-      ignoreEventWhen: (e) => {
-        if (isModalActive()) return true;
-        if (e.key === 'Tab') {
-          const t = (e.target || document.activeElement) as HTMLElement | null;
-          return !!t?.closest?.(
-            'button, [role="button"], a, input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select, [tabindex]:not([tabindex="-1"])',
-          );
-        }
-        return false;
-      },
-    },
+    tabGuard,
   );
 
   // Toggle Rulers: Ctrl+R or Cmd+R

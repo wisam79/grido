@@ -28,19 +28,33 @@ export function withShadowlessDrag<E>(
   getRoot: () => ShadowRoot,
   onStart: (e: E) => void,
   onEnd: (e: E) => void,
-): { handleStart: (e: E) => void; handleEnd: (e: E) => void } {
+): { handleStart: (e: E) => void; handleEnd: (e: E) => void; cleanup: () => void } {
   const restore = () => setSubtreeShadows(getRoot(), true);
+  let cleanupSafetyListeners: () => void = () => {};
+
+  const cleanup = () => {
+    cleanupSafetyListeners();
+    cleanupSafetyListeners = () => {};
+    restore();
+  };
+
   const handleStart = (e: E) => {
+    cleanup();
     setSubtreeShadows(getRoot(), false);
     if (typeof window !== 'undefined') {
-      window.addEventListener('pointerup', restore, { once: true });
-      window.addEventListener('blur', restore, { once: true });
+      const restoreSafely = () => cleanup();
+      cleanupSafetyListeners = () => {
+        window.removeEventListener('pointerup', restoreSafely);
+        window.removeEventListener('blur', restoreSafely);
+      };
+      window.addEventListener('pointerup', restoreSafely, { once: true });
+      window.addEventListener('blur', restoreSafely, { once: true });
     }
     onStart(e);
   };
   const handleEnd = (e: E) => {
-    restore();
+    cleanup();
     onEnd(e);
   };
-  return { handleStart, handleEnd };
+  return { handleStart, handleEnd, cleanup };
 }

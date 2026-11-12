@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"image"
 	"math"
 )
@@ -11,20 +12,41 @@ import (
 // أي تعديل هنا يكسر التوازي مع الواجهة — يُحدَّث المساران معاً أو لا شيء.
 
 func applyScannerFilterMode(img *image.NRGBA, mode ScannerFilterMode) *image.NRGBA {
+	out, _ := applyScannerFilterModeContext(context.Background(), img, mode)
+	return out
+}
+
+func applyScannerFilterModeContext(ctx context.Context, img *image.NRGBA, mode ScannerFilterMode) (*image.NRGBA, error) {
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
 	switch mode {
 	case FilterMagic:
-		applyScannerMagicFilter(img)
+		if err := applyScannerMagicFilter(ctx, img); err != nil {
+			return nil, err
+		}
 	case FilterBW:
-		applyScannerOtsuFilter(img)
+		if err := applyScannerOtsuFilter(ctx, img); err != nil {
+			return nil, err
+		}
 	case FilterGrayscale:
-		applyScannerGrayscaleFilter(img)
+		if err := applyScannerGrayscaleFilter(ctx, img); err != nil {
+			return nil, err
+		}
 	case FilterSharpen:
-		applyScannerSharpenFilter(img)
+		if err := applyScannerSharpenFilter(ctx, img); err != nil {
+			return nil, err
+		}
 	case FilterDeyellow:
-		applyScannerDeyellowFilter(img)
+		if err := applyScannerDeyellowFilter(ctx, img); err != nil {
+			return nil, err
+		}
 	case FilterOriginal:
 	}
-	return img
+	if err := checkScannerWarpContext(ctx); err != nil {
+		return nil, err
+	}
+	return img, nil
 }
 
 // lumShift10 يكافئ `(306r + 601g + 117b) >> 10` في TS (قسمة صحيحة لأسفل).
@@ -46,7 +68,7 @@ func jsRoundF(x float64) uint8 {
 
 // applyScannerMagicFilter منقولة من applyMagicColorFilter: تبييض الخلفية
 // وتمديد النطاق الديناميكي مع حماية الألوان المشبعة.
-func applyScannerMagicFilter(img *image.NRGBA) {
+func applyScannerMagicFilter(ctx context.Context, img *image.NRGBA) error {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
 	pix := img.Pix
@@ -57,6 +79,9 @@ func applyScannerMagicFilter(img *image.NRGBA) {
 	bgSum := 0.0
 	bgCount := 0
 	for y := 0; y < h; y += sampleStep {
+		if err := checkScannerWarpContext(ctx); err != nil {
+			return err
+		}
 		for x := 0; x < w; x += sampleStep {
 			idx := y*stride + x*4
 			gray := 0.299*float64(pix[idx]) + 0.587*float64(pix[idx+1]) + 0.114*float64(pix[idx+2])
@@ -74,6 +99,11 @@ func applyScannerMagicFilter(img *image.NRGBA) {
 
 	// 2. منحنى التباين الذكي
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		for x := 0; x < w; x++ {
 			idx := y*stride + x*4
 			ri, gi, bi := pix[idx], pix[idx+1], pix[idx+2]
@@ -109,11 +139,12 @@ func applyScannerMagicFilter(img *image.NRGBA) {
 			pix[idx+3] = 255
 		}
 	}
+	return nil
 }
 
 // applyScannerOtsuFilter منقولة من applyOtsuFilter: عتبة تكيفية (Bradley)
 // عبر الصورة التكاملية.
-func applyScannerOtsuFilter(img *image.NRGBA) {
+func applyScannerOtsuFilter(ctx context.Context, img *image.NRGBA) error {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
 	pix := img.Pix
@@ -130,6 +161,11 @@ func applyScannerOtsuFilter(img *image.NRGBA) {
 	intW := w + 1
 	integral := make([]uint64, intW*(h+1))
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		rowSum := uint64(0)
 		for x := 0; x < w; x++ {
 			rowSum += uint64(gray[y*w+x])
@@ -141,6 +177,11 @@ func applyScannerOtsuFilter(img *image.NRGBA) {
 	const c = 8
 
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		y1 := max(0, y-windowRadius)
 		y2 := min(h, y+windowRadius+1)
 		for x := 0; x < w; x++ {
@@ -162,11 +203,12 @@ func applyScannerOtsuFilter(img *image.NRGBA) {
 			pix[idx+2] = val
 		}
 	}
+	return nil
 }
 
 // applyScannerGrayscaleFilter منقولة من applyGrayscaleFilter — العينة هنا
 // خطية على المصفوفة المسطحة (كل بكسل رقم sampleStep) كما في TS.
-func applyScannerGrayscaleFilter(img *image.NRGBA) {
+func applyScannerGrayscaleFilter(ctx context.Context, img *image.NRGBA) error {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
 	pix := img.Pix
@@ -192,6 +234,11 @@ func applyScannerGrayscaleFilter(img *image.NRGBA) {
 	}
 
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		for x := 0; x < w; x++ {
 			idx := y*stride + x*4
 			lum := float64(lumShift10(pix[idx], pix[idx+1], pix[idx+2]))
@@ -210,17 +257,18 @@ func applyScannerGrayscaleFilter(img *image.NRGBA) {
 			pix[idx+3] = 255
 		}
 	}
+	return nil
 }
 
 // applyScannerSharpenFilter منقولة من applySharpenFilter: نواة Laplacian
 // (المركز 3.0 والجيران -0.5) مع نسخ الحواف.
-func applyScannerSharpenFilter(img *image.NRGBA) {
+func applyScannerSharpenFilter(ctx context.Context, img *image.NRGBA) error {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
 	pix := img.Pix
 	stride := img.Stride
 	if w <= 2 || h <= 2 {
-		return
+		return nil
 	}
 
 	src := make([]uint8, len(pix))
@@ -230,6 +278,11 @@ func applyScannerSharpenFilter(img *image.NRGBA) {
 	const neighborWeight = -0.5
 
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		rowOffset := y * stride
 		isBorderRow := y == 0 || y == h-1
 		for x := 0; x < w; x++ {
@@ -255,17 +308,23 @@ func applyScannerSharpenFilter(img *image.NRGBA) {
 			pix[idx+3] = 255
 		}
 	}
+	return nil
 }
 
 // applyScannerDeyellowFilter منقولة من applyDeYellowFilter: تعويض القناة
 // الزرقاء الناقصة عند رصد اصفرار مع إبقاء الحبر الداكن كما هو.
-func applyScannerDeyellowFilter(img *image.NRGBA) {
+func applyScannerDeyellowFilter(ctx context.Context, img *image.NRGBA) error {
 	w := img.Bounds().Dx()
 	h := img.Bounds().Dy()
 	pix := img.Pix
 	stride := img.Stride
 
 	for y := 0; y < h; y++ {
+		if y%32 == 0 {
+			if err := checkScannerWarpContext(ctx); err != nil {
+				return err
+			}
+		}
 		for x := 0; x < w; x++ {
 			idx := y*stride + x*4
 			r := pix[idx]
@@ -285,4 +344,5 @@ func applyScannerDeyellowFilter(img *image.NRGBA) {
 			pix[idx+3] = 255
 		}
 	}
+	return nil
 }
