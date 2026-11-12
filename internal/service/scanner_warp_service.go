@@ -480,13 +480,9 @@ func computeScannerPerspectiveTransform(src, dst []ScannerWarpPoint) ([9]float64
 	return h, nil
 }
 
-// warpPerspectiveBilinear الاستعدال بشرائح صفوف متوازية — نفس حلقة
+// warpPerspectiveBilinearContext الاستعدال بشرائح صفوف متوازية — نفس حلقة
 // warp-pipeline.ts (Homography عكسي + Bilinear بأوزان w00/w10/w01/w11).
 // البكسلات خارج المضلع تبقى شفافة (أصفار) كما في createImageData.
-func warpPerspectiveBilinear(src *image.NRGBA, localCorners []ScannerWarpPoint, outW, outH int) (*image.NRGBA, error) {
-	return warpPerspectiveBilinearContext(context.Background(), src, localCorners, outW, outH)
-}
-
 func warpPerspectiveBilinearContext(ctx context.Context, src *image.NRGBA, localCorners []ScannerWarpPoint, outW, outH int) (*image.NRGBA, error) {
 	srcW := src.Bounds().Dx()
 	srcH := src.Bounds().Dy()

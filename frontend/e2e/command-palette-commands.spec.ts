@@ -23,14 +23,14 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     const palette = page.getByTestId('command-palette');
     await expect(palette).toBeVisible();
     await expect(palette).toHaveCount(1);
-    // لا نسخة ثانية من اللوحة على شكل نافذة حوارية فوق الشريط
-    await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
+    // اللوحة الوحيدة تُستضاف داخل Radix Dialog لإدارة التركيز — لا لوحة ثانية.
+    await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(1);
   });
 
   test('Ctrl+K يفتح اللوحة النشطة الوحيدة', async ({ page }) => {
     await page.keyboard.press('Control+k');
     await expect(page.getByTestId('command-palette')).toBeVisible();
-    await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
+    await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(1);
   });
 
   test('أمر «تبديل المظهر» ينفّذ تبديلاً حقيقياً للمظهر', async ({ page }) => {

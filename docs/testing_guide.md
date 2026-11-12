@@ -364,7 +364,7 @@ go test -count=1 -v ./internal/...
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
 - **Go Backend (بوابة دورية جديدة):** وظيفة `Backend Race & Coverage (Scheduled)` في `.github/workflows/ci.yml` تعمل أسبوعياً وعند `workflow_dispatch` عبر `go test -race -covermode=atomic -coverprofile=coverage.out ./internal/...`، تطبع الملخص وترفع `coverage.out` لمدة 14 يوماً. هي تشخيص دوري مستقل عن المسار السريع لكل push؛ لا تُثبت عتبة رقمية قبل تكوين baseline سحابي فعلي.
-- **ثبات E2E:** مواصفة Transformer تعتمد `expect.poll` على هندسة العقدة الفعلية، وأُزيلت فواصل `waitForTimeout` الثابتة بين ضغطات المفاتيح.
+- **ثبات E2E:** مواصفة Transformer تعتمد `expect.poll` على هندسة العقدة الفعلية، وأُزيلت فواصل `waitForTimeout` الثابتة بين ضغطات المفاتيح. ومواصفة لوحة الأدوات تثبت مصدرًا واحدًا داخل **Radix Dialog واحد** (`command-palette` واحد + `dialog-content` واحد) لأن الحوار هو الآن مالك focus trap وعودة التركيز، وليس نسخة أوامر ثانية.
 
 > 📌 الأرقام أدناه **تحقق: 2026-10-20**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
 
