@@ -48,7 +48,7 @@
 
 | الأداة | الإصدار |
 |---|---|
-| [Go](https://go.dev/dl/) | 1.26+ |
+| [Go](https://go.dev/dl/) | 1.26.11+ |
 | [Node.js](https://nodejs.org/) | 22+ (الإصدار المثبَّت في `.nvmrc`؛ `frontend/package.json` يفرض `>=22`) |
 | [Wails CLI](https://v3.wails.io/) | `wails3` v3.0.0 |
 | NSIS | للبناء على ويندوز فقط |

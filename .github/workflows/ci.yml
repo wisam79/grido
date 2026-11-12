@@ -10,9 +10,9 @@ permissions:
 # Single source of truth for toolchain versions (Dependabot watches the
 # actions; Go is pinned here, Node is pinned in .nvmrc for local/CI parity).
 env:
-  # 1.26.10 — govulncheck gate: GO-2026-6809 (crypto/x509) fixed in 1.26.10
-  # و GO-2026-6617 (net/http) fixed in 1.26.9 — لا تنزل دون 1.26.10.
-  GO_VERSION: "1.26.10"
+  # 1.26.11 — govulncheck gate: GO-2026-6859 (net/http) fixed in 1.26.11؛
+  # ويتضمن إصلاحَي GO-2026-6809/6617 من 1.26.10/1.26.9. لا تنزل دون 1.26.11.
+  GO_VERSION: "1.26.11"
 
 on:
   push:
