@@ -6,15 +6,12 @@ import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { assertExportablePixels, CanvasTooLargeError } from '@/lib/export/export-limits';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { createLogger } from '@/lib/logger';
 import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
-import { renderWithPixelFilter } from './export-pixel-filter';
+import { renderWithCanonicalPrintFilters } from './export-pixel-filter';
 import {
   applySlotTransform,
-  drawSlotImage,
   drawSlotImageLocal,
   getSlotLocalSize,
   loadImage,
@@ -91,28 +88,16 @@ export async function exportSlotCanvas(
     }
 
     const localSize = getSlotLocalSize(exportWidth, exportHeight, slot.rotation);
-    // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
-    if (isPixelFilter(slot.filter)) {
-      const off = renderWithPixelFilter(localSize.width, localSize.height, slot.filter, (octx) => {
-        // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
-        octx.filter = buildAdjustmentCSS(slot);
-        drawSlotImageLocal(octx, img, exportWidth, exportHeight, slot);
-      });
-      if (off) {
-        ctx.save();
-        applySlotTransform(ctx, 0, 0, exportWidth, exportHeight, slot);
-        ctx.drawImage(off, 0, 0, localSize.width, localSize.height);
-        ctx.restore();
-      }
-    } else {
+    const filtered = renderWithCanonicalPrintFilters(
+      localSize.width,
+      localSize.height,
+      slot,
+      (octx) => drawSlotImageLocal(octx, img, exportWidth, exportHeight, slot),
+    );
+    if (filtered) {
       ctx.save();
-      const filterStr = buildCSSFilter(slot);
-      if (filterStr && filterStr !== 'none') {
-        ctx.filter = filterStr;
-      }
-      // القص (zoom/drag) والقلب والدوران يُحترمون أيضاً في تصدير الخانة المفردة (إصلاح E-7)
-      drawSlotImage(ctx, img, 0, 0, exportWidth, exportHeight, slot);
-      ctx.filter = 'none';
+      applySlotTransform(ctx, 0, 0, exportWidth, exportHeight, slot);
+      ctx.drawImage(filtered, 0, 0, localSize.width, localSize.height);
       ctx.restore();
     }
 

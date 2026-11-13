@@ -90,12 +90,11 @@ describe('ExportProject Unit Tests', () => {
         new Response('copy failed', { status: 500 }),
       );
       const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
-        Promise.resolve(
-          new Response(tiffBytes.slice(), {
-            status: 200,
-            headers: { 'Content-Type': 'image/tiff' },
-          }),
-        ),
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          blob: async () => new Blob([tiffBytes.slice()], { type: 'image/tiff' }),
+        } as Response),
       );
       vi.mocked(AppGo.SaveFileDialog).mockResolvedValueOnce('success');
 
@@ -121,9 +120,11 @@ describe('ExportProject Unit Tests', () => {
 
     it('never sends an empty or invalid TIFF placeholder to IPC fallback', async () => {
       vi.spyOn(LocalApi, 'isLocalApiAvailable').mockReturnValue(false);
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(new Blob(['not-tiff']), { status: 200 }),
-      );
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        blob: async () => new Blob(['not-tiff']),
+      } as Response);
 
       const result = await downloadBlob(
         new Blob([], { type: 'image/tiff' }),

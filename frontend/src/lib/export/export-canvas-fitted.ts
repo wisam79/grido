@@ -12,13 +12,11 @@ import { measureTextContentHeightPx } from '@/lib/canvas/text-fit';
 import { resolveTextDecorationColor, resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { wrapTextLines } from '@/lib/canvas/text-layout';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
 import { createLogger } from '@/lib/logger';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
-import { colorWithAlpha, getRoundedPool } from './export-color';
-import { renderWithPixelFilter } from './export-pixel-filter';
+import { colorWithAlpha } from './export-color';
+import { renderWithCanonicalPrintFilters } from './export-pixel-filter';
 import { drawImageCover, drawRoundRect, drawStar, loadImage } from './export-primitives';
 
 import type { useEditorStore } from '@/lib/editor-store';
@@ -146,55 +144,13 @@ export async function renderFittedBranch(
         ctx.restore();
       }
 
-      if (isPixelFilter(el.filter)) {
-        const off = renderWithPixelFilter(w, h, el.filter, (octx) => {
-          // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
-          octx.filter = buildAdjustmentCSS(el);
-          octx.save();
-          clipImage(octx);
-          drawImageCover(octx, img, 0, 0, w, h);
-          octx.restore();
-        });
-        if (off) ctx.drawImage(off, 0, 0, w, h);
-      } else {
-        const filterStr = buildCSSFilter(el);
-        if (maskShape) {
-          ctx.save();
-          clipImage(ctx);
-          ctx.filter = filterStr;
-          drawImageCover(ctx, img, 0, 0, w, h);
-          ctx.filter = 'none';
-          ctx.restore();
-        } else if (radius > 0) {
-          // قص cornerRadius على كانفس وسيط مشترك ليأخذ الظل شكل ألفا الصورة المقصوصة (مطابقة KonvaImage)
-          const pooled = getRoundedPool(w, h);
-          if (pooled) {
-            const { canvas: off, ctx: octx } = pooled;
-            if (filterStr && filterStr !== 'none') octx.filter = filterStr;
-            drawRoundRect(octx, 0, 0, off.width, off.height, radius);
-            octx.clip();
-            drawImageCover(octx, img, 0, 0, off.width, off.height);
-            octx.filter = 'none';
-            ctx.drawImage(off, 0, 0, w, h);
-          } else {
-            // 🛡️ تعذر توفير كانفس وسيط (ندرة 2D context): قص مباشر على السياق
-            // المشترك كمسار احتياطي يرسم الحواف المستديرة — بدل إسقاط الصورة صامتاً
-            // بلا سجل (تدقيق 2026-11-01).
-            logger.warn('export-canvas-fitted: rounded pool unavailable; direct clip fallback');
-            ctx.save();
-            drawRoundRect(ctx, 0, 0, w, h, radius);
-            ctx.clip();
-            if (filterStr && filterStr !== 'none') ctx.filter = filterStr;
-            drawImageCover(ctx, img, 0, 0, w, h);
-            ctx.filter = 'none';
-            ctx.restore();
-          }
-        } else {
-          ctx.filter = filterStr;
-          drawImageCover(ctx, img, 0, 0, w, h);
-          ctx.filter = 'none';
-        }
-      }
+      const filtered = renderWithCanonicalPrintFilters(w, h, el, (octx) => {
+        octx.save();
+        clipImage(octx);
+        drawImageCover(octx, img, 0, 0, w, h);
+        octx.restore();
+      });
+      if (filtered) ctx.drawImage(filtered, 0, 0, w, h);
     } else if (el.type === 'text') {
       const fontSize = el.fontSize || 32;
       // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)

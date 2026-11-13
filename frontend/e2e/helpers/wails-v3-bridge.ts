@@ -159,7 +159,14 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
       { id: 256, name: 'A4 Borderless', widthMM: 210, heightMM: 297, isBorderless: true },
     ],
   }), // GetSupportedPapers
-  1373740449: async () => ({ success: true, jobId: 1, status: 'Completed' }), // PollJobStatus
+  1373740449: async () => ({
+    success: true,
+    jobId: 1,
+    status: 'Completed',
+    code: 'COMPLETED',
+    terminal: true,
+    error: '',
+  }), // PollJobStatus
   1268920029: async () => ({ success: true, jobId: 1, status: 'Spooling' }), // PrintDirect
   1144725046: async (req: {
     printerName?: string;

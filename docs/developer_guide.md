@@ -17,7 +17,7 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 ### عقد الفلاتر القانوني
 
 - `frontend/src/lib/filters/print-filter-contract.ts` هو كتالوج الوصفات المرتبة: وصفة المرشح أولاً، ثم تعديلات المستخدم بترتيب brightness → contrast → saturation. `custom-filters.ts` و`konva-filters.ts` يستهلكان العمليات نفسها؛ النظير في Go هو `printFilterRecipes` و`applyPrintImageFilterPipeline` في `print_image_pipeline.go`.
-- العمليات اللونية المتجاورة قد تندمج في مسح بكسلي واحد، لكن التقريب المرحلي وترتيب العمليات محفوظان؛ pixelate والـblur يظلان تمريرتين مكانيتين مستقلتين. المرشح أو التعديل غير الصالح يُرفض في تحقق الطلب بدلاً من التجاهل الصامت.
+- العمليات اللونية المتجاورة قد تندمج في مسح بكسلي واحد، لكن التقريب المرحلي وترتيب العمليات محفوظان؛ pixelate والـblur يظلان تمريرتين مكانيتين مستقلتين. مسارات Canvas 2D اليدوية للكولاج والوضع الحر والخانة المفردة تطبق العمليات القانونية نفسها على `ImageData` بدل الاعتماد على اختلافات `ctx.filter` بين محركات المتصفح. المرشح أو التعديل غير الصالح يُرفض في تحقق الطلب بدلاً من التجاهل الصامت.
 - `test-fixtures/print-rgba/filters/` يحمل RGBA متوقعاً مستقلاً لـidentity/brightness/contrast/saturation/sepia/grayscale/invert/threshold/pixelate، وتستهلكه اختبارات TypeScript وGo مع حرّاس طفرة للترتيب.
 
 ### معاملة التقاط Stage (Capture Transaction)
@@ -45,7 +45,7 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 - المسار النشط للطباعة sRGB هو: توليد JPEG افتراضياً أو PNG اختيارياً → `PrintDirect` → `PrintImageDirectGDI` → `CreateDCW`/`StartDocW`/`StretchDIBits` → Windows Spooler. لا `iframe` ولا `window.print()` في هذا المسار.
 - `ResolvePrinterPlan(PrinterPlanRequest)` يحل القالب الفعلي قبل السبول ويعيد المطلوب/المطبق، أبعاد الورق والمساحة القابلة للطباعة والإزاحات والمقياس وسبب fallback. الطلب الصريح لقالب مخصص غير مدعوم يفشل ولا يسقط بصمت إلى A4؛ fallback الافتراضي يحمل metadata صريحة.
 - `PollJobStatus` يعيد envelope ثابتاً للحالة/الكود/النهائية، و`CancelSpoolJob` يستعمل `SetJobW(..., JOB_CONTROL_CANCEL)` لمهمة أُرسلت فعلاً. هذا منفصل عن `CancelPrintJob` الخاص بتوليد الورقة قبل السبول.
-- في الواجهة ظهرت سقالات orchestration: استيراد `ResolvePrinterPlan`/`CancelSpoolJob`، معرف توليد مملوك للعميل، ومراجع generation/spool. في اللقطة التي وثقتها هذه الجلسة لم يكن استدعاء `ResolvePrinterPlan(...)` ولا تمرير `jobId` إلى `PrintRequest` ولا تثبيت `spoolJobRef` بعد `PrintDirect` ظاهراً بعد؛ لذلك يبقى اكتمال التكامل ونتائج اختباره معلقاً لتأكيد الوالد، ولا يُعلن إغلاقه من مجرد وجود الواردات.
+- الواجهة تستدعي `ResolvePrinterPlan` قبل `PrintDirect`، تمرر `PrintRequest.jobId` وكتل الخلفية، وتثبت `spoolJobRef`. بعد السبول تُبقي حالة الانتظار وتستعلم كل 1.5ث حتى terminal أو مهلة دقيقتين؛ الإلغاء يستهدف generation/spool بمعرفيهما ولا يلغي أعمالاً أخرى.
 - اختبارات Windows ذات البادئة `TestGDIPure_*` تستخدم seam Win32 قابلاً للاستبدال ولا تحتاج طابعة مثبتة؛ CI يشغّلها في `windows-build`. الاختبارات الحية ذات `TestGDILive_*` ليست ضمن اختيار المستضيف.
 
 ### تقرير الأداء
