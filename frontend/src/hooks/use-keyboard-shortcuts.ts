@@ -481,11 +481,9 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // استعادة الواجهة 100%: Ctrl + Shift/Alt + Backspace أو 0
-      const isResetKey =
-        e.key === 'Backspace' ||
-        e.code === 'Backspace' ||
-        (isAlt && (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0'));
+      // استعادة الواجهة 100%: Ctrl + Shift/Alt + Backspace فقط
+      // (Alt+0 بدون Mod أو Ctrl+Alt+0 لا يُعترضان هنا كي لا يُحجب autoFitZoomStore).
+      const isResetKey = e.key === 'Backspace' || e.code === 'Backspace';
 
       if (isResetKey) {
         e.preventDefault();

@@ -2,6 +2,17 @@
 
 Welcome to the **Grido Studio** developer guide. This document provides an in-depth explanation of the application's architecture, key systems, canvas engine, state management, background processes, testing workflows, and build guides.
 
+## حدود عقود متابعة UI/البنية — 2026-11-13
+
+مرجع الحالة والأدلة [التقرير 24](reviews/24-ui-architecture-audit-disposition-2026-11-13.md#ملحق-disposition--2026-11-13)؛ البنود المسماة مثبتة بأدلة محددة ونتائج منفردة، والباقي غير متحقق/غير مغلق في هذه الجولة. لا شهادة إغلاق شامل.
+
+- **Capture:** `frontend/src/lib/canvas/konva-export-utils.ts:529–572,719–785` يحل `includeNodeIds` من Stage داخل القفل، ويبقي أسلاف/أبناء المحدد ويستعيد visible الأصلية في `finally`. `frontend/src/lib/store/slices/element/merge.ts:54–77,222–264` يحفظ Map لمراجع المصادر immutable ويفحصها بعد capture/upload؛ تغيير مشارك يبطل النتيجة، وتعديلات nonparticipants لا تبطلها.
+- **Auth:** `frontend/src/components/editor/dialogs/account/use-auth-forms.ts:60–102,121–310` يشترك متزامناً في close ويشترط open+mounted+generation قبل callbacks ورسائل/حقول النتائج. `account-license-modal.tsx:53–85` تحت `dialogs/` يثبت callback/finite/reset. الحماية **محلية للواجهة**؛ لا تلغي مصادقة الستور أو IPC الأصلي، ويبقى نجاح store.user المتأخر ممكناً. لا تغيير لسياسة الترخيص/offline.
+- **Admin:** `admin-web/src/pages/admin/useAdminOperationOwnership.ts:13–47` يجمع lifecycle/session epochs وclient identity مع mounted/authenticated؛ reset في `useAdminUsers.ts:50–68` و`useAdminKeys.ts:51–63` تحت المجلد نفسه يبطل الملكية. `useAdminSession.ts:80–101,164–193,247–276` يبطل الجلسة متزامناً وينظف override التخزين ويراقب auth؛ ordinary fetch IDs لا تبطل mutation في الجلسة نفسها. هذا عزل للنتائج والرسائل، **لا rollback** لكتابة خادم أو بديل authorization؛ اختبار ownership النهائي 51/51 بالمحاكاة.
+- **Phone:** `admin-web/src/lib/phone-bridge-pairing.ts:33,78` و`admin-web/src/pages/PhoneCameraPage.tsx:170,244–359,565,791–808` يثبتان transitions/generations/reset/channel lifecycle/canUpload/labels؛ النقل هو العرض الرئيسي، وبادج ack يظهر فقط عند إقرار حقيقي إن وصل. **transport readiness ليس desktop acknowledgement**؛ paired-ack اختياري بلا producer مثبت، وغيابه لا يحجب upload توافقاً مع desktop قديم. الهجرة `supabase/migrations/20261113155602_phone_bridge_handshake_json_mime.sql` **LOCAL NOT APPLIED** رغم lint والبصمة؛ اختبار pure helper 24/24 لا يثبت page GUI/live MIME.
+- **Templates/rotation:** `frontend/src/components/editor/panels/template-panel.tsx:42–89,215–224,273–288` يتحقق من خلايا الاستيراد وحدودها وradix10، ويحذف نسخة المكتبة فقط مع حفظ applied metadata snapshot وهندسته وصوره. `frontend/src/features/freeform-collage/lib/slots/slot-resize.ts:340–381` يدور المقاس الفيزيائي بعامل تحجيم واحد؛ إن تعارض الحد الأدنى مع المساحة يعيد slots نفسها بلا تغيير حتى rotation.
+- **Batch:** الدليل السابق `frontend/src/components/editor/dialogs/batch-insert-dialog.tsx:294,523` يثبت تفريغ queue وإخفاء layout غير المدعوم في الكولاج؛ إخفاء الخيار بديل صادق، لا تنفيذ لسياسة layout جديدة.
+
 ---
 
 ## عقود إغلاق الطباعة والتصدير في شجرة العمل — 13 نوفمبر 2026

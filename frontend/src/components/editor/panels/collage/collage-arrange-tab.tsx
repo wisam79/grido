@@ -25,7 +25,6 @@ import {
   reverseRowsWithinFilled,
   shuffleWithinFilled,
   srcMatricesEqual,
-  transposeIndexMap,
   type SrcMatrix,
 } from './collage-arrange-ops';
 import {
@@ -78,7 +77,7 @@ export function CollageArrangeTab() {
     collageTemplate,
     collageGap,
     collageMargin,
-    setCollageTemplate,
+    commitCollageLayout,
     pushHistory,
   } = useEditorStore(
     useShallow((state) => ({
@@ -92,7 +91,7 @@ export function CollageArrangeTab() {
       collageTemplate: state.collageTemplate,
       collageGap: state.collageGap,
       collageMargin: state.collageMargin,
-      setCollageTemplate: state.setCollageTemplate,
+      commitCollageLayout: state.commitCollageLayout,
       pushHistory: state.pushHistory,
     })),
   );
@@ -195,16 +194,25 @@ export function CollageArrangeTab() {
    */
   const transposeGrid = () => {
     const template = collageTemplate;
-    if (!template) return;
-    const rows = template.physicalLayout?.rows ?? grid.rows;
-    const cols = template.physicalLayout?.cols ?? grid.cols;
+    if (!template || !grid.isComplete) return;
+    const rows = grid.rows;
+    const cols = grid.cols;
     if (!rows || !cols) return;
-
-    // خريطة الصور المطلوبة تُحسب **قبل** إعادة البناء (المعرّفات تتغير بعده)
-    const contentMap = transposeIndexMap(rows, currentSrcMatrix());
 
     const nextRows = cols;
     const nextCols = rows;
+
+    // الخريطة الهندسية (row, col) → (col, row) تُمرَّر ذرياً إلى commitCollageLayout
+    // لتحديث القالب ومواضع الصور في خطوة تراجع واحدة بدل خطوتين متتابعتين
+    const sourceSlotIds: Array<string | undefined> = Array.from(
+      { length: nextRows * nextCols },
+      () => undefined,
+    );
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        sourceSlotIds[c * nextCols + r] = grid.matrix[r]?.[c] ?? undefined;
+      }
+    }
 
     if (template.physicalLayout) {
       const type = template.physicalLayout.type as PhotoGridType;
@@ -221,30 +229,27 @@ export function CollageArrangeTab() {
         collageGap,
         collageMargin,
       );
-      setCollageTemplate({
-        ...template,
-        name: `كولاج ${label} (${nextRows}×${nextCols})`,
-        slots: cells.length,
-        cells,
-        physicalLayout: { ...template.physicalLayout, rows: nextRows, cols: nextCols },
-      });
+      commitCollageLayout(
+        {
+          ...template,
+          name: `كولاج ${label} (${nextRows}×${nextCols})`,
+          slots: cells.length,
+          cells,
+          physicalLayout: { ...template.physicalLayout, rows: nextRows, cols: nextCols },
+        },
+        { sourceSlotIds },
+      );
     } else {
       const cells = buildStretchGridCells(nextRows, nextCols);
-      setCollageTemplate({
-        ...template,
-        name: `كولاج مخصص (${nextRows}×${nextCols})`,
-        slots: cells.length,
-        cells,
-      });
-    }
-
-    // الخلايا الجديدة تُرتَّب صفاً صفاً بعرض nextCols ⇒ المفهرس = c*nextCols + r
-    if (contentMap.size > 0) {
-      const freshSlots = useEditorStore.getState().slots;
-      const assignments = [...contentMap.entries()]
-        .map(([index, sourceSlotId]) => ({ slotId: freshSlots[index]?.id, sourceSlotId }))
-        .filter((a): a is { slotId: string; sourceSlotId: string } => Boolean(a.slotId));
-      if (assignments.length > 0) moveSlotContentsBatch(assignments);
+      commitCollageLayout(
+        {
+          ...template,
+          name: `كولاج مخصص (${nextRows}×${nextCols})`,
+          slots: cells.length,
+          cells,
+        },
+        { sourceSlotIds },
+      );
     }
   };
 
@@ -290,7 +295,7 @@ export function CollageArrangeTab() {
       hint: 'قلب الصفوف والأعمدة',
       icon: <ArrowsDownUp className="w-3.5 h-3.5" weight="bold" />,
       onClick: transposeGrid,
-      disabled: !collageTemplate,
+      disabled: !collageTemplate || !grid.isComplete,
       fullWidth: false,
     },
     {

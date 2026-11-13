@@ -131,7 +131,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
         mode,
         controller.signal,
       );
-      if (reqId !== activeReqIdRef.current) return;
+      if (reqId !== activeReqIdRef.current || controller.signal.aborted) return;
       if (result.documents && result.documents.length > 0) {
         setDetectedDocs(result.documents);
         setSelectedDocIds(result.documents.map((d) => d.id));
@@ -345,6 +345,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
   useEffect(() => {
     if (!open) {
       activeReqIdRef.current += 1;
+      detectionAbortRef.current?.abort();
+      detectionAbortRef.current = null;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset detection state on close
       setIsDetecting(false);
       setDetectedDocs([]);
@@ -401,7 +403,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      if (isCancelled) return;
+      if (isCancelled || sessionRef.current !== session) return;
       imgRef.current = img;
       setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
 
@@ -424,15 +426,17 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
 
     img.src = imageSrc;
 
-    const reqIdAtMount = activeReqIdRef.current;
     return () => {
       isCancelled = true;
       // 🧷 إبطال جلسة هذا التركيب — أي callback مجدول بعدها يفشل الفحص
       sessionRef.current += 1;
       cancelScheduledWarmup();
       cancelScheduledWarmupRef.current = null;
-      // Math.max كي لا يُخفّض العداد عن أي طلب أحدث (حارس reqId يظل صحيحاً)
-      activeReqIdRef.current = Math.max(activeReqIdRef.current, reqIdAtMount + 1);
+      // الزيادة الرتيبة تضمن إبطال أي runDetection انطلق داخل هذا التركيب (حتى لو بدأ بعد التركيب).
+      activeReqIdRef.current += 1;
+      detectionAbortRef.current?.abort();
+      detectionAbortRef.current = null;
+      setIsDetecting(false);
       img.onload = null;
       img.onerror = null;
       // تحرير الصورة المفكوكة من الذاكرة دون revoke (الـ blob URL ملك المنادي

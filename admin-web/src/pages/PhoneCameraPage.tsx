@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import {
+  createPhoneBridgePairingState,
+  getPhoneBridgePairingView,
+  updatePhoneBridgePairing,
+  type PhoneBridgePairingEvent,
+} from '../lib/phone-bridge-pairing';
 import { 
   Camera, 
   SwitchCamera, 
@@ -128,8 +134,8 @@ function PhoneCameraPageInner() {
   const [recentThumbnail, setRecentThumbnail] = useState<string | null>(null);
 
   // إعدادات الكاميرا المتقدمة (Apple Camera Features)
-  const [isPaired, setIsPaired] = useState<boolean>(false);
-  const [pairedDeviceName, setPairedDeviceName] = useState<string>('');
+  const [pairingState, setPairingState] = useState(() => createPhoneBridgePairingState(''));
+  const pairingView = getPhoneBridgePairingView(pairingState, sessionId);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [torchAvailable, setTorchAvailable] = useState<boolean>(false);
   const [torchActive, setTorchActive] = useState<boolean>(false);
@@ -161,8 +167,15 @@ function PhoneCameraPageInner() {
       return searchParams.get('session') || searchParams.get('token') || '';
     };
 
-    const token = parseSessionId();
-    setSessionId(token);
+    const updateSession = () => {
+      setSessionId(parseSessionId());
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+      setStatusMessage('');
+      setStatusType(null);
+    };
+    updateSession();
+    window.addEventListener('hashchange', updateSession);
+    window.addEventListener('popstate', updateSession);
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -170,6 +183,11 @@ function PhoneCameraPageInner() {
       });
       setSupabase(client);
     }
+
+    return () => {
+      window.removeEventListener('hashchange', updateSession);
+      window.removeEventListener('popstate', updateSession);
+    };
   }, []);
 
   // 2. قفل الشاشة لمنع الإغلاق التلقائي أثناء جلسة التصوير (Screen Wake Lock API)
@@ -204,43 +222,107 @@ function PhoneCameraPageInner() {
     };
   }, []);
 
-  // 3. ربط قناة Realtime اللحظية (Push Events مثل WhatsApp) ومصافحة الاقتران
+  // إشعار Dynamic Island منبثق بأسلوب Apple HIG
+  const showStatus = useCallback((msg: string, type: 'success' | 'error' | 'info') => {
+    setStatusMessage(msg);
+    setStatusType(type);
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    statusTimerRef.current = setTimeout(() => {
+      setStatusMessage('');
+      setStatusType(null);
+    }, 3500);
+  }, []);
+
   useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    };
+  }, []);
+
+  // 3. جاهزية النقل وإقرار سطح المكتب الاختياري مستقلان عن مصافحة التخزين
+  useEffect(() => {
+    let isMounted = true;
+    let pairing = updatePhoneBridgePairing(createPhoneBridgePairingState(''), {
+      type: 'session-changed', sessionId,
+    });
+    setPairingState(pairing);
     if (!supabase || !sessionId) return;
 
-    let isMounted = true;
     const roomToken = sessionId.split('/').pop() || sessionId;
     const channelTopic = `phone-bridge:${roomToken}`;
     const channel = supabase.channel(channelTopic, {
-      config: { broadcast: { self: false } },
+      config: { broadcast: { self: false, ack: true } },
     });
 
     channelRef.current = channel;
 
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED' && isMounted) {
-        const device = detectDeviceModel();
-        setPairedDeviceName(device);
-        setIsPaired(true);
+    const updatePairing = (event: PhoneBridgePairingEvent) => {
+      if (!isMounted) return;
+      pairing = updatePhoneBridgePairing(pairing, event);
+      setPairingState(pairing);
+    };
 
-        // إرسال إشعار الاقتران اللحظي المباشر للكمبيوتر عبر WebSocket
-        channel.send({
-          type: 'broadcast',
-          event: 'paired',
-          payload: { device },
-        });
+    // لا يرسل الخادم الحالي paired-ack؛ نستقبله اختيارياً دون حجب العملاء القدامى.
+    channel.on('broadcast', { event: 'paired-ack' }, (msg) => {
+      updatePairing({
+        type: 'desktop-ack',
+        sessionId,
+        channelGeneration: pairing.channelGeneration,
+        device: msg?.payload?.device,
+      });
+    });
+
+    channel.subscribe(async (status, subErr) => {
+      if (!isMounted) return;
+
+      if (status === 'SUBSCRIBED') {
+        updatePairing({ type: 'channel-subscribed', sessionId });
+        const channelGeneration = pairing.channelGeneration;
+        const isCurrentSend = () => isMounted
+          && pairing.channelStatus === 'subscribed'
+          && pairing.channelGeneration === channelGeneration;
+
+        // ack:true يؤكد استلام الخادم للإشارة، وليس وصولها إلى سطح المكتب.
+        try {
+          const sendRes = await channel.send({
+            type: 'broadcast',
+            event: 'paired',
+            payload: { device: detectDeviceModel() },
+          });
+          if (!isCurrentSend()) return;
+          updatePairing({ type: 'server-ack', sessionId, channelGeneration, ready: sendRes === 'ok' });
+          if (sendRes !== 'ok') {
+            console.warn('Phone bridge broadcast ack failed:', sendRes);
+            showStatus('تعذر تأكيد جاهزية قناة الإرسال؛ يمكنك محاولة رفع الصور', 'info');
+          }
+        } catch (sendErr) {
+          if (!isCurrentSend()) return;
+          updatePairing({ type: 'server-ack', sessionId, channelGeneration, ready: false });
+          console.warn('Phone bridge broadcast error:', sendErr);
+          showStatus('تعذر إرسال إشارة المصافحة عبر القناة؛ يمكنك محاولة رفع الصور', 'info');
+        }
+        return;
+      }
+
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        updatePairing({ type: 'channel-disconnected', sessionId });
+        if (status !== 'CLOSED') {
+          console.warn('Phone bridge channel status error:', status, subErr);
+        }
+        showStatus('قناة الإرسال منقطعة؛ يمكنك محاولة رفع الصور إلى التخزين', 'info');
       }
     });
 
     const performHandshake = async () => {
-      try {
-        const device = detectDeviceModel();
-        if (isMounted) {
-          setPairedDeviceName(device);
-        }
+      const reportHandshakeFailure = (message: string) => {
+        if (!isMounted) return;
+        updatePairing({ type: 'handshake-result', sessionId, error: message });
+        showStatus('تعذر رفع مصافحة JSON الاحتياطية', 'info');
+      };
 
+      try {
         const handshakeData = {
-          device,
+          device: detectDeviceModel(),
           platform: navigator.platform,
           userAgent: navigator.userAgent,
           screen: `${window.screen.width}x${window.screen.height}`,
@@ -255,22 +337,29 @@ function PhoneCameraPageInner() {
             upsert: false,
           });
 
-        if (!error && isMounted) {
-          setIsPaired(true);
+        if (!isMounted) return;
+        if (!error) {
+          // رفع ملف المصافحة لا يثبت أن سطح المكتب قرأه أو أنه ما زال متصلاً.
+          updatePairing({ type: 'handshake-result', sessionId, error: null });
+        } else {
+          console.warn('Pairing handshake upload failed:', error);
+          reportHandshakeFailure(error.message || 'رفض الخادم رفع ملف مصافحة JSON');
         }
       } catch (err) {
+        if (!isMounted) return;
         console.warn('Pairing handshake error:', err);
+        reportHandshakeFailure(err instanceof Error ? err.message : 'خطأ في رفع مصافحة JSON');
       }
     };
 
-    performHandshake();
+    void performHandshake();
 
     return () => {
       isMounted = false;
-      channel.unsubscribe();
-      channelRef.current = null;
+      void channel.unsubscribe();
+      if (channelRef.current === channel) channelRef.current = null;
     };
-  }, [supabase, sessionId]);
+  }, [supabase, sessionId, showStatus]);
 
   // 4. تفعيل كاميرا الهاتف المباشرة (Live Viewfinder) مع قراءة قدرات المستشعر
   const startCamera = useCallback(async () => {
@@ -325,17 +414,6 @@ function PhoneCameraPageInner() {
     };
   }, [startCamera]);
 
-  // إشعار Dynamic Island منبثق بأسلوب Apple HIG
-  const showStatus = (msg: string, type: 'success' | 'error' | 'info') => {
-    setStatusMessage(msg);
-    setStatusType(type);
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-    statusTimerRef.current = setTimeout(() => {
-      setStatusMessage('');
-      setStatusType(null);
-    }, 3500);
-  };
-
   // التحكم في الفلاش (Torch)
   const toggleTorch = async () => {
     const track = streamRef.current?.getVideoTracks()[0];
@@ -379,8 +457,17 @@ function PhoneCameraPageInner() {
   // النقر للتركيز وتعديل التعريض (Tap to Focus & Exposure)
   const handleViewfinderTap = async (e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    let clientX: number;
+    let clientY: number;
+    if ('touches' in e) {
+      const touch = e.touches.length > 0 ? e.touches[0] : e.changedTouches?.[0];
+      if (!touch) return;
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+      clientY = (e as React.MouseEvent).clientY;
+    }
 
     const x = clientX - rect.left;
     const y = clientY - rect.top;
@@ -394,7 +481,7 @@ function PhoneCameraPageInner() {
 
     // محاولة إرسال نقاط الاهتمام للمستشعر (pointsOfInterest)
     const track = streamRef.current?.getVideoTracks()[0];
-    if (track && 'applyConstraints' in track) {
+    if (track && 'applyConstraints' in track && rect.width > 0 && rect.height > 0) {
       try {
         const relX = Math.max(0, Math.min(1, x / rect.width));
         const relY = Math.max(0, Math.min(1, y / rect.height));
@@ -475,7 +562,7 @@ function PhoneCameraPageInner() {
       return;
     }
 
-    if (!sessionId) {
+    if (!pairingView.canUpload) {
       showStatus('معرف الجلسة غير صالح أو مفقود', 'error');
       return;
     }
@@ -495,7 +582,7 @@ function PhoneCameraPageInner() {
       const { error } = await supabase.storage
         .from('phone-bridge')
         .upload(filePath, blob, {
-          contentType: 'image/jpeg',
+          contentType: blob.type || 'image/jpeg',
           cacheControl: 'no-cache',
           upsert: false,
         });
@@ -693,28 +780,32 @@ function PhoneCameraPageInner() {
           )}
 
           {/* Dynamic Island Pill المركزي */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/95 border border-white/15 shadow-2xl backdrop-blur-2xl transition-all duration-300">
-            <span className="relative flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                isPaired ? 'bg-emerald-400' : 'bg-amber-400'
-              }`} />
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                isPaired ? 'bg-emerald-500' : 'bg-amber-500'
-              }`} />
-            </span>
+          <div className="flex flex-wrap justify-center items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/95 border border-white/15 shadow-2xl backdrop-blur-2xl transition-all duration-300">
+            <span
+              aria-hidden="true"
+              className={`inline-flex rounded-full h-2 w-2 ${pairingView.transportReady ? 'bg-emerald-500' : 'bg-amber-500'}`}
+            />
             <span className="text-xs font-semibold tracking-wide text-neutral-100">
               Grido Studio
             </span>
-            {isPaired ? (
-              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                <ShieldCheck className="w-3 h-3" />
-                <span>مقترن ({pairedDeviceName})</span>
+            <span
+              className="text-[10px] font-medium text-neutral-300"
+              role="status"
+              title={pairingView.handshakeError
+                ? `${pairingView.handshakeLabel}: ${pairingView.handshakeError}`
+                : undefined}
+            >
+              {pairingView.transportLabel}
+            </span>
+            {pairingView.desktopAcked && (
+              <span
+                title={pairingView.desktopAckDetail}
+                className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+              >
+                <ShieldCheck className="w-3 h-3" aria-hidden="true" />
+                <span>{pairingView.desktopAckLabel}</span>
               </span>
-            ) : sessionId ? (
-              <span className="text-[10px] font-mono font-medium text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                #{sessionId.split('/').pop()?.slice(0, 6) || sessionId.slice(0, 6)}
-              </span>
-            ) : null}
+            )}
           </div>
 
           {/* زر كتم / تفعيل صوت غالق الكاميرا */}

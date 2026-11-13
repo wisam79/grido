@@ -43,11 +43,12 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
   const rxCut = displayW / 2;
   const ryCut = displayH / 2;
 
+  // ltr-island: خطوط النزيف والأمان والقص تتبع نظام الإحداثيات الديكارتي للكانفس Konva (الأصل في الزاوية العلوية اليسرى)
   return (
     <div
       className="absolute inset-0 pointer-events-none z-20 select-none"
       style={{ overflow: 'visible' }}
-      dir="rtl"
+      dir="ltr"
     >
       <svg
         width={displayW}
@@ -140,7 +141,10 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
       </svg>
 
       {/* شارة إيضاحية دقيقة لخطوط المطابع — متموضعة بذكاء أسفل الكانفس لمنع حجب التصاميم وبأرضية صلبة لمنع إجهاد الـ Compositor */}
-      <div className="absolute -bottom-7 start-0 flex items-center gap-1.5 bg-card px-2 py-0.5 rounded-md border border-border/80 text-micro font-bold shadow-fluent-4 font-cairo whitespace-nowrap">
+      <div
+        dir="rtl"
+        className="absolute -bottom-7 start-0 flex items-center gap-1.5 bg-card px-2 py-0.5 rounded-md border border-border/80 text-micro font-bold shadow-fluent-4 font-cairo whitespace-nowrap"
+      >
         <span className="flex items-center gap-1 text-sky-500">
           <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
           <span>قص</span>

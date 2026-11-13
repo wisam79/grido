@@ -104,14 +104,3 @@ export function formatRulerNumber(val: number, unit: RulerUnit): string {
   }
   return Number(val.toFixed(1)).toString();
 }
-
-/**
- * تنسيق قياس الإحداثي الدقيق
- */
-export function formatRulerCoordinate(val: number, unit: RulerUnit): string {
-  if (Math.abs(val) < 0.0001) return `0 ${unit}`;
-  if (unit === 'in') return `${Number(val.toFixed(2))} in`;
-  if (unit === 'cm') return `${Number(val.toFixed(2))} cm`;
-  if (unit === 'px') return `${Math.round(val)} px`;
-  return `${Number(val.toFixed(1))} mm`;
-}

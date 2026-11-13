@@ -18,6 +18,7 @@ import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { mergePaths } from '@/lib/canvas/path-boolean';
 import { shapeElementToSegments } from '@/lib/canvas/shape-to-path';
 import { assertExportablePixels } from '@/lib/export/export-limits';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
 
@@ -47,6 +48,32 @@ async function uploadRasterBlob(blob: Blob): Promise<string> {
     logger.warn('Media upload failed for rasterized layer — falling back to data URL', err);
     return blobToDataUrl(blob);
   }
+}
+
+/** حارس طزاجة التسطيح بعد انتهاء العمليات غير المتزامنة لمنع تلويث مستند أو حالة أحدث */
+function isRasterizeStale(
+  state: ElementCross,
+  initialSession: number,
+  initialProjectId: string | null,
+  expectedWidth: number,
+  expectedHeight: number,
+  sourceRefs: ReadonlyMap<string, CanvasElement>,
+): boolean {
+  if (getDocumentSession() !== initialSession) return true;
+  const currentProjectId = (state as { projectId?: string | null }).projectId ?? null;
+  if (currentProjectId !== initialProjectId) return true;
+  if (state.mode !== 'single') return true;
+  if (state.canvasWidth !== expectedWidth || state.canvasHeight !== expectedHeight) return true;
+
+  let survivingCount = 0;
+  for (const el of state.elements) {
+    if (!sourceRefs.has(el.id)) continue;
+    // الستور immutable: تغير مرجع مصدر واحد يكشف المحتوى والهندسة والرؤية والترتيب،
+    // بينما تعديلات العناصر غير المشاركة لا تُبطل نتيجة التحديد.
+    if (el !== sourceRefs.get(el.id) || el.locked) return true;
+    survivingCount += 1;
+  }
+  return survivingCount !== sourceRefs.size;
 }
 
 /** خصائص الطلاء والمؤثرات التي تنتقل من الطبقة الأمامية إلى الشكل المدموج */
@@ -191,38 +218,50 @@ export const createElementMergeSlice: StateCreator<
       return 'too-large';
     }
 
-    const keepIds = new Set(sources.map((el) => el.id));
-    const hidden: Konva.Node[] = [];
-    for (const el of elements) {
-      if (keepIds.has(el.id)) continue;
-      const node = stage.findOne<Konva.Node>(`#${el.id}`);
-      if (node) {
-        node.hide();
-        hidden.push(node);
-      }
-    }
-    stage.batchDraw();
+    const initialSession = getDocumentSession();
+    const initialProjectId = (get() as { projectId?: string | null }).projectId ?? null;
+    const sourceRefs = new Map(sources.map((el) => [el.id, el]));
+    const keepIds = new Set(sourceRefs.keys());
 
     let imageSrc: string;
     try {
-      // نسبة 1 = بكسلات الورقة المنطقية، فهي الدقة الكاملة المستقلة عن الزوم
+      // نسبة 1 = بكسلات الورقة المنطقية، فهي الدقة الكاملة المستقلة عن الزوم؛
+      // إخفاء العقد غير المحددة واستعادة حالتها المرئية الأصلية يتم ذرياً داخل قفل المسرح
       const blob = await captureStageBlob(stage, 1, 'image/png', undefined, rect, {
         useFullResolution: true,
+        includeNodeIds: keepIds,
       });
       if (!blob) return 'failed';
+      if (
+        isRasterizeStale(
+          get(),
+          initialSession,
+          initialProjectId,
+          canvasWidth,
+          canvasHeight,
+          sourceRefs,
+        )
+      ) {
+        return 'failed';
+      }
       imageSrc = await uploadRasterBlob(blob);
     } catch (err) {
       logger.error('Rasterize capture failed', err);
       return 'failed';
-    } finally {
-      for (const node of hidden) {
-        try {
-          node.show();
-        } catch {
-          // عقدة أُزيلت أثناء الالتقاط — لا شيء لاستعادته
-        }
-      }
-      stage.batchDraw();
+    }
+
+    const latestState = get();
+    if (
+      isRasterizeStale(
+        latestState,
+        initialSession,
+        initialProjectId,
+        canvasWidth,
+        canvasHeight,
+        sourceRefs,
+      )
+    ) {
+      return 'failed';
     }
 
     const front = sources[sources.length - 1];

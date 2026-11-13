@@ -92,8 +92,21 @@ export function ProjectsDialog({
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [projectName, setProjectName] = useState('');
   const [projectsList, setProjectsList] = useState<domain.Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingProjects, setIsFetchingProjects] = useState(false);
+  const [isSavingProject, setIsSavingProject] = useState(false);
+  const isMountedRef = useRef(true);
+  const isOpenRef = useRef(false);
+  const dialogSessionRef = useRef(0);
+  const fetchGenRef = useRef(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      dialogSessionRef.current += 1;
+    };
+  }, []);
 
   // Backup & Import states
   const [backupActionLoading, setBackupActionLoading] = useState(false);
@@ -115,7 +128,12 @@ export function ProjectsDialog({
   const [pinnedProjects, setPinnedProjects] = useState<string[]>(() => {
     try {
       const savedPinned = localStorage.getItem('grido_pinned_projects');
-      if (savedPinned) return JSON.parse(savedPinned);
+      if (savedPinned) {
+        const parsed: unknown = JSON.parse(savedPinned);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((id): id is string => typeof id === 'string');
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -133,37 +151,64 @@ export function ProjectsDialog({
 
   // تحميل قائمة المشاريع عند فتح نافذة الحوار أو الانتقال لتبويب القائمة
   const fetchProjects = async () => {
-    setIsLoading(true);
+    const fetchGen = ++fetchGenRef.current;
+    const fetchDialogSession = dialogSessionRef.current;
+    setIsFetchingProjects(true);
     try {
       const list = await GetAllProjects();
+      if (
+        !isMountedRef.current ||
+        fetchGen !== fetchGenRef.current ||
+        dialogSessionRef.current !== fetchDialogSession
+      ) {
+        return;
+      }
       setProjectsList(list || []);
     } catch (err) {
+      if (
+        !isMountedRef.current ||
+        fetchGen !== fetchGenRef.current ||
+        dialogSessionRef.current !== fetchDialogSession
+      ) {
+        return;
+      }
       logger.error('Failed to load projects:', err);
       toast.error(toErrorMessage(err, 'فشل تحميل المشاريع'));
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current && fetchGen === fetchGenRef.current) {
+        setIsFetchingProjects(false);
+      }
     }
   };
 
   useEffect(() => {
+    isOpenRef.current = Boolean(isOpen);
+    dialogSessionRef.current += 1;
     if (isOpen) {
       if (defaultTab) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTab(defaultTab);
       }
-      setIsLoading(false);
+      setIsFetchingProjects(false);
       setBackupActionLoading(false);
       Promise.resolve().then(() => {
-        fetchProjects();
+        if (isMountedRef.current && isOpenRef.current) {
+          void fetchProjects();
+        }
       });
     } else {
-      setIsLoading(false);
+      fetchGenRef.current += 1;
+      setIsFetchingProjects(false);
+      if (!saveInFlightRef.current) {
+        setIsSavingProject(false);
+      }
       setBackupActionLoading(false);
     }
   }, [isOpen, defaultTab]);
 
   const handleSave = async () => {
-    if (!projectName.trim()) {
+    const trimmedName = projectName.trim();
+    if (!trimmedName) {
       toast.error('أدخل اسم المشروع');
       return;
     }
@@ -177,7 +222,7 @@ export function ProjectsDialog({
     const projectIdBefore = state.projectId;
     const documentSession = getDocumentSession();
     const submittedHistory = captureHistoryEntry(state);
-    setIsLoading(true);
+    setIsSavingProject(true);
     try {
       const currentId = state.projectId || uid();
       const projectFile = serializeEditorState(state);
@@ -185,7 +230,7 @@ export function ProjectsDialog({
       // الزمني) — تُعاد استخدامها في المقارنة اللاحقة بدل تسلسلَين إضافيين
       // كاملين عند اكتمال الحفظ (كانت لقطة الإرسال تُسلسل من جديد هناك).
       const sentFingerprint = JSON.stringify({ ...projectFile, savedAt: undefined });
-      const projectData = projectFileToDomainProject(projectFile, currentId, projectName);
+      const projectData = projectFileToDomainProject(projectFile, currentId, trimmedName);
 
       await SaveProject(projectData);
       toast.success(
@@ -206,28 +251,44 @@ export function ProjectsDialog({
         const unchanged = JSON.stringify(buildProjectDocument(live)) === sentFingerprint;
         useEditorStore.setState({
           projectId: currentId,
-          projectName: projectName.trim(),
+          projectName: trimmedName,
           isDirty: !unchanged,
           // مرساة الحفظ هي لقطة الإرسال، حتى مع وجود تعديلات حيّة أحدث منها.
           lastSavedEntry: submittedHistory,
         });
       }
-      fetchProjects();
-      setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
+      await fetchProjects();
+      if (isMountedRef.current && isOpenRef.current) {
+        setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
+      }
     } catch (err) {
-      logger.error('Failed to save project:', err);
-      toast.error(toErrorMessage(err, 'فشل حفظ المشروع'));
+      if (isMountedRef.current) {
+        logger.error('Failed to save project:', err);
+        toast.error(toErrorMessage(err, 'فشل حفظ المشروع'));
+      }
     } finally {
       saveInFlightRef.current = false;
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsSavingProject(false);
+      }
     }
   };
 
   const performLoad = async (project: domain.Project) => {
+    const loadDocSession = getDocumentSession();
+    const loadDialogSession = dialogSessionRef.current;
     try {
       // قائمة المكتبة تُجلب الآن كملخّص خفيف (بلا عناصر/خانات) لتفادي نقل
       // كل مشروع عبر IPC عند فتح النافذة — الجلب الكامل يحدث هنا فقط.
       const fullProject = await GetProject(project.id);
+      if (
+        !isMountedRef.current ||
+        !isOpenRef.current ||
+        dialogSessionRef.current !== loadDialogSession ||
+        getDocumentSession() !== loadDocSession
+      ) {
+        return;
+      }
       if (!fullProject) {
         throw new Error('تعذّر العثور على المشروع في المكتبة');
       }
@@ -240,6 +301,14 @@ export function ProjectsDialog({
       setProjectName(project.name);
       setIsOpen?.(false);
     } catch (err) {
+      if (
+        !isMountedRef.current ||
+        !isOpenRef.current ||
+        dialogSessionRef.current !== loadDialogSession ||
+        getDocumentSession() !== loadDocSession
+      ) {
+        return;
+      }
       logger.error('Failed to load project details:', err);
       toast.error(toErrorMessage(err, 'فشل تحميل المشروع'));
     }
@@ -354,10 +423,11 @@ export function ProjectsDialog({
       await ResetLibrary();
       toast.success('تم تفريغ مكتبة المشاريع');
       const state = useEditorStore.getState();
-      if (state.projectId) {
-        useEditorStore.setState({ projectId: null });
+      if (state.projectId || state.projectName) {
+        useEditorStore.setState({ projectId: null, projectName: null, isDirty: true });
       }
-      fetchProjects();
+      setProjectName('');
+      await fetchProjects();
     } catch (err) {
       logger.error('Failed to reset library:', err);
       toast.error(toErrorMessage(err, 'فشل تهيئة مكتبة المشاريع'));
@@ -463,15 +533,15 @@ export function ProjectsDialog({
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                    disabled={isLoading}
+                    disabled={isSavingProject}
                   />
                 </div>
                 <Button
                   className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs"
                   onClick={handleSave}
-                  disabled={isLoading}
+                  disabled={isSavingProject}
                 >
-                  {isLoading ? (
+                  {isSavingProject ? (
                     <>
                       <Spinner className="w-3.5 h-3.5" size={14} />
                       <span>جاري الحفظ ...</span>
@@ -530,7 +600,7 @@ export function ProjectsDialog({
                   </div>
                 </div>
 
-                {isLoading ? (
+                {isFetchingProjects ? (
                   <ProjectsSkeleton rows={4} />
                 ) : projectsList.length === 0 ? (
                   <div className="text-center py-10 border-2 border-dashed rounded-md text-muted-foreground text-xs">

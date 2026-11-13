@@ -177,33 +177,37 @@ function SlotSizeFields({
   const rect = useMemo(() => getSlotRect(slot, geo), [slot, geo]);
   const widthMM = pxToMm(rect.width, dpi);
   const heightMM = pxToMm(rect.height, dpi);
-  const [width, setWidth] = useState(widthMM.toFixed(1));
-  const [height, setHeight] = useState(heightMM.toFixed(1));
+  const safeWidthMM = Number.isFinite(widthMM) ? widthMM : null;
+  const safeHeightMM = Number.isFinite(heightMM) ? heightMM : null;
+  const [width, setWidth] = useState(() => (safeWidthMM !== null ? safeWidthMM.toFixed(1) : ''));
+  const [height, setHeight] = useState(() =>
+    safeHeightMM !== null ? safeHeightMM.toFixed(1) : '',
+  );
   const [activeField, setActiveField] = useState<'width' | 'height' | null>(null);
-  const [prevWidthMM, setPrevWidthMM] = useState(widthMM);
-  const [prevHeightMM, setPrevHeightMM] = useState(heightMM);
+  const [prevWidthMM, setPrevWidthMM] = useState<number | null>(safeWidthMM);
+  const [prevHeightMM, setPrevHeightMM] = useState<number | null>(safeHeightMM);
   const skipCommitRef = useRef(false);
 
   // مزامنة المسودات مع تحديثات الكانفاس/الهندسة (الورق، DPI، الفجوة، الهامش)
   // دون إعادة تركيب المكون وفقدان تركيز لوحة المفاتيح
-  if (widthMM !== prevWidthMM) {
-    setPrevWidthMM(widthMM);
+  if (safeWidthMM !== null && !Object.is(safeWidthMM, prevWidthMM)) {
+    setPrevWidthMM(safeWidthMM);
     if (activeField !== 'width') {
-      setWidth(widthMM.toFixed(1));
+      setWidth(safeWidthMM.toFixed(1));
     }
   }
-  if (heightMM !== prevHeightMM) {
-    setPrevHeightMM(heightMM);
+  if (safeHeightMM !== null && !Object.is(safeHeightMM, prevHeightMM)) {
+    setPrevHeightMM(safeHeightMM);
     if (activeField !== 'height') {
-      setHeight(heightMM.toFixed(1));
+      setHeight(safeHeightMM.toFixed(1));
     }
   }
 
-  const matchedPreset = findMatchingPreset(widthMM, heightMM);
+  const matchedPreset = findMatchingPreset(safeWidthMM ?? 0, safeHeightMM ?? 0);
 
   const resetDraft = () => {
-    setWidth(widthMM.toFixed(1));
-    setHeight(heightMM.toFixed(1));
+    if (safeWidthMM !== null) setWidth(safeWidthMM.toFixed(1));
+    if (safeHeightMM !== null) setHeight(safeHeightMM.toFixed(1));
   };
 
   const commitSize = (axis: 'width' | 'height') => {

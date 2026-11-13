@@ -35,6 +35,59 @@ import type { FreeformTab } from '@/lib/workspace-tools';
 
 const logger = createLogger('template-panel');
 
+const MAX_IMPORTED_CELLS = 200;
+const CELL_BOUNDS_EPSILON = 1e-4;
+
+function parseValidatedCells(raw: unknown): NormalizedCell[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_IMPORTED_CELLS) {
+    return null;
+  }
+  const validated: NormalizedCell[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+    const cell = item as Record<string, unknown>;
+    const { x, y, w, h } = cell;
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof w !== 'number' ||
+      typeof h !== 'number' ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      !Number.isFinite(w) ||
+      !Number.isFinite(h)
+    ) {
+      return null;
+    }
+    if (
+      x < 0 ||
+      y < 0 ||
+      w <= 0 ||
+      h <= 0 ||
+      x + w > 1 + CELL_BOUNDS_EPSILON ||
+      y + h > 1 + CELL_BOUNDS_EPSILON
+    ) {
+      return null;
+    }
+    const clampedW = Math.min(w, 1 - x);
+    const clampedH = Math.min(h, 1 - y);
+    if (clampedW <= 0 || clampedH <= 0) return null;
+
+    const cleanCell: NormalizedCell & {
+      presetType?: string;
+      label?: string;
+      rotation?: number;
+    } = { x, y, w: clampedW, h: clampedH };
+    if (typeof cell.presetType === 'string') cleanCell.presetType = cell.presetType;
+    if (typeof cell.label === 'string') cleanCell.label = cell.label.slice(0, 80);
+    if (typeof cell.rotation === 'number' && Number.isFinite(cell.rotation)) {
+      cleanCell.rotation = cell.rotation;
+    }
+    validated.push(cleanCell);
+  }
+  return validated;
+}
+
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
@@ -106,7 +159,12 @@ export const TemplatePanel = React.memo(function TemplatePanel({
         let parsedCells: NormalizedCell[] | null = null;
         try {
           const raw = typeof t.cells === 'string' ? JSON.parse(t.cells) : t.cells;
-          if (Array.isArray(raw)) parsedCells = raw as NormalizedCell[];
+          parsedCells = parseValidatedCells(raw);
+          if (parsedCells === null) {
+            logger.warn(
+              `Template "${t.name}" has invalid or out-of-bounds cells — excluded from list`,
+            );
+          }
         } catch {
           logger.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
         }
@@ -156,9 +214,11 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   const handleDeleteTemplate = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const numericId = parseInt(id.replace('collage-user-', ''));
-      if (!isNaN(numericId)) {
+      const rawId = id.startsWith('collage-user-') ? id.slice('collage-user-'.length) : '';
+      const numericId = /^\d+$/.test(rawId) ? parseInt(rawId, 10) : NaN;
+      if (!Number.isNaN(numericId)) {
         await DeleteCustomTemplate(numericId);
+        // حذف نسخة المكتبة لا يغيّر اللقطة المطبقة أو هندستها وصورها على الكانفس.
         toast.success('تم حذف القالب');
         loadTemplates();
       }
@@ -207,17 +267,25 @@ export const TemplatePanel = React.memo(function TemplatePanel({
           if (!file) return;
           try {
             const text = await file.text();
-            const items = JSON.parse(text);
+            const items: unknown = JSON.parse(text);
             if (!Array.isArray(items)) throw new Error('Invalid format');
             let imported = 0;
             for (const item of items) {
-              if (item.name && item.cells) {
-                await SaveCustomTemplate(item.name, item.cells.length, JSON.stringify(item.cells));
+              if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+              const record = item as Record<string, unknown>;
+              const name = typeof record.name === 'string' ? record.name.trim().slice(0, 100) : '';
+              const validCells = parseValidatedCells(record.cells);
+              if (name && validCells) {
+                await SaveCustomTemplate(name, validCells.length, JSON.stringify(validCells));
                 imported++;
               }
             }
-            toast.success(`تم استيراد ${imported} قالب`);
-            loadTemplates();
+            if (imported === 0) {
+              toast.error('لم يتم العثور على قوالب صالحة للاستيراد');
+            } else {
+              toast.success(`تم استيراد ${imported} قالب`);
+              loadTemplates();
+            }
           } catch (err) {
             toast.error(toErrorMessage(err, 'ملف غير صالح للاستيراد'));
           }

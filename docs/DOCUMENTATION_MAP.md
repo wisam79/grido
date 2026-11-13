@@ -107,13 +107,15 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=164
+vitest_test_files=166
 e2e_spec_files=31
 go_test_files=67
 docs_files=6
 ```
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
+
+مراجعة 13 نوفمبر 2026 — متابعة تدقيق UI/البنية: أظهر `node scripts/docs-gate.mjs --strict-refs` المشغّل بواسطة المنسّق **166 Vitest / 31 E2E / 67 Go / 6 مستندات جذرية**؛ انحرافه الوحيد كان Vitest الموثق 164 مقابل الفعلي 166 بعد إضافة `frontend/test/template-panel.test.tsx` و`frontend/test/konva-capture-selection.test.ts`. حُدّث البلوك بالتنسيق مع المنسّق؛ سجل 164 السابق أدناه تاريخي محفوظ. جرد التوثيق **19** وتأكيدات الكود **53** سليمة، والتقرير 24 داخل `docs/reviews/` المسجّل. أعداد الملفات لا تثبت نجاح الحالات؛ نتائج الاستهدافات وحدودها في التقرير 24، وإعادة `node scripts/docs-gate.mjs --strict-refs` بواسطة المنسّق بعد التحديث **PASS** بالجرد نفسه. لا staged files وقت التشغيل، لذا مصفوفة commit-doc لم تُختبر.
 
 مراجعة 13 نوفمبر 2026 — إغلاق عقود الطباعة/التصدير في شجرة العمل: أعاد `node scripts/docs-gate.mjs` الجرد الفعلي **164 Vitest / 31 E2E / 67 Go / 6 مستندات جذرية** بعد ظهور ملفات cover/filter/bleed/RGBA parity وعقود domain/gradient/performance وspec parity. سُجّل `docs/print-acceptance/` في الجرد كحزمة SOP/manifest عامة، وحالة التقرير 23 ما زالت Pending بلا تشغيل طابعة. هذه أعداد ملفات فقط وليست نتيجة نجاح حالات؛ الحزمة الكاملة وCI والتحقق من تنسيق printer plan/spool تنتظر الوالد، والقبول الفيزيائي ينتظر المالك.
 

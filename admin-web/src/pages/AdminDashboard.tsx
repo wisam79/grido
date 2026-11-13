@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import type { ActiveTab } from './admin/types';
 import { useAdminSession } from './admin/useAdminSession';
 import { useAdminUsers } from './admin/useAdminUsers';
@@ -16,26 +17,56 @@ import { StatsBreakdown } from './admin/components/StatsBreakdown';
 import { SettingsForm } from './admin/components/SettingsForm';
 import { EditUserModal } from './admin/components/EditUserModal';
 
+function AdminErrorFallback() {
+  return (
+    <main
+      dir="rtl"
+      className="min-h-screen bg-workspace text-text-primary flex flex-col items-center justify-center p-6 text-center gap-4"
+    >
+      <h1 className="text-xl font-bold">تعذر عرض لوحة الإدارة</h1>
+      <p className="text-sm text-text-secondary max-w-md">
+        حدث خطأ غير متوقع أثناء عرض بيانات الإدارة. يمكنك إعادة تحميل الصفحة للمحاولة مجدداً.
+      </p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold cursor-pointer"
+      >
+        إعادة تحميل الصفحة
+      </button>
+    </main>
+  );
+}
+
 /**
- * AdminDashboard — مخرج نحيف (composer) يحافظ على نفس default export حتى لا تنكسر المسارات.
- * المنطق كله في admin/useAdmin*.ts والعرض في admin/components/*.tsx — بلا أي تغيير سلوكي.
+ * AdminDashboard — مخرج محروس بـ ErrorBoundary يربط الجلسة وبيانات المستخدمين والمفاتيح.
  */
 export default function AdminDashboard() {
+  return (
+    <ErrorBoundary fallback={<AdminErrorFallback />}>
+      <AdminDashboardContent />
+    </ErrorBoundary>
+  );
+}
+
+function AdminDashboardContent() {
   const session = useAdminSession();
   const settings = useAdminSettings();
-  const users = useAdminUsers(session.supabase);
-  const keys = useAdminKeys(session.supabase);
+  const users = useAdminUsers(session.supabase, session.sessionOwnerRef);
+  const keys = useAdminKeys(session.supabase, session.sessionOwnerRef);
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
 
   const loading = users.loading || keys.loading;
 
   useEffect(() => {
+    users.resetUsersData();
+    keys.resetKeysData();
     if (session.isAuthenticated && session.supabase) {
       void users.loadUsersData();
       void keys.loadKeysData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.isAuthenticated, session.supabase]);
+  }, [session.isAuthenticated, session.checkingSession, session.supabase, session.sessionEpoch]);
 
   if (session.checkingSession) {
     return (
@@ -67,12 +98,15 @@ export default function AdminDashboard() {
     void keys.loadKeysData();
   };
 
+  // Session changes drive resets above; an old logout continuation must not reset a new owner.
+  const handleLogout = session.handleLogout;
+
   return (
     <div
       className="admin-shell min-h-screen flex flex-col md:flex-row bg-[#121212] text-white font-sans selection:bg-[#3b82f6]/30 selection:text-white"
       dir="rtl"
     >
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={session.handleLogout} />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
 
       <main className="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen relative">
         <div className="aurora-bg" />
@@ -149,6 +183,7 @@ export default function AdminDashboard() {
             freeCount={users.freeCount}
             proPct={users.proPct}
             entPct={users.entPct}
+            freePct={users.freePct}
             estimatedMRR={users.estimatedMRR}
             windowAiCost={users.windowAiCost}
             aiLogsCount={users.aiUsageLogs.length}

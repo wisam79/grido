@@ -398,9 +398,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             variant="ghost"
             className="h-8 px-2 font-medium text-muted-foreground"
             onClick={() => {
-              setSaveName(
-                `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
-              );
+              const photoLabel =
+                photoType === 'stretch'
+                  ? 'تمدد حر'
+                  : getPhotoDimensions(photoType).label.split(' / ')[0];
+              setSaveName(`شبكة ${rows}×${cols} — ${photoLabel}`);
               setShowSaveForm(true);
             }}
             title="حفظ في المكتبة"

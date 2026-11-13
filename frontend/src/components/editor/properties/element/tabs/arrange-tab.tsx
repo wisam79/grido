@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import {
   AlignLeftIcon,
@@ -36,11 +36,109 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   // تراجع عند كل فقدان تركيز — حتى نقرة على الحقل بلا تعديل — فيمتلئ سقف
   // الثلاثين خطوة بإدخالات متطابقة ويصبح التراجع بلا أثر مرئي (فيضان سجل التراجع).
   const coordDirtyRef = useRef(false);
+  const skipCommitRef = useRef(false);
   const pushCoordHistory = useCallback(() => {
     if (!coordDirtyRef.current) return;
     coordDirtyRef.current = false;
     useEditorStore.getState().pushHistory();
   }, []);
+
+  const [widthDraft, setWidthDraft] = useState<{ elementId: string; text: string } | null>(null);
+  const [heightDraft, setHeightDraft] = useState<{ elementId: string; text: string } | null>(null);
+
+  const displayedWidth =
+    widthDraft && widthDraft.elementId === element.id
+      ? widthDraft.text
+      : String(Math.round(element.width * 100));
+  const displayedHeight =
+    heightDraft && heightDraft.elementId === element.id
+      ? heightDraft.text
+      : String(Math.round(element.height * 100));
+
+  const applyDimension = useCallback(
+    (axis: 'width' | 'height', rawPercent: number) => {
+      if (axis === 'height' && element.type === 'text') return;
+      const clamped = Math.max(0.05, rawPercent / 100);
+      if (axis === 'width') {
+        const deco =
+          element.type === 'text'
+            ? { textSizing: 'fixed' as const, textResizeAnchor: undefined }
+            : scaleElementDecorations(element, clamped / Math.max(1e-6, element.width), 1);
+        coordDirtyRef.current = true;
+        onUpdate(element.id, { width: clamped, ...deco });
+      } else {
+        const deco = scaleElementDecorations(element, 1, clamped / Math.max(1e-6, element.height));
+        coordDirtyRef.current = true;
+        onUpdate(element.id, { height: clamped, ...deco });
+      }
+    },
+    [element, onUpdate],
+  );
+
+  const handleSizeChange = useCallback(
+    (axis: 'width' | 'height', raw: string) => {
+      if (axis === 'height' && element.type === 'text') return;
+      const setDraft = axis === 'width' ? setWidthDraft : setHeightDraft;
+      setDraft({ elementId: element.id, text: raw });
+      if (raw.trim() === '') return;
+      const v = Number(raw);
+      if (!Number.isFinite(v) || v < 5) return;
+      applyDimension(axis, v);
+    },
+    [applyDimension, element.id, element.type],
+  );
+
+  const handleSizeCommit = useCallback(
+    (axis: 'width' | 'height') => {
+      if (skipCommitRef.current) {
+        skipCommitRef.current = false;
+        return;
+      }
+      const draft = axis === 'width' ? widthDraft : heightDraft;
+      const setDraft = axis === 'width' ? setWidthDraft : setHeightDraft;
+      if (draft && draft.elementId === element.id) {
+        const trimmed = draft.text.trim();
+        if (trimmed !== '') {
+          const v = Number(trimmed);
+          if (Number.isFinite(v)) {
+            const clamped = Math.max(0.05, v / 100);
+            const current = axis === 'width' ? element.width : element.height;
+            if (Math.abs(clamped - current) > 1e-6) {
+              applyDimension(axis, v);
+            }
+          }
+        }
+        setDraft(null);
+      }
+      pushCoordHistory();
+    },
+    [
+      applyDimension,
+      element.height,
+      element.id,
+      element.width,
+      heightDraft,
+      pushCoordHistory,
+      widthDraft,
+    ],
+  );
+
+  const handleSizeKeyDown = useCallback(
+    (axis: 'width' | 'height', e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSizeCommit(axis);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        skipCommitRef.current = true;
+        if (axis === 'width') setWidthDraft(null);
+        else setHeightDraft(null);
+        pushCoordHistory();
+        e.currentTarget.blur();
+      }
+    },
+    [handleSizeCommit, pushCoordHistory],
+  );
 
   const handleRotate90 = useCallback(() => {
     const { canvasWidth, canvasHeight } = useEditorStore.getState();
@@ -221,19 +319,10 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               type="number"
               dir="ltr"
               aria-label="W"
-              value={Math.round(element.width * 100)}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (e.target.value === '' || !Number.isFinite(v)) return;
-                const newWidth = Math.max(0.05, v / 100);
-                const deco =
-                  element.type === 'text'
-                    ? { textSizing: 'fixed' as const, textResizeAnchor: undefined }
-                    : scaleElementDecorations(element, newWidth / Math.max(1e-6, element.width), 1);
-                coordDirtyRef.current = true;
-                onUpdate(element.id, { width: newWidth, ...deco });
-              }}
-              onBlur={pushCoordHistory}
+              value={displayedWidth}
+              onChange={(e) => handleSizeChange('width', e.target.value)}
+              onKeyDown={(e) => handleSizeKeyDown('width', e)}
+              onBlur={() => handleSizeCommit('width')}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
@@ -253,21 +342,10 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               dir="ltr"
               aria-label="H"
               disabled={element.type === 'text'}
-              value={Math.round(element.height * 100)}
-              onChange={(e) => {
-                if (element.type === 'text') return;
-                const v = Number(e.target.value);
-                if (e.target.value === '' || !Number.isFinite(v)) return;
-                const newHeight = Math.max(0.05, v / 100);
-                const deco = scaleElementDecorations(
-                  element,
-                  1,
-                  newHeight / Math.max(1e-6, element.height),
-                );
-                coordDirtyRef.current = true;
-                onUpdate(element.id, { height: newHeight, ...deco });
-              }}
-              onBlur={pushCoordHistory}
+              value={displayedHeight}
+              onChange={(e) => handleSizeChange('height', e.target.value)}
+              onKeyDown={(e) => handleSizeKeyDown('height', e)}
+              onBlur={() => handleSizeCommit('height')}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold disabled:cursor-not-allowed"
             />
           </div>

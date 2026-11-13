@@ -20,7 +20,7 @@ import {
 
 import { HorizontalRuler, VerticalRuler } from './ruler';
 
-import type { RulerUnit, SelectionBoundsProjection } from './ruler';
+import type { RulerUnit } from './ruler';
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;
@@ -39,8 +39,6 @@ export interface ViewportFixedRulersProps {
   marginPxX?: number;
   marginPxY?: number;
   onChangeRulerUnit: (unit: RulerUnit) => void;
-  selectionBoundsX?: SelectionBoundsProjection | null;
-  selectionBoundsY?: SelectionBoundsProjection | null;
   onStartDragHGuide?: (e: React.PointerEvent<SVGSVGElement>) => void;
   onStartDragVGuide?: (e: React.PointerEvent<SVGSVGElement>) => void;
   onClearGuides?: () => void;
@@ -69,7 +67,6 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   rulerUnit,
   marginPxX = 0,
   onChangeRulerUnit,
-  selectionBoundsX,
   onStartDragHGuide,
   onClearGuides,
   hasGuides,
@@ -84,12 +81,12 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   | 'displayH'
   | 'heightMM'
   | 'canvasPxH'
-  | 'selectionBoundsY'
   | 'onStartDragVGuide'
   | 'marginPxY'
 >) {
   if (!showRuler || printMode) return null;
 
+  // ltr-island: قياسات وتدريجات المسطرة الهندسية تُعرض من اليسار لليمين لمطابقة إحداثيات كانفس Konva
   return (
     <div
       className="flex h-[16px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none"
@@ -103,7 +100,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
               type="button"
               title="وحدة القياس وإدارة الخطوط الإرشادية (Ctrl+R)"
               aria-label="خيارات وحدة قياس المسطرة"
-              className="w-[16px] h-[16px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
+              className="w-[16px] h-[16px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-colors group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative /* ltr-island */"
             >
               <span className="text-2xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
                 {rulerUnit}
@@ -219,12 +216,11 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
           pxWidth={canvasPxW}
           unit={rulerUnit}
           marginPx={marginPxX}
-          selectionBounds={selectionBoundsX}
           onPointerDown={onStartDragHGuide}
         />
       </div>
 
-      {/* 🧭 الزاوية العلوية اليمنى أعلى شريط التمرير الرأسي (16x16px) */}
+      {/* 🧭 الزاوية العلوية اليمنى أعلى شريط التمرير الرأسي (16x16px) — ltr-island */}
       <div
         className="w-[16px] h-[16px] shrink-0 bg-ruler-corner border-l border-ruler-border select-none"
         aria-hidden="true"
@@ -243,7 +239,6 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   canvasPxH,
   rulerUnit,
   marginPxY = 0,
-  selectionBoundsY,
   onStartDragVGuide,
 }: Omit<
   ViewportFixedRulersProps,
@@ -263,9 +258,10 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
 >) {
   if (!showRuler || printMode) return null;
 
+  // ltr-island: قياسات وتدريجات المسطرة الرأسية تُعرض من اليسار لليمين لمطابقة إحداثيات كانفس Konva
   return (
     <div
-      className="w-[16px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none"
+      className="w-[16px] h-full bg-ruler-surface border-r border-ruler-border z-(--z-ruler) shrink-0 select-none"
       dir="ltr"
     >
       <VerticalRuler
@@ -276,7 +272,6 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
         pxHeight={canvasPxH}
         unit={rulerUnit}
         marginPx={marginPxY}
-        selectionBounds={selectionBoundsY}
         onPointerDown={onStartDragVGuide}
       />
     </div>

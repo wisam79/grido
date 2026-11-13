@@ -60,7 +60,7 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
         if (line.startsWith('-') || line.startsWith('*')) {
           const cleanItem = line.replace(/^[-*]\s*/, '').replace(/\*\*/g, '');
           return (
-            <div key={idx} className="flex items-start gap-2 pr-1 text-xs text-foreground/90">
+            <div key={idx} className="flex items-start gap-2 ps-1 text-xs text-foreground/90">
               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/80 mt-1.5 shrink-0" />
               <span>{cleanItem}</span>
             </div>
@@ -154,7 +154,7 @@ export function UpdateNotifier() {
     setIsOpen(open);
   }, []);
 
-  if (!updateInfo || !isOpen) return null;
+  if (!updateInfo) return null;
 
   const handleStartUpdate = async () => {
     setIsDownloading(true);
@@ -310,7 +310,7 @@ export function UpdateNotifier() {
               )}
               <Button
                 variant="outline"
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 className="h-9 px-4 text-xs font-semibold rounded-md hover:bg-muted/80 cursor-pointer"
               >
                 إغلاق

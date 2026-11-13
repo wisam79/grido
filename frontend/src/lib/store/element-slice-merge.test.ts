@@ -3,13 +3,30 @@
  * على الورقة، والتراجع، وخطوة الترتيب، واسم الطبقة — الطبقة المتجهة الناتجة
  * تُختبر هندسياً في canvas/shape-merge.test.ts، وهنا يُختبر عقد الستور.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { captureStageBlob } from '../canvas/konva-export-utils';
 import { useEditorStore } from '../editor-store';
+import { advanceDocumentSession } from '../io/document-session';
+import { uploadMediaBlob } from '../io/media-upload';
 import { deserializeProjectFile, serializeEditorState } from '../io/project-serializer';
 import { CanvasElementSchema } from '../schema';
 
-import type { CanvasElement, ShapeElement } from './types';
+import type { CanvasElement, ImageElement, ShapeElement } from './types';
+import type Konva from 'konva';
+
+vi.mock('../canvas/konva-export-utils', () => ({ captureStageBlob: vi.fn() }));
+vi.mock('../io/media-upload', () => ({ uploadMediaBlob: vi.fn() }));
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 function addRect(x: number, y: number, w: number, h: number): string {
   useEditorStore.getState().addShapeElement('rect');
@@ -28,6 +45,9 @@ function byId(id: string): CanvasElement {
 
 describe('element-slice merge', () => {
   beforeEach(() => {
+    vi.mocked(captureStageBlob).mockReset();
+    vi.mocked(uploadMediaBlob).mockReset();
+    vi.mocked(uploadMediaBlob).mockResolvedValue({ imageSrc: '/local-image/raster.png' });
     useEditorStore.getState().reset();
     useEditorStore.getState().setMode('single');
   });
@@ -157,6 +177,204 @@ describe('element-slice merge', () => {
     const id = addRect(0.1, 0.1, 0.2, 0.2);
     useEditorStore.getState().setSelectedIds([id]);
     return expect(useEditorStore.getState().rasterizeSelected(null)).resolves.toBe('no-stage');
+  });
+
+  describe('rasterize freshness across capture and upload', () => {
+    const stage = {} as Konva.Stage;
+    const blob = () => new Blob(['raster'], { type: 'image/png' });
+
+    function seedSelection() {
+      const a = addRect(0.1, 0.1, 0.2, 0.2);
+      const b = addRect(0.2, 0.2, 0.2, 0.2);
+      const other = addRect(0.5, 0.5, 0.1, 0.1);
+      const hidden = addRect(0.6, 0.6, 0.1, 0.1);
+      useEditorStore.setState((s) => ({
+        elements: s.elements.map((el) => {
+          if (el.id === a) {
+            return { ...el, type: 'image', imageSrc: '/local-image/source.png' } as ImageElement;
+          }
+          if (el.id === hidden) return { ...el, visible: false };
+          return el;
+        }),
+      }));
+      useEditorStore.getState().setSelectedIds([a, b, hidden]);
+      useEditorStore.getState().pushHistory();
+      return { a, b, other, hidden };
+    }
+
+    type Sources = ReturnType<typeof seedSelection>;
+    const changes: Array<{ name: string; apply: (ids: Sources) => void }> = [
+      {
+        name: 'source position',
+        apply: ({ a }) => useEditorStore.getState().updateElement(a, { x: 0.3 }),
+      },
+      {
+        name: 'source image',
+        apply: ({ a }) =>
+          useEditorStore.getState().updateElement(a, { imageSrc: '/local-image/new.png' }),
+      },
+      {
+        name: 'source paint',
+        apply: ({ b }) => useEditorStore.getState().updateElement(b, { fill: '#123456' }),
+      },
+      {
+        name: 'source visibility',
+        apply: ({ b }) => useEditorStore.getState().updateElement(b, { visible: false }),
+      },
+      {
+        name: 'source zIndex',
+        apply: ({ b }) => useEditorStore.getState().updateElement(b, { zIndex: 99 }),
+      },
+      {
+        name: 'source lock',
+        apply: ({ a }) => useEditorStore.getState().updateElement(a, { locked: true }),
+      },
+      { name: 'source removal', apply: ({ a }) => useEditorStore.getState().removeElement(a) },
+      { name: 'project', apply: () => useEditorStore.setState({ projectId: 'another-project' }) },
+      { name: 'document session', apply: () => advanceDocumentSession() },
+      {
+        name: 'canvas width',
+        apply: () => useEditorStore.setState((s) => ({ canvasWidth: s.canvasWidth + 1 })),
+      },
+      {
+        name: 'canvas height',
+        apply: () => useEditorStore.setState((s) => ({ canvasHeight: s.canvasHeight + 1 })),
+      },
+      { name: 'mode', apply: () => useEditorStore.setState({ mode: 'collage' }) },
+    ];
+
+    for (const phase of ['capture', 'upload'] as const) {
+      it.each(changes)(
+        `rejects $name changes during ${phase} without overwriting newer state`,
+        async ({ apply }) => {
+          const ids = seedSelection();
+          const capture = deferred<Blob | null>();
+          const upload = deferred<{ imageSrc: string }>();
+          const uploadStarted = deferred<void>();
+          vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+          vi.mocked(uploadMediaBlob).mockImplementationOnce(() => {
+            uploadStarted.resolve();
+            return upload.promise;
+          });
+          const pending = useEditorStore.getState().rasterizeSelected(stage);
+          expect(vi.mocked(captureStageBlob).mock.calls[0][5]).toMatchObject({
+            useFullResolution: true,
+            includeNodeIds: new Set([ids.a, ids.b]),
+          });
+          if (phase === 'upload') {
+            capture.resolve(blob());
+            await uploadStarted.promise;
+          }
+          apply(ids);
+          const newerState = useEditorStore.getState();
+          if (phase === 'capture') capture.resolve(blob());
+          else upload.resolve({ imageSrc: '/local-image/stale.png' });
+
+          await expect(pending).resolves.toBe('failed');
+          expect(useEditorStore.getState()).toBe(newerState);
+          expect(uploadMediaBlob).toHaveBeenCalledTimes(phase === 'capture' ? 0 : 1);
+        },
+      );
+
+      it(`keeps nonparticipant edits during ${phase} and adds exactly one undo step`, async () => {
+        const ids = seedSelection();
+        const originals = [byId(ids.a), byId(ids.b)];
+        const capture = deferred<Blob | null>();
+        const upload = deferred<{ imageSrc: string }>();
+        const uploadStarted = deferred<void>();
+        vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+        vi.mocked(uploadMediaBlob).mockImplementationOnce(() => {
+          uploadStarted.resolve();
+          return upload.promise;
+        });
+        const pending = useEditorStore.getState().rasterizeSelected(stage);
+        if (phase === 'upload') {
+          capture.resolve(blob());
+          await uploadStarted.promise;
+        }
+        useEditorStore.getState().updateElement(ids.other, {
+          x: 0.7,
+          fill: '#abcdef',
+          visible: false,
+          zIndex: 40,
+        });
+        useEditorStore.getState().updateElement(ids.hidden, { name: 'not captured' });
+        const newcomer = addRect(0.8, 0.8, 0.1, 0.1);
+        useEditorStore.getState().pushHistory();
+        const newerOther = byId(ids.other);
+        const newerHidden = byId(ids.hidden);
+        const newerNewcomer = byId(newcomer);
+        const historyLength = useEditorStore.getState().history.length;
+        const historyIndex = useEditorStore.getState().historyIndex;
+        expect(byId(ids.a)).toBe(originals[0]);
+        expect(byId(ids.b)).toBe(originals[1]);
+        if (phase === 'capture') {
+          capture.resolve(blob());
+          await uploadStarted.promise;
+        }
+        upload.resolve({ imageSrc: '/local-image/fresh.png' });
+        await expect(pending).resolves.toBe('ok');
+        const state = useEditorStore.getState();
+        const flat = state.elements.find(
+          (el) => ![ids.other, ids.hidden, newcomer].includes(el.id),
+        ) as ImageElement;
+        expect(flat).toMatchObject({
+          type: 'image',
+          imageSrc: '/local-image/fresh.png',
+          zIndex: originals[1].zIndex,
+          opacity: 1,
+          rotation: 0,
+          visible: true,
+          locked: false,
+        });
+        expect(state.elements).toHaveLength(4);
+        expect(byId(ids.other)).toBe(newerOther);
+        expect(byId(ids.hidden)).toBe(newerHidden);
+        expect(byId(newcomer)).toBe(newerNewcomer);
+        expect(state.selectedId).toBe(flat.id);
+        expect(state.selectedIds).toEqual([flat.id]);
+        expect(state.lastEditedImage).toBe(flat.imageSrc);
+        expect(state.lastEditedImageAspect).toBeCloseTo(
+          (flat.width * state.canvasWidth) / (flat.height * state.canvasHeight),
+        );
+        expect(state.history).toHaveLength(historyLength + 1);
+        expect(state.historyIndex).toBe(historyIndex + 1);
+        state.undo();
+        expect(byId(ids.a)).toEqual(originals[0]);
+        expect(byId(ids.b)).toEqual(originals[1]);
+        expect(byId(ids.other)).toEqual(newerOther);
+        expect(byId(newcomer)).toEqual(newerNewcomer);
+      });
+    }
+
+    it('accepts a no-op source edit and a new elements array with the same source refs', async () => {
+      const { a } = seedSelection();
+      const capture = deferred<Blob | null>();
+      vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+      const pending = useEditorStore.getState().rasterizeSelected(stage);
+      const source = byId(a);
+      useEditorStore.getState().updateElement(a, { x: source.x });
+      useEditorStore.setState((s) => ({ elements: [...s.elements] }));
+      expect(byId(a)).toBe(source);
+      capture.resolve(blob());
+      await expect(pending).resolves.toBe('ok');
+    });
+
+    it.each(['null', 'rejection'] as const)(
+      'leaves selection/history untouched on capture %s',
+      async (failure) => {
+        seedSelection();
+        const capture = deferred<Blob | null>();
+        vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
+        const original = useEditorStore.getState();
+        const pending = original.rasterizeSelected(stage);
+        if (failure === 'null') capture.resolve(null);
+        else capture.reject(new Error('capture rejected'));
+        await expect(pending).resolves.toBe('failed');
+        expect(useEditorStore.getState()).toBe(original);
+        expect(uploadMediaBlob).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('survives a save/load round-trip with its path and name', () => {

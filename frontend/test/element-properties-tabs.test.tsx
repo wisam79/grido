@@ -1,9 +1,11 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
 
 import type { ShapeElement, TextElement, ImageElement } from '../src/lib/editor-store';
 
@@ -255,4 +257,136 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
 
     expect(mockOnUpdate).toHaveBeenCalledWith(textElement.id, { strokeWidth: 0 });
   });
+});
+
+describe('ElementArrangeTab — focused size drafts and history', () => {
+  const actions = {
+    updateElement: useEditorStore.getState().updateElement,
+    pushHistory: useEditorStore.getState().pushHistory,
+  };
+  const shape: ShapeElement = {
+    id: 'arrange-shape',
+    type: 'shape',
+    shape: 'rect',
+    x: 0.1,
+    y: 0.2,
+    width: 0.3,
+    height: 0.25,
+    rotation: 0,
+    opacity: 1,
+    zIndex: 1,
+    fill: '#123456',
+    stroke: '#000000',
+    strokeWidth: 2,
+  };
+
+  function Harness() {
+    const element = useEditorStore((state) => state.elements[0]);
+    const onUpdate = useEditorStore((state) => state.updateElement);
+    return (
+      <TooltipProvider>
+        <ElementArrangeTab element={element} onUpdate={onUpdate} />
+      </TooltipProvider>
+    );
+  }
+
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState({ ...actions, elements: [shape], history: [], historyIndex: -1 });
+    useEditorStore.getState().pushHistory();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(['W', 'H'] as const)(
+    'Escape discards a below-minimum %s draft before native blur',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      expect(input).toHaveFocus();
+      const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+
+      fireEvent.change(input, { target: { value: '1' } });
+      expect(input).toHaveValue(1);
+      expect(onUpdate).not.toHaveBeenCalled();
+      fireEvent.keyDown(input, { key: 'Escape' });
+
+      expect(input).not.toHaveFocus();
+      expect(input).toHaveValue(label === 'W' ? 30 : 25);
+      expect(useEditorStore.getState().elements[0]).toEqual(shape);
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(history).not.toHaveBeenCalled();
+      expect(useEditorStore.getState().history).toHaveLength(1);
+    },
+  );
+
+  it.each(['W', 'H'] as const)(
+    'Escape keeps the last valid live %s update and records it once',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      const axis = label === 'W' ? 'width' : 'height';
+
+      fireEvent.change(input, { target: { value: '45' } });
+      expect(input).toHaveFocus();
+      expect(useEditorStore.getState().elements[0][axis]).toBe(0.45);
+      expect(history).not.toHaveBeenCalled();
+      fireEvent.change(input, { target: { value: '1' } });
+      fireEvent.keyDown(input, { key: 'Escape' });
+
+      expect(input).not.toHaveFocus();
+      expect(input).toHaveValue(45);
+      expect(useEditorStore.getState().elements[0][axis]).toBe(0.45);
+      expect(history).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().history).toHaveLength(2);
+
+      // The cancellation guard must be consumed by blur, not leak into the next edit.
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '2' } });
+      act(() => input.blur());
+      expect(input).toHaveValue(5);
+      expect(useEditorStore.getState().elements[0][axis]).toBe(0.05);
+      expect(history).toHaveBeenCalledTimes(2);
+      expect(useEditorStore.getState().history).toHaveLength(3);
+    },
+  );
+
+  it.each(['W', 'H'] as const)(
+    'Enter then native blur commits a below-minimum %s draft only once',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      fireEvent.change(input, { target: { value: '2' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      act(() => input.blur());
+
+      expect(input).toHaveValue(5);
+      expect(useEditorStore.getState().elements[0][label === 'W' ? 'width' : 'height']).toBe(0.05);
+      expect(history).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().history).toHaveLength(2);
+    },
+  );
+
+  it.each(['W', 'H'] as const)(
+    'an empty %s draft restores the live value on blur without history',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      fireEvent.change(input, { target: { value: '' } });
+      expect(input).toHaveValue(null);
+      act(() => input.blur());
+
+      expect(input).toHaveValue(label === 'W' ? 30 : 25);
+      expect(useEditorStore.getState().elements[0]).toEqual(shape);
+      expect(history).not.toHaveBeenCalled();
+    },
+  );
 });

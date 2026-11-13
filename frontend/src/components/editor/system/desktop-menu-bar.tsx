@@ -194,7 +194,8 @@ export function DesktopMenuBar() {
         `تم نقل ${movedCount} ملف غير مستخدم (${movedMb} ميجابايت) إلى سلة وسائط التطبيق`,
       );
     } catch (e) {
-      toast.error('حدث خطأ أثناء تنظيف كاش الوسائط: ' + String(e));
+      logger.error('Failed to cleanup unused media:', e);
+      toast.error(`حدث خطأ أثناء تنظيف كاش الوسائط: ${toErrorMessage(e, 'تعذر إتمام العملية')}`);
     }
   };
 
@@ -216,7 +217,8 @@ export function DesktopMenuBar() {
       setTrashStats({ count: trashCount, mb: trashMb });
       setEmptyTrashDialogOpen(true);
     } catch (e) {
-      toast.error('حدث خطأ أثناء فحص سلة الوسائط: ' + String(e));
+      logger.error('Failed to inspect media trash stats:', e);
+      toast.error(`حدث خطأ أثناء فحص سلة الوسائط: ${toErrorMessage(e, 'تعذر قراءة بيانات السلة')}`);
     }
   };
 
@@ -230,7 +232,8 @@ export function DesktopMenuBar() {
       );
       setEmptyTrashDialogOpen(false);
     } catch (e) {
-      toast.error('حدث خطأ أثناء إفراغ سلة الوسائط: ' + String(e));
+      logger.error('Failed to empty media trash:', e);
+      toast.error(`حدث خطأ أثناء إفراغ سلة الوسائط: ${toErrorMessage(e, 'تعذر إفراغ السلة')}`);
     } finally {
       setIsClearingTrash(false);
     }

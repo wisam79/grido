@@ -121,63 +121,109 @@ async function renderBleedCanvas(
 
     const strip = Math.min(bleedPx, imgWidth, imgHeight);
     if (strip > 0) {
-      ctx.save();
-      ctx.translate(bleedPx, bleedPx);
-      ctx.scale(-1, 1);
-      ctx.drawImage(drawable, 0, 0, strip, imgHeight, 0, 0, strip, imgHeight);
-      ctx.restore();
+      // الحواف والزوايا تتمدد للخارج نحو هامش النزيف (من حافة الصورة للخارج)
+      const mirrorRegions: ReadonlyArray<{
+        tx: number;
+        ty: number;
+        sxScale: number;
+        syScale: number;
+        srcX: number;
+        srcY: number;
+        w: number;
+        h: number;
+      }> = [
+        // الحافة اليسرى واليمنى
+        {
+          tx: bleedPx,
+          ty: bleedPx,
+          sxScale: -1,
+          syScale: 1,
+          srcX: 0,
+          srcY: 0,
+          w: strip,
+          h: imgHeight,
+        },
+        {
+          tx: bleedPx + imgWidth + strip,
+          ty: bleedPx,
+          sxScale: -1,
+          syScale: 1,
+          srcX: imgWidth - strip,
+          srcY: 0,
+          w: strip,
+          h: imgHeight,
+        },
+        // الحافة العلوية والسفلية
+        {
+          tx: bleedPx,
+          ty: bleedPx,
+          sxScale: 1,
+          syScale: -1,
+          srcX: 0,
+          srcY: 0,
+          w: imgWidth,
+          h: strip,
+        },
+        {
+          tx: bleedPx,
+          ty: bleedPx + imgHeight + strip,
+          sxScale: 1,
+          syScale: -1,
+          srcX: 0,
+          srcY: imgHeight - strip,
+          w: imgWidth,
+          h: strip,
+        },
+        // الزوايا الأربع (أعلى يسار، أعلى يمين، أسفل يسار، أسفل يمين)
+        {
+          tx: bleedPx,
+          ty: bleedPx,
+          sxScale: -1,
+          syScale: -1,
+          srcX: 0,
+          srcY: 0,
+          w: strip,
+          h: strip,
+        },
+        {
+          tx: bleedPx + imgWidth + strip,
+          ty: bleedPx,
+          sxScale: -1,
+          syScale: -1,
+          srcX: imgWidth - strip,
+          srcY: 0,
+          w: strip,
+          h: strip,
+        },
+        {
+          tx: bleedPx,
+          ty: bleedPx + imgHeight + strip,
+          sxScale: -1,
+          syScale: -1,
+          srcX: 0,
+          srcY: imgHeight - strip,
+          w: strip,
+          h: strip,
+        },
+        {
+          tx: bleedPx + imgWidth + strip,
+          ty: bleedPx + imgHeight + strip,
+          sxScale: -1,
+          syScale: -1,
+          srcX: imgWidth - strip,
+          srcY: imgHeight - strip,
+          w: strip,
+          h: strip,
+        },
+      ];
 
-      ctx.save();
-      ctx.translate(bleedPx + imgWidth, bleedPx);
-      ctx.scale(-1, 1);
-      ctx.drawImage(drawable, imgWidth - strip, 0, strip, imgHeight, 0, 0, strip, imgHeight);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx, bleedPx);
-      ctx.scale(1, -1);
-      ctx.drawImage(drawable, 0, 0, imgWidth, strip, 0, 0, imgWidth, strip);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx, bleedPx + imgHeight);
-      ctx.scale(1, -1);
-      ctx.drawImage(drawable, 0, imgHeight - strip, imgWidth, strip, 0, 0, imgWidth, strip);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx, bleedPx);
-      ctx.scale(-1, -1);
-      ctx.drawImage(drawable, 0, 0, strip, strip, 0, 0, strip, strip);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx + imgWidth, bleedPx);
-      ctx.scale(-1, -1);
-      ctx.drawImage(drawable, imgWidth - strip, 0, strip, strip, 0, 0, strip, strip);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx, bleedPx + imgHeight);
-      ctx.scale(-1, -1);
-      ctx.drawImage(drawable, 0, imgHeight - strip, strip, strip, 0, 0, strip, strip);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(bleedPx + imgWidth, bleedPx + imgHeight);
-      ctx.scale(-1, -1);
-      ctx.drawImage(
-        drawable,
-        imgWidth - strip,
-        imgHeight - strip,
-        strip,
-        strip,
-        0,
-        0,
-        strip,
-        strip,
-      );
-      ctx.restore();
+      for (const r of mirrorRegions) {
+        ctx.save();
+        ctx.translate(r.tx, r.ty);
+        ctx.scale(r.sxScale, r.syScale);
+        ctx.drawImage(drawable, r.srcX, r.srcY, r.w, r.h, 0, 0, r.w, r.h);
+        ctx.restore();
+      }
     }
 
     if (showCropMarks) {

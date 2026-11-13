@@ -206,6 +206,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
     [stagePosX, onScrollX, viewportWidth, displayW],
   );
 
+  // ltr-island: شريط التمرير الأفقي يتطابق مع إحداثيات ومحاذاة كانفس Konva من اليسار إلى اليمين
   return (
     <div
       role="scrollbar"
@@ -322,6 +323,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
     [stagePosY, onScrollY, viewportHeight, displayH],
   );
 
+  // ltr-island: شريط التمرير الرأسي يتموضع على الجانب الأيمن للكانفس ويتطابق مع إحداثيات Konva
   return (
     <div
       role="scrollbar"
@@ -333,7 +335,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden ${className}`}
+      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden /* ltr-island */ ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل الارتفاع */}
@@ -370,9 +372,10 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
   onResetPan,
   className = '',
 }: CanvasCornerResetButtonProps) {
+  // ltr-island: زر الزاوية يقع عند تقاطع أشرطة التمرير المطابقة لإحداثيات Konva
   return (
     <div
-      className={`w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none ${className}`}
+      className={`w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border flex items-center justify-center select-none /* ltr-island */ ${className}`}
       dir="ltr"
     >
       <Tooltip>
@@ -408,14 +411,15 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
   onResetPan,
   className = '',
 }: CanvasScrollbarsBottomBarProps) {
+  // ltr-island: الشريط السفلي يجمع شريط التمرير الأفقي وزوايا التقاطع بمحاذاة LTR لمطابقة Konva
   return (
     <div
       className={`flex h-[20px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
       dir="ltr"
     >
-      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (20x20px) */}
+      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (20x20px) — ltr-island */}
       <div
-        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none"
+        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none /* ltr-island */"
         aria-hidden="true"
       />
 

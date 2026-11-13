@@ -231,31 +231,36 @@ export function useAppBootstrap(): AppBootstrapState {
           'native-file-drop',
           async (data: { x?: number; y?: number; images: string[] }) => {
             if (!data || !data.images || data.images.length === 0) return;
-            const images = data.images;
-            const store = useEditorStore.getState();
+            try {
+              const images = data.images;
+              const store = useEditorStore.getState();
 
-            if (store.mode === 'collage') {
-              const targetSlotId =
-                store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
-                  ? store.selectedId
-                  : null;
-              const plan = buildCollageInsertPlan(store.slots, images, {
-                targetSlotId,
-                scope: targetSlotId ? 'target' : 'empty',
-              });
-              await store.setSlotImagesBatch(plan.assignments, images[0] || null);
-              if (plan.remaining.length > 0) store.appendPendingCollageImages(plan.remaining);
-            } else {
-              if (images.length === 1) {
-                void addImageFromSrc(images[0]);
+              if (store.mode === 'collage') {
+                const targetSlotId =
+                  store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
+                    ? store.selectedId
+                    : null;
+                const plan = buildCollageInsertPlan(store.slots, images, {
+                  targetSlotId,
+                  scope: targetSlotId ? 'target' : 'empty',
+                });
+                await store.setSlotImagesBatch(plan.assignments, images[0] || null);
+                if (plan.remaining.length > 0) store.appendPendingCollageImages(plan.remaining);
               } else {
-                const aspectMap = await resolveBatchImageAspectRatios(images);
-                const items = images.map((src) => ({
-                  src,
-                  aspectRatio: aspectMap.get(src) || 1,
-                }));
-                store.addImageElementsBatch(items);
+                if (images.length === 1) {
+                  await addImageFromSrc(images[0]);
+                } else {
+                  const aspectMap = await resolveBatchImageAspectRatios(images);
+                  const items = images.map((src) => ({
+                    src,
+                    aspectRatio: aspectMap.get(src) || 1,
+                  }));
+                  store.addImageElementsBatch(items);
+                }
               }
+            } catch (err) {
+              logger.error('Failed to process native file drop:', err);
+              toast.error(toErrorMessage(err, 'تعذّر إدراج الصور المسحوبة'));
             }
           },
         );

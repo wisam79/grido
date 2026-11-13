@@ -348,9 +348,29 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             const blob = await exportSlotCanvas(slot.id, format, quality / 100);
             if (shouldStop()) break;
             if (blob) {
+              const finalBlob =
+                bleedMM > 0
+                  ? await applyBleedAndCropMarks(
+                      blob,
+                      bleedMM,
+                      showCropMarks,
+                      format,
+                      quality / 100,
+                      exportDpi,
+                      signal,
+                    )
+                  : blob;
+              if (shouldStop()) break;
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
-              const res = await downloadBlob(blob, name, targetDir, exportDpi, undefined, signal);
+              const res = await downloadBlob(
+                finalBlob,
+                name,
+                targetDir,
+                exportDpi,
+                undefined,
+                signal,
+              );
               const outcome = classifySaveResult(res);
               if (outcome === 'success') {
                 successCount++;

@@ -2,6 +2,21 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## متابعة تدقيق UI/البنية — 2026-11-13
+
+المصدر التاريخي في [التقرير 24](reviews/24-ui-architecture-audit-disposition-2026-11-13.md#ملحق-disposition--2026-11-13) **بلا اختبارات تنفيذية**. مصفوفتُه تفصل code disposition عن test results؛ لا تُعتمد claims «100%/500+/50» السابقة كقياس لهذه المتابعة ولا تُجمع نتائج الملفات في إجمالي قبل اكتمال سجلاتها.
+
+- تشغيل فعلي أرسله المنسّق بتاريخ 2026-11-13: `node frontend/node_modules/vitest/vitest.mjs run test/export-bleed.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **11/11 ناجحة** بعد إضافة `frontend/test/export-bleed.test.ts:89`. يسجل الاختبار affine transforms/source rects للحواف والزوايا الثمانية خارج حدود الأصل بـexpected يدوي (صورة 100×100 ونزيف 4)، مع validation/abort السابقة. يثبت هندسة الوجهات لا pixel RGBA/visual parity؛ تشغيل 10/10 الأول لا يُجمع مع الإعادة.
+- تشغيل فعلي آخر أرسله المنسّق في التاريخ نفسه وبنفس الأعلام: `node frontend/node_modules/vitest/vitest.mjs run test/export-dialog.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **26/26 ناجحة**؛ regression suite قائم بلا test explicit للـbatch bleed. رسائل unreadable/CMYK errors متعمدة وليست فشلاً مخفياً.
+- `node frontend/node_modules/vitest/vitest.mjs run test/text-editing-overlay.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **16/16 ناجحة** بحسب تشغيل المنسّق؛ component regression behaviors. تحذير jsdom Canvas `getContext not implemented` ظاهر ولم يُخفَ ولم يؤثر في المرور؛ النتيجة لا تثبت pixel/visual parity أو كل defaults الجديدة.
+- استهدافات منفردة أخرى مؤكدة من مالكي التنفيذ، بعامل واحد ودون coverage: `test/account-license-modal.test.tsx` **67/67**، `src/lib/store/element-slice-merge.test.ts` **39/39**، `test/konva-capture-selection.test.ts` **5/5**، و`test/collage-image-crop.test.tsx` القائم **18/18** في frontend؛ `admin-web/src/lib/phone-bridge-pairing.test.ts` **24/24** باختبار pure helper لا page GUI. الأوامر والتفصيل في سجل التقرير 24؛ mocks/تحذيرات متعمدة ولا native/live auth/desktop ack/pixel parity. محاولة minWorkers غير المدعومة قبل أمر auth النهائي ليست نتيجة نجاح.
+- admin ownership النهائي: `C:/projects/grido/admin-web/node_modules/.bin/vitest run --root C:/projects/grido/admin-web src/pages/admin/__tests__/admin-mutation-ownership.test.tsx --maxWorkers=1 --no-file-parallelism --coverage.enabled=false` → **51/51**؛ لا يجمع مع 38 السابق. `npm --prefix admin-web run lint` و`node admin-web/node_modules/typescript/bin/tsc --noEmit -p admin-web/tsconfig.app.json` ناجحان بصفر أخطاء/تحذيرات بحسب تشغيل المنسّق.
+- القوالب/الخصائص: `test/template-panel.test.tsx` **7/7**، `test/element-properties-tabs.test.tsx` **16/16**، `test/freeform-collage.test.ts` **64/64**، كل ملف منفرداً بالأمر والأعلام frontend نفسها حسب التحقق النهائي المرسل. أسماء الملفات هنا لا تعني اختبارات GUI أو حزمة كاملة؛ المرجع التفصيلي التقرير 24.
+- `migration-lint`: **42 ملفاً، 0 تحذيرات** وبصمة الهجرة متحققة بحسب المنسّق؛ الهجرة `supabase/migrations/20261113155602_phone_bridge_handshake_json_mime.sql` **LOCAL NOT APPLIED**. لا اتصال/تطبيق حيّ أو phone↔desktop ack من هذه النتيجة.
+- أضيفت `jsdom` **31.0.1** كاعتماد تطوير في admin-web بحسب التأكيد المرسل؛ لا يعني ذلك نجاح اختبار React أو اختبار جلسة Supabase حيّ.
+- البوابات الخفيفة النهائية بحسب المنسّق: `npm --prefix frontend run typecheck` و`npm --prefix frontend run lint` و`npm --prefix frontend run format:check` **PASS**، بعد تصحيح import order باختبار auth وتنسيق `export-bleed.test.ts` ثم إعادة الفحص. بقية نقاط المصدر غير المسماة غير متحققة؛ لا انتظار نتائج جارٍ ولا extrapolation. كاتب التوثيق لم يشغّل اختبارات/بناء/E2E/CI؛ نتائج الطباعة السابقة تبقى خاصة بنطاقها وتاريخها.
+- جرد المنسّق `node scripts/docs-gate.mjs --strict-refs`: **166 Vitest / 31 E2E / 67 Go / 6 مستندات جذرية**؛ حُدّث metric بالتنسيق بعد انحراف 164→166 وإضافة `frontend/test/template-panel.test.tsx` و`frontend/test/konva-capture-selection.test.ts`. جرد19 وتأكيدات53 سليمة، إعادة `node scripts/docs-gate.mjs --strict-refs` النهائية **PASS**؛ غياب staged files يعني أن commit-doc matrix لم تُختبر. أعداد الملفات ليست حالات ناجحة.
+
 ---
 
 ## إغلاق عقود الطباعة والتصدير — 13 نوفمبر 2026
@@ -244,7 +259,7 @@ flowchart TD
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (164 ملف اختبار؛ نتيجة الحالات من CI)"]
+        VTests["Vitest + React Testing Library (166 ملف اختبار؛ نتيجة الحالات من CI)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -318,7 +333,7 @@ case 1234567890: // اسم الدالة الجديدة
 | :------------------- | :--------------------------------------------------------------------------------------------------- | :----------------------- |
 | `task test:all`      | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة                                                | المشروع بالكامل          |
 | `task test:backend`  | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم                                                   | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (164 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component  |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (166 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component  |
 | `task test:e2e`      | تشغيل اختبارات Playwright E2E السريعة على Chromium                                                   | E2E Browser              |
 
 ### 3.2 عبر npm في مجلد `frontend`

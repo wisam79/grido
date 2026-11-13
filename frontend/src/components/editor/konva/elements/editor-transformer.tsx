@@ -379,6 +379,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           shadowBlur={4}
           shadowOffset={{ x: 0, y: 1 }}
           shadowOpacity={0.35}
+          shadowForStrokeEnabled={false}
           perfectDrawEnabled={false}
         />
         <Text

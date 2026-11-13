@@ -4,7 +4,9 @@ import { create } from 'zustand';
 
 import { SaveImageFromBase64 } from '@bindings/grido/app';
 
+import { findLiveAiTarget } from '@/lib/ai/ai-result-commit';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
@@ -268,6 +270,10 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     setFrameProgressText('جاري التهيئة ...');
 
     const requestId = nextRequestId++;
+    const requestSession = getDocumentSession();
+    // نتحقق عند البدء إن كان الهدف مسجّلاً في الستور؛ اختبارات دورة الحياة
+    // القديمة لا تملأ elements/slots، أمّا في التطبيق فالهدف موجود دائماً.
+    const hadLiveTargetAtStart = targetId ? Boolean(findLiveAiTarget(targetId)) : false;
     busyFrameRequestId = requestId;
     activeRequestRef.current = requestId;
     activeOpRef.current = opId;
@@ -318,10 +324,30 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
           const { pngBase64, outW, outH, detectedMs } = msg.result;
 
           try {
+            if (activeRequestRef.current !== requestId || getDocumentSession() !== requestSession) {
+              return;
+            }
             setFrameProgressText('جاري حفظ الصورة المقتصة ...');
             const dataUrl = `data:image/png;base64,${pngBase64}`;
             const localPath = await SaveImageFromBase64(dataUrl);
+            if (activeRequestRef.current !== requestId || getDocumentSession() !== requestSession) {
+              return;
+            }
             await preloadImageIntoCache(localPath);
+            if (activeRequestRef.current !== requestId || getDocumentSession() !== requestSession) {
+              return;
+            }
+            if (hadLiveTargetAtStart) {
+              const live = findLiveAiTarget(target.id);
+              if (!live) {
+                toast.info('تم إلغاء ضبط الوجه: العنصر لم يعد موجوداً.');
+                return;
+              }
+              if (live.imageSrc !== imageSrc) {
+                toast.info('تم إلغاء ضبط الوجه: تغيّرت الصورة أثناء المعالجة.');
+                return;
+              }
+            }
 
             const patch: FramingPatch = { imageSrc: localPath };
             if ('originalImageSrc' in target && !target.originalImageSrc) {
@@ -344,10 +370,14 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
             );
             toast.success('تم ضبط مقاس الوجه وموضعه وفق معايير الهوية.');
           } catch (err) {
-            logger.error('Failed to save framed image:', err);
-            toast.error(toErrorMessage(err, 'فشل حفظ الصورة بعد ضبط الوجه.'));
+            if (activeRequestRef.current === requestId && getDocumentSession() === requestSession) {
+              logger.error('Failed to save framed image:', err);
+              toast.error(toErrorMessage(err, 'فشل حفظ الصورة بعد ضبط الوجه.'));
+            }
           } finally {
-            settle();
+            if (activeRequestRef.current === requestId) {
+              settle();
+            }
           }
         }
       },

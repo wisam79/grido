@@ -338,6 +338,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-combo-traveler',
     name: 'طقم المسافر المزدوج (جوازات + فيزا)',
     slots: 6,
+    isBaked: true,
     cells: [
       { x: 0.025, y: 0.025, w: 0.465, h: 0.32, presetType: 'passport', label: 'جواز 3.5×4.5' },
       { x: 0.51, y: 0.025, w: 0.465, h: 0.32, presetType: 'passport', label: 'جواز 3.5×4.5' },

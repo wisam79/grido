@@ -50,11 +50,13 @@ export function AccountLicenseModal() {
   const [licenseError, setLicenseError] = useState<string | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
 
-  // 🧭 نماذج المصادقة (كانت مضمّنة هنا): دخول/تسجيل/OTP/استعادة
-  const forms = useAuthForms(() => {
+  const handleAuthenticated = useCallback(() => {
     setAccountModalOpen(false);
     setActiveTab('license');
-  });
+  }, [setAccountModalOpen]);
+
+  // 🧭 نماذج المصادقة (كانت مضمّنة هنا): دخول/تسجيل/OTP/استعادة
+  const forms = useAuthForms(handleAuthenticated);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -66,35 +68,31 @@ export function AccountLicenseModal() {
   }, [accountModalOpen]);
 
   useEffect(() => {
+    let nextDays = 0;
     if (user && user.plan === 'trial' && user.expiresAt) {
       const expiry = new Date(user.expiresAt).getTime();
-      const diff = expiry - Date.now();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
-    } else {
-      setTrialDaysLeft(0);
+      if (Number.isFinite(expiry)) {
+        nextDays = Math.max(0, Math.ceil((expiry - Date.now()) / (1000 * 60 * 60 * 24)));
+      }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTrialDaysLeft(nextDays);
   }, [user]);
 
   const confirmLogout = async () => {
     await logoutAccount();
     toast.info('تم تسجيل الخروج.');
+    forms.resetForms();
     forms.setAuthMode('login');
     setActiveTab('auth');
   };
 
   const active = isLicenseActive();
 
-  // تصفير حالة النموذج عند إغلاق النافذة — أثناء طلب جارٍ كان الإغلاق
-  // يترك spinner التحميل عالقاً للفتح التالي
+  // The hook observes every store close synchronously, including external closes.
   const handleModalOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        forms.resetForms();
-      }
-      setAccountModalOpen(open);
-    },
-    [forms, setAccountModalOpen],
+    (open: boolean) => setAccountModalOpen(open),
+    [setAccountModalOpen],
   );
 
   return (

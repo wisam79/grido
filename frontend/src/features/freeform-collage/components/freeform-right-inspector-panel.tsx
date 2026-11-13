@@ -93,29 +93,42 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
 
     const handleWidthChange = (valStr: string) => {
       const num = parseFloat(valStr);
-      if (isNaN(num) || num <= 0) return;
-      const clampedMM = Math.min(paperWidthMM - xMM, Math.max(5, num));
-      const newWRel = clampedMM / paperWidthMM;
-      if (slot.lockAspect && slot.w > 0) {
+      if (!Number.isFinite(num) || num <= 0) return;
+      if (slot.lockAspect && slot.w > 0 && slot.h > 0 && paperWidthMM > 0 && paperHeightMM > 0) {
         const aspect = (slot.w * paperWidthMM) / (slot.h * paperHeightMM);
-        const newHRel = clampedMM / aspect / paperHeightMM;
-        onUpdateSlot({ w: newWRel, h: Math.min(1 - slot.y, newHRel) });
+        const maxWMM = Math.min((1 - slot.x) * paperWidthMM, (1 - slot.y) * paperHeightMM * aspect);
+        const minWMM = Math.min(maxWMM, Math.max(5, 5 * aspect));
+        const targetWMM = Math.min(maxWMM, Math.max(minWMM, num));
+        const targetHMM = targetWMM / aspect;
+        onUpdateSlot({
+          w: Math.min(1 - slot.x, targetWMM / paperWidthMM),
+          h: Math.min(1 - slot.y, targetHMM / paperHeightMM),
+        });
       } else {
-        onUpdateSlot({ w: newWRel });
+        const clampedMM = Math.min(paperWidthMM - xMM, Math.max(5, num));
+        onUpdateSlot({ w: clampedMM / paperWidthMM });
       }
     };
 
     const handleHeightChange = (valStr: string) => {
       const num = parseFloat(valStr);
-      if (isNaN(num) || num <= 0) return;
-      const clampedMM = Math.min(paperHeightMM - yMM, Math.max(5, num));
-      const newHRel = clampedMM / paperHeightMM;
-      if (slot.lockAspect && slot.h > 0) {
+      if (!Number.isFinite(num) || num <= 0) return;
+      if (slot.lockAspect && slot.w > 0 && slot.h > 0 && paperWidthMM > 0 && paperHeightMM > 0) {
         const aspect = (slot.w * paperWidthMM) / (slot.h * paperHeightMM);
-        const newWRel = (clampedMM * aspect) / paperWidthMM;
-        onUpdateSlot({ h: newHRel, w: Math.min(1 - slot.x, newWRel) });
+        const maxHMM = Math.min(
+          (1 - slot.y) * paperHeightMM,
+          ((1 - slot.x) * paperWidthMM) / aspect,
+        );
+        const minHMM = Math.min(maxHMM, Math.max(5, 5 / aspect));
+        const targetHMM = Math.min(maxHMM, Math.max(minHMM, num));
+        const targetWMM = targetHMM * aspect;
+        onUpdateSlot({
+          h: Math.min(1 - slot.y, targetHMM / paperHeightMM),
+          w: Math.min(1 - slot.x, targetWMM / paperWidthMM),
+        });
       } else {
-        onUpdateSlot({ h: newHRel });
+        const clampedMM = Math.min(paperHeightMM - yMM, Math.max(5, num));
+        onUpdateSlot({ h: clampedMM / paperHeightMM });
       }
     };
 

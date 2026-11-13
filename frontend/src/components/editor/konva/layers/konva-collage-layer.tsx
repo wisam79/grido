@@ -536,6 +536,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                       shadowColor={collageSelectionShadow()}
                       shadowBlur={4 / uiScale}
                       shadowOpacity={0.4}
+                      shadowForStrokeEnabled={false}
                     />
                   </Group>
                 );

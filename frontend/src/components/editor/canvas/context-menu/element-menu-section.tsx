@@ -91,6 +91,9 @@ export function ElementMenuSection({
 
   const el = elements.find((e) => e.id === targetId);
   const imgEl = el?.type === 'image' ? (el as ImageElement) : null;
+  const isLocked = el?.locked === true;
+  const lockableItemClassName = `${menuItemClassName} disabled:opacity-40 disabled:pointer-events-none`;
+  const lockableSpinnerClassName = `${menuItemSpinnerClassName} disabled:pointer-events-none`;
 
   return (
     <div className="space-y-1">
@@ -148,8 +151,10 @@ export function ElementMenuSection({
             <button
               role="menuitem"
               tabIndex={-1}
-              className={menuItemClassName}
+              disabled={isLocked}
+              className={lockableItemClassName}
               onClick={() => {
+                if (isLocked) return;
                 setCropTarget({
                   imageSrc: imgEl.imageSrc!,
                   originalImageSrc: imgEl.originalImageSrc,
@@ -216,9 +221,10 @@ export function ElementMenuSection({
             <button
               role="menuitem"
               tabIndex={-1}
-              disabled={isRemovingBg}
-              className={menuItemSpinnerClassName}
+              disabled={isLocked || isRemovingBg}
+              className={lockableSpinnerClassName}
               onClick={() => {
+                if (isLocked) return;
                 handleRemoveBg(imgEl);
                 onClose();
               }}
@@ -237,9 +243,10 @@ export function ElementMenuSection({
             <button
               role="menuitem"
               tabIndex={-1}
-              disabled={isEnhancing}
-              className={menuItemSpinnerClassName}
+              disabled={isLocked || isEnhancing}
+              className={lockableSpinnerClassName}
               onClick={() => {
+                if (isLocked) return;
                 handleEnhance(imgEl);
                 onClose();
               }}
@@ -338,8 +345,9 @@ export function ElementMenuSection({
         <button
           role="menuitem"
           tabIndex={-1}
-          className={menuItemClassName}
-          onClick={() => handleAction(() => bringToFront(targetId))}
+          disabled={isLocked}
+          className={lockableItemClassName}
+          onClick={() => !isLocked && handleAction(() => bringToFront(targetId))}
         >
           <ArrowUp
             className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
@@ -351,8 +359,9 @@ export function ElementMenuSection({
         <button
           role="menuitem"
           tabIndex={-1}
-          className={menuItemClassName}
-          onClick={() => handleAction(() => sendToBack(targetId))}
+          disabled={isLocked}
+          className={lockableItemClassName}
+          onClick={() => !isLocked && handleAction(() => sendToBack(targetId))}
         >
           <ArrowDown
             className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"

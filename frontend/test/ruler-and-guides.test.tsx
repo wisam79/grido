@@ -10,10 +10,11 @@ import { HorizontalRuler, VerticalRuler } from '../src/components/editor/canvas/
 import {
   getRulerSteps,
   formatRulerNumber,
-  formatRulerCoordinate,
   getUnitSpan,
 } from '../src/components/editor/canvas/ruler-utils';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+
+import type { RulerUnit } from '../src/components/editor/canvas/ruler';
 
 describe('Ruler & User Guides Integration Tests', () => {
   it('renders HorizontalRuler with various units and origin offset', () => {
@@ -119,7 +120,7 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(stepsPX.labelStep).toBeGreaterThanOrEqual(10);
   });
 
-  it('formats ruler numbers and coordinates properly', () => {
+  it('formats ruler numbers properly', () => {
     expect(formatRulerNumber(0, 'mm')).toBe('0');
     expect(formatRulerNumber(35, 'mm')).toBe('35');
     expect(formatRulerNumber(0.5, 'in')).toBe('½');
@@ -129,12 +130,6 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(formatRulerNumber(-0.25, 'in')).toBe('-¼');
     expect(formatRulerNumber(-10, 'mm')).toBe('-10');
     expect(formatRulerNumber(-150, 'px')).toBe('-150');
-
-    expect(formatRulerCoordinate(0, 'mm')).toBe('0 mm');
-    expect(formatRulerCoordinate(35.0, 'mm')).toBe('35 mm');
-    expect(formatRulerCoordinate(2.5, 'in')).toBe('2.5 in');
-    expect(formatRulerCoordinate(150, 'px')).toBe('150 px');
-    expect(formatRulerCoordinate(12.34, 'cm')).toBe('12.34 cm');
   });
 
   it('calculates unit spans correctly', () => {
@@ -146,7 +141,7 @@ describe('Ruler & User Guides Integration Tests', () => {
 
   it('renders ViewportFixedRulersHeader and toggles unit selector dropdown', () => {
     let _selectedUnit = 'mm';
-    const handleChangeUnit = (u: any) => {
+    const handleChangeUnit = (u: RulerUnit) => {
       _selectedUnit = u;
     };
 
