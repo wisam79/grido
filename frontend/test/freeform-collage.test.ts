@@ -25,6 +25,8 @@ import {
   parseLayoutFile,
 } from '../src/features/freeform-collage/lib/freeform-math';
 
+import { MIN_SIZE } from '../src/features/freeform-collage/lib/slots/constants';
+
 import type { FreeformSlot, FreeformLayout } from '../src/features/freeform-collage/types';
 
 describe('Freeform Collage Feature Unit Tests (10x Suite)', () => {
@@ -352,6 +354,136 @@ describe('Freeform Collage Feature Unit Tests (10x Suite)', () => {
     const rotated = rotateSlot(slots, 'slot1');
     expect(rotated[0].w).toBeLessThanOrEqual(1 - rotated[0].x + 1e-9);
     expect(rotated[0].h).toBeLessThanOrEqual(1 - rotated[0].y + 1e-9);
+  });
+});
+
+describe('rotateSlot — proportional bounds and finite paper ratios', () => {
+  it.each([
+    { x: 0.8, y: 0.1, w: 0.15, h: 0.3, paperW: 100, paperH: 150 },
+    { x: 0.1, y: 0.8, w: 0.3, h: 0.15, paperW: 150, paperH: 100 },
+    { x: 0.1, y: 0.2, w: 0.3, h: 0.2, paperW: 150, paperH: 100 },
+  ])(
+    'uses one scale and keeps x/y and physical ratio at ($x, $y)',
+    ({ paperW, paperH, ...geometry }) => {
+      const target: FreeformSlot = {
+        id: 'target',
+        ...geometry,
+        rotation: 270,
+        lockAspect: true,
+        presetType: 'passport',
+        label: 'Keep metadata',
+      };
+      const other: FreeformSlot = { id: 'other', x: 0, y: 0, w: 0.1, h: 0.1 };
+      const rotated = rotateSlot([target, other], target.id, paperW, paperH);
+      const result = rotated[0];
+      const rawW = target.h * (paperH / paperW);
+      const rawH = target.w * (paperW / paperH);
+      const scale = Math.min(1, (1 - target.x) / rawW, (1 - target.y) / rawH);
+
+      expect(result.w).toBeCloseTo(rawW * scale, 12);
+      expect(result.h).toBeCloseTo(rawH * scale, 12);
+      expect(result.w / rawW).toBeCloseTo(result.h / rawH, 12);
+      expect((result.w * paperW) / (result.h * paperH)).toBeCloseTo(
+        (target.h * paperH) / (target.w * paperW),
+        12,
+      );
+      expect(result.w).toBeGreaterThanOrEqual(MIN_SIZE);
+      expect(result.h).toBeGreaterThanOrEqual(MIN_SIZE);
+      expect(result.x + result.w).toBeLessThanOrEqual(1 + 1e-12);
+      expect(result.y + result.h).toBeLessThanOrEqual(1 + 1e-12);
+      expect(result).toMatchObject({
+        x: target.x,
+        y: target.y,
+        rotation: 0,
+        lockAspect: true,
+        label: target.label,
+      });
+      expect(rotated[1]).toBe(other);
+      expect(target.rotation).toBe(270);
+    },
+  );
+
+  it('raises both dimensions with one scale when the rotated minimum size is feasible', () => {
+    const target: FreeformSlot = { id: 'target', x: 0.1, y: 0.1, w: 0.04, h: 0.08, rotation: 0 };
+    const [result] = rotateSlot([target], target.id, 100, 200);
+    expect(result.w).toBeCloseTo(0.32, 12);
+    expect(result.h).toBeCloseTo(MIN_SIZE, 12);
+    expect(result.w / result.h).toBeCloseTo(8, 12);
+    expect(result).toMatchObject({ x: 0.1, y: 0.1, rotation: 90 });
+  });
+
+  it.each([
+    { x: 0.95, y: 0.1, w: 0.04, h: 0.5, paperW: 100, paperH: 100 },
+    { x: 0.1, y: 0.95, w: 0.5, h: 0.04, paperW: 100, paperH: 100 },
+    { x: 0.97, y: 0.1, w: 0.02, h: 0.2, paperW: 100, paperH: 150 },
+    { x: 0.1, y: 0.1, w: 0.04, h: 0.5, paperW: 100, paperH: 1000 },
+  ])(
+    'is a complete no-op, including rotation, when ratio/minimum/bounds cannot coexist at ($x, $y)',
+    ({ paperW, paperH, ...geometry }) => {
+      const target: FreeformSlot = { id: 'target', ...geometry, rotation: 180 };
+      const slots = [target];
+      expect(rotateSlot(slots, target.id, paperW, paperH)).toBe(slots);
+      expect(slots[0]).toBe(target);
+      expect(target.rotation).toBe(180);
+    },
+  );
+
+  it.each([
+    [undefined, undefined],
+    [Infinity, 150],
+    [100, Infinity],
+    [NaN, 150],
+    [100, NaN],
+    [0, 150],
+    [-100, 150],
+    [100, 0],
+    [Number.MIN_VALUE, Number.MAX_VALUE],
+    [Number.MAX_VALUE, Number.MIN_VALUE],
+  ])('falls back to a finite square-paper ratio for %s × %s', (paperW, paperH) => {
+    const target: FreeformSlot = { id: 'target', x: 0.1, y: 0.2, w: 0.3, h: 0.2 };
+    const [result] = rotateSlot([target], target.id, paperW, paperH);
+    expect(result).toMatchObject({ x: 0.1, y: 0.2, w: 0.2, h: 0.3, rotation: 90 });
+    expect([result.x, result.y, result.w, result.h, result.rotation].every(Number.isFinite)).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    { x: NaN },
+    { y: Infinity },
+    { w: NaN },
+    { h: 0 },
+    { w: -1 },
+    { x: -0.1 },
+    { y: -0.1 },
+    { rotation: Infinity },
+  ])('does not mutate invalid slot geometry (%j)', (patch) => {
+    const target = {
+      id: 'target',
+      x: 0.1,
+      y: 0.2,
+      w: 0.3,
+      h: 0.2,
+      rotation: 0,
+      ...patch,
+    } as FreeformSlot;
+    const slots = [target];
+    expect(rotateSlot(slots, target.id, 100, 150)).toBe(slots);
+    expect(slots[0]).toBe(target);
+  });
+
+  it('returns the original array for a missing target', () => {
+    const slots: FreeformSlot[] = [{ id: 'target', x: 0, y: 0, w: 0.3, h: 0.2 }];
+    expect(rotateSlot(slots, 'missing', 100, 150)).toBe(slots);
+  });
+
+  it('restores feasible physical dimensions and rotation after four quarter turns', () => {
+    const slots: FreeformSlot[] = [{ id: 'target', x: 0.1, y: 0.1, w: 0.35, h: 0.3, rotation: 0 }];
+    let result = slots;
+    for (let turn = 0; turn < 4; turn++) result = rotateSlot(result, 'target', 100, 150);
+    expect(result[0].w).toBeCloseTo(slots[0].w, 12);
+    expect(result[0].h).toBeCloseTo(slots[0].h, 12);
+    expect(result[0]).toMatchObject({ x: 0.1, y: 0.1, rotation: 0 });
   });
 });
 

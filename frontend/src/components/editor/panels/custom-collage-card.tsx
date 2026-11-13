@@ -92,26 +92,25 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   // تحديث التبويب النشط وفئة القالب تلقائياً عند تغيير القالب لاحقاً من قبل المستخدم
   // مع الحفاظ الإجباري على "الشبكة" (custom) كتبويب افتراضي عند فتح التطبيق
-  const isInitialMount = useRef(true);
-  const [prevTemplateId, setPrevTemplateId] = useState<string | null | undefined>(activeTemplateId);
-  if (isInitialMount.current) {
-    isInitialMount.current = false;
-  } else if (activeTemplateId !== prevTemplateId) {
-    setPrevTemplateId(activeTemplateId);
-    if (activeTemplateId) {
-      if (isCustomActive) {
-        setLocalActiveTab('custom');
-        onActiveTabChange?.('custom');
-      } else if (isFreeformActive) {
-        setLocalActiveTab('freeform');
-        onActiveTabChange?.('freeform');
-      } else if (savedTemplates.some((p) => p.id === activeTemplateId)) {
-        setLocalActiveTab('presets');
-        onActiveTabChange?.('presets');
-        setPresetCategory('saved');
-      }
+  const prevTemplateIdRef = useRef<string | null | undefined>(activeTemplateId);
+
+  useEffect(() => {
+    if (activeTemplateId === prevTemplateIdRef.current) return;
+    prevTemplateIdRef.current = activeTemplateId;
+
+    if (!activeTemplateId) return;
+    if (isCustomActive) {
+      setLocalActiveTab('custom');
+      onActiveTabChange?.('custom');
+    } else if (isFreeformActive) {
+      setLocalActiveTab('freeform');
+      onActiveTabChange?.('freeform');
+    } else if (savedTemplates.some((p) => p.id === activeTemplateId)) {
+      setLocalActiveTab('presets');
+      onActiveTabChange?.('presets');
+      setPresetCategory('saved');
     }
-  }
+  }, [activeTemplateId, isCustomActive, isFreeformActive, savedTemplates, onActiveTabChange]);
 
   // شبكة القالب المطبقة فعلياً على الكانفس — تُشتق من الإحداثيات لا من تعداد
   // حالات ثابت (كان 4/6/8/9/12 فقط يترك أي عدد آخر بقيم قديمة في النموذج)

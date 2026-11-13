@@ -12,6 +12,7 @@ import {
   TEXT_LABEL_PREVIEW,
   sanitizeText,
   resolveTextRenderState,
+  resolveTextDecorationColor,
   toEditorDisplayText,
   fromEditorDisplayText,
 } from '@/lib/canvas/text-helpers';
@@ -295,7 +296,11 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const paddingXPx = (textEl.textBgPaddingX ?? textEl.textBgPadding ?? 0) * scaleRatio;
   const paddingYPx = (textEl.textBgPaddingY ?? textEl.textBgPadding ?? 0) * scaleRatio;
   const radiusPx = (textEl.textBgRadius || 0) * scaleRatio;
-  const borderWidthPx = (textEl.textBgBorderWidth || 0) * scaleRatio;
+  const bgBorderColor = textEl.textBgBorderColor || undefined;
+  const borderWidthPx =
+    bgBorderColor && (textEl.textBgBorderWidth || 0) > 0
+      ? (textEl.textBgBorderWidth || 0) * scaleRatio
+      : 0;
   // حد CSS يُرسم داخل الصندوق بعكس حد Konva المركزي — نعوّضه كي يبقى
   // محتوى النص بعرض w تماماً كما في عقدة الكانفس.
   const insetXPx = Math.max(0, paddingXPx - borderWidthPx);
@@ -305,6 +310,11 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const fillStyle = buildFillStyle(textEl, widthPx, contentHeightPx);
   const textShadow = buildTextShadow(textEl, scaleRatio);
   const strokeWidthPx = (textEl.strokeWidth || 0) * scaleRatio;
+  const linearFallbackColor =
+    textEl.fillLinearGradientColorStops && textEl.fillLinearGradientColorStops.length >= 2
+      ? String(textEl.fillLinearGradientColorStops[1])
+      : gradientStart();
+  const decorationColor = resolveTextDecorationColor(textEl) ?? linearFallbackColor;
 
   const bgColor =
     textEl.textBgColor && textEl.textBgColor !== 'transparent' ? textEl.textBgColor : 'transparent';
@@ -370,6 +380,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         }
       } else if (Math.abs(fit.height - textEl.height) > 1e-6) {
         patch.height = fit.height;
+        patch.x = nextX;
         patch.y = nextY;
       }
     }
@@ -391,12 +402,12 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     backgroundColor: 'transparent',
     padding: `${insetYPx + editorOffsetYPx}px ${insetXPx}px`,
     minHeight: `${contentHeightPx + paddingYPx * 2 - borderWidthPx * 2}px`,
-    fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
-    fontFamily: textEl.fontFamily || '"IBM Plex Sans Arabic", Cairo, sans-serif',
+    fontSize: `${(textEl.fontSize || 16) * scaleRatio}px`,
+    fontFamily: textEl.fontFamily || (isCurved ? 'Cairo, sans-serif' : 'sans-serif'),
     fontWeight: renderState.fontWeight,
     fontStyle: textEl.fontStyle || 'normal',
     textDecoration: textEl.textDecoration || 'none',
-    textDecorationColor: textEl.color || TEXT_COLOR_DEFAULT,
+    textDecorationColor: decorationColor,
     textTransform: textEl.textTransform || 'none',
     textAlign: isCurved ? 'center' : textEl.textAlign || 'center',
     lineHeight: textEl.lineHeight || 1.2,
@@ -407,7 +418,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     wordSpacing: isArabicSpacing ? `${(textEl.letterSpacing || 0) * scaleRatio}px` : undefined,
     textShadow,
     WebkitTextStroke:
-      strokeWidthPx > 0 && textEl.stroke ? `${strokeWidthPx}px ${textEl.stroke}` : undefined,
+      strokeWidthPx > 0 ? `${strokeWidthPx}px ${textEl.stroke || TEXT_COLOR_DEFAULT}` : undefined,
     paintOrder: 'stroke fill',
     overflow: 'hidden',
   };
@@ -429,8 +440,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         backgroundColor: isCurved ? 'transparent' : bgColor,
         borderRadius: radiusPx > 0 ? `${radiusPx}px` : '4px',
         border:
-          borderWidthPx > 0
-            ? `${borderWidthPx}px solid ${textEl.textBgBorderColor || textEl.color || TEXT_COLOR_DEFAULT}`
+          borderWidthPx > 0 && bgBorderColor
+            ? `${borderWidthPx}px solid ${bgBorderColor}`
             : undefined,
         boxShadow:
           '0 0 0 2px var(--primary) , 0 0 0 4px color-mix(in srgb, var(--primary) 25%, transparent), 0 4px 20px rgba(0, 0, 0, 0.25)',

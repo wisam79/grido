@@ -238,6 +238,7 @@ export function BatchInsertDialog({
 
   // Execute Batch Insertion
   const handleExecute = async () => {
+    if (isProcessing) return;
     if (images.length === 0) {
       toast.error('اختر صورة واحدة على الأقل');
       return;
@@ -290,8 +291,9 @@ export function BatchInsertDialog({
         toast.success(`تم إدراج ${expandedItems.length} صورة`);
       }
 
+      // تفريغ الطابور بعد ترحيل العناصر (سواء أُدرجت أو أُضيفت لقائمة التعبئة) منعاً لتكرار الإرسال
+      setImages([]);
       if (!keepQueueOpen) {
-        setImages([]);
         onOpenChange(false);
       }
     } catch (err) {
@@ -518,115 +520,119 @@ export function BatchInsertDialog({
           <div className="md:col-span-5 p-5 overflow-y-auto custom-scrollbar flex flex-col gap-4 bg-muted/10">
             <h4 className="text-xs font-bold text-muted-foreground">خيارات التوزيع والمحاذاة</h4>
 
-            {/* Layout Mode Selector */}
-            <div className="space-y-1.5">
-              <Label id="batch-layout-mode" className="text-xs font-semibold text-foreground">
-                نمط التوزيع
-              </Label>
-              <div
-                role="group"
-                aria-labelledby="batch-layout-mode"
-                className="grid grid-cols-2 gap-1.5"
-              >
-                <Button
-                  type="button"
-                  variant={layoutMode === 'grid' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLayoutMode('grid')}
-                  className={cn(
-                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
-                    layoutMode === 'grid'
-                      ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
-                      : 'hover:bg-muted/60 text-foreground',
-                  )}
-                >
-                  <SquaresFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                  <span>شبكة منتظمة</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={layoutMode === 'cascade' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setLayoutMode('cascade')}
-                  className={cn(
-                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
-                    layoutMode === 'cascade'
-                      ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
-                      : 'hover:bg-muted/60 text-foreground',
-                  )}
-                >
-                  <Stack className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                  <span>تتالي درجي</span>
-                </Button>
-              </div>
-            </div>
-
-            {layoutMode === 'grid' && (
+            {mode !== 'collage' && (
               <>
-                {/* Columns */}
-                <div className="space-y-2 pt-1 border-t border-border/30">
-                  <FluentSliderField
-                    label="عدد الأعمدة"
-                    value={columns}
-                    min={0}
-                    max={8}
-                    step={1}
-                    valueFormatter={(val) => (val === 0 ? 'تلقائي ذكي' : `${val} أعمدة`)}
-                    onChange={(val) => setColumns(val)}
-                  />
-                  <div className="flex justify-between text-micro text-muted-foreground">
-                    <span>تلقائي</span>
-                    <span>2</span>
-                    <span>4</span>
-                    <span>6</span>
-                    <span>8</span>
-                  </div>
-                </div>
-
-                {/* Spacing / Gap */}
-                <div className="space-y-2 pt-1 border-t border-border/30">
-                  <FluentSliderField
-                    label="المسافة البينية (Gap)"
-                    value={gapPx}
-                    min={0}
-                    max={80}
-                    step={4}
-                    unit="px"
-                    onChange={(val) => setGapPx(val)}
-                  />
-                </div>
-
-                {/* Margin */}
-                <div className="space-y-2 pt-1 border-t border-border/30">
-                  <FluentSliderField
-                    label="الهوامش (Margin)"
-                    value={marginPx}
-                    min={0}
-                    max={120}
-                    step={5}
-                    unit="px"
-                    onChange={(val) => setMarginPx(val)}
-                  />
-                </div>
-
-                {/* Center Last Row */}
-                <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                  <div className="space-y-0.5">
-                    <Label
-                      id="batch-center-last-row"
-                      className="text-xs font-medium text-foreground"
+                {/* Layout Mode Selector */}
+                <div className="space-y-1.5">
+                  <Label id="batch-layout-mode" className="text-xs font-semibold text-foreground">
+                    نمط التوزيع
+                  </Label>
+                  <div
+                    role="group"
+                    aria-labelledby="batch-layout-mode"
+                    className="grid grid-cols-2 gap-1.5"
+                  >
+                    <Button
+                      type="button"
+                      variant={layoutMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setLayoutMode('grid')}
+                      className={cn(
+                        'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
+                        layoutMode === 'grid'
+                          ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
+                          : 'hover:bg-muted/60 text-foreground',
+                      )}
                     >
-                      توسيط الصف الأخير
-                    </Label>
-                    <p className="text-xs text-muted-foreground">توسيط عناصر الصف الناقص</p>
+                      <SquaresFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <span>شبكة منتظمة</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant={layoutMode === 'cascade' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setLayoutMode('cascade')}
+                      className={cn(
+                        'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
+                        layoutMode === 'cascade'
+                          ? 'bg-primary-action text-primary-foreground shadow-2xs font-bold'
+                          : 'hover:bg-muted/60 text-foreground',
+                      )}
+                    >
+                      <Stack className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <span>تتالي درجي</span>
+                    </Button>
                   </div>
-                  <Switch
-                    aria-labelledby="batch-center-last-row"
-                    checked={centerLastRow}
-                    onCheckedChange={setCenterLastRow}
-                  />
                 </div>
+
+                {layoutMode === 'grid' && (
+                  <>
+                    {/* Columns */}
+                    <div className="space-y-2 pt-1 border-t border-border/30">
+                      <FluentSliderField
+                        label="عدد الأعمدة"
+                        value={columns}
+                        min={0}
+                        max={8}
+                        step={1}
+                        valueFormatter={(val) => (val === 0 ? 'تلقائي ذكي' : `${val} أعمدة`)}
+                        onChange={(val) => setColumns(val)}
+                      />
+                      <div className="flex justify-between text-micro text-muted-foreground">
+                        <span>تلقائي</span>
+                        <span>2</span>
+                        <span>4</span>
+                        <span>6</span>
+                        <span>8</span>
+                      </div>
+                    </div>
+
+                    {/* Spacing / Gap */}
+                    <div className="space-y-2 pt-1 border-t border-border/30">
+                      <FluentSliderField
+                        label="المسافة البينية (Gap)"
+                        value={gapPx}
+                        min={0}
+                        max={80}
+                        step={4}
+                        unit="px"
+                        onChange={(val) => setGapPx(val)}
+                      />
+                    </div>
+
+                    {/* Margin */}
+                    <div className="space-y-2 pt-1 border-t border-border/30">
+                      <FluentSliderField
+                        label="الهوامش (Margin)"
+                        value={marginPx}
+                        min={0}
+                        max={120}
+                        step={5}
+                        unit="px"
+                        onChange={(val) => setMarginPx(val)}
+                      />
+                    </div>
+
+                    {/* Center Last Row */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                      <div className="space-y-0.5">
+                        <Label
+                          id="batch-center-last-row"
+                          className="text-xs font-medium text-foreground"
+                        >
+                          توسيط الصف الأخير
+                        </Label>
+                        <p className="text-xs text-muted-foreground">توسيط عناصر الصف الناقص</p>
+                      </div>
+                      <Switch
+                        aria-labelledby="batch-center-last-row"
+                        checked={centerLastRow}
+                        onCheckedChange={setCenterLastRow}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

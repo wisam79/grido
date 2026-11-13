@@ -238,23 +238,54 @@ export function resizeSlotWithSnap(
   let h = bottom - top;
 
   // 3. قفل نسبة الأبعاد (Aspect Ratio Lock)
-  if (aspectRatio && aspectRatio > 0) {
+  if (aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0) {
+    const origW = origR - origL;
+    const origH = origB - origT;
+
     if (handle.includes('e') || handle.includes('w')) {
-      const desiredH = clamp(w / aspectRatio, MIN_SIZE, 1 - top);
-      h = desiredH;
-      if (handle.includes('n')) {
-        top = Math.max(0, bottom - h);
+      const maxH = handle.includes('n') ? bottom : 1 - top;
+      const minW = Math.max(MIN_SIZE, MIN_SIZE * aspectRatio);
+      const capW = Math.max(origW, w);
+      const upperW = Math.min(capW, maxH * aspectRatio);
+
+      if (upperW >= minW) {
+        w = clamp(w, minW, upperW);
+        h = clamp(w / aspectRatio, MIN_SIZE, maxH);
       } else {
-        bottom = Math.min(1, top + h);
+        w = clamp(w, MIN_SIZE, Math.max(MIN_SIZE, capW));
+        h = clamp(w / aspectRatio, MIN_SIZE, maxH);
+      }
+
+      if (handle.includes('w')) {
+        left = right - w;
+      } else {
+        right = left + w;
+      }
+      if (handle.includes('n')) {
+        top = bottom - h;
+      } else {
+        bottom = top + h;
       }
     } else {
-      const desiredW = clamp(h * aspectRatio, MIN_SIZE, 1 - left);
-      w = desiredW;
-      if (handle.includes('w')) {
-        left = Math.max(0, right - w);
+      const maxW = 1 - left;
+      const minH = Math.max(MIN_SIZE, MIN_SIZE / aspectRatio);
+      const capH = Math.max(origH, h);
+      const upperH = Math.min(capH, maxW / aspectRatio);
+
+      if (upperH >= minH) {
+        h = clamp(h, minH, upperH);
+        w = clamp(h * aspectRatio, MIN_SIZE, maxW);
       } else {
-        right = Math.min(1, left + w);
+        h = clamp(h, MIN_SIZE, Math.max(MIN_SIZE, capH));
+        w = clamp(h * aspectRatio, MIN_SIZE, maxW);
       }
+
+      if (handle.includes('n')) {
+        top = bottom - h;
+      } else {
+        bottom = top + h;
+      }
+      right = left + w;
     }
   }
 
@@ -306,23 +337,48 @@ export function rotateSlot(
   paperWidthMM?: number,
   paperHeightMM?: number,
 ): FreeformSlot[] {
-  const aspect =
-    paperWidthMM && paperHeightMM && paperWidthMM > 0 && paperHeightMM > 0
+  const paperAspect =
+    paperWidthMM !== undefined &&
+    paperHeightMM !== undefined &&
+    Number.isFinite(paperWidthMM) &&
+    Number.isFinite(paperHeightMM) &&
+    paperWidthMM > 0 &&
+    paperHeightMM > 0
       ? paperHeightMM / paperWidthMM
       : 1;
+  const aspect = Number.isFinite(paperAspect) && paperAspect > 0 ? paperAspect : 1;
+  const target = slots.find((s) => s.id === targetId);
+  if (!target) return slots;
 
-  return slots.map((s) => {
-    if (s.id !== targetId) return s;
-    const nextRot = (((s.rotation || 0) + 90) % 360) as 0 | 90 | 180 | 270;
-    const newW = clamp(s.h * aspect, MIN_SIZE, 1 - s.x);
-    const newH = clamp(s.w / aspect, MIN_SIZE, 1 - s.y);
-    return {
-      ...s,
-      w: newW,
-      h: newH,
-      rotation: nextRot,
-    };
-  });
+  const rotation = target.rotation ?? 0;
+  if (
+    ![target.x, target.y, target.w, target.h, rotation].every(Number.isFinite) ||
+    target.x < 0 ||
+    target.y < 0 ||
+    target.w <= 0 ||
+    target.h <= 0
+  ) {
+    return slots;
+  }
+
+  const rotatedW = target.h * aspect;
+  const rotatedH = target.w / aspect;
+  if (!Number.isFinite(rotatedW) || !Number.isFinite(rotatedH) || rotatedW <= 0 || rotatedH <= 0) {
+    return slots;
+  }
+
+  // عامل واحد يحفظ النسبة الفيزيائية؛ إن تعارض الحد الأدنى مع المساحة فلا تدوير.
+  const minScale = Math.max(MIN_SIZE / rotatedW, MIN_SIZE / rotatedH);
+  const maxScale = Math.min((1 - target.x) / rotatedW, (1 - target.y) / rotatedH);
+  if (!Number.isFinite(minScale) || !Number.isFinite(maxScale) || minScale > maxScale) {
+    return slots;
+  }
+  const scale = clamp(1, minScale, maxScale);
+  const nextRot = ((((rotation + 90) % 360) + 360) % 360) as 0 | 90 | 180 | 270;
+
+  return slots.map((s) =>
+    s === target ? { ...s, w: rotatedW * scale, h: rotatedH * scale, rotation: nextRot } : s,
+  );
 }
 
 /**

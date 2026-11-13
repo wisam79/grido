@@ -63,7 +63,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
       dir="rtl"
       className="relative h-10 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
-      <div className="h-full flex items-center justify-between gap-1.5 ps-2.5">
+      <div className="h-full flex items-center justify-between gap-2 ps-2.5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         {/* المجموعات الرئيسية (ملف، تحرير، كولاج، تحديد)
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
@@ -92,13 +92,13 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           </CommandGroup>
         </div>
 
-        {/* 🧭 مبدّل وضع العمل المتمركز في منتصف شريط الأدوات بالكامل */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center pointer-events-auto">
+        {/* 🧭 مبدّل وضع العمل في التدفق الطبيعي للأجهزة المتوسطة ومتمركز شبكياً في الشاشات الأوسع */}
+        <div className="hidden md:flex items-center shrink-0 lg:justify-self-center pointer-events-auto">
           <ModeSwitcher />
         </div>
 
         {/* المجموعة النهائية: أزرار إخراج أيقونية موحدة بالكامل بنمط Fluent 2 Subtle */}
-        <CommandGroup className="gap-1.5">
+        <CommandGroup className="gap-1.5 lg:justify-self-end">
           {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
           <TooltipBtn content="حفظ المشروع (Ctrl + S)">
             <Button

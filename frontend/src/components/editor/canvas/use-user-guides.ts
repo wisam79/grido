@@ -188,12 +188,17 @@ export function useUserGuides(
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('blur', handlePointerUp);
     return () => {
       if (moveRafId !== null) {
         cancelAnimationFrame(moveRafId);
+        moveRafId = null;
       }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('blur', handlePointerUp);
     };
   }, [isDragging, innerRef]);
 

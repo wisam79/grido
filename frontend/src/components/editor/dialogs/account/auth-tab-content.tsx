@@ -94,9 +94,14 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         </p>
       </div>
       <div className="space-y-1">
-        <Label htmlFor="recovery-new-password" className="text-xs font-bold text-foreground/90">
-          كلمة المرور الجديدة
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="recovery-new-password" className="text-xs font-bold text-foreground/90">
+            كلمة المرور الجديدة
+          </Label>
+          <span className="text-micro text-muted-foreground font-sans">
+            8 أحرف على الأقل (حروف وأرقام)
+          </span>
+        </div>
         <div className="relative">
           <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
           <Input
@@ -105,7 +110,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             placeholder="••••••••"
             className="pr-9 h-9 text-xs rounded-md"
             required
-            minLength={6}
+            minLength={8}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />

@@ -30,6 +30,7 @@ import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
@@ -213,7 +214,7 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
       collapsible
       defaultOpen={true}
       action={
-        element.filter ? (
+        element.filter && element.filter !== 'none' ? (
           <Button
             variant="ghost"
             size="sm"
@@ -292,6 +293,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   const [refineOpen, setRefineOpen] = useState(false);
 
   const handleScannerSave = async (processedResult: string | string[]) => {
+    const session = getDocumentSession();
+    const targetElementId = element.id;
+    const targetWidth = element.width;
     try {
       // مسار URL-first (المرحلة 2 من ترحيل الماسح): Go يكتب النتائج في
       // الوسائط ويسلّم روابط /local-image/ جاهزة — لا Blob ولا رفع من الواجهة.
@@ -305,18 +309,18 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
       // حل أبعاد الدفعة الكبيرة بطلب Go واحد متوازي O(1)
       const aspectMap = await resolveBatchImageAspectRatios(paths);
+      if (!isMountedRef.current || getDocumentSession() !== session) return;
 
+      const liveState = useEditorStore.getState();
       // تحديث العنصر الأول بالكانفاس
       const firstPath = paths[0];
       const firstAspect = aspectMap.get(firstPath) || 1.0;
-      if (isMountedRef.current) {
-        const newHeight = (element.width * canvasRatio) / firstAspect;
-        onUpdate(element.id, {
-          imageSrc: firstPath,
-          height: newHeight,
-        });
-        state.setLastEditedImageAspect(firstAspect);
-      }
+      const newHeight = (targetWidth * canvasRatio) / firstAspect;
+      onUpdate(targetElementId, {
+        imageSrc: firstPath,
+        height: newHeight,
+      });
+      liveState.setLastEditedImageAspect(firstAspect);
 
       // إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بدفعة واحدة ولقطة تراجع واحدة
       if (paths.length > 1) {
@@ -324,9 +328,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           src,
           aspectRatio: aspectMap.get(src) || 1.0,
         }));
-        state.addImageElementsBatch(extraItems);
+        liveState.addImageElementsBatch(extraItems);
       } else {
-        state.pushHistory();
+        liveState.pushHistory();
       }
 
       if (paths.length > 1) {
@@ -335,6 +339,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         toast.success('تم عزل المستند');
       }
     } catch (err) {
+      if (!isMountedRef.current || getDocumentSession() !== session) return;
       logger.error(err);
       toast.error(toErrorMessage(err, 'فشل حفظ المستند المستعدل'));
     }
@@ -362,18 +367,24 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   const handleOpenFile = async () => {
     if (isFileDialogOpen) return;
+    const session = getDocumentSession();
+    const targetElementId = element.id;
     setIsFileDialogOpen(true);
     try {
       const finalPath = await pickLocalImage();
+      if (!isMountedRef.current || getDocumentSession() !== session) return;
       if (finalPath) {
-        onUpdate(element.id, { imageSrc: finalPath });
+        onUpdate(targetElementId, { imageSrc: finalPath });
         useEditorStore.getState().pushHistory();
       }
     } catch (err) {
+      if (!isMountedRef.current || getDocumentSession() !== session) return;
       logger.error(err);
       toast.error(toErrorMessage(err, 'فشل تغيير الصورة'));
     } finally {
-      setIsFileDialogOpen(false);
+      if (isMountedRef.current) {
+        setIsFileDialogOpen(false);
+      }
     }
   };
 
@@ -733,7 +744,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               try {
                 if (!isCurrent()) return false;
                 let localPath = cropped;
-                if (cropped.startsWith('data:image/')) {
+                if (wailsIsDesktop() && cropped.startsWith('data:image/')) {
                   localPath = await SaveImageFromBase64(cropped);
                 }
 

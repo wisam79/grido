@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
 import { WindowControls } from '@/components/editor/system/window-controls';
 import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
 import { Button } from '@/components/ui/button';
@@ -156,11 +155,12 @@ export function LicenseLockScreen({
                   لصق من الحافظة
                 </button>
               </div>
-              <div className="relative">
-                <Key className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
+              <div className="relative" dir="ltr">
+                <Key className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4 pointer-events-none" />
                 <input
                   id="license-key-input"
                   type="text"
+                  dir="ltr"
                   required
                   placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                   value={lockKey}
@@ -206,7 +206,6 @@ export function LicenseLockScreen({
             )}
           </div>
         </div>
-        <AccountLicenseModal />
       </div>
     </div>
   );

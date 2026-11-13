@@ -228,7 +228,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
           الألواح الجانبية
         </DropdownMenuLabel>
         <DropdownMenuItem
-          onClick={handleToggleLeft}
+          onClick={handleToggleRight}
           className="flex items-center justify-between cursor-pointer py-1.5 px-2.5 rounded-md group text-xs font-medium hover:bg-accent/70 focus:bg-accent/70 transition-colors"
         >
           <div className="flex items-center gap-2.5">
@@ -239,7 +239,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={handleToggleRight}
+          onClick={handleToggleLeft}
           className="flex items-center justify-between cursor-pointer py-1.5 px-2.5 rounded-md group text-xs font-medium hover:bg-accent/70 focus:bg-accent/70 transition-colors"
         >
           <div className="flex items-center gap-2.5">

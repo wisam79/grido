@@ -25,6 +25,8 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
   const [isOpen, setIsOpen] = React.useState(false);
   // معرّف عنصر الملصق قيد إعادة التحرير (null = فتح جديد من المكتبة)
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  // رقم جلسة الفتح — يضمن إعادة تهيئة كاملة للحوار عند إعادة تحرير نفس العنصر بعد الإغلاق دون حفظ
+  const [sessionRevision, setSessionRevision] = React.useState(0);
   // العنصر يُقرأ من المتجر ليُمرر كمصدر ثابت للحوار (key يضمن إعادة التهيئة لكل عنصر)
   const editingEl = useEditorStore(
     React.useCallback(
@@ -42,6 +44,7 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
     const openHandler = () => {
       preloadBarcodeDialog();
       setEditingId(null);
+      setSessionRevision((rev) => rev + 1);
       setIsOpen(true);
     };
 
@@ -50,6 +53,7 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
       if (!detail?.elementId) return;
       preloadBarcodeDialog();
       setEditingId(detail.elementId);
+      setSessionRevision((rev) => rev + 1);
       setIsOpen(true);
     };
 
@@ -62,6 +66,13 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
     };
   }, []);
 
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    setIsOpen(nextOpen);
+    if (!nextOpen) {
+      setEditingId(null);
+    }
+  }, []);
+
   const editingElement =
     editingEl && editingEl.type === 'image' && editingEl.stickerSource
       ? { id: editingEl.id, source: editingEl.stickerSource }
@@ -72,9 +83,9 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
   return (
     <React.Suspense fallback={null}>
       <BarcodeDialog
-        key={editingElement ? `edit-${editingElement.id}` : 'new'}
+        key={`${editingElement ? `edit-${editingElement.id}` : 'new'}-${sessionRevision}`}
         open={isOpen}
-        onOpenChange={setIsOpen}
+        onOpenChange={handleOpenChange}
         editingElement={editingElement}
       />
     </React.Suspense>

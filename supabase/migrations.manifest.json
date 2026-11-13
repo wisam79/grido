@@ -39,5 +39,6 @@
   "20261019213537_ai_usage_reserve_and_scoped_idempotency.sql": "613db12325ff4f6c03020bb2a0ed04deb9bd45f6b54858a119332c28fe944253",
   "20261019213652_reclaim_orphan_email_revoke_anon.sql": "886b545a5245d44f4bc348eca53b32892ffebaecef63771d9c1ce718f44d92f8",
   "20261029220000_cancel_ai_quota_reservation.sql": "80b02c152854fb529efc7492e42a46426b8917b61fd9e9d08795fa7dca67fbb0",
-  "20261101120000_activate_license_preserve_remaining_time.sql": "168f76f5df2edc47b8f8181fd02583715b52d615ab0bc8fe0e7bfff10e365bab"
+  "20261101120000_activate_license_preserve_remaining_time.sql": "168f76f5df2edc47b8f8181fd02583715b52d615ab0bc8fe0e7bfff10e365bab",
+  "20261113155602_phone_bridge_handshake_json_mime.sql": "488f941aef1ac792cfa17682a71d4afa17007a98ddb040bba0a119751ce353b0"
 }

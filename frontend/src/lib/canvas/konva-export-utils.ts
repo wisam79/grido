@@ -489,6 +489,8 @@ export async function withHiddenOverlays<T>(
   stage: Konva.Stage,
   _targetPixelRatio: number,
   callback: () => Promise<T> | T,
+  extraNodeIds?: Iterable<string>,
+  includeNodeIds?: Iterable<string>,
 ): Promise<T> {
   const transformers = stage.find('Transformer') as unknown as KonvaNodeLike[];
   const gridLayers = stage.find('.grid-layer') as unknown as KonvaNodeLike[];
@@ -505,7 +507,8 @@ export async function withHiddenOverlays<T>(
   // 🛠️ طبقة الأدوات والمحوّل ومستطيل التحديد — تُخفى كاملة بنقرة واحدة
   const overlayTools = stage.find('.overlay-tools-layer') as unknown as KonvaNodeLike[];
   const magicAiScanners = stage.find('.magic-ai-scanner') as unknown as KonvaNodeLike[];
-  const hiddenNodes = [
+
+  const uniqueNodes = new Set<KonvaNodeLike>([
     ...transformers,
     ...gridLayers,
     ...columnsLayers,
@@ -515,7 +518,39 @@ export async function withHiddenOverlays<T>(
     ...paperShadows,
     ...overlayTools,
     ...magicAiScanners,
-  ].map((node) => ({ node, visible: node.visible?.() ?? true }));
+  ]);
+  if (extraNodeIds && typeof stage.findOne === 'function') {
+    for (const id of extraNodeIds) {
+      const node = stage.findOne<Konva.Node>(`#${id}`) as unknown as KonvaNodeLike | undefined;
+      if (node) uniqueNodes.add(node);
+    }
+  }
+  if (includeNodeIds) {
+    // حل العقد من المسرح الحالي داخل معاملة الالتقاط، لا من قائمة استبعاد
+    // سبقت انتظار الطابور. أبقِ أسلاف المحدد وأبناءه (خلفيات/نصوص/صور المجموعة).
+    const includedNodes = new Set<Konva.Node>();
+    const includedAncestors = new Set<Konva.Node>();
+    for (const id of includeNodeIds) {
+      const node = stage.findOne<Konva.Node>(`#${id}`);
+      if (!node) continue;
+      includedNodes.add(node);
+      includedAncestors.add(node);
+      for (const ancestor of node.getAncestors()) includedAncestors.add(ancestor);
+    }
+    stage.find((node: Konva.Node) => {
+      if (
+        !includedAncestors.has(node) &&
+        !node.getAncestors().some((ancestor) => includedNodes.has(ancestor))
+      ) {
+        uniqueNodes.add(node);
+      }
+      return false;
+    });
+  }
+  const hiddenNodes = Array.from(uniqueNodes, (node) => ({
+    node,
+    visible: node.visible?.() ?? true,
+  }));
 
   try {
     for (const { node } of hiddenNodes) node.hide();
@@ -525,8 +560,12 @@ export async function withHiddenOverlays<T>(
     return await callback();
   } finally {
     for (const { node, visible } of hiddenNodes) {
-      if (visible) node.show();
-      else node.hide();
+      try {
+        if (visible) node.show();
+        else node.hide();
+      } catch {
+        // عقدة أُزيلت أثناء الالتقاط — لا شيء لاستعادته
+      }
     }
 
     stage.batchDraw();
@@ -618,6 +657,10 @@ export interface CaptureStageOptions {
   useFullResolution?: boolean;
   /** بدائل عقد الصور؛ التحميل والتبديل والاستعادة كلها داخل قفل المسرح. */
   imageOverrides?: Array<{ nodeId: string; src: string }>;
+  /** معرفات عقد إضافية تُخفى وتُستعاد حالتها المرئية الأصلية ذرياً داخل قفل المسرح. */
+  hiddenNodeIds?: Iterable<string>;
+  /** التقاط هذه العقد وأبنائها فقط؛ تُحل العقد وتُعزل وتُستعاد الرؤية داخل قفل المسرح. */
+  includeNodeIds?: Iterable<string>;
   signal?: AbortSignal;
   queueTimeoutMs?: number;
   readinessTimeoutMs?: number;
@@ -716,24 +759,30 @@ export async function captureStageBlob(
         stage.scale({ x: 1, y: 1 });
         stage.batchDraw();
 
-        return await withHiddenOverlays(stage, targetPixelRatio, async () => {
-          const width = captureRect?.width ?? stage.width();
-          const height = captureRect?.height ?? stage.height();
-          const outputWidth = Math.ceil(width * targetPixelRatio);
-          const outputHeight = Math.ceil(height * targetPixelRatio);
-          assertExportablePixels(outputWidth, outputHeight);
-          const exportCanvas = captureRect
-            ? stage.toCanvas({ ...captureRect, pixelRatio: targetPixelRatio })
-            : stage.toCanvas({ pixelRatio: targetPixelRatio });
-          return await raceDeadline(
-            new Promise<Blob | null>((resolve) => {
-              exportCanvas.toBlob(resolve, mimeType, quality);
-            }),
-            'toBlob',
-            toBlobTimeoutMs,
-            options.signal,
-          );
-        });
+        return await withHiddenOverlays(
+          stage,
+          targetPixelRatio,
+          async () => {
+            const width = captureRect?.width ?? stage.width();
+            const height = captureRect?.height ?? stage.height();
+            const outputWidth = Math.ceil(width * targetPixelRatio);
+            const outputHeight = Math.ceil(height * targetPixelRatio);
+            assertExportablePixels(outputWidth, outputHeight);
+            const exportCanvas = captureRect
+              ? stage.toCanvas({ ...captureRect, pixelRatio: targetPixelRatio })
+              : stage.toCanvas({ pixelRatio: targetPixelRatio });
+            return await raceDeadline(
+              new Promise<Blob | null>((resolve) => {
+                exportCanvas.toBlob(resolve, mimeType, quality);
+              }),
+              'toBlob',
+              toBlobTimeoutMs,
+              options.signal,
+            );
+          },
+          options.hiddenNodeIds,
+          options.includeNodeIds,
+        );
       } finally {
         try {
           stage.position(prevPos);

@@ -1,9 +1,104 @@
 import { z } from 'zod';
 
+import { sanitizeText } from './canvas/text-helpers';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
+import { sanitizeSvgMarkup } from './utils';
 
 export const AUTOFILL_IMAGE_LIMIT = 500;
 export const MAX_BLEED_MM = 20;
+const MAX_STICKER_FIELD_LENGTH = 500;
+const MAX_SVG_MARKUP_LENGTH = 500_000;
+const MAX_SVG_PATH_LENGTH = 500_000;
+const DANGEROUS_JSON_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+const UNSAFE_URI_PATTERN = /^(?:javascript|vbscript):|^data:\s*text\/html\b/i;
+
+function isSafeImageUri(value: string): boolean {
+  // تجميع بداية المسار بعد تجاهل محارف التحكم والمسافات لمنع الالتفاف (مثل java\tscript:)
+  let prefix = '';
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x20 || code === 0x7f) continue;
+    prefix += value[i];
+    if (prefix.length >= 24) break;
+  }
+  return !UNSAFE_URI_PATTERN.test(prefix);
+}
+
+/**
+ * يعيد بناء شجرة JSON دون مفاتيح تلويث النموذج الأولي (`__proto__` ونحوها)
+ * قبل تمريرها إلى Zod (`z.record` يكتب المفاتيح مباشرةً أثناء `safeParse`).
+ */
+export function stripDangerousJsonKeys(input: unknown, depth = 10): unknown {
+  if (depth <= 0 || !input || typeof input !== 'object') return input;
+  if (Array.isArray(input)) {
+    return input.map((item) => stripDangerousJsonKeys(item, depth - 1));
+  }
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (DANGEROUS_JSON_KEYS.has(key)) continue;
+    clean[key] = stripDangerousJsonKeys(value, depth - 1);
+  }
+  return clean;
+}
+
+const safeUriStringSchema = z.string().refine(isSafeImageUri, {
+  message: 'Unsafe URI scheme',
+});
+
+const StickerSourceLayoutOverrideSchema = z.object({
+  dxMm: z.number().finite().min(-500).max(500),
+  dyMm: z.number().finite().min(-500).max(500),
+  scale: z.number().finite().min(0.2).max(5),
+  rotationDeg: z.number().finite().min(-180).max(180),
+  visible: z.boolean(),
+});
+
+const StickerSourceParamsSchema = z.object({
+  version: z.literal(2).optional(),
+  fields: z
+    .record(
+      z.string().max(120),
+      z
+        .string()
+        .max(10_000)
+        .transform((val) => sanitizeText(val, MAX_STICKER_FIELD_LENGTH)),
+    )
+    .optional(),
+  primaryColor: z
+    .string()
+    .max(120)
+    .transform((val) => sanitizeText(val, 120))
+    .optional(),
+  secondaryColor: z
+    .string()
+    .max(120)
+    .transform((val) => sanitizeText(val, 120))
+    .optional(),
+  backgroundColor: z
+    .string()
+    .max(120)
+    .transform((val) => sanitizeText(val, 120))
+    .optional(),
+  isTransparent: z.boolean().optional(),
+  fontFamily: z
+    .string()
+    .max(120)
+    .transform((val) => sanitizeText(val, 120))
+    .optional(),
+  fontScale: z.number().finite().min(0.5).max(3).optional(),
+  finish: z.enum(['standard', 'glossy', 'matte', 'holographic']).optional(),
+  dieCutBorder: z.boolean().optional(),
+  sizeMm: z
+    .object({
+      width: z.number().finite().positive().max(2000),
+      height: z.number().finite().positive().max(2000),
+    })
+    .optional(),
+  bleedMm: z.number().finite().min(0).max(50).optional(),
+  safeMm: z.number().finite().min(0).max(50).optional(),
+  overrides: z.record(z.string().max(120), StickerSourceLayoutOverrideSchema).optional(),
+});
+
 // Queues contain durable local paths or existing image data, never session-only Blob URLs.
 const queuedImageSchema = z
   .string()
@@ -13,38 +108,47 @@ const queuedImageSchema = z
   });
 
 export const CanvasElementSchema = z.object({
-  id: z.string(),
+  id: z.string().max(256),
   type: z.enum(['image', 'text', 'shape']),
-  x: z.number(),
-  y: z.number(),
-  width: z.number(),
-  height: z.number(),
-  rotation: z.number(),
-  opacity: z.number(),
-  zIndex: z.number(),
+  x: z.number().finite(),
+  y: z.number().finite(),
+  width: z.number().finite().positive(),
+  height: z.number().finite().positive(),
+  rotation: z.number().finite(),
+  opacity: z.number().finite().min(0).max(1),
+  zIndex: z.number().finite(),
   locked: z.boolean().optional(),
   visible: z.boolean().optional(),
 
-  imageSrc: z.string().optional(),
-  originalImageSrc: z.string().optional(),
+  imageSrc: safeUriStringSchema.optional(),
+  originalImageSrc: safeUriStringSchema.optional(),
   filter: z.string().optional(),
-  brightness: z.number().optional(),
-  contrast: z.number().optional(),
-  saturation: z.number().optional(),
-  blur: z.number().optional(),
+  brightness: z.number().finite().optional(),
+  contrast: z.number().finite().optional(),
+  saturation: z.number().finite().optional(),
+  blur: z.number().finite().optional(),
   // خلفية عنصر الصورة (تُستخدم خلف الصور الشفافة) — كانت تُسقط سابقاً عند الحفظ (إصلاح Bug#3)
   bgColor: z.string().optional(),
   // مصدر الملصق (قالب + تخصيصات) لإتاحة إعادة التحرير من استوديو الملصقات — اختياري للتوافق مع الملفات القديمة
-  // (params غير مقيدة هنا لأن StickerParams واجهة بلا فهرس سلاسل، والتحقق الفعلي يحدث عند الاستهلاك)
   stickerSource: z
     .object({
-      templateId: z.string(),
-      params: z.any(),
-      svg: z.string().optional(),
+      templateId: z.string().min(1).max(120),
+      params: StickerSourceParamsSchema,
+      svg: z
+        .string()
+        .max(MAX_SVG_MARKUP_LENGTH)
+        .transform((val) => {
+          const clean = sanitizeSvgMarkup(val);
+          return clean || undefined;
+        })
+        .optional(),
     })
     .optional(),
 
-  text: z.string().optional(),
+  text: z
+    .string()
+    .transform((val) => sanitizeText(val))
+    .optional(),
   fontSize: z.number().optional(),
   fontWeight: z.number().optional(),
   color: z.string().optional(),
@@ -111,28 +215,59 @@ export const CanvasElementSchema = z.object({
   fillRadialGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
 
   // تعبئة صور الأشكال (fillType='image') — تُسقط عند الحفظ دون إعلانها هنا
-  fillImageSrc: z.string().optional(),
+  fillImageSrc: safeUriStringSchema.optional(),
   fillImageFit: z.enum(['stretch', 'cover', 'contain', 'tile']).optional(),
-  fillImageScale: z.number().optional(),
-  fillImageRotation: z.number().optional(),
-  fillImageOffsetX: z.number().optional(),
-  fillImageOffsetY: z.number().optional(),
+  fillImageScale: z.number().finite().optional(),
+  fillImageRotation: z.number().finite().optional(),
+  fillImageOffsetX: z.number().finite().optional(),
+  fillImageOffsetY: z.number().finite().optional(),
 
   // خصائص متقدمة
   shadowColor: z.string().optional(),
-  shadowBlur: z.number().optional(),
-  shadowOffsetX: z.number().optional(),
-  shadowOffsetY: z.number().optional(),
-  shadowOpacity: z.number().optional(),
-  cornerRadius: z.number().optional(),
+  shadowBlur: z.number().finite().optional(),
+  shadowOffsetX: z.number().finite().optional(),
+  shadowOffsetY: z.number().finite().optional(),
+  shadowOpacity: z.number().finite().min(0).max(1).optional(),
+  cornerRadius: z.number().finite().optional(),
   globalCompositeOperation: z.string().optional(),
   flipX: z.boolean().optional(),
   flipY: z.boolean().optional(),
-  svgPath: z.string().optional(),
+  svgPath: z.string().max(MAX_SVG_PATH_LENGTH).optional(),
   groupId: z.string().optional(),
   // اسم الطبقة المخصص — يَسقط عند الحفظ إن لم يُصرَّح هنا (Zod يحذف المجهول)
-  name: z.string().optional(),
+  name: z
+    .string()
+    .transform((val) => sanitizeText(val, 200))
+    .optional(),
 });
+
+export type ParsedCanvasElement = z.infer<typeof CanvasElementSchema>;
+
+/**
+ * يتحقق من مصفوفة عناصر مفسّرة من حافظة `GRIDO_ELEMENTS:` ويعقّمها
+ * (تنظيف مفاتيح `__proto__` ثم التحقق الكامل عبر `CanvasElementSchema`).
+ */
+export function parseSanitizedCanvasElements(raw: unknown): ParsedCanvasElement[] | null {
+  const cleaned = stripDangerousJsonKeys(raw);
+  const result = z.array(CanvasElementSchema).safeParse(cleaned);
+  if (!result.success || result.data.length === 0) return null;
+  return result.data;
+}
+
+/**
+ * يعقّم مصفوفة عناصر مُمرّرة إلى `pasteCopiedElements` ويسقط أي عنصر غير صالح.
+ */
+export function sanitizeCanvasElementArray(rawItems: readonly unknown[]): ParsedCanvasElement[] {
+  const valid: ParsedCanvasElement[] = [];
+  for (const item of rawItems) {
+    const cleaned = stripDangerousJsonKeys(item);
+    const parsed = CanvasElementSchema.safeParse(cleaned);
+    if (parsed.success) {
+      valid.push(parsed.data);
+    }
+  }
+  return valid;
+}
 
 export const CanvasSlotSchema = z.object({
   id: z.string(),

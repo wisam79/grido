@@ -48,6 +48,9 @@ export async function exportCanvas(
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
     let stageBlob: Blob | null = null;
+    // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
+    // (كان يُنتج خلفية سوداء للتصدير الشفاف)
+    const needsWhiteFlatten = format === 'jpg' && backgroundColor === 'transparent';
     try {
       // 🛡️ M15: الـ Stage أصبح مقاساً ثابتاً (zoom=1) فوقه CSS transform، فحساب
       // النسبة من مقاسه صار يعني «دقة تصدير تتغير بزوم المستخدم» بدل دقة الورقة.
@@ -56,9 +59,6 @@ export async function exportCanvas(
       // `canvasWidth / stage.width()` يُنتج displayW × ratio = canvasWidth.)
       const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
       const targetPixelRatio = 1;
-      // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
-      // (كان يُنتج خلفية سوداء للتصدير الشفاف)
-      const needsWhiteFlatten = format === 'jpg' && backgroundColor === 'transparent';
       stageBlob = await captureStageBlob(
         stageRef,
         targetPixelRatio,
@@ -67,32 +67,40 @@ export async function exportCanvas(
         captureRect,
         { useFullResolution: true },
       );
-      if (needsWhiteFlatten && stageBlob) {
-        const captured = await createImageBitmap(stageBlob);
-        const flattenCanvas = document.createElement('canvas');
-        flattenCanvas.width = canvasWidth;
-        flattenCanvas.height = canvasHeight;
-        const fctx = flattenCanvas.getContext('2d');
-        if (fctx) {
-          fctx.fillStyle = previewWhite();
-          fctx.fillRect(0, 0, canvasWidth, canvasHeight);
-          // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
-          // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
-          fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
-          const flattenedBlob = await new Promise<Blob | null>((resolve) => {
-            flattenCanvas.toBlob(resolve, 'image/jpeg', quality);
-          });
-          if (flattenedBlob) stageBlob = flattenedBlob;
-        }
-        captured.close();
-      }
     } catch (e) {
       logger.error('Failed to export via Konva Stage, falling back to manual canvas:', e);
       stageBlob = null;
     }
 
     if (stageBlob) {
-      return stageBlob;
+      if (!needsWhiteFlatten) {
+        return stageBlob;
+      }
+
+      const captured = await createImageBitmap(stageBlob);
+      try {
+        const flattenCanvas = document.createElement('canvas');
+        flattenCanvas.width = canvasWidth;
+        flattenCanvas.height = canvasHeight;
+        const fctx = flattenCanvas.getContext('2d');
+        if (!fctx) {
+          throw new Error('Failed to acquire 2D context while flattening JPEG transparency');
+        }
+        fctx.fillStyle = previewWhite();
+        fctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
+        // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
+        fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
+        const flattenedBlob = await new Promise<Blob | null>((resolve) => {
+          flattenCanvas.toBlob(resolve, 'image/jpeg', quality);
+        });
+        if (!flattenedBlob) {
+          throw new Error('Failed to encode flattened JPEG blob');
+        }
+        return flattenedBlob;
+      } finally {
+        captured.close();
+      }
     }
   }
 

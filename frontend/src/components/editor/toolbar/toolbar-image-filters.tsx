@@ -19,29 +19,39 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
 }: ImageFiltersPopoverProps = {}) {
   const { imageSrc, filter, mode, selectedId } = useEditorStore(
     useShallow((state) => {
-      const selectedEl = state.elements.find((e) => e.id === state.selectedId);
-      if (selectedEl?.type === 'image') {
-        return {
-          imageSrc: selectedEl.imageSrc,
-          filter: selectedEl.filter,
-          mode: state.mode,
-          selectedId: state.selectedId,
-        };
-      }
-      const selectedSlot = state.slots?.find((s) => s.id === state.selectedId);
-      if (state.mode === 'collage' && selectedSlot) {
-        return {
-          imageSrc: selectedSlot.imageSrc,
-          filter: selectedSlot.filter,
-          mode: state.mode,
-          selectedId: state.selectedId,
-        };
+      if (state.mode !== 'collage') {
+        const primaryEl = state.elements.find((e) => e.id === state.selectedId);
+        const selectedEl =
+          primaryEl?.type === 'image'
+            ? primaryEl
+            : state.elements.find((e) => state.selectedIds.includes(e.id) && e.type === 'image');
+        if (selectedEl?.type === 'image') {
+          return {
+            imageSrc: selectedEl.imageSrc,
+            filter: selectedEl.filter,
+            mode: state.mode,
+            selectedId: selectedEl.id,
+          };
+        }
+      } else {
+        const selectedSlot =
+          state.slots?.find((s) => s.id === state.selectedId && !!s.imageSrc) ??
+          state.slots?.find((s) => state.selectedIds.includes(s.id) && !!s.imageSrc) ??
+          state.slots?.find((s) => s.id === state.selectedId);
+        if (selectedSlot) {
+          return {
+            imageSrc: selectedSlot.imageSrc,
+            filter: selectedSlot.filter,
+            mode: state.mode,
+            selectedId: selectedSlot.id,
+          };
+        }
       }
       return {
         imageSrc: undefined,
         filter: undefined,
         mode: state.mode,
-        selectedId: state.selectedId,
+        selectedId: null,
       };
     }),
   );
@@ -82,12 +92,13 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
         </div>
         <div className="grid grid-cols-4 gap-1.5" dir="rtl">
           {IMAGE_FILTERS.map((f) => {
-            const isActive = filter === f.id;
+            const isActive = (filter ?? 'none') === f.id;
 
             return (
               <button
                 key={f.id}
                 onClick={() => {
+                  if (isActive) return;
                   if (mode !== 'collage') {
                     updateElement(selectedId, { filter: f.id });
                   } else {

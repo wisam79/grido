@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useDeferredValue, useMemo, useState } from 'react';
+import { useCallback, useEffect, useDeferredValue, useMemo, useRef, useState } from 'react';
 
 import { createLogger } from '@/lib/logger';
 import { sanitizeSvgMarkup } from '@/lib/utils';
@@ -27,6 +27,21 @@ interface UseStickerCustomizationParams {
   cancelledRef: RefObject<boolean>;
 }
 
+function resolveInitialTemplate(
+  editingElement: { id: string; source: StickerElementSource } | null,
+  initialCategory: StickerCategoryGroupId | StickerCategory | 'all',
+): StickerTemplate {
+  if (editingElement) {
+    const match = ALL_STICKER_TEMPLATES.find((t) => t.id === editingElement.source.templateId);
+    if (match) return match;
+  }
+  if (initialCategory !== 'all') {
+    const match = ALL_STICKER_TEMPLATES.find((t) => t.category === initialCategory);
+    if (match) return match;
+  }
+  return ALL_STICKER_TEMPLATES[0];
+}
+
 /**
  * آلة حالة التخصيص في استوديو الملصقات — كانت متمركزة داخل
  * sticker-studio-dialog فتضخّمه إلى ما يقارب 930 سطراً. تملك: حالة المرحلة
@@ -41,19 +56,13 @@ export function useStickerCustomization({
   cancelledRef,
 }: UseStickerCustomizationParams) {
   // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
-  const [view, setView] = useState<'gallery' | 'customize'>('gallery');
+  const [view, setView] = useState<'gallery' | 'customize'>(() =>
+    open && editingElement ? 'customize' : 'gallery',
+  );
 
-  const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() => {
-    if (editingElement) {
-      const match = ALL_STICKER_TEMPLATES.find((t) => t.id === editingElement.source.templateId);
-      if (match) return match;
-    }
-    if (initialCategory !== 'all') {
-      const match = ALL_STICKER_TEMPLATES.find((t) => t.category === initialCategory);
-      if (match) return match;
-    }
-    return ALL_STICKER_TEMPLATES[0];
-  });
+  const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() =>
+    resolveInitialTemplate(editingElement, initialCategory),
+  );
 
   // سجل التراجع/الإعادة — كل تعديل يلتزم كسجل قابل للرجوع مثل أدوات التصميم الاحترافية
   const { params, canUndo, canRedo, setParams, commitParams, resetParams, undo, redo } =
@@ -64,18 +73,41 @@ export function useStickerCustomization({
           (t) => t.id === editingElement.source.templateId,
         );
         if (template) {
-          setSelectedTemplate(template);
           return migrateStickerParams(editingElement.source.params, template);
         }
       }
-      return buildDefaultStickerParams(ALL_STICKER_TEMPLATES[0]);
+      return buildDefaultStickerParams(resolveInitialTemplate(editingElement, initialCategory));
     });
 
-  // وضع إعادة التحرير: نبدأ مباشرة في وضع التخصيص (لا معنى للمعرض)
+  // إعادة التهيئة الكاملة عند إعادة فتح الحوار (خصوصاً إعادة تحرير نفس الملصق بعد الإغلاق دون حفظ)
+  const wasOpenRef = useRef(open);
+  const prevEditingRef = useRef(editingElement);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (open && editingElement) setView('customize');
-  }, [open, editingElement]);
+    const justOpened = open && !wasOpenRef.current;
+    const editingChanged = editingElement !== prevEditingRef.current;
+    wasOpenRef.current = open;
+    prevEditingRef.current = editingElement;
+
+    if (!open) return;
+
+    if (justOpened || editingChanged) {
+      const targetTemplate = resolveInitialTemplate(editingElement, initialCategory);
+      setSelectedTemplate(targetTemplate);
+      if (editingElement) {
+        const matched = ALL_STICKER_TEMPLATES.find(
+          (t) => t.id === editingElement.source.templateId,
+        );
+        resetParams(
+          matched
+            ? migrateStickerParams(editingElement.source.params, matched)
+            : buildDefaultStickerParams(targetTemplate),
+        );
+      } else {
+        resetParams(buildDefaultStickerParams(targetTemplate));
+      }
+      setView(editingElement ? 'customize' : 'gallery');
+    }
+  }, [open, editingElement, initialCategory, resetParams]);
 
   // Reset loading state and restore gallery on dialog close (rule: Modal loading state cleanup)
   useEffect(() => {

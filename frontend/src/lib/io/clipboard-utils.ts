@@ -1,11 +1,9 @@
-import { z } from 'zod';
-
 import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
 import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
-import { CanvasElementSchema } from '@/lib/schema';
+import { parseSanitizedCanvasElements } from '@/lib/schema';
 
 import {
   SaveImageFromBase64,
@@ -51,14 +49,15 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
       try {
         const rawJson = text.replace('GRIDO_ELEMENTS:', '');
         const rawParsed: unknown = JSON.parse(rawJson);
-        const parseResult = z.array(CanvasElementSchema).safeParse(rawParsed);
-        if (parseResult.success && parseResult.data.length > 0) {
-          readState().pasteCopiedElements(parseResult.data as unknown as CanvasElement[]);
+        const sanitizedElements = parseSanitizedCanvasElements(rawParsed);
+        if (sanitizedElements && sanitizedElements.length > 0) {
+          readState().pasteCopiedElements(sanitizedElements as unknown as CanvasElement[]);
           return true;
         }
       } catch (err) {
         logger.error('Failed to parse GRIDO_ELEMENTS from clipboard', err);
       }
+      return false;
     } else if (readState().mode !== 'collage') {
       // نص خارجي من متصفح/ورد/مفكرة — تعقيم + تنبيه عند الاقتطاع
       const sanitized = sanitizeText(text);

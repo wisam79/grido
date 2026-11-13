@@ -43,6 +43,22 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
     })),
   );
 
+  // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط
+  // كان يُبقي صورة المعاينة دائمة بلا تراجع — الاستعادة عند التنظيف.
+  const holdRef = React.useRef<{ id: string; src: string | undefined } | null>(null);
+  const updateElementRef = React.useRef(updateElement);
+  updateElementRef.current = updateElement;
+  React.useEffect(
+    () => () => {
+      if (holdRef.current) {
+        const { id, src } = holdRef.current;
+        holdRef.current = null;
+        updateElementRef.current(id, { imageSrc: src });
+      }
+    },
+    [],
+  );
+
   return (
     <>
       {/* مجموعة ترتيب الطبقة (أمام/خلف) */}
@@ -159,12 +175,23 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                   size="sm"
                   onMouseDown={() => {
                     const curr = element.imageSrc;
+                    holdRef.current = { id: element.id, src: curr };
                     updateElement(element.id, { imageSrc: element.originalImageSrc });
                     const restore = () => {
+                      holdRef.current = null;
                       updateElement(element.id, { imageSrc: curr });
+                      cleanup();
+                    };
+                    const cleanup = () => {
                       window.removeEventListener('mouseup', restore);
+                      window.removeEventListener('pointerup', restore);
+                      window.removeEventListener('pointercancel', restore);
+                      window.removeEventListener('blur', restore);
                     };
                     window.addEventListener('mouseup', restore);
+                    window.addEventListener('pointerup', restore);
+                    window.addEventListener('pointercancel', restore);
+                    window.addEventListener('blur', restore);
                   }}
                   aria-label="معاينة الصورة الأصلية"
                   className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary-action active:text-primary-foreground"

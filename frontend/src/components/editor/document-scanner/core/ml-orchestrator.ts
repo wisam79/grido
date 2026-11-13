@@ -382,6 +382,31 @@ function buildDoc(
   };
 }
 
+/** يحوّل مضلعاً متحققاً إلى مستند واحد أو يشطره لبطاقتي هوية ضمن نافذة التكديس. */
+function expandQuadToDocuments(quad: Point[], score: number, startIdx: number): DetectedDocument[] {
+  const sorted = sortCornerPoints(quad);
+  const cw = Math.hypot(sorted[1].x - sorted[0].x, sorted[1].y - sorted[0].y);
+  const ch = Math.hypot(sorted[3].x - sorted[0].x, sorted[3].y - sorted[0].y);
+  const ratio = ch > 0 ? cw / ch : 0;
+  const inStackedWindow = ratio >= STACKED_SPLIT_MIN_RATIO && ratio <= STACKED_SPLIT_MAX_RATIO;
+
+  if (inStackedWindow) {
+    const cards = splitQuadIntoIdCardsWithSeam(
+      quad,
+      'vertical',
+      SPLIT_SEAM_RATIO_DEFAULT,
+      (pair) => pair.length === 2 && pair.every((c) => isIdCardAspectQuad(c.corners)),
+    );
+    if (cards.length === 2 && cards.every((c) => isIdCardAspectQuad(c.corners))) {
+      return cards.map((card, cardIdx) =>
+        buildDoc(startIdx + cardIdx, { corners: card.corners, score }, card.aspectType),
+      );
+    }
+  }
+
+  return [buildDoc(startIdx, { corners: quad, score })];
+}
+
 /**
  * نقطة الدخول الشاملة للكشف (الاسم التاريخي المحفوظ): ML حصراً عبر
  * العامل بتمريرات متكررة، ثم NMS والشطر الدلالي — انظر §5.1.
@@ -403,8 +428,19 @@ export async function detectDocumentAuto(
   };
 
   try {
-    // 🚀 المسار الأصلي في Go أولاً: كشف فائق الدقة بـ FastViT-SA24 مع أركان Heatmap دقيقة
-    if (!engineOverride && typeof window !== 'undefined' && 'src' in src && src.src) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    // 🚀 المسار الأصلي في Go لوضع المستند المفرد فقط (Go يعيد رباعياً واحداً):
+    // لا نتجاوز multi أبداً، ونمرّر الناتج عبر شطر البطاقات المكدّسة قبل الرجوع المبكر.
+    if (
+      mode === 'single' &&
+      !engineOverride &&
+      typeof window !== 'undefined' &&
+      'src' in src &&
+      src.src
+    ) {
       const nativeResult = await detectDocumentViaGo(src as HTMLImageElement, signal);
       if (
         nativeResult &&
@@ -419,12 +455,12 @@ export async function detectDocumentAuto(
           ML_STANDALONE_MIN,
         );
         if (validated) {
-          const doc = buildDoc(0, validated);
+          const goDocs = expandQuadToDocuments(validated.corners, validated.score, 0);
           return {
-            corners: doc.corners,
-            confidence: doc.confidence,
+            corners: goDocs[0].corners,
+            confidence: goDocs[0].confidence,
             method: 'scanic',
-            documents: [doc],
+            documents: goDocs,
           };
         }
       }
@@ -474,40 +510,7 @@ export async function detectDocumentAuto(
       // بتوريث aspectType='id_card' من المُقسِّط نفسه (مهارة §4 — القاعدة المحكمة)
       const docs: DetectedDocument[] = [];
       for (const cand of selected) {
-        const sorted = sortCornerPoints(cand.quad);
-        const cw = Math.hypot(sorted[1].x - sorted[0].x, sorted[1].y - sorted[0].y);
-        const ch = Math.hypot(sorted[3].x - sorted[0].x, sorted[3].y - sorted[0].y);
-        const ratio = ch > 0 ? cw / ch : 0;
-        const inStackedWindow =
-          ratio >= STACKED_SPLIT_MIN_RATIO && ratio <= STACKED_SPLIT_MAX_RATIO;
-
-        let splitDocs: DetectedDocument[] | null = null;
-        if (inStackedWindow) {
-          const cards = splitQuadIntoIdCardsWithSeam(
-            cand.quad,
-            'vertical',
-            SPLIT_SEAM_RATIO_DEFAULT,
-            (pair) => pair.length === 2 && pair.every((c) => isIdCardAspectQuad(c.corners)),
-          );
-          if (cards.length === 2 && cards.every((c) => isIdCardAspectQuad(c.corners))) {
-            splitDocs = cards;
-          }
-        }
-
-        if (splitDocs) {
-          const baseIdx = docs.length;
-          splitDocs.forEach((card, cardIdx) => {
-            docs.push(
-              buildDoc(
-                baseIdx + cardIdx,
-                { corners: card.corners, score: cand.score },
-                card.aspectType,
-              ),
-            );
-          });
-        } else {
-          docs.push(buildDoc(docs.length, { corners: cand.quad, score: cand.score }));
-        }
+        docs.push(...expandQuadToDocuments(cand.quad, cand.score, docs.length));
       }
 
       return {

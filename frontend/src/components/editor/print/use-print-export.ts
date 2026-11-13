@@ -456,7 +456,7 @@ export function usePrintExport({
           return null;
         }
         logger.error('Single composition capture failed:', e);
-        toast.error('فشل تجهيز الصورة للطباعة: ' + String(e));
+        toast.error('فشل تجهيز الصورة للطباعة: ' + describeError(e));
         return null;
       }
     },

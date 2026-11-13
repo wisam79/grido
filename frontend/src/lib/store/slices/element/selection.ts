@@ -44,12 +44,16 @@ export const createElementSelectionSlice: StateCreator<
   >
 > = (set, get) => ({
   bringToFront: (id) => {
+    const el = get().elements.find((e) => e.id === id);
+    if (!el || el.locked) return;
     const maxZ = maxZIndex(get().elements);
     get().updateElement(id, { zIndex: maxZ + 10 });
     get().pushHistory();
   },
 
   sendToBack: (id) => {
+    const el = get().elements.find((e) => e.id === id);
+    if (!el || el.locked) return;
     const minZ = minZIndex(get().elements);
     get().updateElement(id, { zIndex: minZ - 10 });
     get().pushHistory();

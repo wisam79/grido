@@ -116,6 +116,7 @@ export const KonvaCanvas = React.memo(
         if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
 
         e.evt.preventDefault();
+        e.evt.stopPropagation();
         const pendingZoom = pendingSlotZoomsRef.current.get(slot.id);
         const currentZoom = pendingZoom ?? slot.zoom ?? 1;
         const step = e.evt.deltaY < 0 ? 0.05 : -0.05;

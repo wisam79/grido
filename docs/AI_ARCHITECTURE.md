@@ -1,5 +1,11 @@
 # معمارية الذكاء الاصطناعي (AI Architecture)
 
+## حدود متابعة ملكية نتائج الواجهة — 2026-11-13
+
+[التقرير 24](reviews/24-ui-architecture-audit-disposition-2026-11-13.md#ملحق-disposition--2026-11-13) يفصل متابعة face-frame/scanner عن مسار Modal والحصص. دليل scanner السابق (`frontend/src/components/editor/document-scanner/hooks/use-scanner-detection.ts:345–440` و`frontend/src/components/editor/document-scanner/core/ml-orchestrator.ts:428–465`) يخص أجيال الكشف/abort وsingle مقابل multi/split في العميل؛ دليل face-frame ونتائج اختبارات تلك النقطة غير متحققة في هذه الجولة؛ لا إغلاق كلي لمجموعة السباقات.
+
+منع تطبيق ناتج قديم بعد تبديل المستند/المصدر/الهدف لا يثبت إلغاء استدلال على الخادم أو تحرير حصة. كذلك إغلاق حوار auth يمنع تحديثات واجهته القديمة، لا مصادقة الستور أو طلب IPC. لا تغيير موثق لهذه الجولة في نماذج Modal أو حدود/حجز AI أو نشر الخدمات؛ المرجع التنفيذي والتاريخ السابقان أدناه محفوظان بنطاقهما.
+
 > المصدر التنفيذي: [`modal_ai/upscaler.py`](../modal_ai/upscaler.py). القاعدة الحاكمة: `.agents/AGENTS.md`، والتفاصيل الهندسية: [مهارة ضبط AI](../.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md). آخر تحديث: 29 أكتوبر 2026.
 
 ## المسار السحابي المزدوج (Dual-Stage Studio Enhancement)

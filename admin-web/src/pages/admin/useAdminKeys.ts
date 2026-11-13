@@ -1,28 +1,36 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useAdminOperationOwnership } from './useAdminOperationOwnership';
+import type { AdminSessionOwnerRef } from './useAdminOperationOwnership';
 import type { FormEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useFeedback } from '../../components/common/FeedbackProvider';
 import {
+  buildBatchCustomKey,
   buildBatchKeysCsv,
   buildCustomKey,
   downloadTextFile,
+  fetchAllPaged,
+  parsePositiveInt,
   randomKeySuffix,
 } from '../../lib/admin-utils';
 import type { GenMode, GenPlan, KeyStatusFilter, LicenseKey } from './types';
 
 /**
- * useAdminKeys — حالات المفاتيح + توليد مفرد/مجمّع + تصدير + نسخ + فلاتر المفاتيح.
- * منطق verbatim من AdminDashboard.tsx — نفس استعلامات license_keys ونفس منطق التوليد.
- * ملاحظة: تصدير CSV للمستخدمين يعيش في useAdminUsers (handleExportCSV) لأنه
- * يعمل على filteredUsers؛ هنا تصدير الدفعة (handleExportBatch) ونسخ المفتاح.
+ * useAdminKeys — حالات المفاتيح + جلب مقسّم بالصفحات + معالجة أخطاء Supabase +
+ * توليد مفرد/مجمّع آمن ضد NaN والتصادم + نسخ محروس بالحافظة.
  */
 
-export function useAdminKeys(supabase: SupabaseClient | null) {
+export function useAdminKeys(
+  supabase: SupabaseClient | null,
+  sessionOwnerRef: AdminSessionOwnerRef,
+) {
   const { notify } = useFeedback();
+  const { captureOwner, invalidateOwnership } = useAdminOperationOwnership(supabase, sessionOwnerRef);
+  const batchReqIdRef = useRef(0);
 
   const [keys, setKeys] = useState<LicenseKey[]>([]);
   const [keysTotal, setKeysTotal] = useState(0);
-  const [unusedKeysTotal, setUnusedKeysTotal] = useState(0);
+  const [unusedKeysTotal, setUnusedKeysTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [keySearchQuery, setKeySearchQuery] = useState('');
   const [keyStatusFilter, setKeyStatusFilter] = useState<KeyStatusFilter>('all');
@@ -37,36 +45,95 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
   const [generatedBatchKeys, setGeneratedBatchKeys] = useState<string[]>([]);
   const [generatingBatch, setGeneratingBatch] = useState(false);
 
-  // Load Dashboard Data (keys part — نفس استعلامات الملف الأصلي)
+  const fetchReqIdRef = useRef(0);
+
+  const resetKeysData = useCallback(() => {
+    invalidateOwnership();
+    batchReqIdRef.current += 1;
+    fetchReqIdRef.current += 1;
+    setKeys([]);
+    setKeysTotal(0);
+    setUnusedKeysTotal(null);
+    setLoading(false);
+    setKeySearchQuery('');
+    setKeyStatusFilter('all');
+    setGeneratedKey('');
+    setGeneratedBatchKeys([]);
+    setGeneratingBatch(false);
+  }, [invalidateOwnership]);
+
+  // Load Dashboard Data (paginated to prevent PostgREST 1000-row silent truncation)
   const loadKeysData = useCallback(async () => {
-    if (!supabase) return;
+    const ownsOperation = captureOwner();
+    if (!supabase || !ownsOperation()) return;
+    const reqId = ++fetchReqIdRef.current;
+    const ownsFetch = () => ownsOperation() && reqId === fetchReqIdRef.current;
     setLoading(true);
 
     try {
       const [keysRes, unusedKeysRes, keysCountRes] = await Promise.all([
-        supabase.from('license_keys').select('*').order('created_at', { ascending: false }),
+        fetchAllPaged<LicenseKey>((from, to) =>
+          !ownsFetch() ? Promise.resolve({ data: [], error: null }) : supabase
+            .from('license_keys')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, to),
+        ),
         supabase.from('license_keys').select('*', { count: 'exact', head: true }).eq('status', 'unused'),
         supabase.from('license_keys').select('*', { count: 'exact', head: true }),
       ]);
 
-      if (!keysRes.error && keysRes.data) setKeys(keysRes.data as LicenseKey[]);
-      if (!keysCountRes.error && typeof keysCountRes.count === 'number')
+      if (!ownsFetch()) return;
+
+      const errors: string[] = [];
+      if (keysRes.error) {
+        errors.push(keysRes.error.message || 'license_keys');
+      } else {
+        setKeys(keysRes.data);
+      }
+
+      if (keysCountRes.error) {
+        errors.push(keysCountRes.error.message || 'license_keys_count');
+      } else if (typeof keysCountRes.count === 'number') {
         setKeysTotal(keysCountRes.count);
-      if (!unusedKeysRes.error && typeof unusedKeysRes.count === 'number')
+      }
+
+      if (unusedKeysRes.error) {
+        errors.push(unusedKeysRes.error.message || 'unused_keys_count');
+      } else if (typeof unusedKeysRes.count === 'number') {
         setUnusedKeysTotal(unusedKeysRes.count);
+      }
+
+      if (errors.length > 0) {
+        console.error('Error fetching keys data:', errors);
+        notify(`تعذر تحميل مفاتيح التراخيص: ${errors[0]}`, 'error');
+      }
     } catch (err) {
+      if (!ownsFetch()) return;
       console.error('Error fetching keys data:', err);
+      notify(
+        'تعذر تحميل مفاتيح التراخيص: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'),
+        'error',
+      );
     } finally {
-      setLoading(false);
+      if (ownsFetch()) {
+        setLoading(false);
+      }
     }
-  }, [supabase]);
+  }, [supabase, notify, captureOwner]);
 
   // Generate Single License Key
   const handleGenerateKey = async (e: FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    const ownsOperation = captureOwner();
+    if (!supabase || !ownsOperation()) return;
 
-    const duration = parseInt(genDuration, 10);
+    const duration = parsePositiveInt(genDuration);
+    if (!duration) {
+      notify('يرجى تحديد مدة صالحة بالأشهر.', 'warning');
+      return;
+    }
+
     const customKey = buildCustomKey(genPrefix, genPlan, randomKeySuffix());
 
     try {
@@ -76,15 +143,18 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
         p_custom_key: customKey,
       });
 
+      if (!ownsOperation()) return;
       if (error) throw error;
       const keyVal =
         typeof data === 'object' && data !== null && 'key' in data
           ? (data as { key: string }).key
           : (data as string);
       setGeneratedKey(keyVal);
+      if (!ownsOperation()) return;
       notify('تم توليد مفتاح ترخيص وإدراجه سحابياً بنجاح!', 'success');
-      loadKeysData();
+      if (ownsOperation()) await loadKeysData();
     } catch (err) {
+      if (!ownsOperation()) return;
       notify('فشل توليد المفتاح سحابياً: ' + (err as Error).message, 'error');
     }
   };
@@ -92,27 +162,48 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
   // Generate Batch License Keys
   const handleGenerateBatchKeys = async (e: FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    const ownsOperation = captureOwner();
+    if (!supabase || !ownsOperation()) return;
+
+    const duration = parsePositiveInt(genDuration);
+    if (!duration) {
+      notify('يرجى تحديد مدة صالحة بالأشهر.', 'warning');
+      return;
+    }
+
+    const parsedCount = parsePositiveInt(genCount);
+    if (!parsedCount) {
+      notify('يرجى إدخال عدد مفاتيح صالح بين 1 و 50.', 'warning');
+      return;
+    }
+
+    const batchReqId = ++batchReqIdRef.current;
+    const ownsBatch = () => ownsOperation() && batchReqId === batchReqIdRef.current;
     setGeneratingBatch(true);
     setGeneratedBatchKeys([]);
 
-    const duration = parseInt(genDuration, 10);
-    const count = Math.min(50, Math.max(1, parseInt(genCount, 10)));
+    const count = Math.min(50, parsedCount);
     const batchList: string[] = [];
+    const seenCustomKeys = new Set<string>();
     let failedCount = 0;
     let firstError = '';
 
     try {
       for (let i = 0; i < count; i++) {
-        const customPrefix = genPrefix
-          ? `${genPrefix.trim().toUpperCase()}-${genPlan.toUpperCase()}-${i + 1}`
-          : undefined;
+        if (!ownsBatch()) return;
+        let customPrefix = buildBatchCustomKey(genPrefix, genPlan, i);
+        while (customPrefix && seenCustomKeys.has(customPrefix)) {
+          customPrefix = buildBatchCustomKey(genPrefix, genPlan, i);
+        }
+        if (customPrefix) seenCustomKeys.add(customPrefix);
+
         const { data, error } = await supabase.rpc('admin_create_license_key', {
           p_plan: genPlan,
           p_duration_months: duration,
           p_custom_key: customPrefix,
         });
 
+        if (!ownsBatch()) return;
         if (!error && data) {
           const k =
             typeof data === 'object' && 'key' in data ? (data as { key: string }).key : (data as string);
@@ -123,7 +214,9 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
         }
       }
 
+      if (!ownsBatch()) return;
       setGeneratedBatchKeys(batchList);
+      if (!ownsBatch()) return;
       if (batchList.length === 0) {
         notify(`فشل توليد الدفعة بالكامل: ${firstError || 'خطأ غير معروف'}`, 'error');
       } else if (failedCount > 0) {
@@ -134,11 +227,12 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
       } else {
         notify(`تم توليد دفعة مكونة من ${batchList.length} مفاتيح سحابية بنجاح!`, 'success');
       }
-      loadKeysData();
+      if (ownsBatch()) await loadKeysData();
     } catch (err) {
+      if (!ownsBatch()) return;
       notify('فشل توليد الدفعة: ' + (err as Error).message, 'error');
     } finally {
-      setGeneratingBatch(false);
+      if (ownsBatch()) setGeneratingBatch(false);
     }
   };
 
@@ -156,14 +250,24 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
     );
   };
 
-  const handleCopyKey = () => {
-    if (generatedKey) {
-      navigator.clipboard.writeText(generatedKey);
+  const handleCopyKey = async () => {
+    const ownsOperation = captureOwner();
+    if (!generatedKey || !ownsOperation()) return;
+    if (!navigator.clipboard?.writeText) {
+      notify('النسخ التلقائي غير مدعوم في هذا المتصفح، يرجى النسخ يدوياً.', 'warning');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(generatedKey);
+      if (!ownsOperation()) return;
       notify('تم نسخ مفتاح الترخيص للحافظة!', 'success');
+    } catch {
+      if (!ownsOperation()) return;
+      notify('تعذر نسخ مفتاح الترخيص للحافظة، يرجى النسخ يدوياً.', 'error');
     }
   };
 
-  // Filtering Keys (verbatim)
+  // Filtering Keys
   const filteredKeys = keys.filter((key) => {
     const matchesSearch =
       (key.key || '').toLowerCase().includes(keySearchQuery.toLowerCase()) ||
@@ -177,7 +281,8 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
 
   // Dashboard Overview Metrics — جزء المفاتيح
   const totalKeys = keysTotal || keys.length;
-  const unusedKeys = unusedKeysTotal || keys.filter((k) => k.status === 'unused').length;
+  const unusedKeys =
+    unusedKeysTotal !== null ? unusedKeysTotal : keys.filter((k) => k.status === 'unused').length;
 
   return {
     keys,
@@ -202,6 +307,7 @@ export function useAdminKeys(supabase: SupabaseClient | null) {
     generatedBatchKeys,
     generatingBatch,
     loadKeysData,
+    resetKeysData,
     handleGenerateKey,
     handleGenerateBatchKeys,
     handleExportBatch,

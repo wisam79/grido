@@ -1,4 +1,5 @@
 import { nextZIndex, normalizeSelection } from './types';
+import { sanitizeCanvasElementArray } from '../../../schema';
 import { uid } from '../../../utils';
 
 import type { ElementCross, ElementSlice } from './types';
@@ -74,9 +75,12 @@ export const createElementClipboardSlice: StateCreator<
 
   pasteCopiedElements: (customElements) => {
     const state = get();
-    const clipboard =
+    const rawClipboard =
       customElements && customElements.length > 0 ? customElements : state.clipboardElements;
-    if (!clipboard || clipboard.length === 0) return;
+    if (!rawClipboard || rawClipboard.length === 0) return;
+
+    const clipboard = sanitizeCanvasElementArray(rawClipboard);
+    if (clipboard.length === 0) return;
 
     const nextElements = [...state.elements];
     const newSelectedIds: string[] = [];
@@ -84,7 +88,8 @@ export const createElementClipboardSlice: StateCreator<
 
     const sortedClipboard = [...clipboard].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
-    sortedClipboard.forEach((el) => {
+    sortedClipboard.forEach((rawEl) => {
+      const el = rawEl as unknown as CanvasElement;
       const newId = uid();
 
       let newGroupId = el.groupId;

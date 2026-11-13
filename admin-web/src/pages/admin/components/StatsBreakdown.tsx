@@ -11,6 +11,7 @@ interface StatsBreakdownProps {
   freeCount: number;
   proPct: number;
   entPct: number;
+  freePct: number;
   estimatedMRR: number;
   windowAiCost: number;
   aiLogsCount: number;
@@ -25,6 +26,7 @@ export function StatsBreakdown({
   freeCount,
   proPct,
   entPct,
+  freePct,
   estimatedMRR,
   windowAiCost,
   aiLogsCount,
@@ -79,11 +81,11 @@ export function StatsBreakdown({
             <div className="flex justify-between text-slate-300 mb-1.5 font-sans">
               <span>الباقة المجانية</span>
               <span className="font-bold text-[#9E9E9E] font-mono">
-                {freeCount} ({100 - proPct - entPct}%)
+                {freeCount} ({freePct}%)
               </span>
             </div>
             <div className="w-full bg-[#141414] h-2.5 rounded-full overflow-hidden border border-[#2C2C2C]">
-              <div className="bg-slate-700 h-full" style={{ width: `${100 - proPct - entPct}%` }} />
+              <div className="bg-slate-700 h-full" style={{ width: `${freePct}%` }} />
             </div>
           </div>
         </div>
