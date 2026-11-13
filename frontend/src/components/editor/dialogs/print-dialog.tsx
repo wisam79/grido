@@ -134,6 +134,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const previewViewportRef = useRef<HTMLDivElement>(null);
   const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
   const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
+  const previewRequestRef = useRef(0);
   const savedSelectionRef = useRef<string[] | null>(null);
 
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
@@ -509,6 +510,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       return;
     }
 
+    const requestId = ++previewRequestRef.current;
+    const abortController = new AbortController();
     let cancelled = false;
     let attempts = 0;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -545,9 +548,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           'image/png',
           undefined,
           { x: 0, y: 0, width: paperW, height: paperH },
-          { useFullResolution: true },
+          {
+            useFullResolution: true,
+            signal: abortController.signal,
+            readiness: { fonts: true, images: true },
+            readinessTimeoutMs: 8000,
+            queueTimeoutMs: 8000,
+            toBlobTimeoutMs: 15_000,
+          },
         );
-        if (cancelled || !blob) return;
+        if (cancelled || requestId !== previewRequestRef.current || !blob) return;
         previewUrl = URL.createObjectURL(blob);
         setPreviewImageSrc((previous) => {
           if (previous.startsWith('blob:')) URL.revokeObjectURL(previous);
@@ -555,7 +565,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         });
         previewUrl = '';
       } catch (err) {
-        if (cancelled) return;
+        if (cancelled || requestId !== previewRequestRef.current) return;
         logger.error('Failed to generate print preview image:', err);
         const freshElements = useEditorStore.getState().elements;
         const firstImg = freshElements.find(
@@ -573,9 +583,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }
     };
 
-    const timer = setTimeout(() => void generatePreview(), 30);
+    const timer = setTimeout(() => void generatePreview(), 0);
     return () => {
       cancelled = true;
+      abortController.abort();
       clearTimeout(timer);
       if (retryTimer) clearTimeout(retryTimer);
     };

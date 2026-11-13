@@ -5,6 +5,7 @@ import {
   buildSinglePayload,
   type CollagePayloadContext,
 } from '../src/components/editor/print/print-payload-builder';
+import { captureStageBlob } from '../src/lib/canvas/konva-export-utils';
 
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
 import type { CanvasSlot, ImageElement } from '../src/lib/store/types';
@@ -13,7 +14,8 @@ import type { CanvasSlot, ImageElement } from '../src/lib/store/types';
 // print-payload-builder.test.ts — عقد حمولة الوضع الحر (Single Mode Contract)
 //
 // يقفل إصلاحات مراجعة الطباعة RV-16:
-//   H2: عناصر التركيب تُرسل بـ slotAspect=0 (تمديد Konva) لا قصاً تغطياً في Go.
+//   Cover: عناصر التركيب السريع ترسل نافذة cover صريحة مع slotAspect=0.
+//   Fallback: غياب أبعاد المصدر يجعل المسار السريع غير مؤهل ويلتقط Stage.
 //   M3: توسيع النسخ على جانب Go (copies/copyCols/copyStep*) بدل تكرار العناصر
 //       عبر IPC — 48 نسخة × 21 عنصراً كانت تتجاوز حد التحقق 1000 عنصر.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -239,6 +241,7 @@ const baseCtx = {
   printShowCutLines: true,
   printShowEndCutLine: true,
   printCutLineStyle: 'dashed' as const,
+  imageDimensions: new Map([['/local-image/photo-a.png', { width: 800, height: 600 }]]),
 };
 
 describe('عقد حمولة الوضع الحر (Single Payload Contract)', () => {
@@ -246,33 +249,124 @@ describe('عقد حمولة الوضع الحر (Single Payload Contract)', () =
     vi.clearAllMocks();
   });
 
-  it('H2: عناصر التركيب تُرسل بـ slotAspect=0 — تمديد Konva لا قصّ cover في Go', async () => {
+  it('يرسل نافذة cover الصريحة ويُبقي slotAspect=0 لمنع إعادة اشتقاق Go', async () => {
     const built = await buildSinglePayload({
       ...baseCtx,
       elements: [
-        makeImageElement({ id: 'el-a', imageSrc: '/local-image/photo-a.png' }),
         makeImageElement({
-          id: 'el-b',
-          imageSrc: '/local-image/photo-b.png',
-          // عنصر مُمدَّد بغير نسبة مصدره — أخطر حالة لهذا العقد
+          id: 'el-wide',
+          imageSrc: '/local-image/wide.png',
           x: 0.05,
           y: 0.05,
           width: 0.9,
           height: 0.1,
         }),
       ],
+      imageDimensions: new Map([['/local-image/wide.png', { width: 800, height: 600 }]]),
     });
 
     expect(built).not.toBeNull();
-    expect(built!.items).toHaveLength(2);
-    for (const item of built!.items) {
-      // صفر = بلا اقتصاص تغطية في computeCropFromSlot ⇒ تُمدَّد الصورة كاملة
-      // داخل مستطيلها تماماً كما يعرضها Konva (image-node يضبط width/height)
-      expect(item.slotAspect).toBe(0);
-      expect(item.zoom).toBe(1);
-      expect(item.dragX).toBe(0);
-      expect(item.dragY).toBe(0);
-    }
+    expect(built!.items).toHaveLength(1);
+    expect(built!.items[0]).toMatchObject({
+      imageSrc: '/local-image/wide.png',
+      cropX: 0,
+      cropW: 800,
+      slotAspect: 0,
+      zoom: 1,
+      dragX: 0,
+      dragY: 0,
+    });
+    expect(built!.items[0].cropY).toBeCloseTo(240.74074074074073);
+    expect(built!.items[0].cropH).toBeCloseTo(118.51851851851852);
+    expect(captureStageBlob).not.toHaveBeenCalled();
+  });
+
+  it('يرسل نافذة cover صريحة لحالة نسبة متطرفة', async () => {
+    const built = await buildSinglePayload({
+      ...baseCtx,
+      elements: [
+        makeImageElement({
+          id: 'el-tall',
+          imageSrc: '/local-image/tall.png',
+          x: 0.05,
+          y: 0.05,
+          width: 0.9,
+          height: 0.1,
+          flipX: true,
+          flipY: true,
+        }),
+      ],
+      imageDimensions: new Map([['/local-image/tall.png', { width: 1000, height: 8000 }]]),
+    });
+
+    expect(built!.items[0]).toMatchObject({
+      cropX: 0,
+      cropW: 1000,
+      slotAspect: 0,
+      flipX: true,
+      flipY: true,
+    });
+    expect(built!.items[0].cropY).toBeCloseTo(3925.925925925926);
+    expect(built!.items[0].cropH).toBeCloseTo(148.14814814814815);
+  });
+
+  it('يحافظ على القلب والزوايا والنسخ مع نافذة cover المحسوبة', async () => {
+    const built = await buildSinglePayload({
+      ...baseCtx,
+      layout: makeLayout({ actualCopies: 4 }),
+      elements: [
+        makeImageElement({
+          imageSrc: '/local-image/portrait.png',
+          width: 0.25,
+          height: 0.5,
+          flipX: true,
+          flipY: true,
+          cornerRadius: 18,
+        }),
+      ],
+      imageDimensions: new Map([['/local-image/portrait.png', { width: 600, height: 1200 }]]),
+    });
+
+    expect(built!.items[0]).toMatchObject({
+      cropY: 0,
+      cropH: 1200,
+      slotAspect: 0,
+      flipX: true,
+      flipY: true,
+      cornerRadiusMM: 1.8,
+      copies: 4,
+      copyCols: 2,
+      copyStepX: 92,
+      copyStepY: 122,
+    });
+    expect(built!.items[0].cropX).toBeCloseTo(75);
+    expect(built!.items[0].cropW).toBeCloseTo(450);
+  });
+
+  it('يسقط إلى التقاط Stage عند غياب أبعاد مصدر صورة بدل إرسال stretch', async () => {
+    const built = await buildSinglePayload({
+      ...baseCtx,
+      imageDimensions: new Map(),
+    });
+
+    expect(captureStageBlob).toHaveBeenCalledOnce();
+    expect(built!.items).toHaveLength(1);
+    expect(built!.items[0]).toMatchObject({
+      imageSrc: '/local-image/print_upload_mock.png',
+      w: 90,
+      h: 120,
+      copies: 1,
+    });
+  });
+
+  it('يسقط إلى التقاط Stage عند أبعاد غير صالحة', async () => {
+    const built = await buildSinglePayload({
+      ...baseCtx,
+      imageDimensions: new Map([['/local-image/photo-a.png', { width: Number.NaN, height: 600 }]]),
+    });
+
+    expect(captureStageBlob).toHaveBeenCalledOnce();
+    expect(built!.items[0].imageSrc).toBe('/local-image/print_upload_mock.png');
   });
 
   it('M3: النسخ تُوسَّع على جانب Go — لا تكرار عناصر عبر IPC', async () => {
@@ -284,6 +378,10 @@ describe('عقد حمولة الوضع الحر (Single Payload Contract)', () =
         makeImageElement({ id: 'el-a', imageSrc: '/local-image/photo-a.png' }),
         makeImageElement({ id: 'el-b', imageSrc: '/local-image/photo-b.png' }),
       ],
+      imageDimensions: new Map([
+        ['/local-image/photo-a.png', { width: 800, height: 600 }],
+        ['/local-image/photo-b.png', { width: 800, height: 600 }],
+      ]),
     });
 
     expect(built).not.toBeNull();

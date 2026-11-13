@@ -126,118 +126,283 @@ func resolveLocalPath(src string) string {
 	return candidate
 }
 
-func applyColorAdjustments(img image.Image, brightness, contrast, saturation float64) image.Image {
-	if brightness == 100 && contrast == 100 && saturation == 100 {
-		return img
-	}
-	// ⚡ دمج مرشحي السطوع والتباين في LUT واحد (مسح بكسل واحد بدل اثنين مع
-	// نسختي NRGBA كاملتين)، مطابق بكسل-بكسل لتسلسل imaging.AdjustBrightness ←
-	// AdjustContrast لأن التركيب LUT(LUT(x)) = LUT_مركّب(x) ضمن نفس التدوير clamp.
-	// التشبع يبقى مسحاً منفصلاً (HSL لا يُمثَّل بجدول بحث).
-	bPct := clampAdjPct(brightness - 100)
-	cPct := clampAdjPct(contrast - 100)
+const (
+	printAdjustmentMin = 0.0
+	printAdjustmentMax = 200.0
+)
 
-	brightLUT := make([]uint8, 256)
-	shift := 255.0 * bPct / 100.0
-	for i := 0; i < 256; i++ {
-		brightLUT[i] = imagingClamp(float64(i) + shift)
-	}
+type printFilterOperationKind uint8
 
-	lut := make([]uint8, 256)
-	v := (100.0 + cPct) / 100.0
-	for i := 0; i < 256; i++ {
-		afterBright := brightLUT[i]
-		switch {
-		case 0 <= v && v <= 1:
-			lut[i] = imagingClamp((0.5 + (float64(afterBright)/255.0-0.5)*v) * 255.0)
-		case 1 < v && v < 2:
-			lut[i] = imagingClamp((0.5 + (float64(afterBright)/255.0-0.5)*(1/(2.0-v))) * 255.0)
-		default:
-			lut[i] = uint8(float64(afterBright)/255.0+0.5) * 255
+const (
+	printFilterBrightness printFilterOperationKind = iota
+	printFilterContrast
+	printFilterSaturation
+	printFilterSepia
+	printFilterGrayscale
+	printFilterInvert
+	printFilterThreshold
+	printFilterPixelate
+	printFilterBlur
+)
+
+type printFilterOperation struct {
+	kind   printFilterOperationKind
+	amount float64
+}
+
+// printFilterRecipes mirrors IMAGE_FILTERS in frontend/src/lib/templates/constants.ts.
+// Operation order is part of the rendering contract: CSS filter functions are not
+// commutative, so each catalog recipe must run exactly as authored before the user's
+// brightness → contrast → saturation adjustments.
+var printFilterRecipes = map[string][]printFilterOperation{
+	"none":      nil,
+	"grayscale": {{kind: printFilterGrayscale, amount: 1}},
+	"invert":    {{kind: printFilterInvert, amount: 1}},
+	"blur":      {{kind: printFilterBlur, amount: 4}},
+	"sepia":     {{kind: printFilterSepia, amount: 1}},
+	"enhance": {
+		{kind: printFilterContrast, amount: 1.08},
+		{kind: printFilterSaturation, amount: 1.12},
+		{kind: printFilterBrightness, amount: 1.02},
+	},
+	"skinGlow": {
+		{kind: printFilterBrightness, amount: 1.06},
+		{kind: printFilterContrast, amount: 0.94},
+		{kind: printFilterSaturation, amount: 1.08},
+		{kind: printFilterSepia, amount: 0.10},
+	},
+	"clarity": {
+		{kind: printFilterContrast, amount: 1.22},
+		{kind: printFilterSaturation, amount: 1.20},
+		{kind: printFilterBrightness, amount: 0.98},
+	},
+	"lowlight": {
+		{kind: printFilterBrightness, amount: 1.16},
+		{kind: printFilterContrast, amount: 0.90},
+		{kind: printFilterSaturation, amount: 1.05},
+	},
+	"cinematic": {
+		{kind: printFilterContrast, amount: 1.10},
+		{kind: printFilterSaturation, amount: 1.15},
+		{kind: printFilterSepia, amount: 0.05},
+		{kind: printFilterBrightness, amount: 1.02},
+	},
+	"monoPro": {
+		{kind: printFilterGrayscale, amount: 1},
+		{kind: printFilterContrast, amount: 1.25},
+		{kind: printFilterBrightness, amount: 1.02},
+	},
+	"pixelate":  {{kind: printFilterPixelate, amount: 10}},
+	"threshold": {{kind: printFilterThreshold, amount: 0.5}},
+}
+
+// IsSupportedPrintImageFilter exposes the backend allowlist without exporting a
+// mutable map. The empty value is accepted as the legacy spelling of "none".
+func IsSupportedPrintImageFilter(filter string) bool {
+	if filter == "" {
+		return true
+	}
+	_, ok := printFilterRecipes[filter]
+	return ok
+}
+
+// ValidatePrintImageFilter is reusable from request validation without coupling
+// the pipeline to PrintService's validation flow.
+func ValidatePrintImageFilter(filter string) error {
+	if !IsSupportedPrintImageFilter(filter) {
+		return fmt.Errorf("unsupported print image filter %q", filter)
+	}
+	return nil
+}
+
+// ValidatePrintImageAdjustments enforces the UI contract shared by brightness,
+// contrast, and saturation sliders. The processing functions still clamp finite
+// out-of-range values defensively; request validation should use this helper to
+// reject malformed payloads rather than silently accepting them.
+func ValidatePrintImageAdjustments(brightness, contrast, saturation float64) error {
+	for _, adjustment := range []struct {
+		name  string
+		value float64
+	}{
+		{name: "brightness", value: brightness},
+		{name: "contrast", value: contrast},
+		{name: "saturation", value: saturation},
+	} {
+		if math.IsNaN(adjustment.value) || math.IsInf(adjustment.value, 0) {
+			return fmt.Errorf("print image %s must be finite", adjustment.name)
+		}
+		if adjustment.value < printAdjustmentMin || adjustment.value > printAdjustmentMax {
+			return fmt.Errorf("print image %s %.4g outside range %.0f..%.0f", adjustment.name, adjustment.value, printAdjustmentMin, printAdjustmentMax)
 		}
 	}
+	return nil
+}
 
-	img = imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
-		c.R = lut[c.R]
-		c.G = lut[c.G]
-		c.B = lut[c.B]
-		return c
-	})
+func normalizedPrintAdjustment(value float64) float64 {
+	if math.IsNaN(value) || math.IsInf(value, 0) {
+		return 100
+	}
+	return math.Min(math.Max(value, printAdjustmentMin), printAdjustmentMax)
+}
 
+func printUserAdjustmentOperations(brightness, contrast, saturation float64) []printFilterOperation {
+	brightness = normalizedPrintAdjustment(brightness)
+	contrast = normalizedPrintAdjustment(contrast)
+	saturation = normalizedPrintAdjustment(saturation)
+
+	operations := make([]printFilterOperation, 0, 3)
+	if brightness != 100 {
+		operations = append(operations, printFilterOperation{kind: printFilterBrightness, amount: brightness / 100})
+	}
+	if contrast != 100 {
+		operations = append(operations, printFilterOperation{kind: printFilterContrast, amount: contrast / 100})
+	}
 	if saturation != 100 {
-		img = imaging.AdjustSaturation(img, clampAdjPct(saturation-100))
+		operations = append(operations, printFilterOperation{kind: printFilterSaturation, amount: saturation / 100})
 	}
-	return img
+	return operations
 }
 
-// clampAdjPct يقيد نسبة التعديل لنطاق (-100, 100) كما تفعل دوال imaging داخلياً.
-func clampAdjPct(p float64) float64 {
-	return math.Min(math.Max(p, -100), 100)
+// applyColorAdjustments applies the canonical CSS sequence authored by the UI:
+// multiplicative brightness, linear contrast around 0.5, then Rec.709 saturation.
+func applyColorAdjustments(img image.Image, brightness, contrast, saturation float64) image.Image {
+	return applyPrintFilterOperations(img, printUserAdjustmentOperations(brightness, contrast, saturation))
 }
 
-// imagingClamp نسخة من دالة clamp الداخلية لمكتبة imaging v1.6.2 —
-// ضرورية لتطابق البكسل مع AdjustBrightness/AdjustContrast الأصليتين.
-func imagingClamp(x float64) uint8 {
-	v := int64(x + 0.5)
-	if v > 255 {
-		return 255
+// applyPrintImageFilterPipeline applies the selected base recipe first and user
+// adjustments second, matching buildCSSFilter's catalog → adjustments contract.
+func applyPrintImageFilterPipeline(img image.Image, filter string, brightness, contrast, saturation float64) image.Image {
+	recipe := printFilterRecipes[filter]
+	user := printUserAdjustmentOperations(brightness, contrast, saturation)
+	if len(recipe) == 0 {
+		return applyPrintFilterOperations(img, user)
 	}
-	if v > 0 {
-		return uint8(v)
-	}
-	return 0
+	operations := make([]printFilterOperation, 0, len(recipe)+len(user))
+	operations = append(operations, recipe...)
+	operations = append(operations, user...)
+	return applyPrintFilterOperations(img, operations)
 }
 
 func applyFilter(img image.Image, filter string) image.Image {
-	switch filter {
-	case "grayscale":
-		return imaging.Grayscale(img)
-	case "invert":
-		return imaging.Invert(img)
-	case "blur":
-		return imaging.Blur(img, 4.0)
-	case "sepia":
-		return applySepia(img)
-	case "enhance":
-		img = imaging.AdjustContrast(img, 8)
-		img = imaging.AdjustSaturation(img, 12)
-		img = imaging.AdjustBrightness(img, 2)
-		return img
-	case "skinGlow":
-		// مطابق حرفياً لتعريف CSS في frontend/src/lib/templates/constants.ts —
-		// أي تأثير إضافي هنا يكسر مبدأ WYSIWYG (المعاينة وتصدير الصور يعتمدان CSS)
-		img = imaging.AdjustBrightness(img, 6)
-		img = imaging.AdjustContrast(img, -6)
-		img = imaging.AdjustSaturation(img, 8)
-		img = applySepiaRatio(img, 0.10)
-		return img
-	case "clarity":
-		img = imaging.AdjustContrast(img, 22)
-		img = imaging.AdjustSaturation(img, 20)
-		img = imaging.AdjustBrightness(img, -2)
-		return img
-	case "lowlight":
-		img = imaging.AdjustBrightness(img, 16)
-		img = imaging.AdjustContrast(img, -10)
-		img = imaging.AdjustSaturation(img, 5)
-		return img
-	case "cinematic":
-		img = imaging.AdjustContrast(img, 10)
-		img = imaging.AdjustSaturation(img, 15)
-		img = applySepiaRatio(img, 0.05)
-		img = imaging.AdjustBrightness(img, 2)
-		return img
-	case "monoPro":
-		img = imaging.Grayscale(img)
-		img = imaging.AdjustContrast(img, 25)
-		img = imaging.AdjustBrightness(img, 2)
-		return img
-	case "pixelate":
-		return applyPixelate(img, 10)
-	case "threshold":
-		return applyThreshold(img, 0.5)
+	return applyPrintFilterOperations(img, printFilterRecipes[filter])
+}
+
+func isPerPixelPrintFilter(kind printFilterOperationKind) bool {
+	switch kind {
+	case printFilterBrightness, printFilterContrast, printFilterSaturation,
+		printFilterSepia, printFilterGrayscale, printFilterInvert, printFilterThreshold:
+		return true
+	default:
+		return false
 	}
+}
+
+// applyPrintFilterOperations coalesces adjacent per-pixel operations into one
+// image scan while preserving intermediate Uint8ClampedArray-style rounding.
+// Spatial filters remain separate passes and therefore retain their dimensions
+// and neighborhood behavior.
+func applyPrintFilterOperations(img image.Image, operations []printFilterOperation) image.Image {
+	if len(operations) == 0 {
+		return img
+	}
+
+	pending := make([]printFilterOperation, 0, len(operations))
+	flush := func() {
+		if len(pending) == 0 {
+			return
+		}
+		img = applyPerPixelPrintFilters(img, pending)
+		pending = pending[:0]
+	}
+
+	for _, operation := range operations {
+		if isPerPixelPrintFilter(operation.kind) {
+			pending = append(pending, operation)
+			continue
+		}
+		flush()
+		switch operation.kind {
+		case printFilterPixelate:
+			img = applyPixelate(img, int(math.Round(operation.amount)))
+		case printFilterBlur:
+			// Keep the established imaging.Blur spatial kernel and radius intact.
+			img = imaging.Blur(img, operation.amount)
+		}
+	}
+	flush()
 	return img
+}
+
+func applyPerPixelPrintFilters(img image.Image, operations []printFilterOperation) image.Image {
+	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
+		for _, operation := range operations {
+			switch operation.kind {
+			case printFilterBrightness:
+				c.R = cssClampUint8(float64(c.R) * operation.amount)
+				c.G = cssClampUint8(float64(c.G) * operation.amount)
+				c.B = cssClampUint8(float64(c.B) * operation.amount)
+			case printFilterContrast:
+				c.R = cssClampUint8((float64(c.R)-127.5)*operation.amount + 127.5)
+				c.G = cssClampUint8((float64(c.G)-127.5)*operation.amount + 127.5)
+				c.B = cssClampUint8((float64(c.B)-127.5)*operation.amount + 127.5)
+			case printFilterSaturation:
+				r := float64(c.R)
+				g := float64(c.G)
+				b := float64(c.B)
+				gray := 0.2126*r + 0.7152*g + 0.0722*b
+				c.R = cssClampUint8(gray + (r-gray)*operation.amount)
+				c.G = cssClampUint8(gray + (g-gray)*operation.amount)
+				c.B = cssClampUint8(gray + (b-gray)*operation.amount)
+			case printFilterSepia:
+				c = applySepiaToColor(c, operation.amount)
+			case printFilterGrayscale:
+				gray := cssClampUint8(0.2126*float64(c.R) + 0.7152*float64(c.G) + 0.0722*float64(c.B))
+				c.R, c.G, c.B = gray, gray, gray
+			case printFilterInvert:
+				c.R = 255 - c.R
+				c.G = 255 - c.G
+				c.B = 255 - c.B
+			case printFilterThreshold:
+				level := math.Min(math.Max(operation.amount, 0), 1) * 255
+				luminance := 0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B)
+				value := uint8(0)
+				if luminance >= level {
+					value = 255
+				}
+				c.R, c.G, c.B = value, value, value
+			}
+		}
+		return c
+	})
+}
+
+// cssClampUint8 mirrors assignment to Uint8ClampedArray, including ties-to-even
+// rounding. Every operation clamps independently, as sequential frontend filters do.
+func cssClampUint8(value float64) uint8 {
+	if value <= 0 || math.IsNaN(value) {
+		return 0
+	}
+	if value >= 255 {
+		return 255
+	}
+	return uint8(math.RoundToEven(value))
+}
+
+func applySepiaToColor(c color.NRGBA, ratio float64) color.NRGBA {
+	ratio = math.Min(math.Max(ratio, 0), 1)
+	if ratio == 0 {
+		return c
+	}
+	r := float64(c.R)
+	g := float64(c.G)
+	b := float64(c.B)
+	sepiaR := 0.393*r + 0.769*g + 0.189*b
+	sepiaG := 0.349*r + 0.686*g + 0.168*b
+	sepiaB := 0.272*r + 0.534*g + 0.131*b
+	c.R = cssClampUint8(r + (sepiaR-r)*ratio)
+	c.G = cssClampUint8(g + (sepiaG-g)*ratio)
+	c.B = cssClampUint8(b + (sepiaB-b)*ratio)
+	return c
 }
 
 func applyPixelate(img image.Image, pixelSize int) image.Image {
@@ -256,52 +421,6 @@ func applyPixelate(img image.Image, pixelSize int) image.Image {
 	}
 	small := imaging.Resize(img, smallW, smallH, imaging.NearestNeighbor)
 	return imaging.Resize(small, w, h, imaging.NearestNeighbor)
-}
-
-func applyThreshold(img image.Image, threshold float64) image.Image {
-	th := threshold * 255.0
-	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
-		gray := 0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B)
-		var val uint8 = 0
-		if gray >= th {
-			val = 255
-		}
-		return color.NRGBA{R: val, G: val, B: val, A: c.A}
-	})
-}
-
-func applySepia(img image.Image) image.Image {
-	return applySepiaRatio(img, 1.0)
-}
-
-func applySepiaRatio(img image.Image, ratio float64) image.Image {
-	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
-		r := float64(c.R)
-		g := float64(c.G)
-		b := float64(c.B)
-
-		tr := (r * 0.393) + (g * 0.769) + (b * 0.189)
-		tg := (r * 0.349) + (g * 0.686) + (b * 0.168)
-		tb := (r * 0.272) + (g * 0.534) + (b * 0.131)
-
-		if tr > 255 {
-			tr = 255
-		}
-		if tg > 255 {
-			tg = 255
-		}
-		if tb > 255 {
-			tb = 255
-		}
-
-		outR := r + (tr-r)*ratio
-		outG := g + (tg-g)*ratio
-		outB := b + (tb-b)*ratio
-
-		// 🖨️ RV-16-L4: تقريب نصف أعلى (مثل imagingClamp في مسار السطوع/التباين)
-		// بدل الاقتطاع — كان يسحب القيمة 1/256 هبوطاً مقابل CSS sepia(N%)
-		return color.NRGBA{R: uint8(math.Round(outR)), G: uint8(math.Round(outG)), B: uint8(math.Round(outB)), A: c.A}
-	})
 }
 
 type processedKey struct {
@@ -977,8 +1096,7 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 		resizedImg = imaging.Resize(img, targetW, targetH, imaging.Lanczos)
 	}
 
-	adjustedImg := applyColorAdjustments(resizedImg, item.Brightness, item.Contrast, item.Saturation)
-	return applyFilter(adjustedImg, item.Filter)
+	return applyPrintImageFilterPipeline(resizedImg, item.Filter, item.Brightness, item.Contrast, item.Saturation)
 }
 
 // loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU وتفادي تكرار المعالجة الجارية

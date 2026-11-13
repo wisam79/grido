@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
 
 export const AUTOFILL_IMAGE_LIMIT = 500;
+export const MAX_BLEED_MM = 20;
 // Queues contain durable local paths or existing image data, never session-only Blob URLs.
 const queuedImageSchema = z
   .string()
@@ -346,7 +347,7 @@ export const ProjectSchema = z.object({
   showUserGuides: z.boolean().optional().default(true),
   lockUserGuides: z.boolean().optional().default(false),
   showBleedGuides: z.boolean().optional().default(false),
-  bleedMarginMM: z.number().optional().default(2),
+  bleedMarginMM: z.number().finite().min(0).max(MAX_BLEED_MM).optional().default(2),
   safeMarginMM: z.number().optional().default(2),
   cutShapeType: z.enum(['rectangle', 'circle', 'rounded-rect']).optional().default('rectangle'),
 

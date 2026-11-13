@@ -98,7 +98,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
   }, [height, width, x, y, rotation, cornerRadius, enabled]);
 
   return (
-    <Group ref={groupRef} x={x} y={y} rotation={rotation} listening={false}>
+    <Group ref={groupRef} name="magic-ai-scanner" x={x} y={y} rotation={rotation} listening={false}>
       {/* Glowing Pulsing Border Effect - Simplified for max performance */}
       <Rect
         ref={borderRef}

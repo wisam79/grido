@@ -57,7 +57,104 @@ var (
 	procDocumentProperties = modWinspool.NewProc("DocumentPropertiesW")
 	procDeviceCapabilities = modWinspool.NewProc("DeviceCapabilitiesW")
 	procGetJobW            = modWinspool.NewProc("GetJobW")
+	procSetJobW            = modWinspool.NewProc("SetJobW")
 )
+
+// printerGDIWin32API is the deliberately small Win32 seam used by printer-plan,
+// status, and cancellation logic. Production delegates to the lazy DLL procs;
+// Windows unit tests replace individual functions so no installed printer is
+// required to exercise fail-closed and spool-control behavior.
+type printerGDIWin32API struct {
+	openPrinter        func(name *uint16, handle *windows.Handle, desiredAccess uint32) (bool, error)
+	closePrinter       func(handle windows.Handle)
+	documentProperties func(handle windows.Handle, name *uint16, out, in *byte, mode uint32) (int32, error)
+	deviceCapabilities func(name *uint16, capability uint16, output uintptr) (int32, error)
+	createDC           func(name *uint16, devMode *byte) (windows.Handle, error)
+	deleteDC           func(handle windows.Handle)
+	getDeviceCaps      func(handle windows.Handle, index int32) int
+	getJob             func(handle windows.Handle, jobID, level uint32, buffer *byte, bufferSize uint32, needed *uint32) (bool, error)
+	setJob             func(handle windows.Handle, jobID, level uint32, buffer *byte, command uint32) (bool, error)
+}
+
+var printerGDIWin32 = defaultPrinterGDIWin32API()
+
+func defaultPrinterGDIWin32API() printerGDIWin32API {
+	return printerGDIWin32API{
+		openPrinter: func(name *uint16, handle *windows.Handle, desiredAccess uint32) (bool, error) {
+			var defaults *printerDefaultsW
+			if desiredAccess != 0 {
+				defaults = &printerDefaultsW{DesiredAccess: desiredAccess}
+			}
+			r, _, err := procOpenPrinterW.Call(
+				uintptr(unsafe.Pointer(name)),
+				uintptr(unsafe.Pointer(handle)),
+				uintptr(unsafe.Pointer(defaults)),
+			)
+			return r != 0, err
+		},
+		closePrinter: func(handle windows.Handle) {
+			procClosePrinter.Call(uintptr(handle))
+		},
+		documentProperties: func(handle windows.Handle, name *uint16, out, in *byte, mode uint32) (int32, error) {
+			r, _, err := procDocumentProperties.Call(
+				0,
+				uintptr(handle),
+				uintptr(unsafe.Pointer(name)),
+				uintptr(unsafe.Pointer(out)),
+				uintptr(unsafe.Pointer(in)),
+				uintptr(mode),
+			)
+			return int32(r), err
+		},
+		deviceCapabilities: func(name *uint16, capability uint16, output uintptr) (int32, error) {
+			r, _, err := procDeviceCapabilities.Call(
+				uintptr(unsafe.Pointer(name)),
+				0,
+				uintptr(capability),
+				output,
+				0,
+			)
+			return int32(r), err
+		},
+		createDC: func(name *uint16, devMode *byte) (windows.Handle, error) {
+			r, _, err := procCreateDCW.Call(
+				0,
+				uintptr(unsafe.Pointer(name)),
+				0,
+				uintptr(unsafe.Pointer(devMode)),
+			)
+			return windows.Handle(r), err
+		},
+		deleteDC: func(handle windows.Handle) {
+			procDeleteDC.Call(uintptr(handle))
+		},
+		getDeviceCaps: func(handle windows.Handle, index int32) int {
+			r, _, _ := procGetDeviceCaps.Call(uintptr(handle), uintptr(index))
+			return int(int32(r))
+		},
+		getJob: func(handle windows.Handle, jobID, level uint32, buffer *byte, bufferSize uint32, needed *uint32) (bool, error) {
+			r, _, err := procGetJobW.Call(
+				uintptr(handle),
+				uintptr(jobID),
+				uintptr(level),
+				uintptr(unsafe.Pointer(buffer)),
+				uintptr(bufferSize),
+				uintptr(unsafe.Pointer(needed)),
+			)
+			return r != 0, err
+		},
+		setJob: func(handle windows.Handle, jobID, level uint32, buffer *byte, command uint32) (bool, error) {
+			r, _, err := procSetJobW.Call(
+				uintptr(handle),
+				uintptr(jobID),
+				uintptr(level),
+				uintptr(unsafe.Pointer(buffer)),
+				uintptr(command),
+			)
+			return r != 0, err
+		},
+	}
+}
 
 const (
 	halfToneMode = 4
@@ -99,7 +196,17 @@ const (
 	dcPapers     = 2
 	dcPaperSize  = 3
 	dcPaperNames = 16
+
+	jobControlCancel = 3
+
+	printerAccessUse = 0x00000008
 )
+
+type printerDefaultsW struct {
+	Datatype      *uint16
+	DevMode       uintptr
+	DesiredAccess uint32
+}
 
 type docInfoW struct {
 	CbSize       int32
@@ -180,8 +287,7 @@ type deviceMetrics struct {
 
 func queryDeviceMetrics(hdc windows.Handle) deviceMetrics {
 	getCap := func(idx int32) int {
-		r, _, _ := procGetDeviceCaps.Call(uintptr(hdc), uintptr(idx))
-		return int(int32(r))
+		return printerGDIWin32.getDeviceCaps(hdc, idx)
 	}
 	return deviceMetrics{
 		PhysicalWidth:   getCap(physicalWidthIdx),
@@ -312,60 +418,158 @@ func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 	return buf, bmi
 }
 
+type configuredPrinterDevMode struct {
+	Buffer         []byte
+	AppliedForm    string
+	AppliedPaper   uint16
+	PaperWidthMM   float64
+	PaperHeightMM  float64
+	FallbackReason string
+}
+
+func resolvePrinterName(printerName string) (string, error) {
+	printerName = strings.TrimSpace(printerName)
+	if printerName != "" {
+		return printerName, nil
+	}
+	def, err := GetDefaultPrinter()
+	if err != nil || strings.TrimSpace(def) == "" {
+		return "", fmt.Errorf("اسم الطابعة فارغ ولا توجد طابعة افتراضية")
+	}
+	return strings.TrimSpace(def), nil
+}
+
+func directPrintRequestFromPlan(req domain.PrinterPlanRequest) domain.DirectPrintRequest {
+	return domain.DirectPrintRequest{
+		PrinterName:   req.PrinterName,
+		FormName:      req.FormName,
+		PaperID:       req.PaperID,
+		PaperWidthMM:  req.PaperWidthMM,
+		PaperHeightMM: req.PaperHeightMM,
+		Orientation:   req.Orientation,
+		Borderless:    req.Borderless,
+	}
+}
+
+func validatePrinterPlanRequest(req domain.PrinterPlanRequest) error {
+	return validateDirectPrintRequest(directPrintRequestFromPlan(req))
+}
+
+func devModePaperSelection(dm *devModeW) (paperID uint16, formName string, widthMM, heightMM float64) {
+	if dm == nil {
+		return 0, "", 0, 0
+	}
+	if dm.DmPaperSize > 0 {
+		paperID = uint16(dm.DmPaperSize)
+	}
+	if dm.DmFields&dmFormNameField != 0 {
+		formName = windows.UTF16ToString(dm.DmFormName[:])
+	}
+	if formName == "" {
+		formName = standardFormNameByID(paperID)
+	}
+	if dm.DmFields&dmPaperWidthField != 0 && dm.DmPaperWidth > 0 {
+		widthMM = float64(dm.DmPaperWidth) / 10
+	}
+	if dm.DmFields&dmPaperLengthField != 0 && dm.DmPaperLength > 0 {
+		heightMM = float64(dm.DmPaperLength) / 10
+	}
+	return paperID, formName, widthMM, heightMM
+}
+
+func paperSelectionMatchesRequest(req domain.DirectPrintRequest, dm *devModeW) bool {
+	if dm == nil {
+		return false
+	}
+	appliedID, appliedForm, appliedW, appliedH := devModePaperSelection(dm)
+	if req.PaperID != 0 && appliedID != req.PaperID {
+		return false
+	}
+	if strings.TrimSpace(req.FormName) != "" && !strings.EqualFold(strings.TrimSpace(appliedForm), strings.TrimSpace(req.FormName)) {
+		return false
+	}
+	if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
+		if appliedW <= 0 || appliedH <= 0 {
+			if info, ok := standardPaperInfoByID(appliedID); ok {
+				appliedW, appliedH = info.WidthMM, info.HeightMM
+			} else {
+				return false
+			}
+		}
+		if !samePaperDimensions(req.PaperWidthMM, req.PaperHeightMM, appliedW, appliedH, 2.5) {
+			return false
+		}
+	}
+	return true
+}
+
+func samePaperDimensions(w1, h1, w2, h2, tolerance float64) bool {
+	return (math.Abs(w1-w2) <= tolerance && math.Abs(h1-h2) <= tolerance) ||
+		(math.Abs(w1-h2) <= tolerance && math.Abs(h1-w2) <= tolerance)
+}
+
+func isExplicitPaperSelection(req domain.DirectPrintRequest) bool {
+	return req.PaperID != 0 || strings.TrimSpace(req.FormName) != "" || (req.PaperWidthMM > 0 && req.PaperHeightMM > 0)
+}
+
+func devModeBuffer(buf []byte) *devModeW {
+	if len(buf) < int(unsafe.Sizeof(devModeW{})) {
+		return nil
+	}
+	return (*devModeW)(unsafe.Pointer(&buf[0]))
+}
+
 // configurePrinterDevMode ينفذ بروتوكول الدمج الآمن ذو الخطوتين لتعديل إعدادات DEVMODE:
 // 1. استعلام حجم الذاكرة المطلوبة (Public + Private).
 // 2. قراءة إعدادات الدرايفر الحالية.
 // 3. تعديل الخصائص العامة.
 // 4. استدعاء DocumentPropertiesW للدمج والتحقق من صحة الإعدادات عبر الدرايفر.
 func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) ([]byte, error) {
-	pPrinterName, err := windows.UTF16PtrFromString(printerName)
+	configured, err := configurePrinterDevModePlan(printerName, req)
 	if err != nil {
 		return nil, err
 	}
+	return configured.Buffer, nil
+}
+
+func configurePrinterDevModePlan(printerName string, req domain.DirectPrintRequest) (configuredPrinterDevMode, error) {
+	configured := configuredPrinterDevMode{}
+	pPrinterName, err := windows.UTF16PtrFromString(printerName)
+	if err != nil {
+		return configured, err
+	}
 
 	var hPrinter windows.Handle
-	ret, _, lastErr := procOpenPrinterW.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		uintptr(unsafe.Pointer(&hPrinter)),
-		0,
-	)
-	if ret == 0 {
-		return nil, fmt.Errorf("تعذر فتح الطابعة '%s': %s", printerName, win32ErrText(lastErr))
+	ok, lastErr := printerGDIWin32.openPrinter(pPrinterName, &hPrinter, 0)
+	if !ok {
+		return configured, fmt.Errorf("تعذر فتح الطابعة '%s': %s", printerName, win32ErrText(lastErr))
 	}
-	defer procClosePrinter.Call(uintptr(hPrinter))
+	defer printerGDIWin32.closePrinter(hPrinter)
 
 	// الخطوة 1: استعلام الحجم الإجمالي (Public + Driver Private)
-	sizeNeeded, _, _ := procDocumentProperties.Call(
-		0,
-		uintptr(hPrinter),
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0, 0, 0,
-	)
-	if int32(sizeNeeded) <= 0 || uintptr(sizeNeeded) < unsafe.Sizeof(devModeW{}) {
-		return nil, fmt.Errorf("تعذر استعلام حجم إعدادات الطابعة أو الحجم غير صالح (%d بايت)", sizeNeeded)
+	sizeNeeded, _ := printerGDIWin32.documentProperties(hPrinter, pPrinterName, nil, nil, 0)
+	if sizeNeeded <= 0 || uintptr(sizeNeeded) < unsafe.Sizeof(devModeW{}) {
+		return configured, fmt.Errorf("تعذر استعلام حجم إعدادات الطابعة أو الحجم غير صالح (%d بايت)", sizeNeeded)
 	}
 
-	devModeBuf := make([]byte, sizeNeeded)
+	devModeBuf := make([]byte, int(sizeNeeded))
 
 	// الخطوة 2: استخراج الإعدادات الافتراضية
-	rOut, _, lastErr := procDocumentProperties.Call(
-		0,
-		uintptr(hPrinter),
-		uintptr(unsafe.Pointer(pPrinterName)),
-		uintptr(unsafe.Pointer(&devModeBuf[0])),
-		0,
-		uintptr(dmOutBuffer),
-	)
-	if int32(rOut) < 0 {
-		return nil, fmt.Errorf("تعذر قراءة إعدادات الطابعة: %s", win32ErrText(lastErr))
+	rOut, lastErr := printerGDIWin32.documentProperties(hPrinter, pPrinterName, &devModeBuf[0], nil, dmOutBuffer)
+	if rOut < 0 {
+		return configured, fmt.Errorf("تعذر قراءة إعدادات الطابعة: %s", win32ErrText(lastErr))
 	}
 
-	// حفظ نسخة احتياطية من الإعدادات الافتراضية للتعافي الجزئي عند فشل دمج مقاس الورق
+	// حفظ نسخة احتياطية من الإعدادات الافتراضية للتعافي عند غياب أي اختيار ورق صريح.
 	backupBuf := make([]byte, len(devModeBuf))
 	copy(backupBuf, devModeBuf)
+	backupPaper, backupForm, backupW, backupH := devModePaperSelection(devModeBuffer(backupBuf))
 
 	// الخطوة 3: تطبيق التعديلات
-	dm := (*devModeW)(unsafe.Pointer(&devModeBuf[0]))
+	dm := devModeBuffer(devModeBuf)
+	if dm == nil {
+		return configured, fmt.Errorf("إعدادات الطابعة المعادة أقصر من بنية DEVMODE")
+	}
 
 	// اتجاه الصفحة: إذا طلب landscape صراحة أو كانت الأبعاد المطلوبة عرضية (W > H)
 	isLandscape := strings.EqualFold(req.Orientation, "landscape") || (req.PaperWidthMM > req.PaperHeightMM && req.PaperHeightMM > 0)
@@ -390,27 +594,24 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		dm.DmColor = dmColorMonochrome
 	}
 
-	// اسم القالب أو المقاس المخصص (فرض مقاس الورق المحدد):
-	// الأولوية 1: إذا مرر المستدعي معرف ورق صريح
-	// الأولوية 2: مطابقة المقاس القياسي في ويندوز (مثل A4, A3, Letter, A5, A6...)
-	// الأولوية 3: استعلام قوالب الطابعة الحية عبر DeviceCapabilities لمقاسات الصور (مثل 10x15 سم أو 13x18 سم)
-	// الأولوية 4: أبعاد مخصصة فيزيائية بالكامل (DMPAPER_USER مع DmPaperWidth/DmPaperLength)
 	paperID := req.PaperID
-	matchedFormName := req.FormName
+	matchedFormName := strings.TrimSpace(req.FormName)
 
 	if paperID == 0 {
-		if stdID, stdName := matchStandardPaper(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
-			paperID = stdID
-			if matchedFormName == "" {
-				matchedFormName = stdName
-			}
-		} else {
+		if strings.TrimSpace(req.FormName) != "" {
 			driverID, driverForm, found := findPrinterPaperMatch(pPrinterName, req.PaperWidthMM, req.PaperHeightMM, req.Borderless, req.FormName)
 			if found && driverID != 0 {
 				paperID = driverID
-				if driverForm != "" {
-					matchedFormName = driverForm
-				}
+				matchedFormName = driverForm
+			}
+		} else if stdID, stdName := matchStandardPaper(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
+			paperID = stdID
+			matchedFormName = stdName
+		} else {
+			driverID, driverForm, found := findPrinterPaperMatch(pPrinterName, req.PaperWidthMM, req.PaperHeightMM, req.Borderless, "")
+			if found && driverID != 0 {
+				paperID = driverID
+				matchedFormName = driverForm
 			}
 		}
 	} else if matchedFormName == "" {
@@ -422,7 +623,6 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 	}
 
 	if paperID != 0 {
-		// قالب معتمد بمعرف رقمي صريح (سواء كان قياسياً في ويندوز أو خاصاً بالدرايفر)
 		dm.DmFields |= dmPaperSizeField
 		dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField)
 		dm.DmPaperSize = int16(paperID)
@@ -436,9 +636,6 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 			dm.DmFormName = [32]uint16{}
 		}
 	} else if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
-		// أبعاد مخصصة فيزيائية بالكامل (DMPAPER_USER)
-		// في GDI الأبعاد تُمرر بعُشر المليمتر (0.1 mm)
-		// القيمة الأقصر لـ DmPaperWidth والأطول لـ DmPaperLength مع ترك DmOrientation يحدد الاتجاه
 		dimMin := math.Min(req.PaperWidthMM, req.PaperHeightMM)
 		dimMax := math.Max(req.PaperWidthMM, req.PaperHeightMM)
 		dm.DmFields |= dmPaperSizeField | dmPaperWidthField | dmPaperLengthField
@@ -453,63 +650,110 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 			dm.DmFormName = [32]uint16{}
 		}
 	} else if req.FormName != "" {
-		dm.DmFields |= dmFormNameField | dmPaperSizeField
-		dm.DmPaperSize = dmPaperUser
-		dm.DmFormName = formNameField(req.FormName)
+		return configured, fmt.Errorf("قالب الورق المطلوب '%s' غير موجود ضمن قوالب الطابعة", strings.TrimSpace(req.FormName))
 	}
 
-	// الخطوة 4: دمج التعديلات والتحقق من صحتها عبر الدرايفر
-	rMerge, _, lastErr := procDocumentProperties.Call(
-		0,
-		uintptr(hPrinter),
-		uintptr(unsafe.Pointer(pPrinterName)),
-		uintptr(unsafe.Pointer(&devModeBuf[0])),
-		uintptr(unsafe.Pointer(&devModeBuf[0])),
-		uintptr(dmInBuffer|dmOutBuffer),
-	)
-	if int32(rMerge) < 0 {
-		slog.Warn("Full DocumentProperties merge failed; evaluating fallback recovery", "err", win32ErrText(lastErr))
-		// إذا كان الرفض بسبب DMPAPER_USER، نحاول التحويل لمقاس A4 القياسي الأكثر قبولاً لدى الدرايفرات
-		if dm.DmPaperSize == dmPaperUser {
-			dm.DmPaperSize = 9 // DMPAPER_A4
-			dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField | dmFormNameField)
-			dm.DmPaperWidth = 0
-			dm.DmPaperLength = 0
-			rStd, _, _ := procDocumentProperties.Call(
-				0,
-				uintptr(hPrinter),
-				uintptr(unsafe.Pointer(pPrinterName)),
-				uintptr(unsafe.Pointer(&devModeBuf[0])),
-				uintptr(unsafe.Pointer(&devModeBuf[0])),
-				uintptr(dmInBuffer|dmOutBuffer),
-			)
-			if int32(rStd) >= 0 {
-				slog.Info("Custom paper was rejected by driver; safely adapted to standard A4 container", "printer", printerName)
-				return devModeBuf, nil
-			}
+	// الخطوة 4: دمج التعديلات والتحقق من صحتها عبر الدرايفر.
+
+	rMerge, lastErr := printerGDIWin32.documentProperties(hPrinter, pPrinterName, &devModeBuf[0], &devModeBuf[0], dmInBuffer|dmOutBuffer)
+	if rMerge < 0 {
+		if isExplicitPaperSelection(req) {
+			return configured, fmt.Errorf("رفض برنامج تشغيل الطابعة إعداد الورق المطلوب: %s", win32ErrText(lastErr))
 		}
 
-		dmBackup := (*devModeW)(unsafe.Pointer(&backupBuf[0]))
+		dmBackup := devModeBuffer(backupBuf)
 		dmBackup.DmFields |= dmOrientationField | dmCopiesField | dmColorField
 		dmBackup.DmOrientation = dm.DmOrientation
 		dmBackup.DmCopies = dm.DmCopies
 		dmBackup.DmColor = dm.DmColor
-		rFallback, _, lastErrFallback := procDocumentProperties.Call(
-			0,
-			uintptr(hPrinter),
-			uintptr(unsafe.Pointer(pPrinterName)),
-			uintptr(unsafe.Pointer(&backupBuf[0])),
-			uintptr(unsafe.Pointer(&backupBuf[0])),
-			uintptr(dmInBuffer|dmOutBuffer),
-		)
-		if int32(rFallback) >= 0 {
-			return backupBuf, nil
+		rFallback, fallbackErr := printerGDIWin32.documentProperties(hPrinter, pPrinterName, &backupBuf[0], &backupBuf[0], dmInBuffer|dmOutBuffer)
+		if rFallback < 0 {
+			return configured, fmt.Errorf("رفض برنامج تشغيل الطابعة الإعدادات المطلوبة والافتراضية: %s", win32ErrText(fallbackErr))
 		}
-		slog.Warn("Fallback DocumentProperties merge also failed; falling back to driver default devmode", "err", win32ErrText(lastErrFallback))
-		return nil, nil
+		configured.Buffer = backupBuf
+		configured.AppliedPaper = backupPaper
+		configured.AppliedForm = backupForm
+		configured.PaperWidthMM = backupW
+		configured.PaperHeightMM = backupH
+		configured.FallbackReason = "driver rejected requested non-paper settings; applied printer defaults"
+		return configured, nil
 	}
 
-	return devModeBuf, nil
+	if isExplicitPaperSelection(req) && !paperSelectionMatchesRequest(req, dm) {
+		return configured, fmt.Errorf("رفض برنامج تشغيل الطابعة إعداد الورق المطلوب واستبدله بقالب آخر")
+	}
+
+	configured.Buffer = devModeBuf
+	configured.AppliedPaper, configured.AppliedForm, configured.PaperWidthMM, configured.PaperHeightMM = devModePaperSelection(dm)
+	return configured, nil
+}
+
+func readPrinterPaperCapabilities(pPrinterName *uint16) ([]domain.SupportedPaperInfo, error) {
+	if pPrinterName == nil {
+		return nil, fmt.Errorf("اسم الطابعة غير صالح")
+	}
+	count, capErr := printerGDIWin32.deviceCapabilities(pPrinterName, dcPapers, 0)
+	if count < 0 {
+		return nil, fmt.Errorf("تعذر استعلام عدد قوالب الورق: %s", win32ErrText(capErr))
+	}
+	if count == 0 {
+		return []domain.SupportedPaperInfo{}, nil
+	}
+	if count > 10000 {
+		return nil, fmt.Errorf("عدد قوالب الورق المُبلغ من الطابعة شاذ (%d)", count)
+	}
+
+	n := int(count)
+	paperIDs := make([]uint16, n)
+	if r, err := printerGDIWin32.deviceCapabilities(pPrinterName, dcPapers, uintptr(unsafe.Pointer(&paperIDs[0]))); r < 0 {
+		return nil, fmt.Errorf("تعذر قراءة معرفات قوالب الورق: %s", win32ErrText(err))
+	}
+	namesBuf := make([]uint16, n*64)
+	if r, err := printerGDIWin32.deviceCapabilities(pPrinterName, dcPaperNames, uintptr(unsafe.Pointer(&namesBuf[0]))); r < 0 {
+		return nil, fmt.Errorf("تعذر قراءة أسماء قوالب الورق: %s", win32ErrText(err))
+	}
+	type point struct{ X, Y int32 }
+	sizesBuf := make([]point, n)
+	if r, err := printerGDIWin32.deviceCapabilities(pPrinterName, dcPaperSize, uintptr(unsafe.Pointer(&sizesBuf[0]))); r < 0 {
+		return nil, fmt.Errorf("تعذر قراءة أبعاد قوالب الورق: %s", win32ErrText(err))
+	}
+
+	papers := make([]domain.SupportedPaperInfo, n)
+	for i := range papers {
+		papers[i] = parseSupportedPaperInfo(paperIDs[i], namesBuf[i*64:(i+1)*64], sizesBuf[i].X, sizesBuf[i].Y)
+	}
+	return papers, nil
+}
+
+func choosePrinterPaper(papers []domain.SupportedPaperInfo, targetW, targetH float64, borderless bool, requestedForm string) (domain.SupportedPaperInfo, bool) {
+	requestedForm = strings.TrimSpace(requestedForm)
+	dimMin := math.Min(targetW, targetH)
+	dimMax := math.Max(targetW, targetH)
+	bestScore := math.MaxFloat64
+	var best domain.SupportedPaperInfo
+	found := false
+	for _, paper := range papers {
+		cMin := math.Min(paper.WidthMM, paper.HeightMM)
+		cMax := math.Max(paper.WidthMM, paper.HeightMM)
+		diffMin := math.Abs(dimMin - cMin)
+		diffMax := math.Abs(dimMax - cMax)
+		diff := diffMin + diffMax
+		isDimMatch := targetW > 0 && targetH > 0 && diffMin <= 2.5 && diffMax <= 2.5
+		isNameMatch := requestedForm != "" && strings.EqualFold(strings.TrimSpace(paper.Name), requestedForm)
+		if !isDimMatch && !isNameMatch {
+			continue
+		}
+		score := diff
+		if paper.IsBorderless != borderless {
+			score += 100
+		}
+		if score < bestScore {
+			bestScore = score
+			best = paper
+			found = true
+		}
+	}
+	return best, found
 }
 
 // findPrinterPaperMatch يبحث عن أفضل قالب ورق متوافق مع المقاس المطلوب من قائمة قوالب الطابعة الحية:
@@ -519,123 +763,15 @@ func findPrinterPaperMatch(pPrinterName *uint16, targetW, targetH float64, borde
 	if pPrinterName == nil || (targetW <= 0 && targetH <= 0 && requestedForm == "") {
 		return 0, requestedForm, false
 	}
-
-	count, _, _ := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPapers),
-		0, 0,
-	)
-	n := int(int32(count))
-	if n <= 0 || n > 10000 {
+	papers, err := readPrinterPaperCapabilities(pPrinterName)
+	if err != nil {
 		return 0, requestedForm, false
 	}
-
-	paperIDs := make([]uint16, n)
-	rIDs, _, _ := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPapers),
-		uintptr(unsafe.Pointer(&paperIDs[0])),
-		0,
-	)
-	if int32(rIDs) < 0 {
+	best, found := choosePrinterPaper(papers, targetW, targetH, borderless, requestedForm)
+	if !found {
 		return 0, requestedForm, false
 	}
-
-	namesBuf := make([]uint16, n*64)
-	rNames, _, _ := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPaperNames),
-		uintptr(unsafe.Pointer(&namesBuf[0])),
-		0,
-	)
-	if int32(rNames) < 0 {
-		return 0, requestedForm, false
-	}
-
-	type point struct{ X, Y int32 }
-	sizesBuf := make([]point, n)
-	rSizes, _, _ := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPaperSize),
-		uintptr(unsafe.Pointer(&sizesBuf[0])),
-		0,
-	)
-	if int32(rSizes) < 0 {
-		return 0, requestedForm, false
-	}
-
-	type candidate struct {
-		id           uint16
-		name         string
-		widthMM      float64
-		heightMM     float64
-		isBorderless bool
-		diff         float64
-	}
-
-	var candidates []candidate
-	dimMin := math.Min(targetW, targetH)
-	dimMax := math.Max(targetW, targetH)
-
-	for i := 0; i < n; i++ {
-		formName := windows.UTF16ToString(namesBuf[i*64 : (i+1)*64])
-		formW := float64(sizesBuf[i].X) / 10.0
-		formH := float64(sizesBuf[i].Y) / 10.0
-		cMin := math.Min(formW, formH)
-		cMax := math.Max(formW, formH)
-
-		isBrd := strings.Contains(strings.ToLower(formName), "borderless") ||
-			strings.Contains(formName, "بدون حواف")
-
-		diffMin := math.Abs(dimMin - cMin)
-		diffMax := math.Abs(dimMax - cMax)
-		diff := diffMin + diffMax
-
-		// مطابقة الأبعاد بتسامح 2.5 مم، أو مطابقة الاسم إذا وُجد
-		isDimMatch := targetW > 0 && targetH > 0 && diffMin <= 2.5 && diffMax <= 2.5
-		isNameMatch := requestedForm != "" && strings.EqualFold(strings.TrimSpace(formName), strings.TrimSpace(requestedForm))
-
-		if isDimMatch || isNameMatch {
-			candidates = append(candidates, candidate{
-				id:           paperIDs[i],
-				name:         formName,
-				widthMM:      formW,
-				heightMM:     formH,
-				isBorderless: isBrd,
-				diff:         diff,
-			})
-		}
-	}
-
-	if len(candidates) == 0 {
-		return 0, requestedForm, false
-	}
-
-	var best candidate
-	bestScore := math.MaxFloat64
-
-	for _, c := range candidates {
-		score := c.diff
-		if borderless {
-			if !c.isBorderless {
-				score += 100.0
-			}
-		} else {
-			if c.isBorderless {
-				score += 100.0
-			}
-		}
-		if score < bestScore {
-			bestScore = score
-			best = c
-		}
-	}
-
-	return best.id, best.name, true
+	return best.ID, best.Name, true
 }
 
 // matchStandardPaper يطابق أبعاد الورقة بالمليمتر مع معرفات قوالب ويندوز القياسية (DMPAPER_*)
@@ -725,6 +861,47 @@ func standardFormNameByID(id uint16) string {
 	default:
 		return ""
 	}
+}
+
+func standardPaperInfoByID(id uint16) (domain.SupportedPaperInfo, bool) {
+	var info domain.SupportedPaperInfo
+	info.ID = id
+	info.Name = standardFormNameByID(id)
+	switch id {
+	case 1:
+		info.WidthMM, info.HeightMM = 215.9, 279.4
+	case 3:
+		info.WidthMM, info.HeightMM = 279.4, 431.8
+	case 5:
+		info.WidthMM, info.HeightMM = 215.9, 355.6
+	case 6:
+		info.WidthMM, info.HeightMM = 139.7, 215.9
+	case 7:
+		info.WidthMM, info.HeightMM = 184.15, 266.7
+	case 8:
+		info.WidthMM, info.HeightMM = 297, 420
+	case 9:
+		info.WidthMM, info.HeightMM = 210, 297
+	case 11:
+		info.WidthMM, info.HeightMM = 148, 210
+	case 12:
+		info.WidthMM, info.HeightMM = 250, 354
+	case 13:
+		info.WidthMM, info.HeightMM = 182, 257
+	case 16:
+		info.WidthMM, info.HeightMM = 254, 355.6
+	case 43:
+		info.WidthMM, info.HeightMM = 100, 148
+	case 66:
+		info.WidthMM, info.HeightMM = 420, 594
+	case 70:
+		info.WidthMM, info.HeightMM = 105, 148
+	case 88:
+		info.WidthMM, info.HeightMM = 128, 182
+	default:
+		return domain.SupportedPaperInfo{}, false
+	}
+	return info, true
 }
 
 // formNameField يبني حقل DmFormName[32] بإنهاء NUL إلزامي: الحلقة القديمة كانت
@@ -829,7 +1006,39 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 	return cleanPath, nil
 }
 
-// calculatePrintDestRect يحسب موضع وأبعاد رسم الصورة في سياق الطابعة (GDI):
+func calculatePrinterPlanGeometry(metrics deviceMetrics, paperWidthMM, paperHeightMM float64) (printableWidthMM, printableHeightMM, offsetXMM, offsetYMM, scale float64) {
+	const mmPerInch = 25.4
+	if metrics.DPIX > 0 {
+		printableWidthMM = float64(metrics.PrintableWidth) / float64(metrics.DPIX) * mmPerInch
+		offsetXMM = float64(metrics.MarginLeft) / float64(metrics.DPIX) * mmPerInch
+	}
+	if metrics.DPIY > 0 {
+		printableHeightMM = float64(metrics.PrintableHeight) / float64(metrics.DPIY) * mmPerInch
+		offsetYMM = float64(metrics.MarginTop) / float64(metrics.DPIY) * mmPerInch
+	}
+	if paperWidthMM > 0 && paperHeightMM > 0 && printableWidthMM > 0 && printableHeightMM > 0 {
+		scale = math.Min(printableWidthMM/paperWidthMM, printableHeightMM/paperHeightMM)
+		if scale > 1 {
+			scale = 1
+		}
+	}
+	return printableWidthMM, printableHeightMM, offsetXMM, offsetYMM, scale
+}
+
+func orientPaperDimensions(widthMM, heightMM float64, orientation string) (float64, float64) {
+	if widthMM <= 0 || heightMM <= 0 {
+		return widthMM, heightMM
+	}
+	landscape := strings.EqualFold(strings.TrimSpace(orientation), "landscape")
+	if landscape && widthMM < heightMM {
+		return heightMM, widthMM
+	}
+	if !landscape && widthMM > heightMM {
+		return heightMM, widthMM
+	}
+	return widthMM, heightMM
+}
+
 // calculatePrintDestRect يحسب موضع وأبعاد رسم الصورة في سياق الطابعة (GDI):
 // - في وضع Borderless: احتواء (contain) داخل الأبعاد الفيزيائية للورقة وتوسيطها بنسبة الأبعاد،
 // مع منع الإزاحات السالبة نهائياً لحماية أطراف الورقة ورؤوس الصور من القص الميكانيكي.
@@ -896,6 +1105,81 @@ func calculatePrintDestRect(metrics deviceMetrics, imgW, imgH int, borderless bo
 	return destX, destY, destW, destH
 }
 
+// ResolvePrinterPlan resolves the driver's effective paper and destination
+// geometry without starting a spool job.
+func (s *PrintService) ResolvePrinterPlan(req domain.PrinterPlanRequest) (domain.PrinterPlanResult, error) {
+	result := domain.PrinterPlanResult{
+		RequestedFormName: strings.TrimSpace(req.FormName),
+		RequestedPaperID:  req.PaperID,
+	}
+	if err := validatePrinterPlanRequest(req); err != nil {
+		result.Code = "INVALID_REQUEST"
+		result.Error = err.Error()
+		return result, nil
+	}
+
+	printerName, err := resolvePrinterName(req.PrinterName)
+	if err != nil {
+		result.Code = "PRINTER_NOT_FOUND"
+		result.Error = err.Error()
+		return result, nil
+	}
+	printReq := directPrintRequestFromPlan(req)
+	printReq.PrinterName = printerName
+	configured, err := configurePrinterDevModePlan(printerName, printReq)
+	if err != nil {
+		result.Code = "PAPER_REJECTED"
+		result.Error = err.Error()
+		return result, nil
+	}
+
+	pPrinterName, err := windows.UTF16PtrFromString(printerName)
+	if err != nil {
+		return result, err
+	}
+	var devMode *byte
+	if len(configured.Buffer) > 0 {
+		devMode = &configured.Buffer[0]
+	}
+	hdc, createErr := printerGDIWin32.createDC(pPrinterName, devMode)
+	if hdc == 0 {
+		result.Code = "PRINTER_CONTEXT_FAILED"
+		result.Error = fmt.Sprintf("فشل إنشاء سياق الطابعة CreateDCW: %s", win32ErrText(createErr))
+		return result, nil
+	}
+	defer printerGDIWin32.deleteDC(hdc)
+
+	metrics := queryDeviceMetrics(hdc)
+	paperW, paperH := configured.PaperWidthMM, configured.PaperHeightMM
+	if paperW <= 0 || paperH <= 0 {
+		if info, ok := standardPaperInfoByID(configured.AppliedPaper); ok {
+			paperW, paperH = info.WidthMM, info.HeightMM
+		}
+	}
+	if paperW <= 0 || paperH <= 0 {
+		paperW, paperH = req.PaperWidthMM, req.PaperHeightMM
+	}
+	paperW, paperH = orientPaperDimensions(paperW, paperH, req.Orientation)
+	printableW, printableH, offsetX, offsetY, scale := calculatePrinterPlanGeometry(metrics, paperW, paperH)
+
+	result.Success = true
+	result.Code = "EXACT"
+	if configured.FallbackReason != "" {
+		result.Code = "FALLBACK"
+	}
+	result.AppliedFormName = configured.AppliedForm
+	result.AppliedPaperID = configured.AppliedPaper
+	result.PaperWidthMM = paperW
+	result.PaperHeightMM = paperH
+	result.PrintableWidthMM = printableW
+	result.PrintableHeightMM = printableH
+	result.PrintableOffsetXMM = offsetX
+	result.PrintableOffsetYMM = offsetY
+	result.Scale = scale
+	result.FallbackReason = configured.FallbackReason
+	return result, nil
+}
+
 // PrintImageDirectGDI يرسل صورة مولدة مباشرة إلى طابعة ويندوز عبر Win32 GDI
 func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32, error) {
 	if err := validateDirectPrintRequest(req); err != nil {
@@ -941,11 +1225,11 @@ func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32
 		return 0, fmt.Errorf("تعذر فك تشفير الصورة: %w", err)
 	}
 
-	// 2. تكوين DEVMODE للطابعة المستهدفة
+	// 2. تكوين DEVMODE للطابعة المستهدفة. اختيار الورق الصريح يفشل مغلقاً؛
+	// لا يجوز إسقاطه إلى A4 أو إعداد الدرايفر الافتراضي بصمت.
 	devModeBuf, err := configurePrinterDevMode(printerName, req)
 	if err != nil {
-		slog.Warn("Failed to configure printer DEVMODE, falling back to default driver settings", "err", err)
-		devModeBuf = nil
+		return 0, err
 	}
 
 	// 3. إنشاء سياق الطابعة CreateDCW
@@ -1092,77 +1376,12 @@ func (s *PrintService) GetSupportedPapers(printerName string) ([]domain.Supporte
 		return nil, err
 	}
 
-	// 1. عدد القوالب المدعومة — DeviceCapabilities يعيد int (32-bit) وقد يعيد -1
-	// عند الفشل، ويجب قراءته بإشارة (int32) وإلا صار 0xFFFFFFFF عدداً ضخماً
-	// فوقع تخصيص ذاكرة كارثي.
-	count, _, capErr := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPapers),
-		0, 0,
-	)
-	if int32(count) < 0 {
-		return nil, fmt.Errorf("تعذر استعلام عدد قوالب الورق من الطابعة '%s': %s", printerName, win32ErrText(capErr))
+	// 1. عدد القوالب المدعومة وبياناتها تُقرأ عبر مصدر واحد مشترك مع حل الخطة.
+	papers, err := readPrinterPaperCapabilities(pPrinterName)
+	if err != nil {
+		return nil, fmt.Errorf("تعذر قراءة قوالب الورق من الطابعة '%s': %w", printerName, err)
 	}
-	if int32(count) == 0 {
-		return []domain.SupportedPaperInfo{}, nil
-	}
-	n := int(int32(count))
-	if n > 10000 {
-		return nil, fmt.Errorf("عدد قوالب الورق المُبلغ من الطابعة شاذ (%d)", n)
-	}
-
-	// 2. معرفات الورق
-	paperIDs := make([]uint16, n)
-	rIDs, _, errIDs := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPapers),
-		uintptr(unsafe.Pointer(&paperIDs[0])),
-		0,
-	)
-	if int32(rIDs) < 0 {
-		return nil, fmt.Errorf("تعذر قراءة معرفات قوالب الورق من الطابعة '%s': %s", printerName, win32ErrText(errIDs))
-	}
-
-	// 3. أسماء القوالب (كل اسم 64 محرف WCHAR)
-	namesBuf := make([]uint16, n*64)
-	rNames, _, errNames := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPaperNames),
-		uintptr(unsafe.Pointer(&namesBuf[0])),
-		0,
-	)
-	if int32(rNames) < 0 {
-		return nil, fmt.Errorf("تعذر قراءة أسماء قوالب الورق من الطابعة '%s': %s", printerName, win32ErrText(errNames))
-	}
-
-	// 4. قراءة الأبعاد (POINT: X, Y بـ 0.1 mm)
-	type point struct{ X, Y int32 }
-	sizesBuf := make([]point, n)
-	rSizes, _, errSizes := procDeviceCapabilities.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		uintptr(dcPaperSize),
-		uintptr(unsafe.Pointer(&sizesBuf[0])),
-		0,
-	)
-	if int32(rSizes) < 0 {
-		return nil, fmt.Errorf("تعذر قراءة أبعاد قوالب الورق من الطابعة '%s': %s", printerName, win32ErrText(errSizes))
-	}
-
-	result := make([]domain.SupportedPaperInfo, n)
-	for i := 0; i < n; i++ {
-		result[i] = parseSupportedPaperInfo(
-			paperIDs[i],
-			namesBuf[i*64:(i+1)*64],
-			sizesBuf[i].X,
-			sizesBuf[i].Y,
-		)
-	}
-
-	return result, nil
+	return papers, nil
 }
 
 // parseSupportedPaperInfo يفك بيانات قالب الورق من مصفوفات Win32 DeviceCapabilitiesW
@@ -1197,55 +1416,40 @@ func (s *PrintService) PollJobStatus(printerName string, jobID int32) (domain.Di
 	}
 
 	var hPrinter windows.Handle
-	ret, _, lastErr := procOpenPrinterW.Call(
-		uintptr(unsafe.Pointer(pPrinterName)),
-		uintptr(unsafe.Pointer(&hPrinter)),
-		0,
-	)
-	if ret == 0 {
-		return domain.DirectPrintResult{Success: false, Error: fmt.Sprintf("تعذر الاتصال بالطابعة: %s", win32ErrText(lastErr))}, nil
+	ok, lastErr := printerGDIWin32.openPrinter(pPrinterName, &hPrinter, 0)
+	if !ok {
+		return domain.DirectPrintResult{Success: false, JobID: jobID, Code: "PRINTER_OPEN_FAILED", Error: fmt.Sprintf("تعذر الاتصال بالطابعة: %s", win32ErrText(lastErr))}, nil
 	}
-	defer procClosePrinter.Call(uintptr(hPrinter))
+	defer printerGDIWin32.closePrinter(hPrinter)
 
 	var needed uint32
-	rProbe, _, probeErr := procGetJobW.Call(
-		uintptr(hPrinter),
-		uintptr(jobID),
-		2,
-		0, 0,
-		uintptr(unsafe.Pointer(&needed)),
-	)
+	found, probeErr := printerGDIWin32.getJob(hPrinter, uint32(jobID), 2, nil, 0, &needed)
 	if needed == 0 {
-		// اختفاء المهمة من الطابور يعني غالباً اكتمالها وخروجها (GetJob يفشل
-		// بـ ERROR_INVALID_PARAMETER للمعرف غير الموجود) — أما أي فشل آخر
-		// (صلاحيات/طابعة مفقودة) فيُبلَّغ عنه بدل تلوينه «اكتمل» زوراً.
-		if rProbe == 0 && !errors.Is(probeErr, windows.ERROR_INVALID_PARAMETER) && !errors.Is(probeErr, windows.ERROR_SUCCESS) {
+		if !found && (errors.Is(probeErr, windows.ERROR_INVALID_PARAMETER) || errors.Is(probeErr, windows.ERROR_FILE_NOT_FOUND)) {
 			return domain.DirectPrintResult{
-				Success: false,
-				JobID:   jobID,
-				Error:   fmt.Sprintf("تعذر استعلام حالة المهمة: %s", win32ErrText(probeErr)),
+				Success:  false,
+				JobID:    jobID,
+				Status:   "Not Found",
+				Code:     "JOB_NOT_FOUND",
+				Terminal: true,
+				Error:    "لم تعد مهمة الطباعة موجودة في الطابور؛ لا يمكن إثبات ما إذا اكتملت أم أُزيلت",
 			}, nil
 		}
 		return domain.DirectPrintResult{
-			Success: true,
+			Success: false,
 			JobID:   jobID,
-			Status:  "Completed",
+			Code:    "JOB_QUERY_FAILED",
+			Error:   fmt.Sprintf("تعذر استعلام حالة المهمة: %s", win32ErrText(probeErr)),
 		}, nil
 	}
 
 	buf := make([]byte, needed)
-	rGet, _, lastErr := procGetJobW.Call(
-		uintptr(hPrinter),
-		uintptr(jobID),
-		2,
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(needed),
-		uintptr(unsafe.Pointer(&needed)),
-	)
-	if rGet == 0 {
+	found, lastErr = printerGDIWin32.getJob(hPrinter, uint32(jobID), 2, &buf[0], needed, &needed)
+	if !found {
 		return domain.DirectPrintResult{
 			Success: false,
 			JobID:   jobID,
+			Code:    "JOB_QUERY_FAILED",
 			Error:   fmt.Sprintf("تعذر قراءة بيانات المهمة: %s", win32ErrText(lastErr)),
 		}, nil
 	}
@@ -1283,46 +1487,120 @@ func (s *PrintService) PollJobStatus(printerName string, jobID int32) (domain.Di
 		driverMsg = windows.UTF16PtrToString(info.PStatus)
 	}
 
-	statusStr, success := evaluateJobStatus(info.Status, driverMsg)
+	status := evaluateJobStatus(info.Status, driverMsg)
 
 	return domain.DirectPrintResult{
-		Success: success,
-		JobID:   jobID,
-		Status:  statusStr,
+		Success:  status.Success,
+		JobID:    jobID,
+		Status:   status.Status,
+		Code:     status.Code,
+		Terminal: status.Terminal,
+		Error:    status.Error,
 	}, nil
 }
 
+// CancelSpoolJob requests JOB_CONTROL_CANCEL for one Windows spooler job.
+func (s *PrintService) CancelSpoolJob(printerName string, jobID int32) error {
+	if jobID <= 0 {
+		return fmt.Errorf("معرّف مهمة الطباعة غير صالح: %d", jobID)
+	}
+	resolved, err := resolvePrinterName(printerName)
+	if err != nil {
+		return err
+	}
+	pPrinterName, err := windows.UTF16PtrFromString(resolved)
+	if err != nil {
+		return err
+	}
+	var hPrinter windows.Handle
+	ok, lastErr := printerGDIWin32.openPrinter(pPrinterName, &hPrinter, printerAccessUse)
+	if !ok {
+		return fmt.Errorf("تعذر فتح الطابعة '%s': %s", resolved, win32ErrText(lastErr))
+	}
+	defer printerGDIWin32.closePrinter(hPrinter)
+	ok, lastErr = printerGDIWin32.setJob(hPrinter, uint32(jobID), 0, nil, jobControlCancel)
+	if !ok {
+		if errors.Is(lastErr, windows.ERROR_INVALID_PARAMETER) || errors.Is(lastErr, windows.ERROR_FILE_NOT_FOUND) {
+			return fmt.Errorf("JOB_NOT_FOUND: مهمة الطباعة #%d غير موجودة في الطابور", jobID)
+		}
+		return fmt.Errorf("تعذر إلغاء مهمة الطباعة #%d: %s", jobID, win32ErrText(lastErr))
+	}
+	return nil
+}
+
 const (
-	jobStatusError    = 0x00000002
-	jobStatusPrinting = 0x00000010
-	jobStatusOffline  = 0x00000020
-	jobStatusPaperout = 0x00000040
-	jobStatusPrinted  = 0x00000080
-	jobStatusComplete = 0x00001000
+	jobStatusPaused           = 0x00000001
+	jobStatusError            = 0x00000002
+	jobStatusDeleting         = 0x00000004
+	jobStatusSpooling         = 0x00000008
+	jobStatusPrinting         = 0x00000010
+	jobStatusOffline          = 0x00000020
+	jobStatusPaperout         = 0x00000040
+	jobStatusPrinted          = 0x00000080
+	jobStatusDeleted          = 0x00000100
+	jobStatusBlockedDevQ      = 0x00000200
+	jobStatusUserIntervention = 0x00000400
+	jobStatusRestart          = 0x00000800
+	jobStatusComplete         = 0x00001000
+	jobStatusRetained         = 0x00002000
+	jobStatusRenderingLocally = 0x00004000
 )
 
-// evaluateJobStatus يحلل بتات حالة مهمة الطباعة في طابور الويندوز ورسالة الدرايفر
-func evaluateJobStatus(statusBits uint32, driverMsg string) (statusStr string, success bool) {
-	statusStr = "Spooling"
-	if statusBits&jobStatusError != 0 {
-		statusStr = "Error"
-	} else if statusBits&jobStatusPaperout != 0 {
-		statusStr = "Out of Paper"
-	} else if statusBits&jobStatusOffline != 0 {
-		statusStr = "Printer Offline"
-	} else if statusBits&jobStatusPrinting != 0 {
-		statusStr = "Printing"
-	} else if statusBits&jobStatusPrinted != 0 || statusBits&jobStatusComplete != 0 {
-		statusStr = "Printed"
+type spoolJobStatus struct {
+	Status   string
+	Code     string
+	Success  bool
+	Terminal bool
+	Error    string
+}
+
+// evaluateJobStatus maps numeric JOB_STATUS_* bits to a stable result. Driver
+// text may enrich Status, but never supplies the stable code or failure text.
+func evaluateJobStatus(statusBits uint32, driverMsg string) spoolJobStatus {
+	result := spoolJobStatus{Status: "Spooling", Code: "SPOOLING", Success: true}
+
+	type statusRule struct {
+		mask     uint32
+		status   string
+		code     string
+		success  bool
+		terminal bool
+		error    string
+	}
+	rules := []statusRule{
+		{jobStatusDeleted, "Deleted", "JOB_DELETED", false, true, "تم حذف مهمة الطباعة من الطابور"},
+		{jobStatusError, "Error", "JOB_ERROR", false, true, "أبلغ طابور الطباعة عن خطأ في المهمة"},
+		{jobStatusPaperout, "Out of Paper", "OUT_OF_PAPER", false, false, "نفد الورق من الطابعة"},
+		{jobStatusOffline, "Printer Offline", "PRINTER_OFFLINE", false, false, "الطابعة غير متصلة"},
+		{jobStatusBlockedDevQ, "Blocked", "JOB_BLOCKED", false, false, "حظر برنامج تشغيل الطابعة مهمة الطباعة"},
+		{jobStatusUserIntervention, "User Intervention Required", "USER_INTERVENTION_REQUIRED", false, false, "تتطلب الطابعة تدخلاً من المستخدم"},
+		{jobStatusDeleting, "Deleting", "JOB_DELETING", true, false, ""},
+		{jobStatusPaused, "Paused", "JOB_PAUSED", true, false, ""},
+		{jobStatusRestart, "Restarting", "JOB_RESTARTING", true, false, ""},
+		{jobStatusRenderingLocally, "Rendering", "JOB_RENDERING", true, false, ""},
+		{jobStatusPrinting, "Printing", "PRINTING", true, false, ""},
+		{jobStatusPrinted | jobStatusComplete, "Printed", "COMPLETED", true, true, ""},
+		{jobStatusRetained, "Retained", "JOB_RETAINED", true, true, ""},
+		{jobStatusSpooling, "Spooling", "SPOOLING", true, false, ""},
+	}
+	for _, rule := range rules {
+		if statusBits&rule.mask != 0 {
+			result = spoolJobStatus{
+				Status:   rule.status,
+				Code:     rule.code,
+				Success:  rule.success,
+				Terminal: rule.terminal,
+				Error:    rule.error,
+			}
+			break
+		}
 	}
 
-	// حكم النجاح من بتات job.Status الرقمية لا من نص pStatus: رسائل الدرايفر
-	// مترجمة بلغة النظام، فمطابقة نصوص إنجليزية كانت تُبقي Success=true لخطأ ورق.
-	statusFailed := statusBits&(jobStatusError|jobStatusPaperout|jobStatusOffline) != 0
-
-	if driverMsg != "" {
-		statusStr = driverMsg
+	if strings.TrimSpace(driverMsg) != "" {
+		result.Status = strings.TrimSpace(driverMsg)
+		if !result.Success {
+			result.Error = strings.TrimSpace(driverMsg)
+		}
 	}
-
-	return statusStr, !statusFailed
+	return result
 }

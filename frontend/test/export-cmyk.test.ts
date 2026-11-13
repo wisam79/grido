@@ -1,44 +1,33 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { ExportPrintSheet } from '@bindings/grido/internal/handlers/printhandler';
+import { CancelPrintJob, ExportPrintSheet } from '@bindings/grido/internal/handlers/printhandler';
 
 import { uploadPrintImage } from '../src/components/editor/print/print-transport';
 import { exportCanvas } from '../src/lib/export/export-canvas';
-import { buildCmykPrintRequest, basename, runCmykExport } from '../src/lib/export/export-cmyk';
+import {
+  assertValidTiffBlob,
+  basename,
+  buildCmykPrintRequest,
+  isTiffBlobSignature,
+  runCmykExport,
+} from '../src/lib/export/export-cmyk';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// export-cmyk.test.ts — مسار تصدير CMYK (TIFF/JPEG)
-//
-// يقفل ثلاثة عقود:
-//   1. حمولة الطباعة: عنصر واحد يملأ الورقة، بلا علامات قص، colorSpace='cmyk'
-//      و exportFormat مطابق للصيغة المختارة.
-//   2. تسلسل التنفيذ: لقطة RGB ← رفع ← ExportPrintSheet ← قراءة /local-image/.
-//   3. الأخطاء: التقاط فاشل، أو نتيجة Go فاشلة، أو مسار غير صالح ⇒ رمي صريح
-//      (لا ملف صامت ولا "[object Object]").
-// ─────────────────────────────────────────────────────────────────────────────
-
-vi.mock('../src/lib/export/export-canvas', () => ({
-  exportCanvas: vi.fn(),
-}));
-
-// نبقي withTimeout/EXPORT_TIMEOUT_MS الحقيقية ونحاكي الرفع فقط
+vi.mock('../src/lib/export/export-canvas', () => ({ exportCanvas: vi.fn() }));
 vi.mock('../src/components/editor/print/print-transport', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../src/components/editor/print/print-transport')>();
   return { ...actual, uploadPrintImage: vi.fn() };
 });
-
 vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
   ExportPrintSheet: vi.fn(),
-  // 🛑 عقد الإلغاء الجديد (C4) — يُستدعى من cancelExport في use-print-export
-  CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
   CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 const mockExportCanvas = vi.mocked(exportCanvas);
 const mockUpload = vi.mocked(uploadPrintImage);
 const mockExportPrintSheet = vi.mocked(ExportPrintSheet);
-
+const mockCancelPrintJob = vi.mocked(CancelPrintJob);
+const TIFF_BYTES = new Uint8Array([0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00]);
 const captureParams = {
   stage: null,
   format: 'tiff' as const,
@@ -48,8 +37,12 @@ const captureParams = {
   backgroundColor: '#ffffff',
 };
 
+function tiffBlob(): Blob {
+  return new Blob([TIFF_BYTES], { type: 'image/tiff' });
+}
+
 describe('buildCmykPrintRequest', () => {
-  it('يطابق صيغة CMYK وصيغة الملف المختارة', () => {
+  it('always builds a TIFF/CMYK full-sheet request', () => {
     const req = buildCmykPrintRequest({
       imageSrc: '/local-image/print_canvas_1.png',
       paperWidthMM: 210,
@@ -58,46 +51,30 @@ describe('buildCmykPrintRequest', () => {
       backgroundColor: '#ffffff',
       format: 'tiff',
     });
-
     expect(req.colorSpace).toBe('cmyk');
     expect(req.exportFormat).toBe('tiff');
-    expect(req.dpi).toBe(300);
-    expect(req.backgroundColor).toBe('#ffffff');
-  });
-
-  it('يبني عنصراً واحداً يملأ الورقة تماماً بلا هوامش ولا خطوط قص', () => {
-    const req = buildCmykPrintRequest({
-      imageSrc: '/local-image/a.png',
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      dpi: 300,
-      backgroundColor: '#000000',
-      format: 'jpeg',
-    });
-
     expect(req.marginMM).toBe(0);
     expect(req.gapMM).toBe(0);
     expect(req.showCutLines).toBe(false);
     expect(req.cutLines).toEqual([]);
     expect(req.items).toHaveLength(1);
-
-    const [item] = req.items;
-    expect(item.imageSrc).toBe('/local-image/a.png');
-    expect(item.x).toBe(0);
-    expect(item.y).toBe(0);
-    expect(item.w).toBe(210);
-    expect(item.h).toBe(297);
-    expect(item.copies).toBe(1);
+    expect(req.items[0]).toMatchObject({
+      imageSrc: '/local-image/print_canvas_1.png',
+      x: 0,
+      y: 0,
+      w: 210,
+      h: 297,
+      copies: 1,
+    });
   });
 
-  it('يستنتج الاتجاه من أبعاد الورقة (عرضي عند العرض > الطول)', () => {
+  it('derives orientation from sheet dimensions', () => {
     const base = {
       imageSrc: '/local-image/a.png',
       dpi: 300,
       backgroundColor: '#ffffff',
-      format: 'jpeg' as const,
+      format: 'tiff' as const,
     };
-
     expect(
       buildCmykPrintRequest({ ...base, paperWidthMM: 297, paperHeightMM: 210 }).orientation,
     ).toBe('landscape');
@@ -105,30 +82,24 @@ describe('buildCmykPrintRequest', () => {
       buildCmykPrintRequest({ ...base, paperWidthMM: 210, paperHeightMM: 297 }).orientation,
     ).toBe('portrait');
   });
+});
 
-  it('يمرر صيغة JPEG كما اختارها المستخدم (لا يُجبرها على TIFF)', () => {
-    const req = buildCmykPrintRequest({
-      imageSrc: '/local-image/a.png',
-      paperWidthMM: 100,
-      paperHeightMM: 100,
-      dpi: 150,
-      backgroundColor: '#ffffff',
-      format: 'jpeg',
-    });
-    expect(req.exportFormat).toBe('jpeg');
+describe('TIFF validation', () => {
+  it('accepts little- and big-endian TIFF signatures', () => {
+    expect(isTiffBlobSignature(TIFF_BYTES)).toBe(true);
+    expect(isTiffBlobSignature(new Uint8Array([0x4d, 0x4d, 0x00, 0x2a]))).toBe(true);
+  });
+
+  it('rejects empty and non-TIFF blobs', async () => {
+    await expect(assertValidTiffBlob(new Blob())).rejects.toThrow('فارغ');
+    await expect(assertValidTiffBlob(new Blob(['jpeg']))).rejects.toThrow('ليس TIFF');
   });
 });
 
 describe('basename', () => {
-  it('يستخرج الاسم من مسار ويندوز', () => {
+  it('extracts Windows and POSIX basenames', () => {
     expect(basename('C:\\Users\\x\\Exports\\print_123.tif')).toBe('print_123.tif');
-  });
-
-  it('يستخرج الاسم من مسار POSIX', () => {
-    expect(basename('/home/x/exports/print_9.jpeg')).toBe('print_9.jpeg');
-  });
-
-  it('يعيد نصاً فارغاً للمسار الفارغ', () => {
+    expect(basename('/home/x/exports/print_9.tiff')).toBe('print_9.tiff');
     expect(basename('')).toBe('');
   });
 });
@@ -144,102 +115,87 @@ describe('runCmykExport', () => {
     } as never);
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(() => vi.unstubAllGlobals());
 
-  interface MockFetchResponse {
-    ok?: boolean;
-    status?: number;
-    blob?: () => Promise<Blob>;
-  }
-
-  const stubFetch = (response: MockFetchResponse) => {
+  const stubFetch = (response: Partial<Response> = {}) => {
     const fullResponse = {
-      ok: response.ok ?? (response.status ? response.status >= 200 && response.status < 300 : true),
+      ok: response.ok ?? true,
       status: response.status ?? 200,
-      blob: response.blob ?? (() => Promise.resolve(new Blob())),
-    } as unknown as Response;
+      blob: response.blob ?? (() => Promise.resolve(tiffBlob())),
+    } as Response;
     const fetchMock = vi.fn(() => Promise.resolve(fullResponse));
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
   };
 
-  it('يمر بالسلسلة كاملة: لقطة ← رفع ← تحويل ← قراءة الملف الناتج', async () => {
-    const fetchMock = stubFetch({
-      status: 200,
-      blob: () => Promise.resolve(new Blob(['tiff'], { type: 'image/tiff' })),
-    });
-
+  it('captures, uploads, converts, and returns a non-empty validated TIFF', async () => {
+    const fetchMock = stubFetch();
     const result = await runCmykExport(captureParams);
 
     expect(mockExportCanvas).toHaveBeenCalledWith('png', 1, null);
     expect(mockUpload).toHaveBeenCalledTimes(1);
-    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
-
-    const sent = mockExportPrintSheet.mock.calls[0][0];
-    expect(sent.colorSpace).toBe('cmyk');
-    expect(sent.exportFormat).toBe('tiff');
-    expect(sent.items[0].imageSrc).toBe('/local-image/print_canvas_7.png');
-
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/local-image/print_7.tif'));
-    expect(result.sourceFilename).toBe('print_7.tif');
-    expect(result.blob).toBeInstanceOf(Blob);
-  });
-
-  it('يرسل exportFormat=jpeg عندما يختار المستخدم JPEG', async () => {
-    stubFetch({
-      status: 200,
-      blob: () => Promise.resolve(new Blob(['jpg'], { type: 'image/jpeg' })),
+    const request = mockExportPrintSheet.mock.calls[0][0] as unknown as Record<string, unknown>;
+    expect(request.colorSpace).toBe('cmyk');
+    expect(request.exportFormat).toBe('tiff');
+    expect(request.jobId).toMatch(/^cmyk-/);
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/local-image/print_7.tif'), {
+      signal: undefined,
     });
-
-    await runCmykExport({ ...captureParams, format: 'jpeg' });
-
-    expect(mockExportPrintSheet.mock.calls[0][0].exportFormat).toBe('jpeg');
+    expect(result.sourceFilename).toBe('print_7.tif');
+    expect(result.blob.size).toBeGreaterThan(0);
   });
 
-  it('يرمي برسالة عربية عند فشل التقاط الكانفاس', async () => {
-    mockExportCanvas.mockResolvedValue(null);
-
-    await expect(runCmykExport(captureParams)).rejects.toThrow('تعذر التقاط التصميم للتصدير');
+  it('rejects empty capture and invalid backend results explicitly', async () => {
+    mockExportCanvas.mockResolvedValueOnce(new Blob());
+    await expect(runCmykExport(captureParams)).rejects.toThrow('تعذر التقاط التصميم');
     expect(mockUpload).not.toHaveBeenCalled();
+
+    mockExportCanvas.mockResolvedValueOnce(new Blob(['png']));
+    mockExportPrintSheet.mockResolvedValueOnce({ success: false, error: 'CMYK failed' } as never);
+    await expect(runCmykExport(captureParams)).rejects.toThrow('CMYK failed');
   });
 
-  it('يرمي برسالة Go عند فشل التحويل الخلفي', async () => {
-    mockExportPrintSheet.mockResolvedValue({
-      success: false,
-      error: 'CMYK encode failed',
+  it('rejects non-TIFF filename and non-TIFF response bytes', async () => {
+    mockExportPrintSheet.mockResolvedValueOnce({
+      success: true,
+      filePath: 'C:\\Exports\\print_7.jpg',
     } as never);
+    await expect(runCmykExport(captureParams)).rejects.toThrow('مسار ملف CMYK TIFF');
 
-    await expect(runCmykExport(captureParams)).rejects.toThrow('CMYK encode failed');
+    mockExportPrintSheet.mockResolvedValueOnce({
+      success: true,
+      filePath: 'C:\\Exports\\print_7.tif',
+    } as never);
+    stubFetch({ blob: () => Promise.resolve(new Blob(['not-tiff'])) });
+    await expect(runCmykExport(captureParams)).rejects.toThrow('ليس TIFF');
   });
 
-  it('يرمي عندما تنجح النتيجة بلا مسار ملف', async () => {
-    mockExportPrintSheet.mockResolvedValue({ success: true, filePath: '' } as never);
-
-    await expect(runCmykExport(captureParams)).rejects.toThrow('فشل توليد ملف CMYK');
-  });
-
-  it('يرمي عند تعذر قراءة الملف الناتج من الخادم المحلي', async () => {
-    stubFetch({ status: 404, ok: false });
-
+  it('rejects failed source fetch', async () => {
+    stubFetch({ ok: false, status: 404 });
     await expect(runCmykExport(captureParams)).rejects.toThrow('HTTP 404');
   });
 
-  it('يرمي عند فشل رفع اللقطة قبل الوصول إلى Go', async () => {
-    mockUpload.mockRejectedValue(new Error('upload failed: HTTP 500'));
+  it('aborts the owned backend job by client JobID', async () => {
+    stubFetch();
+    const pending = new Promise<never>(() => {}) as unknown as ReturnType<typeof ExportPrintSheet>;
+    Object.assign(pending, {
+      cancelOn: (signal: AbortSignal) =>
+        new Promise<never>((_, reject) => {
+          signal.addEventListener(
+            'abort',
+            () => reject(new DOMException('cancelled', 'AbortError')),
+            { once: true },
+          );
+        }),
+    });
+    mockExportPrintSheet.mockReturnValueOnce(pending);
+    const controller = new AbortController();
+    const operation = runCmykExport({ ...captureParams, signal: controller.signal });
+    await vi.waitFor(() => expect(mockExportPrintSheet).toHaveBeenCalled());
+    const jobId = (mockExportPrintSheet.mock.calls[0][0] as unknown as { jobId: string }).jobId;
+    controller.abort();
 
-    await expect(runCmykExport(captureParams)).rejects.toThrow('upload failed');
-    expect(mockExportPrintSheet).not.toHaveBeenCalled();
-  });
-
-  it('يتخطى تنزيل الـ Blob عبر الشبكة عند تفعيل skipBlobFetch للحفظ المباشر من القرص', async () => {
-    const fetchMock = stubFetch({ status: 200 });
-
-    const result = await runCmykExport({ ...captureParams, skipBlobFetch: true });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.sourceFilename).toBe('print_7.tif');
-    expect(result.blob.size).toBe(0);
+    await expect(operation).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mockCancelPrintJob).toHaveBeenCalledWith(jobId);
   });
 });

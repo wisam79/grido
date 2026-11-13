@@ -49,21 +49,37 @@ type CanvasComposition struct {
 	Items           []PrintItem `json:"items"`
 }
 
+// PrintBackgroundBlock describes a physical, page-local background rectangle.
+// Coordinates and dimensions are millimetres in the same page space as PrintItem.
+// Color2 empty means a solid Color fill; otherwise the block is a linear gradient
+// from Color to Color2 at Angle degrees.
+type PrintBackgroundBlock struct {
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	W      float64 `json:"w"`
+	H      float64 `json:"h"`
+	Color  string  `json:"color"`
+	Color2 string  `json:"color2,omitempty"`
+	Angle  float64 `json:"angle,omitempty"`
+}
+
 type PrintRequest struct {
-	PaperWidthMM    float64            `json:"paperWidthMM"`
-	PaperHeightMM   float64            `json:"paperHeightMM"`
-	MarginMM        float64            `json:"marginMM,omitempty"`
-	GapMM           float64            `json:"gapMM,omitempty"`
-	DPI             int                `json:"dpi"`
-	BackgroundColor string             `json:"backgroundColor"`
-	ShowCutLines    bool               `json:"showCutLines"`
-	CutLineStyle    string             `json:"cutLineStyle,omitempty"` // "dashed", "dotted", "solid", "cropmarks"
-	ColorSpace      string             `json:"colorSpace,omitempty"`   // "sRGB" or "CMYK"
-	ExportFormat    string             `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff", "pdf"
-	Orientation     string             `json:"orientation,omitempty"`  // "portrait" or "landscape"
-	CutLines        []CutLine          `json:"cutLines"`
-	Items           []PrintItem        `json:"items"`
-	Composition     *CanvasComposition `json:"composition,omitempty"`
+	JobID            string                 `json:"jobId,omitempty"`
+	PaperWidthMM     float64                `json:"paperWidthMM"`
+	PaperHeightMM    float64                `json:"paperHeightMM"`
+	MarginMM         float64                `json:"marginMM,omitempty"`
+	GapMM            float64                `json:"gapMM,omitempty"`
+	DPI              int                    `json:"dpi"`
+	BackgroundColor  string                 `json:"backgroundColor"`
+	ShowCutLines     bool                   `json:"showCutLines"`
+	CutLineStyle     string                 `json:"cutLineStyle,omitempty"` // "dashed", "dotted", "solid", "cropmarks"
+	ColorSpace       string                 `json:"colorSpace,omitempty"`   // "sRGB" or "CMYK"
+	ExportFormat     string                 `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff", "pdf"
+	Orientation      string                 `json:"orientation,omitempty"`  // "portrait" or "landscape"
+	CutLines         []CutLine              `json:"cutLines"`
+	Items            []PrintItem            `json:"items"`
+	BackgroundBlocks []PrintBackgroundBlock `json:"backgroundBlocks,omitempty"`
+	Composition      *CanvasComposition     `json:"composition,omitempty"`
 }
 
 type CutLine struct {
@@ -109,12 +125,62 @@ type DirectPrintRequest struct {
 	PaperID       uint16  `json:"paperId,omitempty"`
 }
 
-// DirectPrintResult نتيجة إرسال المهمة المباشرة إلى طابور الطباعة
+// DirectPrintResult is the stable submission/status envelope for a spool job.
+// Plan fields are zero-valued until the backend resolves the driver's effective
+// form and device geometry; existing callers may continue reading the legacy
+// Success, JobID, Status, and Error fields only.
 type DirectPrintResult struct {
-	Success bool   `json:"success"`
-	JobID   int32  `json:"jobId,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Success            bool    `json:"success"`
+	JobID              int32   `json:"jobId,omitempty"`
+	Status             string  `json:"status,omitempty"`
+	Error              string  `json:"error,omitempty"`
+	Code               string  `json:"code,omitempty"`
+	Terminal           bool    `json:"terminal,omitempty"`
+	RequestedFormName  string  `json:"requestedFormName,omitempty"`
+	RequestedPaperID   uint16  `json:"requestedPaperId,omitempty"`
+	AppliedFormName    string  `json:"appliedFormName,omitempty"`
+	AppliedPaperID     uint16  `json:"appliedPaperId,omitempty"`
+	PaperWidthMM       float64 `json:"paperWidthMM,omitempty"`
+	PaperHeightMM      float64 `json:"paperHeightMM,omitempty"`
+	PrintableWidthMM   float64 `json:"printableWidthMM,omitempty"`
+	PrintableHeightMM  float64 `json:"printableHeightMM,omitempty"`
+	PrintableOffsetXMM float64 `json:"printableOffsetXMM,omitempty"`
+	PrintableOffsetYMM float64 `json:"printableOffsetYMM,omitempty"`
+	Scale              float64 `json:"scale,omitempty"`
+	FallbackReason     string  `json:"fallbackReason,omitempty"`
+}
+
+// PrinterPlanRequest asks the backend to resolve requested media against one
+// printer without starting a spool job.
+type PrinterPlanRequest struct {
+	PrinterName   string  `json:"printerName"`
+	FormName      string  `json:"formName,omitempty"`
+	PaperID       uint16  `json:"paperId,omitempty"`
+	PaperWidthMM  float64 `json:"paperWidthMM,omitempty"`
+	PaperHeightMM float64 `json:"paperHeightMM,omitempty"`
+	Orientation   string  `json:"orientation,omitempty"`
+	Borderless    bool    `json:"borderless,omitempty"`
+}
+
+// PrinterPlanResult reports the effective driver plan without starting a job.
+// It intentionally mirrors DirectPrintResult's plan field names so callers can
+// present the same preflight and post-submission information.
+type PrinterPlanResult struct {
+	Success            bool    `json:"success"`
+	Error              string  `json:"error,omitempty"`
+	Code               string  `json:"code,omitempty"`
+	RequestedFormName  string  `json:"requestedFormName,omitempty"`
+	RequestedPaperID   uint16  `json:"requestedPaperId,omitempty"`
+	AppliedFormName    string  `json:"appliedFormName,omitempty"`
+	AppliedPaperID     uint16  `json:"appliedPaperId,omitempty"`
+	PaperWidthMM       float64 `json:"paperWidthMM,omitempty"`
+	PaperHeightMM      float64 `json:"paperHeightMM,omitempty"`
+	PrintableWidthMM   float64 `json:"printableWidthMM,omitempty"`
+	PrintableHeightMM  float64 `json:"printableHeightMM,omitempty"`
+	PrintableOffsetXMM float64 `json:"printableOffsetXMM,omitempty"`
+	PrintableOffsetYMM float64 `json:"printableOffsetYMM,omitempty"`
+	Scale              float64 `json:"scale,omitempty"`
+	FallbackReason     string  `json:"fallbackReason,omitempty"`
 }
 
 // SupportedPaperInfo معلومات قالب الورق الذي يدعمه برنامج تشغيل الطابعة

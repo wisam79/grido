@@ -495,6 +495,93 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     expect(isStageCaptureActive(stage)).toBe(false);
   });
 
+  it('captureStageBlob: يطبق override بعد قفل المسرح ويستعيد الصورة والحالة عند timeout', async () => {
+    const node = await mountSlot({ srcW: 600, srcH: 800, slotW: 200, slotH: 300 });
+    const stage = node.getStage()!;
+    node.id('slot-probe');
+    const originalImage = node.image();
+    const originalPos = { x: 17, y: 23 };
+    const originalScale = { x: 1.5, y: 1.25 };
+    stage.position(originalPos);
+    stage.scale(originalScale);
+
+    const callbacks: BlobCallback[] = [];
+    vi.spyOn(stage, 'toCanvas').mockImplementation((config) => {
+      expect(config?.pixelRatio).toBe(0.5);
+      expect(node.image()).not.toBe(originalImage);
+      const scanner = stage.findOne('.magic-ai-scanner');
+      expect(scanner?.isVisible()).toBe(false);
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (callback) => callbacks.push(callback);
+      return canvas;
+    });
+    const scanner = new (await import('konva')).default.Group({
+      name: 'magic-ai-scanner',
+      visible: true,
+    });
+    stage.getLayers()[0].add(scanner);
+
+    await expect(
+      captureStageBlob(stage, 0.5, 'image/png', 1, undefined, {
+        imageOverrides: [{ nodeId: 'slot-probe', src: 'test://override.png' }],
+        toBlobTimeoutMs: 10,
+      }),
+    ).rejects.toMatchObject({ name: 'CaptureStageTimeoutError', phase: 'toBlob' });
+
+    expect(callbacks).toHaveLength(1);
+    expect(node.image()).toBe(originalImage);
+    expect(scanner.isVisible()).toBe(true);
+    expect(stage.position()).toEqual(originalPos);
+    expect(stage.scale()).toEqual(originalScale);
+    expect(isStageCaptureActive(stage)).toBe(false);
+  });
+
+  it('captureStageBlob: رفض/إلغاء المنتظر لا يكسر تسلسل المسرح وتعمل المسارح المختلفة باستقلال', async () => {
+    const nodeA = await mountSlot({ srcW: 500, srcH: 500, slotW: 200, slotH: 200 });
+    const stageA = nodeA.getStage()!;
+    const callbacksA: BlobCallback[] = [];
+    let stageACaptures = 0;
+    vi.spyOn(stageA, 'toCanvas').mockImplementation(() => {
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (callback) => {
+        stageACaptures += 1;
+        if (stageACaptures === 1) callbacksA.push(callback);
+        else callback(new Blob(['a-next']));
+      };
+      return canvas;
+    });
+
+    const first = captureStageBlob(stageA, 1, 'image/png', 1, undefined, {
+      toBlobTimeoutMs: 1000,
+    });
+    await vi.waitFor(() => expect(callbacksA).toHaveLength(1));
+    const controller = new AbortController();
+    const queued = captureStageBlob(stageA, 1, 'image/png', 1, undefined, {
+      signal: controller.signal,
+      queueTimeoutMs: 1000,
+    });
+    controller.abort();
+    await expect(queued).rejects.toMatchObject({ name: 'AbortError' });
+
+    const containerB = document.createElement('div');
+    document.body.appendChild(containerB);
+    const Konva = (await import('konva')).default;
+    const stageB = new Konva.Stage({ container: containerB, width: 20, height: 20 });
+    stageB.add(new Konva.Layer());
+    vi.spyOn(stageB, 'toCanvas').mockImplementation(() => {
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (callback) => callback(new Blob(['b']));
+      return canvas;
+    });
+    await expect(captureStageBlob(stageB, 1)).resolves.toBeInstanceOf(Blob);
+
+    callbacksA[0](new Blob(['a']));
+    await expect(first).resolves.toBeInstanceOf(Blob);
+    await expect(captureStageBlob(stageA, 1)).resolves.toBeInstanceOf(Blob);
+    stageB.destroy();
+    containerB.remove();
+  });
+
   it('captureStageBlob(useFullResolution): يحجّم cropX/cropWidth لأبعاد الأصل أثناء الالتقاط ثم يستعيدهما', async () => {
     const node = await mountSlot({
       srcW: 4096,

@@ -13,7 +13,7 @@ import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { paperCaptureRect } from '@/lib/canvas/fit';
 import { resolveImageDimensions } from '@/lib/canvas/image-dimensions';
-import { captureStageBlob, swapNodeImagesForCapture } from '@/lib/canvas/konva-export-utils';
+import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { computeSlotCrop } from '@/lib/export/export-primitives';
 import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
@@ -212,6 +212,8 @@ export interface SinglePayloadContext {
   printShowCutLines: boolean;
   printShowEndCutLine: boolean | undefined;
   printCutLineStyle: PrintSettings['cutLineStyle'];
+  /** أبعاد المصادر بعد EXIF، محلولة مرة واحدة في preflight وتُعاد هنا لعقد cover السريع. */
+  imageDimensions?: ReadonlyMap<string, { width: number; height: number }>;
   /** استبدال مصادر الملصقات المُرقّاة بدقة الطباعة (من ensureStickerPrintResolution) */
   stickerSrcMap?: ReadonlyMap<string, string>;
 }
@@ -229,6 +231,7 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     printShowCutLines,
     printShowEndCutLine,
     printCutLineStyle,
+    imageDimensions,
     stickerSrcMap,
   } = ctx;
 
@@ -254,7 +257,20 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     backgroundGradientColor2: backgroundGradientColor2 ?? null,
   });
 
-  const isSimpleRaster = singleCompRes.eligible && !!singleCompRes.composition;
+  const hasResolvedCompositionDimensions = (singleCompRes.composition?.items ?? []).every(
+    (item) => {
+      const dims = imageDimensions?.get(item.imageSrc);
+      return (
+        !!dims &&
+        Number.isFinite(dims.width) &&
+        dims.width > 0 &&
+        Number.isFinite(dims.height) &&
+        dims.height > 0
+      );
+    },
+  );
+  const isSimpleRaster =
+    singleCompRes.eligible && !!singleCompRes.composition && hasResolvedCompositionDimensions;
   const comp = singleCompRes.composition;
   let singleImageSrc = '';
 
@@ -279,20 +295,14 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
             )
             .map((el) => ({ nodeId: el.id, src: stickerSrcMap.get(el.imageSrc)! }))
         : [];
-    const restoreStickerNodes = await swapNodeImagesForCapture(stage, nodeOverrides);
-    let capturedBlob: Blob | null = null;
-    try {
-      capturedBlob = await captureStageBlob(
-        stage,
-        targetPixelRatio,
-        'image/png',
-        undefined,
-        captureRect,
-        { useFullResolution: true },
-      );
-    } finally {
-      restoreStickerNodes();
-    }
+    const capturedBlob = await captureStageBlob(
+      stage,
+      targetPixelRatio,
+      'image/png',
+      undefined,
+      captureRect,
+      { useFullResolution: true, imageOverrides: nodeOverrides },
+    );
     if (!capturedBlob) {
       throw new Error('stage capture returned no blob');
     }
@@ -336,6 +346,12 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     const scaleY = itemHeightMM / comp.canvasHeightPx;
 
     for (const compItem of comp.items) {
+      const sourceDimensions = imageDimensions?.get(compItem.imageSrc);
+      if (!sourceDimensions) {
+        throw new Error('simple composition source dimensions were not resolved');
+      }
+      const crop = computeSlotCrop(sourceDimensions, compItem.w, compItem.h, {});
+
       items.push(
         domain.PrintItem.createFrom({
           // 🖨️ ترقية دقة الملصقات: المصدر المُرقّى (أصل طباعة مؤقت بـ DPI الورقة)
@@ -349,11 +365,12 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
           brightness: compItem.brightness,
           contrast: compItem.contrast,
           saturation: compItem.saturation,
-          // 🖨️ RV-16-H2: عناصر الوضع الحر تُمدَّد (stretch) داخل مستطيلها في Konva
-          // (image-node.tsx يضبط width/height مباشرة). إرسال slotAspect كان يفعّل
-          // قصاً تغاطياً (cover) في computeCropFromSlot فتُطبع منتصف الصورة بدل
-          // تمديدها كاملاً كلما تبدّلت نسبة المستطيل عن نسبة المصدر. الصفر = بلا
-          // قصّ ⇒ تمديد كامل مطابق للمحرر.
+          // عقد cover صريح: تُحسب النافذة مرة واحدة من الأبعاد المحلولة مسبقاً،
+          // ثم slotAspect=0 يمنع Go من إعادة اشتقاق قصّة مختلفة.
+          cropX: crop.sx,
+          cropY: crop.sy,
+          cropW: crop.sw,
+          cropH: crop.sh,
           slotAspect: 0,
           zoom: 1,
           dragX: 0,

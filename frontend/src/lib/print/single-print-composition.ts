@@ -5,13 +5,15 @@
 // فيرسمها Go مرة واحدة بدقة الطباعة.
 //
 // الأهلية مشروطة بتطابق دلالات الرسم مع ما يعرضه Konva:
-// الصور تُمدّد (stretch) داخل مستطيلها، والقلب حول المحور الأوسط، والزوايا
+// الصور تستخدم object-fit: cover داخل مستطيلها، والقلب حول المحور الأوسط، والزوايا
 // المستديرة تُقصّ — أي عنصر خارج هذه المجموعة يعيد التوجيه إلى مسار الالتقاط.
 
 import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
 export interface SingleCompositionItem {
   imageSrc: string;
+  /** عقد الرسم الصريح: صور الوضع الحر تُقصّ object-fit: cover قبل أي قلب. */
+  imageFit: 'cover';
   x: number;
   y: number;
   w: number;
@@ -158,6 +160,7 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
     .filter((el) => !!el.imageSrc)
     .map((el) => ({
       imageSrc: el.imageSrc,
+      imageFit: 'cover',
       x: el.x * canvasWidth,
       y: el.y * canvasHeight,
       w: el.width * canvasWidth,

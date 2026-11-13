@@ -1,11 +1,14 @@
+import { assertExportablePixels } from '@/lib/export/export-limits';
 import { createLogger } from '@/lib/logger';
 
 import {
+  createCaptureOriginalLease,
   getCapturedOriginal,
   getDisplaySource,
   getOriginalForDisplayedElement,
-  releaseCaptureOriginals,
 } from './display-image';
+
+import type { CaptureOriginalLease } from './display-image';
 
 import type Konva from 'konva';
 
@@ -13,7 +16,55 @@ const logger = createLogger('konva-export-utils');
 const activeStageCaptures = new WeakMap<object, number>();
 const stageCaptureTails = new WeakMap<object, Promise<void>>();
 
-async function withSerializedStageCapture<T>(stage: object, capture: () => Promise<T>): Promise<T> {
+export class CaptureStageTimeoutError extends Error {
+  constructor(
+    readonly phase: 'queue' | 'readiness' | 'toBlob',
+    timeoutMs: number,
+  ) {
+    super(`Stage capture ${phase} timed out after ${timeoutMs}ms`);
+    this.name = 'CaptureStageTimeoutError';
+  }
+}
+
+function abortError(signal?: AbortSignal): Error {
+  if (signal?.reason instanceof Error) return signal.reason;
+  return new DOMException('Stage capture aborted', 'AbortError');
+}
+
+function raceDeadline<T>(
+  work: Promise<T>,
+  phase: 'queue' | 'readiness' | 'toBlob',
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<T> {
+  if (signal?.aborted) return Promise.reject(abortError(signal));
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      fn();
+    };
+    const onAbort = () => finish(() => reject(abortError(signal)));
+    const timer = setTimeout(
+      () => finish(() => reject(new CaptureStageTimeoutError(phase, timeoutMs))),
+      timeoutMs,
+    );
+    signal?.addEventListener('abort', onAbort, { once: true });
+    work.then(
+      (value) => finish(() => resolve(value)),
+      (error) => finish(() => reject(error)),
+    );
+  });
+}
+
+async function withSerializedStageCapture<T>(
+  stage: object,
+  capture: () => Promise<T>,
+  options: { signal?: AbortSignal; queueTimeoutMs: number },
+): Promise<T> {
   const previous = stageCaptureTails.get(stage) ?? Promise.resolve();
   let release!: () => void;
   const current = new Promise<void>((resolve) => {
@@ -22,7 +73,20 @@ async function withSerializedStageCapture<T>(stage: object, capture: () => Promi
   const tail = previous.catch(() => {}).then(() => current);
   stageCaptureTails.set(stage, tail);
 
-  await previous.catch(() => {});
+  try {
+    await raceDeadline(
+      previous.catch(() => {}),
+      'queue',
+      options.queueTimeoutMs,
+      options.signal,
+    );
+  } catch (error) {
+    release();
+    void tail.finally(() => {
+      if (stageCaptureTails.get(stage) === tail) stageCaptureTails.delete(stage);
+    });
+    throw error;
+  }
   try {
     return await capture();
   } finally {
@@ -46,6 +110,7 @@ interface CachedImageNode {
 interface KonvaNodeLike {
   hide: () => void;
   show: () => void;
+  visible?: () => boolean;
 }
 
 interface KonvaImageNodeLike {
@@ -92,14 +157,17 @@ function getSourceDimensions(src: CanvasImageSource): { width: number; height: n
  * display-image). captureStageBlob غير متزامنة أصلاً فالانتظار ممكن؛ الفشل
  * الفردي لا يوقف الالتقاط — العقدة تبقى على مشتقها (fallback كامل).
  */
-export async function preloadImagesForFullResolution(stage: Konva.Stage): Promise<void> {
+export async function preloadImagesForFullResolution(
+  stage: Konva.Stage,
+  lease: CaptureOriginalLease,
+): Promise<void> {
   try {
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
     const jobs: Promise<HTMLImageElement | null>[] = [];
     for (const node of nodes) {
       const current = node.image();
       if (current instanceof HTMLImageElement) {
-        jobs.push(getOriginalForDisplayedElement(current));
+        jobs.push(getOriginalForDisplayedElement(current, lease));
       }
     }
     await Promise.all(jobs);
@@ -120,7 +188,10 @@ export async function preloadImagesForFullResolution(stage: Konva.Stage): Promis
  * 2. عنصر عرض مشتق من Go (2048px): الأصل الحقيقي في جسر الالتقاط العابر
  *    المعبأ عبر preloadImagesForFullResolution — قراءة متزامنة لا تنتظر.
  */
-export function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[] {
+export function upgradeImagesToFullResolution(
+  stage: Konva.Stage,
+  lease: CaptureOriginalLease,
+): UpgradedImageRecord[] {
   const restored: UpgradedImageRecord[] = [];
   try {
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
@@ -128,7 +199,7 @@ export function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImage
       const current = node.image();
       let source = getDisplaySource(current as HTMLCanvasElement | null);
       if ((!source || source === current) && current instanceof HTMLImageElement) {
-        source = getCapturedOriginal(current);
+        source = getCapturedOriginal(current, lease);
       }
       if (source && current !== source) {
         const record: UpgradedImageRecord = { node, image: current as CanvasImageSource };
@@ -192,12 +263,30 @@ export function restoreImageNodes(restored: UpgradedImageRecord[]): void {
 }
 
 /** محمّل صورة خام محلي — بلا اعتماد على طبقة lib/export (اتجاه الطبقات) */
-function loadImageElement(src: string): Promise<HTMLImageElement> {
+function loadImageElement(src: string, signal?: AbortSignal): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortError(signal));
+      return;
+    }
     const img = new Image();
+    const cleanup = () => signal?.removeEventListener('abort', onAbort);
+    const onAbort = () => {
+      cleanup();
+      img.onload = null;
+      img.onerror = null;
+      reject(abortError(signal));
+    };
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = (e) => reject(e);
+    img.onload = () => {
+      cleanup();
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      cleanup();
+      reject(e);
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
     img.src = src;
   });
 }
@@ -224,6 +313,7 @@ export async function swapNodeImagesForCapture(
   stage: Konva.Stage,
   overrides: Array<{ nodeId: string; src: string }>,
   timeoutMs = 8000,
+  signal?: AbortSignal,
 ): Promise<() => void> {
   const applied: Array<{ node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect }> =
     [];
@@ -233,14 +323,15 @@ export async function swapNodeImagesForCapture(
     overrides.map(async ({ nodeId, src }) => {
       if (!nodeId || !src || loaded.has(src)) return;
       try {
-        const img = await Promise.race([
-          loadImageElement(src),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('image load timeout')), timeoutMs),
-          ),
-        ]);
+        const img = await raceDeadline(
+          loadImageElement(src, signal),
+          'readiness',
+          timeoutMs,
+          signal,
+        );
         loaded.set(src, img);
       } catch (e) {
+        if (signal?.aborted || e instanceof CaptureStageTimeoutError) throw e;
         // فشل تحميل بديل واحد لا يوقف الالتقاط — تبقى العقدة على مصدرها
         logger.warn('Failed to preload upgraded print image:', src, e);
       }
@@ -413,29 +504,30 @@ export async function withHiddenOverlays<T>(
   const paperShadows = stage.find('.paper-shadow-rect') as unknown as KonvaNodeLike[];
   // 🛠️ طبقة الأدوات والمحوّل ومستطيل التحديد — تُخفى كاملة بنقرة واحدة
   const overlayTools = stage.find('.overlay-tools-layer') as unknown as KonvaNodeLike[];
+  const magicAiScanners = stage.find('.magic-ai-scanner') as unknown as KonvaNodeLike[];
+  const hiddenNodes = [
+    ...transformers,
+    ...gridLayers,
+    ...columnsLayers,
+    ...slotPlaceholders,
+    ...slotAddHandles,
+    ...collageSelectionRings,
+    ...paperShadows,
+    ...overlayTools,
+    ...magicAiScanners,
+  ].map((node) => ({ node, visible: node.visible?.() ?? true }));
 
   try {
-    for (const tr of transformers) tr.hide();
-    for (const gl of gridLayers) gl.hide();
-    for (const cl of columnsLayers) cl.hide();
-    for (const ph of slotPlaceholders) ph.hide();
-    for (const ah of slotAddHandles) ah.hide();
-    for (const ring of collageSelectionRings) ring.hide();
-    for (const ps of paperShadows) ps.hide();
-    for (const ot of overlayTools) ot.hide();
+    for (const { node } of hiddenNodes) node.hide();
 
     stage.batchDraw();
 
     return await callback();
   } finally {
-    for (const tr of transformers) tr.show();
-    for (const gl of gridLayers) gl.show();
-    for (const cl of columnsLayers) cl.show();
-    for (const ph of slotPlaceholders) ph.show();
-    for (const ah of slotAddHandles) ah.show();
-    for (const ring of collageSelectionRings) ring.show();
-    for (const ps of paperShadows) ps.show();
-    for (const ot of overlayTools) ot.show();
+    for (const { node, visible } of hiddenNodes) {
+      if (visible) node.show();
+      else node.hide();
+    }
 
     stage.batchDraw();
   }
@@ -524,6 +616,44 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): E
 export interface CaptureStageOptions {
   /** استبدال نسخ العرض 2048px بالأصل قبل الالتقاط (دقة طباعة كاملة). */
   useFullResolution?: boolean;
+  /** بدائل عقد الصور؛ التحميل والتبديل والاستعادة كلها داخل قفل المسرح. */
+  imageOverrides?: Array<{ nodeId: string; src: string }>;
+  signal?: AbortSignal;
+  queueTimeoutMs?: number;
+  readinessTimeoutMs?: number;
+  toBlobTimeoutMs?: number;
+  /** انتظار خطوط المستند وصور عقد Konva المرئية قبل تعديل المسرح. */
+  readiness?: { fonts?: boolean; images?: boolean };
+}
+
+const DEFAULT_QUEUE_TIMEOUT_MS = 10_000;
+const DEFAULT_READINESS_TIMEOUT_MS = 10_000;
+const DEFAULT_TO_BLOB_TIMEOUT_MS = 30_000;
+
+async function waitForCaptureReadiness(
+  stage: Konva.Stage,
+  readiness: CaptureStageOptions['readiness'],
+): Promise<void> {
+  const jobs: Promise<unknown>[] = [];
+  if (readiness?.fonts && typeof document !== 'undefined' && document.fonts?.ready) {
+    jobs.push(document.fonts.ready);
+  }
+  if (readiness?.images) {
+    const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
+    for (const node of nodes) {
+      const image = node.image();
+      if (!(image instanceof HTMLImageElement) || image.complete) continue;
+      jobs.push(
+        new Promise<void>((resolve, reject) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener('error', () => reject(new Error('Capture image failed to load')), {
+            once: true,
+          });
+        }),
+      );
+    }
+  }
+  await Promise.all(jobs);
 }
 
 export async function captureStageBlob(
@@ -533,62 +663,93 @@ export async function captureStageBlob(
   quality?: number,
   /** أبعاد الورقة بالإحداثيات المنطقية — تصدير مستقل عن الزوم الحالي */
   captureRect?: { x: number; y: number; width: number; height: number },
-  options?: CaptureStageOptions,
+  options: CaptureStageOptions = {},
 ): Promise<Blob | null> {
-  return withSerializedStageCapture(stage, async () => {
-    const captureCount = activeStageCaptures.get(stage) ?? 0;
-    activeStageCaptures.set(stage, captureCount + 1);
-    const prevPos = { x: stage.x(), y: stage.y() };
-    const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
-    let upgradedImages: UpgradedImageRecord[] = [];
-    let cachedNodes: ExportCacheNode[] = [];
+  if (!Number.isFinite(targetPixelRatio) || targetPixelRatio <= 0) {
+    throw new RangeError('targetPixelRatio must be a finite positive number');
+  }
+  const queueTimeoutMs = options.queueTimeoutMs ?? DEFAULT_QUEUE_TIMEOUT_MS;
+  const readinessTimeoutMs = options.readinessTimeoutMs ?? DEFAULT_READINESS_TIMEOUT_MS;
+  const toBlobTimeoutMs = options.toBlobTimeoutMs ?? DEFAULT_TO_BLOB_TIMEOUT_MS;
 
-    try {
-      // ملكية الصور: عناصر العرض المشتقة (2048px من Go) تجلب أصولها الكاملة
-      // انتظاراً أولاً (captureStageBlob غير متزامنة أصلاً فالانتظار ممكن)
-      // ثم تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
-      if (options?.useFullResolution) {
-        await preloadImagesForFullResolution(stage);
-      }
-      upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
-      cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
-      stage.position({ x: 0, y: 0 });
-      stage.scale({ x: 1, y: 1 });
-      stage.batchDraw();
+  return withSerializedStageCapture(
+    stage,
+    async () => {
+      if (options.signal?.aborted) throw abortError(options.signal);
+      const captureCount = activeStageCaptures.get(stage) ?? 0;
+      activeStageCaptures.set(stage, captureCount + 1);
+      const prevPos = { x: stage.x(), y: stage.y() };
+      const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
+      const lease = createCaptureOriginalLease();
+      let upgradedImages: UpgradedImageRecord[] = [];
+      let restoreOverrides: (() => void) | undefined;
+      let cachedNodes: ExportCacheNode[] = [];
 
-      const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
-        // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
-        // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
-        // المؤقت فقط. أوراق 300DPI كبيرة (A4/A3) تحتاج نسبة 6×+ مع معاينة 400px،
-        // وقسرها على 4× كان يلتقط الكانفاس بدقة مصغرة تُرسم مشوهة عند التسطيح.
-        const MAX_EXPORT_RATIO = 8;
-        const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
-        // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل دقة التصدير
-        // ثابتة مهما كان مستوى التكبير على الشاشة.
-        const exportCanvas = captureRect
-          ? stage.toCanvas({ ...captureRect, pixelRatio: safePixelRatio })
-          : stage.toCanvas({ pixelRatio: safePixelRatio });
-        return await new Promise<Blob | null>((resolve) => {
-          exportCanvas.toBlob(resolve, mimeType, quality);
-        });
-      });
-
-      return blob;
-    } finally {
       try {
-        stage.position(prevPos);
-        stage.scale(prevScale);
-        restoreImageNodes(upgradedImages);
-        restoreScreenCache(cachedNodes);
+        await raceDeadline(
+          waitForCaptureReadiness(stage, options.readiness),
+          'readiness',
+          readinessTimeoutMs,
+          options.signal,
+        );
+        if (options.useFullResolution) {
+          await raceDeadline(
+            preloadImagesForFullResolution(stage, lease),
+            'readiness',
+            readinessTimeoutMs,
+            options.signal,
+          );
+        }
+        upgradedImages = options.useFullResolution
+          ? upgradeImagesToFullResolution(stage, lease)
+          : [];
+        if (options.imageOverrides?.length) {
+          restoreOverrides = await swapNodeImagesForCapture(
+            stage,
+            options.imageOverrides,
+            readinessTimeoutMs,
+            options.signal,
+          );
+        }
+        cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+        stage.position({ x: 0, y: 0 });
+        stage.scale({ x: 1, y: 1 });
         stage.batchDraw();
+
+        return await withHiddenOverlays(stage, targetPixelRatio, async () => {
+          const width = captureRect?.width ?? stage.width();
+          const height = captureRect?.height ?? stage.height();
+          const outputWidth = Math.ceil(width * targetPixelRatio);
+          const outputHeight = Math.ceil(height * targetPixelRatio);
+          assertExportablePixels(outputWidth, outputHeight);
+          const exportCanvas = captureRect
+            ? stage.toCanvas({ ...captureRect, pixelRatio: targetPixelRatio })
+            : stage.toCanvas({ pixelRatio: targetPixelRatio });
+          return await raceDeadline(
+            new Promise<Blob | null>((resolve) => {
+              exportCanvas.toBlob(resolve, mimeType, quality);
+            }),
+            'toBlob',
+            toBlobTimeoutMs,
+            options.signal,
+          );
+        });
       } finally {
-        // 🛡️ الأصول الكاملة المجلوبة للالتقاط لا تبقى حية بعده — تفريغ جسر
-        // الالتقاط وكاش العود يحرر الذاكرة فوراً ويحفظ مكسب ملكية الصور.
-        releaseCaptureOriginals();
-        const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
-        if (remaining > 0) activeStageCaptures.set(stage, remaining);
-        else activeStageCaptures.delete(stage);
+        try {
+          stage.position(prevPos);
+          stage.scale(prevScale);
+          restoreOverrides?.();
+          restoreImageNodes(upgradedImages);
+          restoreScreenCache(cachedNodes);
+          stage.batchDraw();
+        } finally {
+          lease.release();
+          const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
+          if (remaining > 0) activeStageCaptures.set(stage, remaining);
+          else activeStageCaptures.delete(stage);
+        }
       }
-    }
-  });
+    },
+    { signal: options.signal, queueTimeoutMs },
+  );
 }

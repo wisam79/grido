@@ -7,7 +7,9 @@ import {
   ExportPrintSheet,
   PrintDirect,
   PollJobStatus,
-  CancelActivePrintJobs,
+  ResolvePrinterPlan,
+  CancelPrintJob,
+  CancelSpoolJob,
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { ensureStickerPrintResolution } from '@/features/stickers/lib/print-rerasterize';
@@ -26,7 +28,8 @@ import {
   runFreeformPreflight,
 } from '@/lib/export/freeform-preflight';
 import { createLogger } from '@/lib/logger';
-import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
+import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
+import { buildSingleComposition } from '@/lib/print/single-print-composition';
 
 import { extractPrintImageSrc, generatePrintPageStyle } from './print-page-style';
 import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
@@ -60,6 +63,86 @@ export {
 };
 
 const logger = createLogger('use-print-export');
+
+const SPOOL_POLL_INTERVAL_MS = 1_500;
+const SPOOL_POLL_TIMEOUT_MS = 2 * 60_000;
+const PLAN_TIMEOUT_MS = 30_000;
+
+function createClientPrintJobId(): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return `print-${uuid}`;
+  const bytes = new Uint32Array(4);
+  globalThis.crypto?.getRandomValues?.(bytes);
+  const entropy = Array.from(bytes, (value) => value.toString(36)).join('-');
+  return `print-${Date.now().toString(36)}-${entropy || 'client'}`;
+}
+
+function isVisiblePrintBackground(color: string | null | undefined): color is string {
+  return Boolean(color && color.trim() && color.trim().toLowerCase() !== 'transparent');
+}
+
+function spoolFailureDetail(result: domain.DirectPrintResult): string {
+  return result.error || result.status || result.code || 'فشلت مهمة الطباعة دون تفاصيل';
+}
+
+function buildPrintBackgroundBlocks(input: {
+  layout: ReturnType<typeof usePrintLayout>;
+  mode: 'single' | 'collage';
+  elements: PrintExportContext['elements'];
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundColor: string;
+  backgroundGradientColor2?: string | null;
+  backgroundGradientAngle?: number;
+  imageDimensions?: ReadonlyMap<string, { width: number; height: number }>;
+}): domain.PrintBackgroundBlock[] {
+  const {
+    layout,
+    mode,
+    elements,
+    canvasWidth,
+    canvasHeight,
+    backgroundColor,
+    backgroundGradientColor2,
+    backgroundGradientAngle,
+    imageDimensions,
+  } = input;
+  if (!isVisiblePrintBackground(backgroundColor)) return [];
+
+  // A captured single-mode blob already contains the Stage background. Only the
+  // fast item composition needs a separate local block under each design copy.
+  if (mode === 'single') {
+    const composition = buildSingleComposition({
+      elements,
+      canvasWidth,
+      canvasHeight,
+      canvasWidthMM: layout.imageWidthMM,
+      canvasHeightMM: layout.imageHeightMM,
+      backgroundColor,
+      backgroundGradientColor2,
+    });
+    if (
+      !composition.eligible ||
+      !(composition.composition?.items ?? []).every((item) => imageDimensions?.has(item.imageSrc))
+    ) {
+      return [];
+    }
+  }
+
+  return Array.from({ length: Math.max(0, layout.actualCopies) }, (_, index) => {
+    const block = computeBlockPosition(index, layout.grid);
+    return domain.PrintBackgroundBlock.createFrom({
+      x: block.xMM,
+      y: block.yMM,
+      w: layout.imageWidthMM,
+      h: layout.imageHeightMM,
+      color: backgroundColor,
+      ...(isVisiblePrintBackground(backgroundGradientColor2)
+        ? { color2: backgroundGradientColor2, angle: backgroundGradientAngle ?? 135 }
+        : {}),
+    });
+  });
+}
 
 export interface PrintExportContext {
   layout: ReturnType<typeof usePrintLayout>;
@@ -111,9 +194,14 @@ export function usePrintExport({
   printOutputFormat,
 }: PrintExportContext) {
   const stageRef = useStageRef();
+  const backgroundGradientColor2 = useEditorStore((state) => state.backgroundGradientColor2);
+  const backgroundGradientAngle = useEditorStore((state) => state.backgroundGradientAngle);
   const [isExporting, setIsExportingState] = useState(false);
   const isExportingRef = useRef(false);
   const attemptRef = useRef(0);
+  const generationJobIdRef = useRef<string | null>(null);
+  const spoolJobRef = useRef<{ printerName: string; jobId: number; attempt: number } | null>(null);
+  const pollingResolversRef = useRef<Set<() => void>>(new Set());
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const mountedRef = useRef(true);
 
@@ -121,10 +209,15 @@ export function usePrintExport({
     mountedRef.current = true;
     const timers = timersRef.current;
     const attempts = attemptRef;
+    const pollingResolvers = pollingResolversRef.current;
     return () => {
       mountedRef.current = false;
       attempts.current += 1;
       isExportingRef.current = false;
+      generationJobIdRef.current = null;
+      spoolJobRef.current = null;
+      pollingResolvers.forEach((resolve) => resolve());
+      pollingResolvers.clear();
       timers.forEach((t) => clearTimeout(t));
       timers.clear();
     };
@@ -139,25 +232,141 @@ export function usePrintExport({
     return id;
   }, []);
 
+  const stopPollingWaiters = useCallback(() => {
+    pollingResolversRef.current.forEach((resolve) => resolve());
+    pollingResolversRef.current.clear();
+  }, []);
+
+  const clearScheduledTimers = useCallback(() => {
+    timersRef.current.forEach((timer) => clearTimeout(timer));
+    timersRef.current.clear();
+  }, []);
+
   const setExporting = useCallback((v: boolean) => {
     isExportingRef.current = v;
     setIsExportingState(v);
   }, []);
 
   const cancelExport = useCallback(() => {
+    const generationJobId = generationJobIdRef.current;
+    const spoolJob = spoolJobRef.current;
+    generationJobIdRef.current = null;
+    spoolJobRef.current = null;
     attemptRef.current++;
+    clearScheduledTimers();
+    stopPollingWaiters();
     setExporting(false);
-    // 🛑 إلغاء التوليد الحسابي في Go فعلياً (الطابور + الرسم + الحفظ) —
-    // لا مهام = no-op صامت؛ النتيجة المتأخرة مصفّاة أصلاً بمرساة attempt.
-    // مهام سبول الطابعة المرسلة أصلاً لها مسار إلغاء النظام الخاص بها.
-    if (typeof CancelActivePrintJobs === 'function') {
-      CancelActivePrintJobs().catch(() => {});
+
+    if (generationJobId && typeof CancelPrintJob === 'function') {
+      CancelPrintJob(generationJobId).catch(() => {});
+    }
+    if (spoolJob && typeof CancelSpoolJob === 'function') {
+      CancelSpoolJob(spoolJob.printerName, spoolJob.jobId).catch((err) => {
+        logger.warn('Failed to cancel spool job:', err);
+      });
     }
     SetTaskbarProgress(0, 'none').catch(() => {});
     if (typeof document !== 'undefined' && document.body) {
       document.body.style.pointerEvents = '';
     }
-  }, [setExporting]);
+  }, [clearScheduledTimers, setExporting, stopPollingWaiters]);
+
+  const pollSpoolJob = useCallback(
+    async (input: {
+      attempt: number;
+      printerName: string;
+      jobId: number;
+      onDone: () => void;
+    }): Promise<void> => {
+      const { attempt, printerName, jobId, onDone } = input;
+      const startedAt = Date.now();
+
+      await new Promise<void>((resolve) => {
+        let settled = false;
+        const settle = () => {
+          if (settled) return;
+          settled = true;
+          pollingResolversRef.current.delete(settle);
+          resolve();
+        };
+        pollingResolversRef.current.add(settle);
+
+        const finish = (kind: 'success' | 'failure' | 'timeout', detail?: string) => {
+          if (spoolJobRef.current?.attempt === attempt) spoolJobRef.current = null;
+          if (attempt !== attemptRef.current || !mountedRef.current) {
+            settle();
+            return;
+          }
+          SetTaskbarProgress(0, 'none').catch(() => {});
+          if (kind === 'success') {
+            toast.success(`اكتملت طباعة المهمة #${jobId} بنجاح`);
+            setExporting(false);
+            onDone();
+          } else if (kind === 'failure') {
+            toast.error(`تعذرت مهمة الطباعة #${jobId}: ${detail || 'خطأ غير معروف'}`);
+            setExporting(false);
+          } else {
+            toast.warning(
+              `لم تصل حالة نهائية للمهمة #${jobId} خلال دقيقتين — تحقّق من طابور الطباعة قبل إعادة المحاولة.`,
+            );
+            setExporting(false);
+          }
+          settle();
+        };
+
+        const scheduleNext = () => {
+          const elapsed = Date.now() - startedAt;
+          const remaining = SPOOL_POLL_TIMEOUT_MS - elapsed;
+          if (remaining <= 0) {
+            finish('timeout');
+            return;
+          }
+          later(() => void poll(), Math.min(SPOOL_POLL_INTERVAL_MS, remaining));
+        };
+
+        const poll = async () => {
+          if (
+            attempt !== attemptRef.current ||
+            !mountedRef.current ||
+            spoolJobRef.current?.attempt !== attempt
+          ) {
+            settle();
+            return;
+          }
+          if (Date.now() - startedAt >= SPOOL_POLL_TIMEOUT_MS) {
+            finish('timeout');
+            return;
+          }
+
+          try {
+            const result = await PollJobStatus(printerName, jobId);
+            if (
+              attempt !== attemptRef.current ||
+              !mountedRef.current ||
+              spoolJobRef.current?.attempt !== attempt
+            ) {
+              settle();
+              return;
+            }
+            if (!result.success) {
+              finish('failure', spoolFailureDetail(result));
+              return;
+            }
+            if (result.terminal) {
+              finish('success');
+              return;
+            }
+          } catch (err) {
+            logger.debug('PollJobStatus error while monitoring:', err);
+          }
+          scheduleNext();
+        };
+
+        scheduleNext();
+      });
+    },
+    [later, setExporting],
+  );
 
   const printInvocationRef = useRef<{
     effectiveMarginMM: number;
@@ -212,6 +421,7 @@ export function usePrintExport({
     async (
       attempt: number,
       stickerSrcMap?: ReadonlyMap<string, string>,
+      imageDimensions?: ReadonlyMap<string, { width: number; height: number }>,
     ): Promise<BuiltItems | null> => {
       const stage = stageRef.current;
       if (!stage) {
@@ -227,11 +437,12 @@ export function usePrintExport({
           canvasWidth,
           canvasHeight,
           backgroundColor,
-          backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
+          backgroundGradientColor2,
           printDpi,
           printShowCutLines,
           printShowEndCutLine,
           printCutLineStyle,
+          imageDimensions,
           stickerSrcMap,
         });
       } catch (e) {
@@ -256,6 +467,7 @@ export function usePrintExport({
       canvasWidth,
       canvasHeight,
       backgroundColor,
+      backgroundGradientColor2,
       printDpi,
       printShowCutLines,
       printShowEndCutLine,
@@ -270,6 +482,11 @@ export function usePrintExport({
       setExporting(true);
       // رمز الجيل: أي نتيجة تصل بعد بدء تصدير أحدث تُتجاهل بصمت.
       const attempt = ++attemptRef.current;
+      clearScheduledTimers();
+      stopPollingWaiters();
+      spoolJobRef.current = null;
+      const generationJobId = createClientPrintJobId();
+      generationJobIdRef.current = generationJobId;
       // وميض 100% (نجاح/خطأ) يجري عبر later المؤقت — الـ finally كان يمسحه فوراً
       // فيختفي الوميض قبل رسمه؛ هذه الراية تُبقي finally بعيداً عن الوميض المُجدوَل.
       let flashPending = false;
@@ -286,6 +503,8 @@ export function usePrintExport({
         // Konva مؤقتاً (swapNodeImagesForCapture) — إذ أغلب الكانفسات الواقعية
         // غير مؤهلة للمسار السريع وكانت الملصقات تُطبع من راستر إدراجها.
         let stickerSrcMap: ReadonlyMap<string, string> | undefined;
+        let freeformImageDimensions:
+          ReadonlyMap<string, { width: number; height: number }> | undefined;
         if (mode !== 'collage') {
           const dims = await resolveFreeformImageDimensions(elements);
           if (attempt !== attemptRef.current) return;
@@ -302,8 +521,13 @@ export function usePrintExport({
           });
           if (attempt !== attemptRef.current) return;
 
-          for (const [src, upgraded] of reraster.newDimensions) dims.set(src, upgraded);
+          for (const [oldSrc, upgraded] of reraster.newDimensions) {
+            dims.set(oldSrc, upgraded);
+            const upgradedSrc = reraster.srcMap.get(oldSrc);
+            if (upgradedSrc) dims.set(upgradedSrc, upgraded);
+          }
           stickerSrcMap = reraster.srcMap;
+          freeformImageDimensions = dims;
 
           const preflight = runFreeformPreflight({
             elements,
@@ -329,7 +553,9 @@ export function usePrintExport({
         }
 
         const built =
-          mode === 'collage' ? await buildItems() : await buildSingleItems(attempt, stickerSrcMap);
+          mode === 'collage'
+            ? await buildItems()
+            : await buildSingleItems(attempt, stickerSrcMap, freeformImageDimensions);
         // الإلغاء أثناء الالتقاط/الرفع يمنع بدء طلب جديد أو تحرير حالة جولة أحدث.
         if (attempt !== attemptRef.current) return;
         if (!built) {
@@ -376,6 +602,17 @@ export function usePrintExport({
         }
 
         const { items, cutLines, composition } = built;
+        const backgroundBlocks = buildPrintBackgroundBlocks({
+          layout,
+          mode,
+          elements,
+          canvasWidth,
+          canvasHeight,
+          backgroundColor,
+          backgroundGradientColor2,
+          backgroundGradientAngle,
+          imageDimensions: freeformImageDimensions,
+        });
 
         // 🖨️ حارس حدود الورقة (RV-Print-24): Go يرفض W/H الأكبر من الورقة (fail-closed)
         // لكنه لا يفحص الموضع، فالعنصر المُزاح خارج الورقة يُقصّ بصمت. إحداثيات العناصر
@@ -425,6 +662,7 @@ export function usePrintExport({
         const result = await withTimeout(
           ExportPrintSheet(
             domain.PrintRequest.createFrom({
+              jobId: generationJobId,
               paperWidthMM: paperWidth,
               paperHeightMM: paperHeight,
               marginMM: effectiveMarginMM,
@@ -447,6 +685,7 @@ export function usePrintExport({
               orientation: printOrientation || 'portrait',
               cutLines,
               items,
+              ...(backgroundBlocks.length > 0 ? { backgroundBlocks } : {}),
               // 🖨️ حارس v1.16.0: تمرير `composition: undefined` كمفتاح عبر
               // createFrom المولّد ينتج CanvasComposition أصفاراً (Nullable +
               // default {}) فيرفضه validateCanvasComposition في Go ويفشل كل
@@ -457,6 +696,9 @@ export function usePrintExport({
           EXPORT_TIMEOUT_MS,
           'ExportPrintSheet',
         );
+        if (generationJobIdRef.current === generationJobId) {
+          generationJobIdRef.current = null;
+        }
         if (attempt !== attemptRef.current) return;
 
         if (!result.success) {
@@ -486,22 +728,63 @@ export function usePrintExport({
         }
 
         // 🖨️ المسار المباشر الأصلي لويندوز (Win32 GDI Direct Spooling):
-        if (result.filePath && typeof PrintDirect === 'function') {
+        if (
+          result.filePath &&
+          options?.directPrint !== false &&
+          typeof PrintDirect === 'function'
+        ) {
           SetTaskbarProgress(75, 'indeterminate').catch(() => {});
           try {
+            const requestedPlan = domain.PrinterPlanRequest.createFrom({
+              printerName: options?.printerName || '',
+              formName: options?.formName,
+              paperId: options?.paperId,
+              paperWidthMM: paperWidth,
+              paperHeightMM: paperHeight,
+              orientation: printOrientation || 'portrait',
+              borderless: options?.borderless ?? false,
+            });
+            const plan = await withTimeout(
+              ResolvePrinterPlan(requestedPlan),
+              PLAN_TIMEOUT_MS,
+              'ResolvePrinterPlan',
+            );
+            if (attempt !== attemptRef.current) return;
+            if (!plan.success) {
+              const reason = describeError(
+                plan.error || plan.code || 'رفض برنامج تشغيل الطابعة الخطة',
+              );
+              logger.error('Printer plan rejected:', plan.code, plan.error);
+              toast.error(`تعذرت الطباعة: ${reason}`);
+              return;
+            }
+            if (plan.fallbackReason || (typeof plan.scale === 'number' && plan.scale < 1)) {
+              const scaleNotice =
+                typeof plan.scale === 'number' && plan.scale < 1
+                  ? `سيُصغّر المحتوى إلى ${Math.round(plan.scale * 100)}٪`
+                  : '';
+              toast.warning(
+                ['عدّلت الطابعة خطة الورق قبل الإرسال', plan.fallbackReason, scaleNotice]
+                  .filter(Boolean)
+                  .join(' — '),
+              );
+            }
+
+            const appliedPaperWidth = plan.paperWidthMM || paperWidth;
+            const appliedPaperHeight = plan.paperHeightMM || paperHeight;
             const printRes = await withTimeout(
               PrintDirect(
                 domain.DirectPrintRequest.createFrom({
                   printerName: options?.printerName || '',
                   filePath: result.filePath,
-                  paperWidthMM: paperWidth,
-                  paperHeightMM: paperHeight,
+                  paperWidthMM: appliedPaperWidth,
+                  paperHeightMM: appliedPaperHeight,
                   orientation: printOrientation || 'portrait',
                   copies: 1,
                   color: true,
                   borderless: options?.borderless ?? false,
-                  formName: options?.formName,
-                  paperId: options?.paperId,
+                  formName: plan.appliedFormName || options?.formName,
+                  paperId: plan.appliedPaperId || options?.paperId,
                 }),
               ),
               30_000,
@@ -509,39 +792,35 @@ export function usePrintExport({
             );
             if (attempt !== attemptRef.current) return;
             if (printRes.success) {
+              const spoolJobId = printRes.jobId || 0;
+              if (spoolJobId > 0 && typeof PollJobStatus === 'function') {
+                const printerName = options?.printerName || '';
+                spoolJobRef.current = { printerName, jobId: spoolJobId, attempt };
+                toast.success(
+                  `تم إرسال الورقة إلى طابعة ${printerName || 'النظام'} (المهمة #${spoolJobId}) — جارٍ انتظار النتيجة النهائية`,
+                );
+                await pollSpoolJob({ attempt, printerName, jobId: spoolJobId, onDone });
+                return;
+              }
+
               SetTaskbarProgress(100, 'normal').catch(() => {});
               flashPending = true;
               later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
-              toast.success(
-                `تم إرسال الورقة بنجاح إلى طابعة ${options?.printerName || 'النظام'} (المهمة #${printRes.jobId})`,
-              );
+              toast.success(`تم إرسال الورقة بنجاح إلى طابعة ${options?.printerName || 'النظام'}`);
               setExporting(false);
               onDone();
-
-              // مراقبة حالة المهمة في طابور الويندوز عبر PollJobStatus
-              if (printRes.jobId && typeof PollJobStatus === 'function') {
-                const printer = options?.printerName || '';
-                const jId = printRes.jobId;
-                setTimeout(async () => {
-                  try {
-                    const poll = await PollJobStatus(printer, jId);
-                    if (!poll.success && poll.error) {
-                      logger.warn('Print job reported error after spooling:', poll.error);
-                      toast.error(`تنبيه الطابعة للمهمة #${jId}: ${poll.error}`);
-                    }
-                  } catch (err) {
-                    logger.debug('PollJobStatus error (ignored):', err);
-                  }
-                }, 1500);
-              }
-              return;
-            } else {
-              const reason = describeError(printRes.error || 'خطأ غير معروف');
-              logger.error('Direct print failed:', printRes.error);
-              toast.error(`تعذرت الطباعة: ${reason}`);
-              setExporting(false);
               return;
             }
+
+            const reason = describeError(
+              printRes.error || printRes.status || printRes.code || 'خطأ غير معروف',
+            );
+            logger.error(
+              'Direct print failed:',
+              printRes.error || printRes.status || printRes.code,
+            );
+            toast.error(`تعذرت الطباعة: ${reason}`);
+            return;
           } catch (e) {
             if (attempt !== attemptRef.current) return;
             logger.error('Direct print call threw exception:', e);
@@ -562,6 +841,9 @@ export function usePrintExport({
         setExporting(false);
         onDone();
       } catch (err) {
+        if (generationJobIdRef.current === generationJobId) {
+          generationJobIdRef.current = null;
+        }
         if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});
         flashPending = true;
@@ -569,10 +851,10 @@ export function usePrintExport({
         toast.error('حدث خطأ أثناء توليد ورقة الطباعة: ' + describeError(err));
       } finally {
         if (attempt === attemptRef.current) {
-          if (!flashPending) {
+          if (!flashPending && !spoolJobRef.current) {
             SetTaskbarProgress(0, 'none').catch(() => {});
           }
-          setExporting(false);
+          if (!spoolJobRef.current) setExporting(false);
         }
       }
     },
@@ -586,14 +868,14 @@ export function usePrintExport({
       buildSingleItems,
       paperWidth,
       paperHeight,
-      layout.gapMM,
-      layout.imageWidthMM,
-      layout.imageHeightMM,
+      layout,
       collageMargin,
       collageGap,
       collageTemplate,
       printDpi,
       backgroundColor,
+      backgroundGradientColor2,
+      backgroundGradientAngle,
       collageShowCutLines,
       printShowCutLines,
       printCutLineStyle,
@@ -601,6 +883,9 @@ export function usePrintExport({
       printColorSpace,
       printOutputFormat,
       setExporting,
+      clearScheduledTimers,
+      stopPollingWaiters,
+      pollSpoolJob,
       later,
     ],
   );
