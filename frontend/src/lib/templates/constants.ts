@@ -1,3 +1,9 @@
+import {
+  PRINT_FILTER_IDS,
+  printFilterRecipeToCSS,
+  type PrintFilterId,
+} from '../filters/print-filter-contract';
+
 export interface PaperSize {
   id: string;
   name: string;
@@ -124,57 +130,25 @@ export interface ImageFilter {
   preview: string;
 }
 
-export const IMAGE_FILTERS: ImageFilter[] = [
-  { id: 'none', name: 'الأصلي', css: '', preview: '' },
-  {
-    id: 'enhance',
-    name: 'تحسين تلقائي',
-    css: 'contrast(1.08) saturate(1.12) brightness(1.02)',
-    preview: 'contrast(1.08) saturate(1.12) brightness(1.02)',
-  },
-  {
-    id: 'skinGlow',
-    name: 'نضارة البشرة',
-    css: 'brightness(1.06) contrast(0.94) saturate(1.08) sepia(10%)',
-    preview: 'brightness(1.06) contrast(0.94) saturate(1.08) sepia(10%)',
-  },
-  {
-    id: 'clarity',
-    name: 'تفاصيل فائقة',
-    css: 'contrast(1.22) saturate(1.2) brightness(0.98)',
-    preview: 'contrast(1.22) saturate(1.2) brightness(0.98)',
-  },
-  {
-    id: 'lowlight',
-    name: 'معالجة الظلال',
-    css: 'brightness(1.16) contrast(0.9) saturate(1.05)',
-    preview: 'brightness(1.16) contrast(0.9) saturate(1.05)',
-  },
-  {
-    id: 'cinematic',
-    name: 'ألوان سينمائية — غير رسمي',
-    css: 'contrast(1.1) saturate(1.15) sepia(5%) brightness(1.02)',
-    preview: 'contrast(1.1) saturate(1.15) sepia(5%) brightness(1.02)',
-  },
-  {
-    id: 'monoPro',
-    name: 'أحادي فاخر',
-    css: 'grayscale(100%) contrast(1.25) brightness(1.02)',
-    preview: 'grayscale(100%) contrast(1.25) brightness(1.02)',
-  },
-  {
-    id: 'pixelate',
-    name: 'تعتيم بكسلي — للخصوصية',
-    css: 'blur(3px)',
-    preview: 'blur(3px)',
-  },
-  {
-    id: 'threshold',
-    name: 'أبيض وأسود — ختم مطبعة',
-    css: 'grayscale(100%) contrast(200%)',
-    preview: 'grayscale(100%) contrast(200%)',
-  },
-];
+const IMAGE_FILTER_NAMES: Readonly<Record<PrintFilterId, string>> = {
+  none: 'الأصلي',
+  enhance: 'تحسين تلقائي',
+  skinGlow: 'نضارة البشرة',
+  clarity: 'تفاصيل فائقة',
+  lowlight: 'معالجة الظلال',
+  cinematic: 'ألوان سينمائية — غير رسمي',
+  monoPro: 'أحادي فاخر',
+  grayscale: 'تدرج رمادي',
+  invert: 'عكس الألوان',
+  sepia: 'بني داكن',
+  pixelate: 'تعتيم بكسلي — للخصوصية',
+  threshold: 'أبيض وأسود — ختم مطبعة',
+};
+
+export const IMAGE_FILTERS: ImageFilter[] = PRINT_FILTER_IDS.map((id) => {
+  const css = printFilterRecipeToCSS(id);
+  return { id, name: IMAGE_FILTER_NAMES[id], css, preview: css };
+});
 
 /**
  * الاسم المختصر للمرشح — الجزء قبل الشرح بعد الشرطة الطويلة.

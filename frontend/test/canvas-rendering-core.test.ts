@@ -156,23 +156,16 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       expect(res.saturation).toBe(0);
     });
 
-    it('applies color adjustments before the pixel filter (Go order)', () => {
-      const konvaFilters = Konva.Filters as unknown as Record<string, unknown>;
+    it('applies the pixel filter before appended user adjustments (canonical CSS order)', () => {
       const res = getKonvaFilters({ filter: 'pixelate', brightness: 130 });
 
-      // H1: المركّب الواحد يمثل التسلسل القديم — الترتيب محفوظ حرفياً في composedFrom
+      expect(res.operations).toEqual([
+        { kind: 'pixelate', blockSize: 10 },
+        { kind: 'brightness', factor: 1.3 },
+      ]);
       expect(res.filters).toHaveLength(1);
       const composed = res.filters[0] as unknown as ComposedPixelFilter;
-      const source = composed.composedFrom;
-      const brightnessAt = source.indexOf(
-        konvaFilters.Brightness as unknown as (typeof source)[number],
-      );
-      const pixelateAt = source.indexOf(
-        konvaFilters.NearestNeighborPixelate as unknown as (typeof source)[number],
-      );
-
-      expect(brightnessAt).toBeGreaterThanOrEqual(0);
-      expect(pixelateAt).toBeGreaterThan(brightnessAt);
+      expect(composed.composedFrom).toHaveLength(2);
     });
   });
 
@@ -284,22 +277,21 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       expect(composePixelFilters([])).toBeNull();
     });
 
-    it('getKonvaFilters hands the node a single composed filter for multi-filter recipes', () => {
-      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
-      // skinGlow: 4 فلاتر لونية → مركّب واحد؛ الترتيب الداخلي = ترتيب Go
+    it('getKonvaFilters hands the node one composed filter in canonical recipe order', () => {
       const glow = getKonvaFilters({ filter: 'skinGlow' });
       expect(glow.filters).toHaveLength(1);
-      expect((glow.filters[0] as unknown as ComposedPixelFilter).composedFrom).toEqual([
-        konvaFilters.SepiaBlend!,
-        konvaFilters.Brightness!,
-        konvaFilters.Contrast!,
-        konvaFilters.Saturation!,
+      expect(glow.operations).toEqual([
+        { kind: 'brightness', factor: 1.06 },
+        { kind: 'contrast', factor: 0.94 },
+        { kind: 'saturation', factor: 1.08 },
+        { kind: 'sepia', amount: 0.1 },
       ]);
+      expect((glow.filters[0] as unknown as ComposedPixelFilter).composedFrom).toHaveLength(4);
 
       // الوصفة أحادية الفلتر تبقى كما هي بلا تغليف
       const mono = getKonvaFilters({ filter: 'threshold' });
       expect(mono.filters).toHaveLength(1);
-      expect(mono.filters[0]).toBe(konvaFilters.LuminanceThreshold!);
+      expect(mono.operations).toEqual([{ kind: 'threshold', level: 0.5 }]);
     });
   });
 

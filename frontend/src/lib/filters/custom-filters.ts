@@ -6,6 +6,7 @@ import {
   PIXELATE_BLOCK_PX,
   THRESHOLD_LEVEL,
 } from './pixel-filters';
+import type { PrintFilterOperation } from './print-filter-contract';
 
 // 🎨 مرشّحات Konva المخصصة لمطابقة معايير W3C CSS filter بنسبة 100%
 // وهي المرجع الموحد بين المعاينة والطباعة والتصدير.
@@ -24,6 +25,103 @@ type PixelFilterFn = (this: Konva.Node, imageData: ImageData) => void;
 export function markPerPixelFilter<T extends PixelFilterFn>(fn: T): T {
   (fn as unknown as { [PER_PIXEL_FILTER_MARKER]?: boolean })[PER_PIXEL_FILTER_MARKER] = true;
   return fn;
+}
+
+/** Metadata key used to expose the exact operation carried by a generated filter. */
+export const PRINT_FILTER_OPERATION_MARKER = '__gridoPrintFilterOperation';
+
+export interface OrderedPrintFilterFn extends PixelFilterFn {
+  [PRINT_FILTER_OPERATION_MARKER]: PrintFilterOperation;
+}
+
+function clampUnit(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+}
+
+function nonNegativeFactor(value: number, fallback: number): number {
+  return Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
+/** Apply one canonical operation in-place using CSS/W3C byte-domain semantics. */
+export function applyPrintFilterOperation(
+  imageData: ImageData,
+  operation: PrintFilterOperation,
+): void {
+  if (operation.kind === 'threshold') {
+    applyLuminanceThreshold(imageData.data, operation.level);
+    return;
+  }
+  if (operation.kind === 'pixelate') {
+    applyNearestPixelate(imageData.data, imageData.width, imageData.height, operation.blockSize);
+    return;
+  }
+
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    switch (operation.kind) {
+      case 'brightness': {
+        const factor = nonNegativeFactor(operation.factor, 1);
+        data[i] = r * factor;
+        data[i + 1] = g * factor;
+        data[i + 2] = b * factor;
+        break;
+      }
+      case 'contrast': {
+        const factor = nonNegativeFactor(operation.factor, 1);
+        data[i] = (r - 127.5) * factor + 127.5;
+        data[i + 1] = (g - 127.5) * factor + 127.5;
+        data[i + 2] = (b - 127.5) * factor + 127.5;
+        break;
+      }
+      case 'saturation': {
+        const factor = nonNegativeFactor(operation.factor, 1);
+        const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        data[i] = luma + (r - luma) * factor;
+        data[i + 1] = luma + (g - luma) * factor;
+        data[i + 2] = luma + (b - luma) * factor;
+        break;
+      }
+      case 'sepia': {
+        const amount = clampUnit(operation.amount);
+        const tr = r * 0.393 + g * 0.769 + b * 0.189;
+        const tg = r * 0.349 + g * 0.686 + b * 0.168;
+        const tb = r * 0.272 + g * 0.534 + b * 0.131;
+        data[i] = r + (tr - r) * amount;
+        data[i + 1] = g + (tg - g) * amount;
+        data[i + 2] = b + (tb - b) * amount;
+        break;
+      }
+      case 'grayscale': {
+        const amount = clampUnit(operation.amount);
+        const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        data[i] = r + (luma - r) * amount;
+        data[i + 1] = g + (luma - g) * amount;
+        data[i + 2] = b + (luma - b) * amount;
+        break;
+      }
+      case 'invert': {
+        const amount = clampUnit(operation.amount);
+        data[i] = r + (255 - 2 * r) * amount;
+        data[i + 1] = g + (255 - 2 * g) * amount;
+        data[i + 2] = b + (255 - 2 * b) * amount;
+        break;
+      }
+    }
+    // Alpha is deliberately untouched for every color operation.
+  }
+}
+
+/** Create a Konva filter bound to one operation, so duplicate operations stay ordered. */
+export function createOrderedPrintFilter(operation: PrintFilterOperation): OrderedPrintFilterFn {
+  const filter = function (_imageData: ImageData) {
+    applyPrintFilterOperation(_imageData, operation);
+  } as OrderedPrintFilterFn;
+  filter[PRINT_FILTER_OPERATION_MARKER] = operation;
+  return operation.kind === 'pixelate' ? filter : markPerPixelFilter(filter);
 }
 
 // الفلاتر المدمجة في Konva المؤكدة أنها لونية لكل-بكسل (تعمل على data[i] وحده)

@@ -364,12 +364,15 @@ describe('ExportDialog Component Tests', () => {
         'png',
         0.95,
         150,
+        expect.any(AbortSignal),
       );
       expect(mockDownloadBlob).toHaveBeenCalledWith(
         expect.any(Blob),
         expect.any(String),
         undefined,
         150,
+        undefined,
+        expect.any(AbortSignal),
       );
     });
   });
@@ -384,13 +387,13 @@ describe('ExportDialog Component Tests', () => {
       expect(screen.queryByText(/قد يختلف التباين/)).not.toBeInTheDocument();
     });
 
-    it('يبدّل الصيغ إلى TIFF/JPEG ويخفي PNG/JPG عند اختيار CMYK', () => {
+    it('يبدّل الصيغة إلى TIFF فقط ويخفي PNG/JPG عند اختيار CMYK', () => {
       renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
       fireEvent.click(screen.getByText('CMYK'));
 
       expect(screen.getByText('TIFF')).toBeInTheDocument();
-      expect(screen.getByText('JPEG')).toBeInTheDocument();
+      expect(screen.queryByText('JPEG')).not.toBeInTheDocument();
       expect(screen.queryByText('PNG')).not.toBeInTheDocument();
       expect(screen.queryByText('JPG')).not.toBeInTheDocument();
       expect(screen.getByText(/CMYK لمطابع الأوفست/)).toBeInTheDocument();
@@ -405,19 +408,13 @@ describe('ExportDialog Component Tests', () => {
       expect(screen.queryByText('هامش النزيف والقص')).not.toBeInTheDocument();
     });
 
-    it('يعطل خيار JPEG في وضع CMYK مع تلميح صريح ولا يظهر منزلق الجودة (RV-Print-27)', () => {
+    it('لا يعرض أي سطح JPEG أو منزلق جودة في وضع CMYK', () => {
       renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
       fireEvent.click(screen.getByText('CMYK'));
       expect(screen.queryByText('جودة الصورة')).not.toBeInTheDocument();
-
-      const jpegBtn = screen.getByText('JPEG').closest('button');
-      expect(jpegBtn).toBeDisabled();
-      expect(jpegBtn).toHaveAttribute('aria-disabled', 'true');
-      expect(jpegBtn).toHaveAttribute(
-        'title',
-        'مُرمِّز JPEG لا يدعم فصل الأحبار CMYK — اختر TIFF (الحامل الحقيقي لفصل الأحبار)',
-      );
+      expect(screen.queryByText('JPEG')).not.toBeInTheDocument();
+      expect(screen.getByText('TIFF').closest('button')).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('يمرر صيغة CMYK عبر المسار الخلفي ويحفظ بامتداد .tif', async () => {
@@ -433,6 +430,7 @@ describe('ExportDialog Component Tests', () => {
       expect(params.format).toBe('tiff');
       expect(params.dpi).toBe(300);
       expect(params.backgroundColor).toBe('#FFFFFF');
+      expect(params.signal).toBeInstanceOf(AbortSignal);
       // هندسة صفرية الانحراف: mmToPx(mm, dpi) == canvasPx (الافتراضي 2480×3508 @300DPI)
       const canvasWidth = useEditorStore.getState().canvasWidth;
       const canvasHeight = useEditorStore.getState().canvasHeight;
@@ -444,23 +442,33 @@ describe('ExportDialog Component Tests', () => {
       expect(mockExportCanvas).not.toHaveBeenCalled();
 
       expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
-      const [blob, filename] = mockDownloadBlob.mock.calls[0];
+      const [blob, filename, , , sourceFilename, signal] = mockDownloadBlob.mock.calls[0];
       expect(blob).toBeInstanceOf(Blob);
       expect(String(filename)).toMatch(/_CMYK\.tif$/);
+      expect(sourceFilename).toBe('print_1.tif');
+      expect(signal).toBeInstanceOf(AbortSignal);
       expect(toast.success).toHaveBeenCalled();
       expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it('يفرض TIFF دائماً حتى لو نُقر JPEG أو كانت الحالة القديمة jpeg (RV-Print-27)', async () => {
-      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+    it('aborts the active round on close and stale CMYK work cannot save or toast', async () => {
+      const cmyk = deferred<{ blob: Blob; sourceFilename: string }>();
+      mockRunCmykExport.mockReturnValueOnce(cmyk.promise);
+      const handleOpenChange = vi.fn();
+      renderWithProviders(<ExportDialog open={true} onOpenChange={handleOpenChange} />);
 
       fireEvent.click(screen.getByText('CMYK'));
-      const jpegBtn = screen.getByText('JPEG').closest('button');
-      if (jpegBtn) fireEvent.click(jpegBtn);
-      await clickExportAndSettle();
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockRunCmykExport).toHaveBeenCalledTimes(1));
+      const signal = mockRunCmykExport.mock.calls[0][0].signal;
+      fireEvent.click(screen.getByRole('button', { name: 'إيقاف التصدير' }));
 
-      expect(mockRunCmykExport.mock.calls[0][0].format).toBe('tiff');
-      expect(String(mockDownloadBlob.mock.calls[0][1])).toMatch(/_CMYK\.tif$/);
+      expect(signal?.aborted).toBe(true);
+      await act(async () => cmyk.resolve({ blob: new Blob(['late']), sourceFilename: 'late.tif' }));
+      expect(mockDownloadBlob).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(SendNotification).not.toHaveBeenCalled();
+      expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
 
     it('يعرض خطأً صريحاً عند فشل التحويل الخلفي', async () => {

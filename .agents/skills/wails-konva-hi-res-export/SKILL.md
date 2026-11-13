@@ -55,14 +55,36 @@ func (s *PrintService) RenderHiResCanvas(job ExportJob) (image.Image, error) {
 
 ---
 
-## 🎨 3. كاش الفلاتر بدقة التصدير في Konva (High-DPI Filter Cache)
+## 🎨 3. معاملة التقاط Konva وكاش الفلاتر (Capture Transaction & Filter Cache)
 
-عند تصدير الكانفاس مباشرة من Konva Stage في الواجهة:
-1. قم بحصر كافة العقد التي تحتوي على فلاتر مفعّلة (`node.isCached()`).
-2. أعد بناء الكاش بدقة التصدير المستهدفة:
-   ```typescript
-   const targetRatio = Math.max(1, exportDPI / screenDPI);
-   node.cache({ pixelRatio: targetRatio });
-   ```
-3. التقط الكانفاس بـ `stage.toCanvas({ pixelRatio: targetRatio })`.
-4. في كتلة `finally`، استعد فوراً كاش الشاشة العادي (`pixelRatio: 1`) لحماية ذاكرة VRAM من الامتلاء.
+عند تصدير الكانفاس عبر `captureStageBlob`:
+1. يُسلسل الالتقاط لكل Stage ويُحاط انتظار الدور/الجاهزية/`toBlob` بمهل و`AbortSignal`.
+2. تُرقّى مشتقات العرض 2048px وبدائل الصور ويُعاد قياس القص داخل القفل فقط.
+3. تُحفظ نسبة كاش الشاشة المقاسة وتُرقّى العقد المفلترة ضمن ميزانية 256MiB قبل `stage.toCanvas`.
+4. تُخفى overlays ويُصفّر موضع/مقياس Stage مؤقتاً.
+5. داخل `finally` تُستعاد المصفوفة والصور/القص والكاش والرؤية وlease الأصل حتى عند الخطأ أو الإلغاء.
+
+---
+
+## 🧪 4. `cover` والفلاتر والـfixtures المستقلة
+
+- `single-print-composition.ts` يصرّح `imageFit: 'cover'`، و`print-payload-builder.ts` يحسب نافذة القص من أبعاد المصدر بعد EXIF مرة واحدة؛ preflight يقيس DPI من النافذة المرئية، وGo يستهلك حقول القص الصريحة.
+- ترتيب الفلاتر القانوني مصدره `frontend/src/lib/filters/print-filter-contract.ts`: وصفة الأساس ثم brightness → contrast → saturation. النظير في Go يجب أن يبقى حرفياً متزامناً.
+- `test-fixtures/print-rgba/` حزمة مواصفة مستقلة: استعمل `node test-fixtures/print-rgba/generate-fixtures.mjs --verify` فقط. ممنوع إعادة توليد expected bytes من الإنتاج أو auto-bless في CI.
+
+---
+
+## 🩸 5. النزيف واللون وصيغ الإخراج
+
+- النزيف الموجب fail-closed عند أي عجز؛ الصفر فقط يعيد Blob الإدخال نفسه. fallback الحفظ لا يحفظ ملفاً فارغاً.
+- sRGB: JPEG افتراضي للطباعة وPNG اختياري مدعوم مع DPI. CMYK الحقيقي: TIFF فقط؛ CMYK JPEG/PNG مرفوضان.
+- لا ICC أو soft proof حالياً. `fillPatternImage` يبقى على مشتق 2048px، و`cutShapeType` دليل/بيانات مشروع لا clipping تلقائياً.
+
+---
+
+## 🖨️ 6. Direct GDI والخطة والإلغاء
+
+- المسار النشط يولد الصورة ثم يستعمل `PrintDirect`/Win32 GDI؛ لا `iframe` ولا `window.print()`.
+- عقود الخلفية: `ResolvePrinterPlan` للمطلوب/المطبق والمساحة القابلة للطباعة، `PollJobStatus` حتى terminal، `CancelSpoolJob` لمهمة السبول، و`CancelPrintJob(jobID)` لتوليد الورقة قبل السبول.
+- وجود واردات أو refs في الواجهة لا يثبت اكتمال orchestration: تحقق من الاستدعاء الفعلي للخطة، تمرير JobID، تثبيت معرف السبول، والتعامل مع الحالات النهائية، ثم شغّل الاختبارات المستهدفة/CI.
+- `TestGDIPure_*` بلا طابعة حقيقية؛ القبول الفيزيائي منفصل وفق `docs/print-acceptance/` ويبقى Pending حتى دليل عتاد المالك.

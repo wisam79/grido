@@ -135,6 +135,7 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   377054365: async () => 'success', // ResetSettings
 
   // ── PrintHandler bindings (frontend/bindings/grido/internal/handlers/printhandler.ts) ──
+  2204090549: async () => undefined, // CancelSpoolJob
   334009393: async () => ({
     success: true,
     imagePath: 'C:/mock/sheet.png',
@@ -158,8 +159,37 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
       { id: 256, name: 'A4 Borderless', widthMM: 210, heightMM: 297, isBorderless: true },
     ],
   }), // GetSupportedPapers
-  1373740449: async () => ({ success: true, jobId: 1, status: 'Completed' }), // PollJobStatus
+  1373740449: async () => ({
+    success: true,
+    jobId: 1,
+    status: 'Completed',
+    code: 'COMPLETED',
+    terminal: true,
+    error: '',
+  }), // PollJobStatus
   1268920029: async () => ({ success: true, jobId: 1, status: 'Spooling' }), // PrintDirect
+  1144725046: async (req: {
+    printerName?: string;
+    formName?: string;
+    paperId?: number;
+    paperWidthMM?: number;
+    paperHeightMM?: number;
+    borderless?: boolean;
+  }) => ({
+    success: true,
+    requestedFormName: req.formName ?? '',
+    requestedPaperId: req.paperId ?? 0,
+    appliedFormName: req.formName ?? 'A4',
+    appliedPaperId: req.paperId ?? 9,
+    paperWidthMM: req.paperWidthMM ?? 210,
+    paperHeightMM: req.paperHeightMM ?? 297,
+    printableWidthMM: req.paperWidthMM ?? 210,
+    printableHeightMM: req.paperHeightMM ?? 297,
+    printableOffsetXMM: 0,
+    printableOffsetYMM: 0,
+    scale: 1,
+    fallbackReason: '',
+  }), // ResolvePrinterPlan
   2833362764: async () => undefined, // CancelActivePrintJobs
   1965354225: async () => undefined, // CancelPrintJob
 };

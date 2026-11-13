@@ -4,6 +4,64 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 ---
 
+## عقود إغلاق الطباعة والتصدير في شجرة العمل — 13 نوفمبر 2026
+
+> هذه فقرة معمارية عن التنفيذ الموجود حالياً، لا شهادة قبول نهائي. تشغيل CI الشامل والتحقق من اكتمال تنسيق خطة الطابعة/حالة السبول/الإلغاء في كل أسطح الواجهة، والقبول على طابعة فعلية تبقى بوابات معلّقة حتى تأكيد الوالد/المالك.
+
+### `cover` واحد من المحرر إلى Go
+
+- صور الوضع الحر البسيطة تصرّح بالعقد `imageFit: 'cover'` في `frontend/src/lib/print/single-print-composition.ts`. يحل `print-payload-builder.ts` أبعاد المصدر بعد EXIF ويحسب `computeSlotCrop` مرة واحدة، ثم يرسل `cropX/Y/W/H` و`slotAspect: 0` كي لا يعيد Go اشتقاق نافذة مختلفة.
+- `runFreeformPreflight` في `frontend/src/lib/export/freeform-preflight.ts` يقيس DPI الفعلي من نافذة المصدر التي ستبقى بعد `cover`، لا من كامل المصدر. `applyImageProcessing` في `internal/service/print_image_pipeline.go` يستهلك القص قبل القلب ثم التدوير والتحجيم.
+- المتجهات المستقلة في `test-fixtures/print-rgba/cover/` تقفل القص المركزي، الأبعاد الفردية، النسبة المطابقة والقلب بعد القص. لا تُولَّد من ناتج الإنتاج ولا تُبارك تلقائياً في CI.
+
+### عقد الفلاتر القانوني
+
+- `frontend/src/lib/filters/print-filter-contract.ts` هو كتالوج الوصفات المرتبة: وصفة المرشح أولاً، ثم تعديلات المستخدم بترتيب brightness → contrast → saturation. `custom-filters.ts` و`konva-filters.ts` يستهلكان العمليات نفسها؛ النظير في Go هو `printFilterRecipes` و`applyPrintImageFilterPipeline` في `print_image_pipeline.go`.
+- العمليات اللونية المتجاورة قد تندمج في مسح بكسلي واحد، لكن التقريب المرحلي وترتيب العمليات محفوظان؛ pixelate والـblur يظلان تمريرتين مكانيتين مستقلتين. مسارات Canvas 2D اليدوية للكولاج والوضع الحر والخانة المفردة تطبق العمليات القانونية نفسها على `ImageData` بدل الاعتماد على اختلافات `ctx.filter` بين محركات المتصفح. المرشح أو التعديل غير الصالح يُرفض في تحقق الطلب بدلاً من التجاهل الصامت.
+- `test-fixtures/print-rgba/filters/` يحمل RGBA متوقعاً مستقلاً لـidentity/brightness/contrast/saturation/sepia/grayscale/invert/threshold/pixelate، وتستهلكه اختبارات TypeScript وGo مع حرّاس طفرة للترتيب.
+
+### معاملة التقاط Stage (Capture Transaction)
+
+`captureStageBlob` في `frontend/src/lib/canvas/konva-export-utils.ts` يملك دورة الالتقاط كاملة داخل قفل تسلسلي لكل `Stage`:
+
+1. انتظار الدور بمهلة وإشارة `AbortSignal`، ثم انتظار جاهزية الخطوط وصور العقد عند طلبها.
+2. استئجار الأصول الكاملة وترقية مشتقات العرض 2048px، وتطبيق بدائل صور الطباعة مع تحويل إحداثيات القص.
+3. حفظ كاش الشاشة وترقيته ضمن ميزانية 256MiB، وتصفير موضع/مقياس Stage وإخفاء المحوّل والشبكات وعناصر التحرير.
+4. فحص سقف البكسلات قبل `toCanvas`، ثم إحاطة `toBlob` بمهلة وإلغاء.
+5. الاستعادة الحتمية داخل `finally`: موضع ومقياس Stage، بدائل الصور وقصّها، مصادر العرض، نسب كاش الشاشة المقاسة، رؤية الطبقات، lease الأصول وعلامة الالتقاط.
+
+أي مسار جديد للطباعة أو التصدير يحتاج هذه المعاملة؛ لا يجوز إجراء mutation خارجي للعقد ثم محاولة استعادته خارج القفل.
+
+### النزيف وCMYK والتدرجات والإلغاء
+
+- `applyBleedAndCropMarks` في `frontend/src/lib/export/export-bleed.ts` يعيد الـBlob نفسه عند صفر نزيف. النزيف الموجب يتحقق من mm وDPI وبكسلات الخرج **قبل** تخصيص canvas، ويرفض صراحةً فشل الفك/السياق/الرسم/الترميز أو الإلغاء؛ لا نجاح صامت بملف أصلي بلا نزيف.
+- `downloadBlob` لا يسمح لـfallback المحلي/IPC بحفظ Blob فارغ؛ عند وجود `sourceFilename` يجلب البايتات الحقيقية ويتحقق من توقيع TIFF قبل فتح الحفظ الاحتياطي.
+- **CMYK الحقيقي TIFF فقط.** `runCmykExport` يبني `PrintRequest` بصيغة `tiff` ويتحقق من توقيع الناتج، و`print_export.go` يرفض CMYK JPEG صراحةً لأن مشفّر Go لا يحفظ فصل الأحبار. PNG وJPEG مخرجات sRGB؛ لا ICC أو soft proof في هذا الإغلاق.
+- `domain.PrintBackgroundBlock` يصف تعبئة صلبة أو تدرجاً خطياً محلياً بالملليمتر. `drawBackgroundBlocks` ينشئ gradient داخل مستطيل كل كتلة قبل رسم العناصر، فتتكرر النسخ دون تدرج عالمي متسرب بينها.
+- `PrintRequest.JobID` يقبل معرف عميل محدوداً وآمناً للسجل أو يولّد معرفاً قديماً متوافقاً. التسجيل يسبق انتظار semaphore، والمعرف المكرر يُرفض؛ `CancelPrintJob(jobID)` يلغي المهمة المالكة فقط. `composeCanvas`، عمال الصور، حدود الدفعات والرسم والحفظ تفحص السياق، والإلغاء بعد الكتابة يحذف المخرج المؤقت/النهائي قبل الإرجاع.
+
+### خطة الطابعة والسبول وDirect GDI
+
+- المسار النشط للطباعة sRGB هو: توليد JPEG افتراضياً أو PNG اختيارياً → `PrintDirect` → `PrintImageDirectGDI` → `CreateDCW`/`StartDocW`/`StretchDIBits` → Windows Spooler. لا `iframe` ولا `window.print()` في هذا المسار.
+- `ResolvePrinterPlan(PrinterPlanRequest)` يحل القالب الفعلي قبل السبول ويعيد المطلوب/المطبق، أبعاد الورق والمساحة القابلة للطباعة والإزاحات والمقياس وسبب fallback. الطلب الصريح لقالب مخصص غير مدعوم يفشل ولا يسقط بصمت إلى A4؛ fallback الافتراضي يحمل metadata صريحة.
+- `PollJobStatus` يعيد envelope ثابتاً للحالة/الكود/النهائية، و`CancelSpoolJob` يستعمل `SetJobW(..., JOB_CONTROL_CANCEL)` لمهمة أُرسلت فعلاً. هذا منفصل عن `CancelPrintJob` الخاص بتوليد الورقة قبل السبول.
+- الواجهة تستدعي `ResolvePrinterPlan` قبل `PrintDirect`، تمرر `PrintRequest.jobId` وكتل الخلفية، وتثبت `spoolJobRef`. بعد السبول تُبقي حالة الانتظار وتستعلم كل 1.5ث حتى terminal أو مهلة دقيقتين؛ الإلغاء يستهدف generation/spool بمعرفيهما ولا يلغي أعمالاً أخرى.
+- اختبارات Windows ذات البادئة `TestGDIPure_*` تستخدم seam Win32 قابلاً للاستبدال ولا تحتاج طابعة مثبتة؛ CI يشغّلها في `windows-build`. الاختبارات الحية ذات `TestGDILive_*` ليست ضمن اختيار المستضيف.
+
+### تقرير الأداء
+
+مهمة `print-performance-report` في `.github/workflows/ci.yml` تعمل على Windows عند الجدولة أو `workflow_dispatch`، وتشغّل `TestPrintPerfBaselineReport` مع `GRIDO_PRINT_PERF_REPORT=1`. تسجل بيئة المشغّل والزمن والتخصيص/RSS وتنتج `print-bench.txt` و`print-bench.json` و`print-environment.json` وسجل الاختبار لسيناريوهات A4 JPEG وPNG وCMYK TIFF، الفلاتر متعددة الخلايا، النسخ المتكررة، الإلغاء وDIB على Windows. المهمة **report-only** بلا عتبة زمن/RSS مخترعة إلى أن يُجمع baseline سحابي ويُعتمد.
+
+### قرارات لا تتغير ضمن هذا الإغلاق
+
+- JPEG هو افتراضي الطباعة؛ PNG مدعوم اختيارياً للنصوص والباركود والملصقات.
+- `fillPatternImage` يبقى على مشتق العرض 2048px حتى تصميم تحويل هندسي مستقل.
+- `cutShapeType` دليل مرئي/بيانات مشروع وليس clipping تلقائياً للمخرج.
+- CMYK الحقيقي TIFF فقط، وICC/soft proof والقبول اللوني الفيزيائي مؤجلة.
+- حزمة SOP/manifest للطابعة موجودة تحت `docs/print-acceptance/`، وتقرير `docs/reviews/23-real-printer-acceptance-2026-11-13.md` حالته Pending؛ وجود القالب لا يدّعي تشغيل عتاد أو قبولاً.
+
+---
+
 ## هندسة محرك الكانفاس المستقلة والمصفوفات المتزامنة (Viewport Geometry Engine) — 8 نوفمبر 2026
 
 - **النواة الرياضية المستقلة (`frontend/src/lib/canvas/viewport-geometry.ts`):** استخراج كامل معادلات الإحداثيات والتقييد إلى وحدة رياضية نقية خالية من DOM (`createCanvasCamera` و`reconcileCanvasCamera` و`getStageClampBounds` و`clampStagePos` و`computeScrollbarMetrics` و`clientToLocal`).
@@ -292,9 +350,9 @@ The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskf
 `internal/service/print_service.go` (تحقق + تنسيق) → `print_compose.go` (رسم gg)
 → `print_cmyk.go` (CMYK) → `print_export.go` (حفظ نقطي) / `print_pdf_export.go` (PDF).
 
-- **النقطي:** PNG/JPEG (sRGB) وTIFF/JPEG (CMYK) + حقن DPI (pHYs/JFIF) + كتابة ذرية + حقن وسوم `XResolution/YResolution/ResolutionUnit` في TIFF عبر `print_tiff_tags.go`.
+- **النقطي:** PNG/JPEG (sRGB) أو TIFF (CMYK حقيقي) + حقن DPI (pHYs/JFIF) + كتابة ذرية؛ CMYK مع أي JPEG/PNG مرفوض صراحةً.
 - **فصل أحبار CMYK في TIFF (`print_cmyk_tiff.go`):** مُرمِّز مستقل يكتب TIFF 6.0 بـ `PhotometricInterpretation=5` (Separated) و`InkSet=1` و`SamplesPerPixel=4` و`BitsPerSample=[8,8,8,8]` و`Compression=8` (Deflate) بلا `ExtraSamples`، ثم يُمرّر الخرج إلى `injectTIFFResolution` لإضافة وسوم الدقة (تخطيط الرأس ← الشريط ← `BitsPerSample` ← `IFD0` في الذيل يجعل كل الإزاحات قبل نهاية الـIFD فلا تُشوَّه بالحقن). السبب: `golang.org/x/image/tiff` يكتب `*image.CMYK` كـ RGB موسوم `photometric=2` بقناة ألفا (فصل الأحبار يضيع)، و`image/jpeg` القياسي يكتب 3 مكوّنات ولا يدعم CMYK — أي أن مخرج **JPEG يبقى بفضاء RGB** ويُوثّق ذلك في واجهة التصدير نفسها.
-- **مسارات الوصول إلى CMYK:** حوار **الطباعة** لا يعرض فضاء الألوان (يطبع عبر WebView2 بـ sRGB حصراً)، وفصل الألوان يُطلب من حوار **التصدير** عبر `runCmykExport` في `frontend/src/lib/export/export-cmyk.ts` الذي يبني `PrintRequest` بعنصر واحد يملأ الورقة ويقرأ ملف `print_*` الناتج من `/local-image/`.
+- **مسارات الوصول إلى CMYK:** حوار **الطباعة** يستطيع تحويل الإجراء إلى حفظ TIFF للمطبعة عند اختيار CMYK، بينما مسار الطابعة الأصلية يبقى sRGB؛ وحوار **التصدير** يستعمل `runCmykExport` في `frontend/src/lib/export/export-cmyk.ts`. كلا المسارين يفرضان TIFF ولا يرسلان CMYK إلى Direct GDI.
 - **فحص جودة الوضع الحر وترقية دقة الملصقات (جلسة 1.67):** `runFreeformPreflight` (`lib/export/freeform-preflight.ts`) يعكس عقد preflight الكولاج على عناصر الصور الحرة (حاجب: مصدر غير مقروء؛ تحذير: دقة فعالة < 250DPI محسوبة من `resolveFreeformImageDimensions` الدفعي)، ويعمل في `executePrint` قبل أي التقاط/رفع وفي حوار التصدير بمسار مستقل. ومعه `ensureStickerPrintResolution` (`features/stickers/lib/print-rerasterize.ts`) يعيد راسترة أي ملصق (عنصر يحمل `stickerSource`) انخفضت دقته عن الحد من SVG المتجه المحفوظ على مقاسه المطبوع بـ DPI الورقة ويرفعه عبر `uploadPrintImage` كأصل مؤقت بلا لمس الستور — يُطبق في **الكلا المسارين**: التركيب السريع يستبدل المصدر في `PrintItem` (`print-payload-builder.ts` عبر `stickerSrcMap`)، ومسار الالتقاط يستبدل صور عقد Konva مؤقتاً بالمصادر المُرقّاة (`swapNodeImagesForCapture` في `konva-export-utils.ts` — جلسة 1.68) لأن أغلب الكانفسات الواقعية غير مؤهلة للمسار السريع. صفوف VDP تدخل الترقية تلقائياً بعد ربطها بـ `stickerSource` في الإدراج الدفعي، وPNG الملصقات المُصدَّر يحقن كثافته طرفياً عبر `lib/canvas/png-dpi.ts` (مرآة `dpi_patch.go` بعد IHDR بلا إعادة ترميز). في حوار الطباعة `outputFormat` (jpeg افتراضياً، png اختيارياً للنص/الباركود — تعديل موثق للقرار المحمي رقم 4) — Go يدعم png في `saveOutput` مع حقن pHYs جاهزاً. شكل القص للملصقات `cutShape` معلن من القالب ويُتّبع في `generateDieCutContour` بدل مستطيل viewBox عند توفره، وتسطيح ألفا في مسار GDI (`convertToBottomUpDIB`) يدمج البكسلات شبه الشفافة فوق أبيض الورقة بدل طباعتها سوداء/أغمق.
 - **سياسة نطاق الإدخال (RV-Print-07/08):** `ImageSrc` مقبول فقط كـ `data:` أو `/local-image/`،     ومسارات الملفات التي تنحلّ داخل `GRIDO_APP_DIR` بعد `EvalSymlinks`؛ وتُفحص ترويسة الصورة بـ`DecodeConfig` (سقف 100MP) قبل أي فكّ.
 - **تطبيع EXIF قبل القص (جلسة 1.80):** مسارا base64 والملف في `loadRawImage` (`print_image_pipeline.go`) يفكّان الصورة بـ`imaging.AutoOrientation(true)`؛ لذلك تُستهلك `CropX/Y/W/H` على بكسلات وأبعاد الصورة بعد توجيهها، مطابقةً للمصدر الذي يراه المتصفح، بما في ذلك تبديل العرض والارتفاع للتوسيمات 5–8. لا يجوز إعادة القص إلى بكسلات JPEG الخام قبل التوجيه.

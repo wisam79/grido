@@ -1,3 +1,5 @@
+import { MAX_BLEED_MM } from '../../schema';
+
 import type { RulerUnit } from '../../canvas/units';
 import type { EditorState } from '../index';
 import type { StateCreator } from 'zustand';
@@ -141,7 +143,12 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
   setShowUserGuides: (showUserGuides) => set({ showUserGuides }),
   setLockUserGuides: (lockUserGuides) => set({ lockUserGuides }),
   setShowBleedGuides: (showBleedGuides) => set({ showBleedGuides }),
-  setBleedMarginMM: (bleedMarginMM) => set({ bleedMarginMM }),
+  setBleedMarginMM: (bleedMarginMM) => {
+    if (!Number.isFinite(bleedMarginMM) || bleedMarginMM < 0 || bleedMarginMM > MAX_BLEED_MM) {
+      return;
+    }
+    set({ bleedMarginMM });
+  },
   setSafeMarginMM: (safeMarginMM) => set({ safeMarginMM }),
   setCutShapeType: (cutShapeType) => set({ cutShapeType }),
 });

@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -32,7 +33,20 @@ import (
 //      int16 (عُشر المليمتر) بدل اللفّ الصامت إلى سالب داخل devmode.
 // ─────────────────────────────────────────────────────────────────────────────
 
-func TestPrintNative_GDI_RelativeAppDir(t *testing.T) {
+func usePrinterGDIWin32Stub(t *testing.T, mutate func(*printerGDIWin32API)) {
+	t.Helper()
+	original := printerGDIWin32
+	stub := defaultPrinterGDIWin32API()
+	mutate(&stub)
+	printerGDIWin32 = stub
+	t.Cleanup(func() { printerGDIWin32 = original })
+}
+
+func writeTestDevMode(buffer *byte, dm devModeW) {
+	*(*devModeW)(unsafe.Pointer(buffer)) = dm
+}
+
+func TestGDIPure_PrintNative_GDI_RelativeAppDir(t *testing.T) {
 	exportsFile, evilFile := setupRelativePrintExports(t)
 	for _, path := range []string{exportsFile, evilFile} {
 		for _, absolute := range []bool{false, true} {
@@ -55,7 +69,7 @@ func TestPrintNative_GDI_RelativeAppDir(t *testing.T) {
 	}
 }
 
-func TestSanitizePrintFilePath_GDI(t *testing.T) {
+func TestGDIPure_SanitizePrintFilePath_GDI(t *testing.T) {
 	appDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", appDir)
 
@@ -136,7 +150,7 @@ func TestSanitizePrintFilePath_GDI(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_BGRA_RowOrder_Alpha(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_BGRA_RowOrder_Alpha(t *testing.T) {
 	img := image.NewNRGBA(image.Rect(0, 0, 2, 2))
 	img.SetNRGBA(0, 0, color.NRGBA{R: 255, G: 0, B: 0, A: 255})     // أعلى يسار: أحمر
 	img.SetNRGBA(1, 0, color.NRGBA{R: 0, G: 255, B: 0, A: 255})     // أعلى يمين: أخضر
@@ -200,7 +214,7 @@ func TestConvertToBottomUpDIB_BGRA_RowOrder_Alpha(t *testing.T) {
 	}
 }
 
-func TestWin32ErrText_NoSuccessGotcha(t *testing.T) {
+func TestGDIPure_Win32ErrText_NoSuccessGotcha(t *testing.T) {
 	// Errno(0) يطبع «The operation completed successfully.» — يجب استبداله
 	if got := win32ErrText(windows.ERROR_SUCCESS); strings.Contains(got, "successfully") {
 		t.Fatalf("win32ErrText(ERROR_SUCCESS) leaked misleading message: %q", got)
@@ -213,7 +227,7 @@ func TestWin32ErrText_NoSuccessGotcha(t *testing.T) {
 	}
 }
 
-func TestFormNameField_NULTermination(t *testing.T) {
+func TestGDIPure_FormNameField_NULTermination(t *testing.T) {
 	tests := []struct {
 		name string
 		form string
@@ -244,7 +258,7 @@ func TestFormNameField_NULTermination(t *testing.T) {
 	}
 }
 
-func TestValidateDirectPrintRequest_GDI(t *testing.T) {
+func TestGDIPure_ValidateDirectPrintRequest_GDI(t *testing.T) {
 	tests := []struct {
 		name    string
 		req     domain.DirectPrintRequest
@@ -278,7 +292,7 @@ func TestValidateDirectPrintRequest_GDI(t *testing.T) {
 	}
 }
 
-func TestMatchStandardPaperID(t *testing.T) {
+func TestGDIPure_MatchStandardPaperID(t *testing.T) {
 	tests := []struct {
 		name   string
 		w, h   float64
@@ -308,7 +322,7 @@ func TestMatchStandardPaperID(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_FastPaths(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_FastPaths(t *testing.T) {
 	// 1. اختبار مسار *image.RGBA
 	rgba := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	rgba.Set(0, 0, color.RGBA{R: 255, G: 0, B: 0, A: 255})
@@ -346,7 +360,7 @@ func TestConvertToBottomUpDIB_FastPaths(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_BorderlessCover(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_BorderlessCover(t *testing.T) {
 	metrics := deviceMetrics{
 		PhysicalWidth:   4000,
 		PhysicalHeight:  4000,
@@ -368,7 +382,7 @@ func TestCalculatePrintDestRect_BorderlessCover(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_StandardContain(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_StandardContain(t *testing.T) {
 	metrics := deviceMetrics{
 		PrintableWidth:  3000,
 		PrintableHeight: 4000,
@@ -384,7 +398,7 @@ func TestCalculatePrintDestRect_StandardContain(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_FallbackWhenPhysicalZero(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_FallbackWhenPhysicalZero(t *testing.T) {
 	metrics := deviceMetrics{
 		PhysicalWidth:   0,
 		PhysicalHeight:  0,
@@ -408,7 +422,7 @@ func TestCalculatePrintDestRect_FallbackWhenPhysicalZero(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_NRGBA_TransparentPixelZeroing(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_NRGBA_TransparentPixelZeroing(t *testing.T) {
 	nrgba := image.NewNRGBA(image.Rect(0, 0, 2, 2))
 	// بكسل (0, 0) شفاف تماماً
 	nrgba.SetNRGBA(0, 0, color.NRGBA{R: 200, G: 100, B: 50, A: 0})
@@ -457,37 +471,51 @@ func TestConvertToBottomUpDIB_NRGBA_TransparentPixelZeroing(t *testing.T) {
 	}
 }
 
-func TestEvaluateJobStatus_Bitmasks(t *testing.T) {
+func TestGDIPure_EvaluateJobStatus_Bitmasks(t *testing.T) {
 	tests := []struct {
-		name        string
-		statusBits  uint32
-		driverMsg   string
-		wantStatus  string
-		wantSuccess bool
+		name         string
+		statusBits   uint32
+		driverMsg    string
+		wantStatus   string
+		wantCode     string
+		wantSuccess  bool
+		wantTerminal bool
+		wantError    bool
 	}{
-		{"افتراضي بلا بتات (Spooling)", 0, "", "Spooling", true},
-		{"خطأ عام (Error)", jobStatusError, "", "Error", false},
-		{"نفاد الورق (Paperout)", jobStatusPaperout, "", "Out of Paper", false},
-		{"الطابعة مفصولة (Offline)", jobStatusOffline, "", "Printer Offline", false},
-		{"جاري الطباعة (Printing)", jobStatusPrinting, "", "Printing", true},
-		{"اكتملت الطباعة (Printed)", jobStatusPrinted, "", "Printed", true},
-		{"مكتملة (Complete)", jobStatusComplete, "", "Printed", true},
-		{"رسالة درايفر مخصصة مع نجاح", jobStatusPrinting, "جاري معالجة الصفحة 1", "جاري معالجة الصفحة 1", true},
-		{"رسالة درايفر مخصصة مع خطأ ورق (الحكم للبتات)", jobStatusPaperout, "درج الورق فارغ", "درج الورق فارغ", false},
+		{"افتراضي بلا بتات (Spooling)", 0, "", "Spooling", "SPOOLING", true, false, false},
+		{"متوقف مؤقتاً", jobStatusPaused, "", "Paused", "JOB_PAUSED", true, false, false},
+		{"خطأ عام (Error)", jobStatusError, "", "Error", "JOB_ERROR", false, true, true},
+		{"قيد الحذف", jobStatusDeleting, "", "Deleting", "JOB_DELETING", true, false, false},
+		{"محذوف", jobStatusDeleted, "", "Deleted", "JOB_DELETED", false, true, true},
+		{"نفاد الورق (Paperout)", jobStatusPaperout, "", "Out of Paper", "OUT_OF_PAPER", false, false, true},
+		{"الطابعة مفصولة (Offline)", jobStatusOffline, "", "Printer Offline", "PRINTER_OFFLINE", false, false, true},
+		{"محظور", jobStatusBlockedDevQ, "", "Blocked", "JOB_BLOCKED", false, false, true},
+		{"تدخل مستخدم", jobStatusUserIntervention, "", "User Intervention Required", "USER_INTERVENTION_REQUIRED", false, false, true},
+		{"إعادة تشغيل", jobStatusRestart, "", "Restarting", "JOB_RESTARTING", true, false, false},
+		{"تصيير محلي", jobStatusRenderingLocally, "", "Rendering", "JOB_RENDERING", true, false, false},
+		{"جاري الطباعة (Printing)", jobStatusPrinting, "", "Printing", "PRINTING", true, false, false},
+		{"اكتملت الطباعة (Printed)", jobStatusPrinted, "", "Printed", "COMPLETED", true, true, false},
+		{"مكتملة (Complete)", jobStatusComplete, "", "Printed", "COMPLETED", true, true, false},
+		{"محتفظ بها", jobStatusRetained, "", "Retained", "JOB_RETAINED", true, true, false},
+		{"رسالة درايفر مخصصة مع نجاح", jobStatusPrinting, "جاري معالجة الصفحة 1", "جاري معالجة الصفحة 1", "PRINTING", true, false, false},
+		{"رسالة درايفر مخصصة مع خطأ ورق (الحكم للبتات)", jobStatusPaperout, "درج الورق فارغ", "درج الورق فارغ", "OUT_OF_PAPER", false, false, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotStatus, gotSuccess := evaluateJobStatus(tt.statusBits, tt.driverMsg)
-			if gotStatus != tt.wantStatus || gotSuccess != tt.wantSuccess {
-				t.Fatalf("evaluateJobStatus(0x%X, %q) = (%q, %v), want (%q, %v)",
-					tt.statusBits, tt.driverMsg, gotStatus, gotSuccess, tt.wantStatus, tt.wantSuccess)
+			got := evaluateJobStatus(tt.statusBits, tt.driverMsg)
+			if got.Status != tt.wantStatus || got.Code != tt.wantCode || got.Success != tt.wantSuccess || got.Terminal != tt.wantTerminal {
+				t.Fatalf("evaluateJobStatus(0x%X, %q) = %#v, want status=%q code=%q success=%v terminal=%v",
+					tt.statusBits, tt.driverMsg, got, tt.wantStatus, tt.wantCode, tt.wantSuccess, tt.wantTerminal)
+			}
+			if (got.Error != "") != tt.wantError {
+				t.Fatalf("evaluateJobStatus(0x%X).Error = %q, wantError=%v", tt.statusBits, got.Error, tt.wantError)
 			}
 		})
 	}
 }
 
-func TestParseSupportedPaperInfo(t *testing.T) {
+func TestGDIPure_ParseSupportedPaperInfo(t *testing.T) {
 	tests := []struct {
 		name         string
 		id           uint16
@@ -523,7 +551,7 @@ func TestParseSupportedPaperInfo(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_GrayscaleFallback(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_GrayscaleFallback(t *testing.T) {
 	gray := image.NewGray(image.Rect(0, 0, 2, 2))
 	// Row 0 (Top): (0,0)=0 Black, (1,0)=128 Gray
 	gray.SetGray(0, 0, color.Gray{Y: 0})
@@ -558,7 +586,7 @@ func TestConvertToBottomUpDIB_GrayscaleFallback(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_SubImageBounds(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_SubImageBounds(t *testing.T) {
 	// صورة 10x10 بخلفية حمراء كاملة
 	rgba := image.NewRGBA(image.Rect(0, 0, 10, 10))
 	for i := range rgba.Pix {
@@ -594,7 +622,7 @@ func TestConvertToBottomUpDIB_SubImageBounds(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_ExactAspectMatch(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_ExactAspectMatch(t *testing.T) {
 	metrics := deviceMetrics{
 		PrintableWidth:  3000,
 		PrintableHeight: 2000,
@@ -616,7 +644,7 @@ func TestCalculatePrintDestRect_ExactAspectMatch(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_ExtremePanorama(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_ExtremePanorama(t *testing.T) {
 	metrics := deviceMetrics{
 		PrintableWidth:  3000,
 		PrintableHeight: 1000,
@@ -640,7 +668,7 @@ func TestCalculatePrintDestRect_ExtremePanorama(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_A4OnLetterPdf_NoTopClipping(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_A4OnLetterPdf_NoTopClipping(t *testing.T) {
 	// محاكاة درايفر Microsoft Print to PDF بمقاس Letter الافتراضي (600 DPI)
 	metrics := deviceMetrics{
 		PhysicalWidth:   5100,
@@ -673,7 +701,7 @@ func TestCalculatePrintDestRect_A4OnLetterPdf_NoTopClipping(t *testing.T) {
 	}
 }
 
-func TestConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
+func TestGDIPure_ConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
 	// التحقق من أن أبعاد A4 القياسية ترجع DMPAPER_A4 = 9 حتى مع وجود FormName
 	id := matchStandardPaperID(210, 297)
 	if id != 9 {
@@ -681,7 +709,7 @@ func TestConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
 	}
 }
 
-func TestMatchStandardPaper(t *testing.T) {
+func TestGDIPure_MatchStandardPaper(t *testing.T) {
 	tests := []struct {
 		name     string
 		w, h     float64
@@ -707,7 +735,7 @@ func TestMatchStandardPaper(t *testing.T) {
 	}
 }
 
-func TestStandardFormNameByID(t *testing.T) {
+func TestGDIPure_StandardFormNameByID(t *testing.T) {
 	if got := standardFormNameByID(9); got != "A4" {
 		t.Fatalf("standardFormNameByID(9) = %q, want %q", got, "A4")
 	}
@@ -722,7 +750,7 @@ func TestStandardFormNameByID(t *testing.T) {
 	}
 }
 
-func TestConfigurePrinterDevMode_LiveA4Enforcement(t *testing.T) {
+func TestGDILive_ConfigurePrinterDevMode_LiveA4Enforcement(t *testing.T) {
 	printerName, err := GetDefaultPrinter()
 	if err != nil || printerName == "" {
 		t.Skip("لا توجد طابعة افتراضية متاحة في بيئة الاختبار")
@@ -752,7 +780,7 @@ func TestConfigurePrinterDevMode_LiveA4Enforcement(t *testing.T) {
 	}
 }
 
-func TestMatchStandardPaperID_AllSupportedSizes(t *testing.T) {
+func TestGDIPure_MatchStandardPaperID_AllSupportedSizes(t *testing.T) {
 	tests := []struct {
 		name     string
 		w, h     float64
@@ -788,7 +816,7 @@ func TestMatchStandardPaperID_AllSupportedSizes(t *testing.T) {
 	}
 }
 
-func TestFindPrinterPaperMatch_NilPrinterFallback(t *testing.T) {
+func TestGDIPure_FindPrinterPaperMatch_NilPrinterFallback(t *testing.T) {
 	// عند تمرير مؤشر طابعة فارغ، يجب ألا ينهار البرنامج ويعيد false بأمان
 	paperID, formName, matched := findPrinterPaperMatch(nil, 85, 55, false, "Custom")
 	if matched || paperID != 0 || formName != "Custom" {
@@ -796,7 +824,7 @@ func TestFindPrinterPaperMatch_NilPrinterFallback(t *testing.T) {
 	}
 }
 
-func TestCalculatePrintDestRect_StudioPhotoPaperSizes(t *testing.T) {
+func TestGDIPure_CalculatePrintDestRect_StudioPhotoPaperSizes(t *testing.T) {
 	// مقاسات استوديوهات التصوير الفوتوغرافي الشائعة
 	metrics := deviceMetrics{
 		PhysicalWidth:   3600,
@@ -847,7 +875,7 @@ func TestCalculatePrintDestRect_StudioPhotoPaperSizes(t *testing.T) {
 	}
 }
 
-func TestConvertToBottomUpDIB_ExtremeAlphaCases(t *testing.T) {
+func TestGDIPure_ConvertToBottomUpDIB_ExtremeAlphaCases(t *testing.T) {
 	// 1. صورة شفافة 100%
 	transparentImg := image.NewNRGBA(image.Rect(0, 0, 2, 2))
 	buf, bmi := convertToBottomUpDIB(transparentImg)
@@ -879,7 +907,7 @@ func TestConvertToBottomUpDIB_ExtremeAlphaCases(t *testing.T) {
 	}
 }
 
-func TestValidateDirectPrintRequest_BoundaryAndExtremeCases(t *testing.T) {
+func TestGDIPure_ValidateDirectPrintRequest_BoundaryAndExtremeCases(t *testing.T) {
 	tests := []struct {
 		name    string
 		req     domain.DirectPrintRequest
@@ -970,7 +998,180 @@ func TestValidateDirectPrintRequest_BoundaryAndExtremeCases(t *testing.T) {
 	}
 }
 
-func TestPrintImageDirectGDI_CorruptedFile_ReturnsSafeError(t *testing.T) {
+func TestGDIPure_PrinterPlanGeometry(t *testing.T) {
+	metrics := deviceMetrics{
+		PrintableWidth:  2400,
+		PrintableHeight: 3300,
+		MarginLeft:      60,
+		MarginTop:       90,
+		DPIX:            300,
+		DPIY:            300,
+	}
+	printableW, printableH, offsetX, offsetY, scale := calculatePrinterPlanGeometry(metrics, 210, 297)
+	if math.Abs(printableW-203.2) > 0.001 || math.Abs(printableH-279.4) > 0.001 {
+		t.Fatalf("printable geometry = %.3fx%.3fmm, want 203.2x279.4mm", printableW, printableH)
+	}
+	if math.Abs(offsetX-5.08) > 0.001 || math.Abs(offsetY-7.62) > 0.001 {
+		t.Fatalf("printable offsets = %.3f,%.3fmm, want 5.08,7.62mm", offsetX, offsetY)
+	}
+	wantScale := math.Min(203.2/210, 279.4/297)
+	if math.Abs(scale-wantScale) > 0.000001 {
+		t.Fatalf("scale = %.8f, want %.8f", scale, wantScale)
+	}
+}
+
+func TestGDIPure_ResolvePrinterPlan_ExplicitCustomRejectionHasNoA4Fallback(t *testing.T) {
+	mergeCalls := 0
+	usePrinterGDIWin32Stub(t, func(api *printerGDIWin32API) {
+		api.openPrinter = func(_ *uint16, handle *windows.Handle, _ uint32) (bool, error) {
+			*handle = windows.Handle(41)
+			return true, nil
+		}
+		api.closePrinter = func(windows.Handle) {}
+		api.documentProperties = func(_ windows.Handle, _ *uint16, out, _ *byte, mode uint32) (int32, error) {
+			if mode == 0 {
+				return int32(unsafe.Sizeof(devModeW{})), nil
+			}
+			if mode == dmOutBuffer {
+				writeTestDevMode(out, devModeW{DmSize: uint16(unsafe.Sizeof(devModeW{})), DmFields: dmPaperSizeField, DmPaperSize: 9})
+				return 1, nil
+			}
+			mergeCalls++
+			return -1, windows.ERROR_INVALID_PARAMETER
+		}
+		api.deviceCapabilities = func(_ *uint16, _ uint16, _ uintptr) (int32, error) { return -1, windows.ERROR_INVALID_PARAMETER }
+		api.createDC = func(_ *uint16, _ *byte) (windows.Handle, error) {
+			t.Fatal("CreateDC must not run after explicit paper rejection")
+			return 0, nil
+		}
+	})
+
+	result, err := (&PrintService{}).ResolvePrinterPlan(domain.PrinterPlanRequest{
+		PrinterName:   "Stub Printer",
+		FormName:      "Studio 85x55",
+		PaperWidthMM:  85,
+		PaperHeightMM: 55,
+	})
+	if err != nil {
+		t.Fatalf("ResolvePrinterPlan returned error: %v", err)
+	}
+	if result.Success || result.Code != "PAPER_REJECTED" || result.AppliedPaperID == 9 {
+		t.Fatalf("explicit rejected custom plan = %#v, want PAPER_REJECTED without A4", result)
+	}
+	if mergeCalls != 1 {
+		t.Fatalf("DocumentProperties merge calls = %d, want 1 (no A4/default retry)", mergeCalls)
+	}
+}
+
+func TestGDIPure_ResolvePrinterPlan_DefaultFallbackMetadata(t *testing.T) {
+	mergeCalls := 0
+	usePrinterGDIWin32Stub(t, func(api *printerGDIWin32API) {
+		api.openPrinter = func(_ *uint16, handle *windows.Handle, _ uint32) (bool, error) {
+			*handle = windows.Handle(42)
+			return true, nil
+		}
+		api.closePrinter = func(windows.Handle) {}
+		api.documentProperties = func(_ windows.Handle, _ *uint16, out, _ *byte, mode uint32) (int32, error) {
+			switch mode {
+			case 0:
+				return int32(unsafe.Sizeof(devModeW{})), nil
+			case dmOutBuffer:
+				writeTestDevMode(out, devModeW{DmSize: uint16(unsafe.Sizeof(devModeW{})), DmFields: dmPaperSizeField | dmFormNameField, DmPaperSize: 1, DmFormName: formNameField("Letter")})
+				return 1, nil
+			default:
+				mergeCalls++
+				if mergeCalls == 1 {
+					return -1, windows.ERROR_INVALID_PARAMETER
+				}
+				return 1, nil
+			}
+		}
+		api.createDC = func(_ *uint16, _ *byte) (windows.Handle, error) { return windows.Handle(77), nil }
+		api.deleteDC = func(windows.Handle) {}
+		api.getDeviceCaps = func(_ windows.Handle, index int32) int {
+			return map[int32]int{
+				horzResIdx: 2400, vertResIdx: 3150, physicalWidthIdx: 2550, physicalHeightIdx: 3300,
+				physicalOffsetXIdx: 75, physicalOffsetYIdx: 75, logPixelsXIdx: 300, logPixelsYIdx: 300,
+			}[index]
+		}
+	})
+
+	result, err := (&PrintService{}).ResolvePrinterPlan(domain.PrinterPlanRequest{PrinterName: "Stub Printer"})
+	if err != nil {
+		t.Fatalf("ResolvePrinterPlan returned error: %v", err)
+	}
+	if !result.Success || result.Code != "FALLBACK" || result.FallbackReason == "" {
+		t.Fatalf("default fallback result = %#v, want successful FALLBACK metadata", result)
+	}
+	if result.AppliedPaperID != 1 || result.AppliedFormName != "Letter" || result.PaperWidthMM != 215.9 || result.PaperHeightMM != 279.4 {
+		t.Fatalf("effective fallback media = %#v, want Letter 215.9x279.4", result)
+	}
+	if result.PrintableWidthMM <= 0 || result.PrintableHeightMM <= 0 || result.Scale <= 0 {
+		t.Fatalf("fallback geometry not populated: %#v", result)
+	}
+}
+
+func TestGDIPure_CancelSpoolJobCallsSetJobCancel(t *testing.T) {
+	var gotHandle windows.Handle
+	var gotAccess uint32
+	var gotJobID, gotLevel, gotCommand uint32
+	usePrinterGDIWin32Stub(t, func(api *printerGDIWin32API) {
+		api.openPrinter = func(_ *uint16, handle *windows.Handle, desiredAccess uint32) (bool, error) {
+			*handle = windows.Handle(93)
+			gotAccess = desiredAccess
+			return true, nil
+		}
+		api.closePrinter = func(windows.Handle) {}
+		api.setJob = func(handle windows.Handle, jobID, level uint32, buffer *byte, command uint32) (bool, error) {
+			if buffer != nil {
+				t.Fatal("JOB_CONTROL_CANCEL must pass nil JOB_INFO buffer")
+			}
+			gotHandle, gotJobID, gotLevel, gotCommand = handle, jobID, level, command
+			return true, nil
+		}
+	})
+
+	if err := (&PrintService{}).CancelSpoolJob("Stub Printer", 314); err != nil {
+		t.Fatalf("CancelSpoolJob returned error: %v", err)
+	}
+	if gotAccess != printerAccessUse || gotHandle != windows.Handle(93) || gotJobID != 314 || gotLevel != 0 || gotCommand != jobControlCancel {
+		t.Fatalf("SetJob call = access=%#x handle=%d job=%d level=%d command=%d, want %#x/93/314/0/%d", gotAccess, gotHandle, gotJobID, gotLevel, gotCommand, printerAccessUse, jobControlCancel)
+	}
+}
+
+func TestGDIPure_PollJobStatusMissingIsTruthfulTerminal(t *testing.T) {
+	usePrinterGDIWin32Stub(t, func(api *printerGDIWin32API) {
+		api.openPrinter = func(_ *uint16, handle *windows.Handle, _ uint32) (bool, error) {
+			*handle = windows.Handle(2)
+			return true, nil
+		}
+		api.closePrinter = func(windows.Handle) {}
+		api.getJob = func(_ windows.Handle, _ uint32, _ uint32, _ *byte, _ uint32, needed *uint32) (bool, error) {
+			*needed = 0
+			return false, windows.ERROR_INVALID_PARAMETER
+		}
+	})
+
+	result, err := (&PrintService{}).PollJobStatus("Stub Printer", 808)
+	if err != nil {
+		t.Fatalf("PollJobStatus returned error: %v", err)
+	}
+	if result.Success || !result.Terminal || result.Code != "JOB_NOT_FOUND" || result.Status == "Completed" || result.Error == "" {
+		t.Fatalf("missing job result = %#v, want truthful terminal JOB_NOT_FOUND", result)
+	}
+}
+
+func TestGDIPure_PrinterGDISeamShape(t *testing.T) {
+	// Catch accidental removal of one seam needed by printerless Windows CI.
+	v := reflect.ValueOf(defaultPrinterGDIWin32API())
+	for _, name := range []string{"openPrinter", "documentProperties", "createDC", "getDeviceCaps", "getJob", "setJob"} {
+		if v.FieldByName(name).IsNil() {
+			t.Fatalf("default printer Win32 seam %s is nil", name)
+		}
+	}
+}
+
+func TestGDIPure_PrintImageDirectGDI_CorruptedFile_ReturnsSafeError(t *testing.T) {
 	// إنشاء ملف تالف ببادئة مقبولة في مجلد Temp
 	corruptFile := filepath.Join(os.TempDir(), "grido_print_corrupt_"+time.Now().Format("150405.000000000")+".jpg")
 	if err := os.WriteFile(corruptFile, []byte("NOT_A_REAL_JPEG_HEADER_CORRUPT"), 0o644); err != nil {

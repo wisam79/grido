@@ -64,3 +64,13 @@
 - سجلات الواجهة والأدلة: `scratch/full-debug-20261106-TWA0GQ/` (baseline.patch، evidence.md، autosave-{red,green}.log).
 - سجلات Go: `C:/Users/LAPTOP~1/AppData/Local/Temp/grido-backend-red-RJ1esp/` و `...-green-OvD0ZE/`.
 - لقطات المعاينة: جلسة المتصفح على `http://127.0.0.1:9457/` (داكن 1280×720) — معزولة عن بيانات المالك.
+
+---
+
+## تصحيح مؤرخ — 2026-11-13 (متابعة فجوات الطباعة)
+
+- **إلغاء compose (البند 5.1 أعلاه):** شجرة العمل الحالية تمرر `context.Context` إلى `composeCanvas` وعمال الصور والدفعات والرسم والحفظ، وتتحقق منه قبل/بعد العمل؛ الإلغاء بعد الحفظ يحذف المخرج. اختبارات الحواجز الحتمية موجودة في `print_background_gradient_test.go`. هذا يزيل سبب التقرير الأصلي على مستوى الكود، لكن نتيجة الحزمة/CI النهائية تنتظر الوالد.
+- **تداخل التقاطات Stage (البند 5.2):** `captureStageBlob` يملك الآن ذيل تسلسل لكل Stage، ومهل queue/readiness/toBlob وإلغاء، ويستعيد المصفوفة والصور/القص والكاش والرؤية في `finally`. اختبارات الالتقاط توسعت في `canvas-rendering-core.test.ts` و`collage-image-crop.test.tsx`؛ التحقق الشامل ينتظر الوالد.
+- **المسار الأصلي:** الطباعة النشطة هي Direct Win32 GDI إلى Windows Spooler وليست `iframe`/`window.print()`. JPEG افتراضي وPNG مدعوم sRGB؛ CMYK الحقيقي TIFF فقط ولا يدخل GDI.
+- **orchestration:** العقود الخلفية لـ`ResolvePrinterPlan`/`PollJobStatus`/`CancelSpoolJob` وسقالات ملكية generation/spool موجودة في الواجهة. في لقطة التوثيق لم يُثبت بعد الاستدعاء الكامل للخطة وتمرير JobID وتثبيت معرف السبول، لذا لا يُوسم التكامل مكتملاً قبل تأكيد الوالد واختباراته.
+- **حد القبول:** `TestGDIPure_*` ومهمة الأداء report-only لا يثبتان الورق. `docs/print-acceptance/` والتقرير 23 قوالب Pending؛ القبول الفيزيائي واللون record-only يبقيان بوابة مالك.

@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"golang.org/x/image/tiff"
 
@@ -61,37 +60,23 @@ func newTestContext(t *testing.T, w, h int) *gg.Context {
 	return dc
 }
 
-// 1️⃣ دمج الفلاتر: مطابقة بكسل-بكسل ضمن تسامح ±2 مع التسلسل الأصلي
-func TestMergedBrightnessContrast_MatchesSequenced(t *testing.T) {
-	src := randomTestImage(t, 64, 64)
+// 1️⃣ Canonical adjustments: the optimized pipeline must preserve the exact CSS/W3C
+// operation order, not the former imaging.Adjust additive/HSL contract.
+func TestCanonicalBrightnessContrast_MatchesHandDerivedSequence(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 2, 1))
+	src.SetNRGBA(0, 0, color.NRGBA{R: 50, G: 100, B: 150, A: 77})
+	src.SetNRGBA(1, 0, color.NRGBA{R: 250, G: 10, B: 128, A: 201})
 
-	cases := [][2]float64{
-		{110, 100}, {100, 120}, {90, 80}, {130, 115}, {80, 130},
-		{120, -0}, {100, 100}, // بلا تعديل
+	got := applyColorAdjustments(src, 120, 80, 100)
+	want := []color.NRGBA{
+		// brightness(1.2): (60,120,180), then contrast(.8) around 127.5.
+		{R: 74, G: 122, B: 170, A: 77},
+		// Every operation clamps/rounds independently like Uint8ClampedArray.
+		{R: 230, G: 35, B: 149, A: 201},
 	}
-	for _, c := range cases {
-		brightness, contrast := c[0], c[1]
-
-		// التسلسل المرجعي (طريقة imaging القديمة)
-		ref := imaging.AdjustBrightness(src, brightness-100)
-		ref = imaging.AdjustContrast(ref, contrast-100)
-
-		// الدمج الجديد
-		got := applyColorAdjustments(src, brightness, contrast, 100)
-
-		refN := ref.Bounds()
-		for y := 0; y < refN.Dy(); y++ {
-			for x := 0; x < refN.Dx(); x++ {
-				r1, g1, b1, _ := ref.At(x, y).RGBA()
-				r2, g2, b2, _ := got.At(x, y).RGBA()
-				dr := int(r1>>8) - int(r2>>8)
-				dg := int(g1>>8) - int(g2>>8)
-				db := int(b1>>8) - int(b2>>8)
-				if dr < -2 || dr > 2 || dg < -2 || dg > 2 || db < -2 || db > 2 {
-					t.Fatalf("brightness=%.0f contrast=%.0f pixel(%d,%d): ref=(%d,%d,%d) got=(%d,%d,%d) exceeds ±2",
-						brightness, contrast, x, y, r1>>8, g1>>8, b1>>8, r2>>8, g2>>8, b2>>8)
-				}
-			}
+	for x, expected := range want {
+		if actual := color.NRGBAModel.Convert(got.At(x, 0)).(color.NRGBA); actual != expected {
+			t.Fatalf("pixel %d: got %+v, want %+v", x, actual, expected)
 		}
 	}
 }

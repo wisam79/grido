@@ -4,6 +4,58 @@
 
 ---
 
+## إغلاق عقود الطباعة والتصدير — 13 نوفمبر 2026
+
+> الجرد التالي يصف اختبارات موجودة في شجرة العمل. شُغّلت محلياً استهدافات fallback وChromium للطباعة/parity في 13 نوفمبر 2026، أما الحزمة الكاملة والتغطية والبناء فتبقى بوابات CI. عقود printer plan/status/spool cancellation موصولة ومختبرة آلياً، لكن لم يحدث قبول على طابعة فعلية؛ القبول الفيزيائي ينتظر المالك.
+
+### Fixtures مستقلة وغير قابلة للـauto-bless
+
+- الحزمة `test-fixtures/print-rgba/` تخزن RGBA خاماً مع `manifest.json` يحكم الأبعاد/stride/SHA-256 وسياسة المقارنة. `generate-fixtures.mjs` لا يستورد إنتاج Grido؛ `--verify` قراءة فقط، و`--write` يرفض overwrite، ويُمنع تشغيل التوليد في CI.
+- `cover/` يقفل قص المركز ونسب landscape/portrait والمقاس الفردي والنسبة المطابقة والقلب بعد القص. `filters/` يقفل identity والعمليات اللونية وthreshold/pixelate، بما في ذلك alpha وRGB ذي المعنى تحت alpha=0.
+- المستهلكان هما `frontend/test/print-filter-contract.test.ts` و`internal/service/print_filter_contract_test.go`. تغيير expected bytes هو تغيير مواصفة يحتاج مراجعة مستقلة، لا تحديثاً من ناتج الإنتاج.
+
+التحقق المحلي الآمن للحزمة نفسها:
+
+```bash
+node test-fixtures/print-rgba/generate-fixtures.mjs --verify
+```
+
+### اختبارات الطفرة والعقود
+
+- `frontend/test/print-filter-contract.test.ts` و`internal/service/print_filter_contract_test.go` يثبتان ترتيب الوصفة ثم تعديلات المستخدم، ويرفضان عكس الترتيب؛ اختبارات Go تثبت allowlist ونطاق التعديلات وعدم تغير الأبعاد للفلاتر المكانية.
+- `frontend/test/freeform-cover-preflight.test.ts` يثبت أن تحذير DPI يعتمد نافذة `cover` المرئية لا كامل المصدر. `frontend/test/print-payload-builder.test.ts` يقفل حقول القص الصريحة للمسار السريع.
+- `frontend/test/export-bleed.test.ts` يختبر القيم غير المنتهية/السالبة/فوق السقف، مسار الصفر بلا إعادة ترميز، فشل فك الصورة/السياق/الترميز، سقف البكسلات، الإلغاء وتنظيف الموارد. `export-cmyk.test.ts` و`export-project.test.ts` يثبتان TIFF غير الفارغ وتوقيعه، JobID المملوك، إلغاء المهمة الخاصة، وفشل fallback بدلاً من حفظ ملف فارغ.
+- `internal/service/print_background_gradient_test.go` يقفل هندسة التدرج المحلية وتكرارها، تحقق background blocks والفلاتر، JobID والتفرد، حواجز الإلغاء وعدم بقاء مخرج، وإلغاء compose داخل العامل. `internal/core/domain/print_test.go` يقفل JSON للعقود الجديدة مع بقاء الحمولة القديمة صالحة.
+
+### محلي مقابل CI
+
+| الطبقة | محلياً أثناء التطوير | CI/القبول |
+| --- | --- | --- |
+| Fixture integrity | `node test-fixtures/print-rgba/generate-fixtures.mjs --verify` | يُستهلك committed manifest؛ لا توليد ولا auto-bless |
+| Vitest | ملف متأثر واحد بعامل واحد ودون coverage | `validate-frontend` يشغّل الحزمة والتغطية |
+| Go | `go test ./internal/service -run '^TestName$'` أو ملف/مجموعة مسماة خفيفة | `validate-backend` يشغّل `go test -v ./internal/...` |
+| GDI pure | لا يحتاج طابعة، لكن يُفضّل Windows فقط | `windows-build` يشغّل `go test ... -run '^TestGDIPure_'`؛ لا `TestGDILive_*` |
+| Printer plan/spool | seams نقية للعقود + محاكاة Wails للواجهة | `ResolvePrinterPlan` وpolling حتى terminal وإلغاء spool موصولة؛ القبول الفيزيائي فقط يحتاج طابعة المالك |
+| الأداء | لا probe كامل محلياً | `print-performance-report` مجدول/يدوي، report-only، ويرفع artifacts لمدة 30 يوماً |
+| E2E/WebView2 | استهداف Chromium عند إغلاق انحراف CI | Chromium shards + WebKit smoke؛ لا يعادلان طابعة فعلية |
+
+### متابعة parity وإغلاق انحراف CI
+
+- `frontend/test/export-image-fallback.test.ts` يحاكي `clearRect/getImageData/putImageData` لأن الرسم اليدوي يمر أولاً بوسيط RGBA القانوني؛ ويتحقق منفصلاً من رسم المصدر مرتين وتركيب وسيطَي Canvas مرتين بدل افتراض عدد `drawImage` القديم.
+- `frontend/e2e/print-export.spec.ts` ينتظر الرسالة النهائية «اكتملت طباعة المهمة» بعد وصول polling إلى حالة spool نهائية، لا رسالة الإرسال المبكر القديمة. `frontend/e2e/print-rgba-parity.spec.ts` يقارن التقاط Konva الحقيقي مع التصدير اليدوي لنفس cover وترتيب الفلاتر.
+- تحقق 13 نوفمبر 2026: `export-image-fallback.test.ts` نجح **12/12** بعامل واحد ودون coverage، وPlaywright Chromium للملفين السابقين نجح **5/5** بعامل واحد. هذه نتائج استهداف محلي، لا ادعاء للحزمة الكاملة أو WebKit أو طابعة فعلية.
+
+### طباعة Windows النقية وتقرير الأداء
+
+- `internal/service/printer_gdi_windows_test.go` يستخدم seam لـWin32 ويغطي `ResolvePrinterPlan` بلا fallback صامت للورق الصريح، metadata للـfallback الافتراضي، هندسة printable area، bitmasks للحالة، `SetJobW(JOB_CONTROL_CANCEL)`، DIB/alpha/المسارات والملفات التالفة. بادئة `TestGDIPure_*` هي عقد CI بلا طابعة؛ `TestGDILive_*` يتطلب عتاداً ولا يدخل الاختيار المستضاف.
+- مهمة `print-performance-report` في `.github/workflows/ci.yml` تشغّل `TestPrintPerfBaselineReport` على Windows عند schedule/`workflow_dispatch`. السيناريوهات: A4 300DPI JPEG وPNG، مشفّر CMYK TIFF الحقيقي، خلايا مفلترة، نسخ مكررة، إلغاء، وDIB. التقرير يجمع الزمن والتخصيص/RSS والبيئة إلى text/JSON/log؛ لا توجد عتبة نجاح أداء حتى اعتماد baseline فعلي.
+
+### حزمة القبول الفيزيائي الموجودة
+
+`docs/print-acceptance/` مسجلة كحزمة جرد عامة تضم SOP ومخطط JSON وقالباً، ويرتبط بها التقرير `docs/reviews/23-real-printer-acceptance-2026-11-13.md`. تحفظ الأدلة الثنائية الفعلية خارج `docs/` كما يحدد الـSOP، ولا تخزن secrets أو ملفات مستخدم. الحالة الحالية **Pending**: لا تُحوّل سلامة القالب أو نجاح `TestGDIPure_*` أو WebKit إلى ادعاء قبول ورقي.
+
+---
+
 ## تسريع مسار جسر الهاتف ومشتق العرض — 7 نوفمبر 2026
 
 - توسّع `frontend/test/use-phone-bridge.test.tsx` بحالة تتحقق من حقن الأبعاد المسبقة (`width`, `height`, `aspectRatio`) القادمة مع حدث `phone:photo-received` في كاش الواجهة وتخطي نداء `resolveImageAspectRatio`، وتوسّع `internal/service/phone_bridge_service_test.go` للتحقق من وجود `optimizeImageFile` في صفحة الـ LAN وإرسال الأبعاد المسبقة في الحدث.
@@ -186,13 +238,13 @@ node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/App.test
 ```mermaid
 flowchart TD
     subgraph E2E ["End-to-End (E2E Layer)"]
-        PW["Playwright (32 ملف مواصفة / 237 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
+        PW["Playwright (31 ملف مواصفة؛ عدد الحالات ونتيجتها من `npx playwright test --list`/CI)"]
         Bridge["Wails v3 Mock Bridge (/wails/runtime Route Interceptor)"]
         PW --> Bridge
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (150 ملف اختبار؛ آخر تحديث 2026-10-23: 1361 ناجحة + 1 متخطّاة، 0 فاشلة)"]
+        VTests["Vitest + React Testing Library (164 ملف اختبار؛ نتيجة الحالات من CI)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -266,7 +318,7 @@ case 1234567890: // اسم الدالة الجديدة
 | :------------------- | :--------------------------------------------------------------------------------------------------- | :----------------------- |
 | `task test:all`      | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة                                                | المشروع بالكامل          |
 | `task test:backend`  | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم                                                   | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (150 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component  |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (164 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component  |
 | `task test:e2e`      | تشغيل اختبارات Playwright E2E السريعة على Chromium                                                   | E2E Browser              |
 
 ### 3.2 عبر npm في مجلد `frontend`

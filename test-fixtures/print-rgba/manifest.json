@@ -1,0 +1,573 @@
+{
+  "schemaVersion": 1,
+  "fixturePackageVersion": "1.0.0-wave0",
+  "authoredDate": "2026-11-13",
+  "status": "immutable-golden-input",
+  "notice": "Expected bytes are independent specification vectors. Never regenerate them from production output and never auto-bless them in CI.",
+  "generator": {
+    "path": "generate-fixtures.mjs",
+    "mode": "standalone-spec-only-no-production-imports",
+    "writePolicy": "--write only creates an empty package once; it refuses to overwrite manifest.json",
+    "ciPolicy": "CI consumes committed manifest and RGBA files; CI must not invoke --write"
+  },
+  "format": {
+    "id": "rgba8-straight-srgb-byte-domain-top-left-v1",
+    "storage": "raw-uncompressed",
+    "channels": [
+      "R",
+      "G",
+      "B",
+      "A"
+    ],
+    "bitsPerChannel": 8,
+    "rowOrder": "top-to-bottom",
+    "origin": "top-left",
+    "pixelOrderWithinRow": "left-to-right",
+    "strideRule": "width * 4 bytes; no row padding",
+    "alpha": "straight-unassociated",
+    "colorEncoding": "sRGB-byte-domain",
+    "transferHandling": "no linear-light conversion; formulas operate directly on stored 0..255 bytes",
+    "transparentPixelRule": "RGB bytes are meaningful and retained even when alpha is zero",
+    "quantization": "clamp to [0,255], then nearest integer; exact .5 rounds upward"
+  },
+  "comparisonPolicies": {
+    "exact-rgba": {
+      "dimensions": "exact",
+      "stride": "exact",
+      "maxAbsoluteErrorByChannel": {
+        "R": 0,
+        "G": 0,
+        "B": 0,
+        "A": 0
+      },
+      "maxMismatchedBytes": 0
+    },
+    "rgb-one-lsb-alpha-exact": {
+      "dimensions": "exact",
+      "stride": "exact",
+      "maxAbsoluteErrorByChannel": {
+        "R": 1,
+        "G": 1,
+        "B": 1,
+        "A": 0
+      },
+      "rationale": "Permits only cross-language last-bit floating-point quantization; expected bytes remain the canonical half-up result."
+    }
+  },
+  "files": [
+    {
+      "path": "cover/source-landscape-7x5.rgba",
+      "role": "source",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 7,
+      "height": 5,
+      "stride": 28,
+      "byteLength": 140,
+      "sha256": "581307657fb828a33a01b5291eeeeb403521d4731dd0d93a5258a3146da3b546"
+    },
+    {
+      "path": "cover/source-portrait-5x7.rgba",
+      "role": "source",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 5,
+      "height": 7,
+      "stride": 20,
+      "byteLength": 140,
+      "sha256": "670f3f37d5d69565dca3749ee31929e0b3b7ad2037979a7da6e8ac4a8e17623e"
+    },
+    {
+      "path": "cover/expected-landscape-to-portrait-3x5.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 3,
+      "height": 5,
+      "stride": 12,
+      "byteLength": 60,
+      "sha256": "91f4d8c8b4e5889c631dcadef8a4d299ff240fd0dd102d0170f322e1a8cbf126"
+    },
+    {
+      "path": "cover/expected-portrait-to-landscape-5x3.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 5,
+      "height": 3,
+      "stride": 20,
+      "byteLength": 60,
+      "sha256": "af5a8251b67a6536ab1375631fbd3158d4f56d80a01be16bc4b1525a58c892a6"
+    },
+    {
+      "path": "cover/expected-odd-center-square-5x5.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 5,
+      "height": 5,
+      "stride": 20,
+      "byteLength": 100,
+      "sha256": "9322108df77099617d3373f37a98ba7e1715e12ac3cd958f636ead39eb6388d0"
+    },
+    {
+      "path": "cover/expected-exact-aspect-7x5.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 7,
+      "height": 5,
+      "stride": 28,
+      "byteLength": 140,
+      "sha256": "581307657fb828a33a01b5291eeeeb403521d4731dd0d93a5258a3146da3b546"
+    },
+    {
+      "path": "cover/expected-exact-aspect-flip-x-7x5.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 7,
+      "height": 5,
+      "stride": 28,
+      "byteLength": 140,
+      "sha256": "385d7aa50da762315c0a094c2d73bda94fc45183c8972b80654b582d37221eea"
+    },
+    {
+      "path": "cover/expected-exact-aspect-flip-y-7x5.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 7,
+      "height": 5,
+      "stride": 28,
+      "byteLength": 140,
+      "sha256": "7c5caaa7abd14dd50b52fb232dcae5d7f6d1cad0f1f9bc03ac3efe2eba9130c4"
+    },
+    {
+      "path": "filters/source-21x21.rgba",
+      "role": "source",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "9be9fc950dabe39366d35714f47eb94aa61e164477729539fc37e5a26c2e2705"
+    },
+    {
+      "path": "filters/expected-identity.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "9be9fc950dabe39366d35714f47eb94aa61e164477729539fc37e5a26c2e2705"
+    },
+    {
+      "path": "filters/expected-brightness.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "3cc6a620fdf8d1c6c6ff3c7b8ba3082921c360ebf35c5c372aa5b16c04d471a3"
+    },
+    {
+      "path": "filters/expected-contrast.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "06c7d9049e12ef6268e78fed1acb1d5ff757a7b6737ce5cf7c6b6e9a95ac1ae2"
+    },
+    {
+      "path": "filters/expected-saturation.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "795080c630da6c653685c81b260fdd7a5c0dcd1f9fa2b242361c6ef66e38133a"
+    },
+    {
+      "path": "filters/expected-sepia.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "333926218f304383e98d464c18ea2ca4d3998697e0f8357d8b8c6c31eca1f51e"
+    },
+    {
+      "path": "filters/expected-grayscale.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "fc6767877025fd66092837e4ffa82b7f8aef3c598a339ce83ccaf9e955ad4f7f"
+    },
+    {
+      "path": "filters/expected-invert.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "36f377cb17685c7401a90ed46b531cbe20e3668df74a5ed84618c0d147e38b98"
+    },
+    {
+      "path": "filters/expected-threshold.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "ba06c1aec3007ba3ed9a09c1f65bdcd7087d6ae3256663a378da1ada17e9fc75"
+    },
+    {
+      "path": "filters/expected-pixelate.rgba",
+      "role": "expected",
+      "format": "rgba8-straight-srgb-byte-domain-top-left-v1",
+      "width": 21,
+      "height": 21,
+      "stride": 84,
+      "byteLength": 1764,
+      "sha256": "2cd7439c7be9bcccb4310d2e3eaef066791ba76d2ab289ee23767efe558d74ee"
+    }
+  ],
+  "suites": {
+    "cover": {
+      "intent": "Lock center-cover crop orientation, odd-dimension centering, exact aspect, transparency retention, and post-crop flips without interpolation ambiguity.",
+      "sourceDesign": "7x5 asymmetric literal color bands with unequal corners and alpha values 0/16..255; the 5x7 source is its coordinate transpose.",
+      "scope": "Integral 1:1 crop vectors only. Resampler-kernel parity is intentionally deferred.",
+      "algorithm": {
+        "crop": "If sourceAspect > targetAspect, cropWidth = sourceHeight * targetAspect and center X; otherwise cropHeight = sourceWidth / targetAspect and center Y.",
+        "transformOrder": [
+          "center crop",
+          "horizontal/vertical flip in output space"
+        ]
+      },
+      "cases": [
+        {
+          "id": "landscape-to-portrait-3x5",
+          "source": "cover/source-landscape-7x5.rgba",
+          "expected": "cover/expected-landscape-to-portrait-3x5.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 3,
+            "targetHeight": 5,
+            "crop": {
+              "x": 2,
+              "y": 0,
+              "width": 3,
+              "height": 5
+            },
+            "flipX": false,
+            "flipY": false,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "portrait-to-landscape-5x3",
+          "source": "cover/source-portrait-5x7.rgba",
+          "expected": "cover/expected-portrait-to-landscape-5x3.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 5,
+            "targetHeight": 3,
+            "crop": {
+              "x": 0,
+              "y": 2,
+              "width": 5,
+              "height": 3
+            },
+            "flipX": false,
+            "flipY": false,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "odd-center-square-5x5",
+          "source": "cover/source-landscape-7x5.rgba",
+          "expected": "cover/expected-odd-center-square-5x5.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 5,
+            "targetHeight": 5,
+            "crop": {
+              "x": 1,
+              "y": 0,
+              "width": 5,
+              "height": 5
+            },
+            "flipX": false,
+            "flipY": false,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "exact-aspect-7x5",
+          "source": "cover/source-landscape-7x5.rgba",
+          "expected": "cover/expected-exact-aspect-7x5.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 7,
+            "targetHeight": 5,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 7,
+              "height": 5
+            },
+            "flipX": false,
+            "flipY": false,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "exact-aspect-flip-x-7x5",
+          "source": "cover/source-landscape-7x5.rgba",
+          "expected": "cover/expected-exact-aspect-flip-x-7x5.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 7,
+            "targetHeight": 5,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 7,
+              "height": 5
+            },
+            "flipX": true,
+            "flipY": false,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "exact-aspect-flip-y-7x5",
+          "source": "cover/source-landscape-7x5.rgba",
+          "expected": "cover/expected-exact-aspect-flip-y-7x5.rgba",
+          "operation": "center-cover-crop",
+          "parameters": {
+            "targetWidth": 7,
+            "targetHeight": 5,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 7,
+              "height": 5
+            },
+            "flipX": false,
+            "flipY": true,
+            "transformOrder": [
+              "crop",
+              "flip-output-axes"
+            ],
+            "resampling": "none-1:1-integral-crop"
+          },
+          "comparisonPolicy": "exact-rgba"
+        }
+      ]
+    },
+    "filters": {
+      "intent": "Lock byte-domain color/filter semantics on opaque, semitransparent, and fully transparent pixels.",
+      "sourceDesign": "21x21 asymmetric four-region field with gradients, all edge alpha classes, meaningful RGB under alpha=0, weighted threshold anchors at 127/128, and four distinct pixelate samples.",
+      "commonRules": {
+        "arithmetic": "IEEE-754 binary64 reference arithmetic",
+        "alpha": "unchanged except pixelate, which samples the complete RGBA pixel",
+        "domain": "unassociated sRGB bytes; no gamma decoding and no premultiplication"
+      },
+      "cases": [
+        {
+          "id": "identity",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-identity.rgba",
+          "operation": "identity",
+          "parameters": {},
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "brightness",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-brightness.rgba",
+          "operation": "brightness",
+          "parameters": {
+            "factor": 1.2,
+            "formula": "C' = C * factor"
+          },
+          "comparisonPolicy": "rgb-one-lsb-alpha-exact"
+        },
+        {
+          "id": "contrast",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-contrast.rgba",
+          "operation": "contrast",
+          "parameters": {
+            "factor": 1.25,
+            "pivot": 127.5,
+            "formula": "C' = (C - 127.5) * factor + 127.5"
+          },
+          "comparisonPolicy": "rgb-one-lsb-alpha-exact"
+        },
+        {
+          "id": "saturation",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-saturation.rgba",
+          "operation": "saturation",
+          "parameters": {
+            "factor": 1.4,
+            "lumaWeights": [
+              0.2126,
+              0.7152,
+              0.0722
+            ],
+            "formula": "L = dot(RGB, weights); C' = L + (C - L) * factor"
+          },
+          "comparisonPolicy": "rgb-one-lsb-alpha-exact"
+        },
+        {
+          "id": "sepia",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-sepia.rgba",
+          "operation": "sepia",
+          "parameters": {
+            "amount": 1,
+            "matrix": [
+              [
+                0.393,
+                0.769,
+                0.189
+              ],
+              [
+                0.349,
+                0.686,
+                0.168
+              ],
+              [
+                0.272,
+                0.534,
+                0.131
+              ]
+            ]
+          },
+          "comparisonPolicy": "rgb-one-lsb-alpha-exact"
+        },
+        {
+          "id": "grayscale",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-grayscale.rgba",
+          "operation": "grayscale",
+          "parameters": {
+            "amount": 1,
+            "lumaWeights": [
+              0.2126,
+              0.7152,
+              0.0722
+            ],
+            "formula": "Y = dot(RGB, weights); RGB' = [Y,Y,Y]"
+          },
+          "comparisonPolicy": "rgb-one-lsb-alpha-exact"
+        },
+        {
+          "id": "invert",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-invert.rgba",
+          "operation": "invert",
+          "parameters": {
+            "amount": 1,
+            "formula": "C' = 255 - C"
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "threshold",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-threshold.rgba",
+          "operation": "threshold",
+          "parameters": {
+            "level": 0.5,
+            "thresholdByte": 127.5,
+            "lumaWeights": [
+              0.299,
+              0.587,
+              0.114
+            ],
+            "comparison": "white when luma >= 127.5, otherwise black",
+            "alpha": "preserved",
+            "boundaryAnchors": [
+              {
+                "x": 9,
+                "y": 10,
+                "rgba": [
+                  127,
+                  127,
+                  127,
+                  255
+                ],
+                "expected": "black"
+              },
+              {
+                "x": 10,
+                "y": 10,
+                "rgba": [
+                  128,
+                  128,
+                  128,
+                  128
+                ],
+                "expected": "white-alpha-128"
+              }
+            ]
+          },
+          "comparisonPolicy": "exact-rgba"
+        },
+        {
+          "id": "pixelate",
+          "source": "filters/source-21x21.rgba",
+          "expected": "filters/expected-pixelate.rgba",
+          "operation": "pixelate",
+          "parameters": {
+            "blockSize": 10,
+            "downsampleSize": {
+              "width": 2,
+              "height": 2
+            },
+            "sampling": "two-pass-nearest-neighbor-pixel-center",
+            "sourceIndex": "floor((destinationIndex + 0.5) * sourceLength / destinationLength)",
+            "alpha": "sampled with RGB"
+          },
+          "comparisonPolicy": "exact-rgba"
+        }
+      ]
+    }
+  },
+  "deferred": {
+    "fullSheet": "Wave 4 follow-up: composition rasterization depends on production border antialiasing, cut-line stroke placement, and resampling contracts not frozen by Wave 0."
+  }
+}

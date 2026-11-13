@@ -32,6 +32,7 @@ import {
 import { classifySaveResult } from '@/lib/io/save-result';
 import { createLogger } from '@/lib/logger';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { MAX_BLEED_MM } from '@/lib/schema';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import {
@@ -40,8 +41,6 @@ import {
   SendNotification,
   OpenFolder,
 } from '../../../../wailsjs/go/main/App';
-
-import type { CmykFormat } from '@/lib/export';
 
 const logger = createLogger('export-dialog');
 
@@ -101,13 +100,13 @@ function FormatOptionButton({
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const isCancelledRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   // 🛡️ رمز الجولة: بدء تصدير جديد يُبطل الجولة القديمة (يمنع تصديرين
   // متزامنين بعد السماح بالإغلاق أثناء التحميل — Bug#9 سابقاً بالمنع الكلي).
   const runTokenRef = useRef(0);
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
-  // 🎨 فضاء الألوان: RGB (افتراضي، تصدير عميل) أو CMYK (تحويل في الخلفية إلى TIFF/JPEG)
+  // 🎨 فضاء الألوان: RGB (افتراضي، تصدير عميل) أو CMYK/TIFF في الخلفية
   const [colorSpace, setColorSpace] = useState<'rgb' | 'cmyk'>('rgb');
-  const [cmykFormat, setCmykFormat] = useState<CmykFormat>('tiff');
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
   const [batchExport, setBatchExport] = useState(false);
@@ -160,6 +159,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     isCancelledRef.current = !open;
     return () => {
       isCancelledRef.current = true;
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
       runTokenRef.current += 1;
       SetTaskbarProgress(0, 'none').catch(() => {});
     };
@@ -177,6 +178,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     if (!next) {
       // الإبطال متزامن لكل مسارات الإغلاق، قبل وصول أي وعد مؤجّل.
       isCancelledRef.current = true;
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
       runTokenRef.current += 1;
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.pointerEvents = '';
@@ -187,13 +190,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   };
 
   const handleExport = async () => {
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const signal = abortController.signal;
     setLoading(true);
     setProgress(0);
     isCancelledRef.current = false;
     runTokenRef.current += 1;
     const myRun = runTokenRef.current;
     // توقف عند إغلاق المستخدم أو عند بدء جولة أحدث
-    const shouldStop = () => isCancelledRef.current || runTokenRef.current !== myRun;
+    const shouldStop = () =>
+      signal.aborted || isCancelledRef.current || runTokenRef.current !== myRun;
     SetTaskbarProgress(0, 'normal').catch(() => {});
     setTimeout(async () => {
       try {
@@ -263,10 +271,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         // 🎨 مسار CMYK: يُنفَّذ في الخلفية (Go) عبر ExportPrintSheet — لا يدعم
         // تصدير الخلايا المنفصلة، لذا يسبق فرع الدفعات ويُخرج التصميم كملف واحد.
         if (colorSpace === 'cmyk') {
-          // 🛡️ RV-Print-27: مثبّت دفاعي — TIFF هو الصيغة الوحيدة الصالحة لمسار
-          // CMYK (الخلفية ترفض cmyk+jpeg برسالة صريحة والخيار معطّل في الواجهة)،
-          // فلا يبقى أي مسار يُرسل التركيبة المرفوضة.
-          const safeCmykFormat: CmykFormat = cmykFormat === 'jpeg' ? 'tiff' : cmykFormat;
           const dpi = exportDpi;
           // Match the actual RGB capture and preflight, not nominal template millimeters.
           const widthMM = pxToMm(canvasWidth, dpi);
@@ -277,31 +281,38 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           const { blob: cmykBlob, sourceFilename } = await runCmykExport({
             stage: stageRef.current,
-            format: safeCmykFormat,
+            format: 'tiff',
             dpi,
             paperWidthMM: widthMM,
             paperHeightMM: heightMM,
             // مسار الطباعة يرسم فوق خلفية صلبة — الشفافية تُسطَّح إلى بياض المعاينة
             backgroundColor: backgroundColor === 'transparent' ? previewWhite() : backgroundColor,
-            skipBlobFetch: true,
+            signal,
           });
 
           if (shouldStop()) return;
 
-          const ext = safeCmykFormat === 'tiff' ? 'tif' : 'jpg';
+          const ext = 'tif';
           const dateStr = new Date().toISOString().slice(0, 10);
           const name = template
             ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
             : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
 
-          const res = await downloadBlob(cmykBlob, name, undefined, undefined, sourceFilename);
+          const res = await downloadBlob(
+            cmykBlob,
+            name,
+            undefined,
+            undefined,
+            sourceFilename,
+            signal,
+          );
           // نتيجة الحفظ القديمة لا تملك تقدّم الجولة الجديدة ولا إشعاراتها.
           if (shouldStop()) return;
           setProgress(100);
           SetTaskbarProgress(0, 'none').catch(() => {});
           const outcome = classifySaveResult(res);
           if (outcome === 'success') {
-            toast.success(`تم تصدير ${safeCmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
+            toast.success('تم تصدير TIFF بنظام CMYK');
             SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
             onOpenChange(false);
           } else if (outcome === 'cancel') {
@@ -339,7 +350,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (blob) {
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
-              const res = await downloadBlob(blob, name, targetDir, exportDpi);
+              const res = await downloadBlob(blob, name, targetDir, exportDpi, undefined, signal);
               const outcome = classifySaveResult(res);
               if (outcome === 'success') {
                 successCount++;
@@ -386,6 +397,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               format,
               quality / 100,
               exportDpi,
+              signal,
             );
             if (shouldStop()) return;
             const ext = format === 'png' ? 'png' : 'jpg';
@@ -395,7 +407,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               : mode === 'collage'
                 ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
                 : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
-            const res = await downloadBlob(finalBlob, name, undefined, exportDpi);
+            const res = await downloadBlob(
+              finalBlob,
+              name,
+              undefined,
+              exportDpi,
+              undefined,
+              signal,
+            );
             // المستخدم أغلق أثناء الحفظ — لا نغيّر حالة الجولة الجديدة.
             if (shouldStop()) return;
             setProgress(100);
@@ -434,6 +453,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           }
         }
       } finally {
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
         if (!shouldStop()) {
           setLoading(false);
           SetTaskbarProgress(0, 'none').catch(() => {});
@@ -487,13 +509,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 selected={colorSpace === 'cmyk'}
                 title="CMYK"
                 subtitle="مطابع الأوفست"
-                // 🖨️ RV-Print-27: دخول مسار CMYK يُرجع الصيغة إلى TIFF إجبارياً —
-                // مُرمِّز JPEG لا يحافظ على فصل الأحبار والخلفية ترفض الطلب صراحةً،
-                // فلا يبقى أي مسار يُرسل cmyk+jpeg من الحوار.
-                onClick={() => {
-                  setColorSpace('cmyk');
-                  setCmykFormat('tiff');
-                }}
+                onClick={() => setColorSpace('cmyk')}
               />
             </div>
           </div>
@@ -508,7 +524,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div
               role="radiogroup"
               aria-labelledby="export-format-label"
-              className="grid grid-cols-2 gap-2"
+              className={`grid gap-2 ${colorSpace === 'rgb' ? 'grid-cols-2' : 'grid-cols-1'}`}
             >
               {colorSpace === 'rgb' ? (
                 <>
@@ -526,25 +542,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                   />
                 </>
               ) : (
-                <>
-                  <FormatOptionButton
-                    selected={cmykFormat === 'tiff'}
-                    title="TIFF"
-                    subtitle="فصل أحبار حقيقي — بلا فقد"
-                    onClick={() => setCmykFormat('tiff')}
-                  />
-                  {/* 🛡️ RV-Print-27: JPEG معطّل مع CMYK — مُرمِّز JPEG لا يدعم
-                      كتابة فصل الأحبار (سيُنتج RGB باسم _CMYK)، فالمسار الوحيد
-                      الصالح هو TIFF. التلميح يشرح السبب عند التحويم. */}
-                  <FormatOptionButton
-                    selected={false}
-                    title="JPEG"
-                    subtitle="معطّل مع CMYK"
-                    hint="مُرمِّز JPEG لا يدعم فصل الأحبار CMYK — اختر TIFF (الحامل الحقيقي لفصل الأحبار)"
-                    disabled
-                    onClick={() => {}}
-                  />
-                </>
+                <FormatOptionButton
+                  selected
+                  title="TIFF"
+                  subtitle="فصل أحبار حقيقي — بلا فقد"
+                  onClick={() => {}}
+                />
               )}
             </div>
           </div>
@@ -614,13 +617,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <span className="text-muted-foreground font-semibold">الحجم التقريبي:</span>
               <span dir="ltr" className="font-mono font-semibold tabular-nums">
                 {colorSpace === 'cmyk'
-                  ? cmykFormat === 'tiff'
-                    ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 1.0).toFixed(1)
-                    : (
-                        ((canvasWidth * canvasHeight * 3) / 1024 / 1024) *
-                        0.35 *
-                        (quality / 100)
-                      ).toFixed(1)
+                  ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 1.0).toFixed(1)
                   : format === 'png'
                     ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 0.6).toFixed(1)
                     : (
@@ -660,7 +657,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                     label="هامش النزيف والقص"
                     value={bleedMM}
                     min={0}
-                    max={10}
+                    max={MAX_BLEED_MM}
                     step={1}
                     unit="mm"
                     onChange={setBleedMM}

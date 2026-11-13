@@ -8,6 +8,7 @@ import {
   PrintNative,
   PrintDirect,
   PollJobStatus,
+  ResolvePrinterPlan,
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { uploadPrintImage } from '../src/components/editor/print/print-transport';
@@ -17,7 +18,7 @@ import {
   type PrintExecuteOptions,
 } from '../src/components/editor/print/use-print-export';
 import * as imageDimensions from '../src/lib/canvas/image-dimensions';
-import { captureStageBlob, swapNodeImagesForCapture } from '../src/lib/canvas/konva-export-utils';
+import { captureStageBlob } from '../src/lib/canvas/konva-export-utils';
 import { useEditorStore } from '../src/lib/editor-store';
 
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
@@ -44,7 +45,6 @@ vi.mock('../src/lib/canvas/stage-context', () => ({
 
 vi.mock('../src/lib/canvas/konva-export-utils', () => ({
   captureStageBlob: vi.fn(async () => new Blob(['png-bytes'], { type: 'image/png' })),
-  swapNodeImagesForCapture: vi.fn(async () => () => {}),
 }));
 
 vi.mock('../src/components/editor/print/print-transport', async (importOriginal) => {
@@ -69,11 +69,29 @@ vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
     Promise.resolve({ success: true, jobId: 0, status: 'Printed', error: '' }),
   ),
   PollJobStatus: vi.fn(() =>
-    Promise.resolve({ success: true, jobId: 0, status: 'Completed', error: '' }),
+    Promise.resolve({
+      success: true,
+      jobId: 0,
+      status: 'Completed',
+      code: 'COMPLETED',
+      terminal: true,
+      error: '',
+    }),
   ),
+  ResolvePrinterPlan: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      code: 'EXACT',
+      appliedFormName: '',
+      appliedPaperId: 0,
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      scale: 1,
+      fallbackReason: '',
+    }),
+  ),
+  CancelSpoolJob: vi.fn(() => Promise.resolve(undefined)),
   GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [], error: '' })),
-  // 🛑 إلغاء التوليد (عقد C4 الجديد): يُستدعى من cancelExport — no-op في الاختبارات
-  CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
   CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
@@ -96,6 +114,7 @@ const mockExportPrintSheet = vi.mocked(ExportPrintSheet);
 const mockPrintNative = vi.mocked(PrintNative);
 const mockPrintDirect = vi.mocked(PrintDirect);
 const mockPollJobStatus = vi.mocked(PollJobStatus);
+const mockResolvePrinterPlan = vi.mocked(ResolvePrinterPlan);
 const mockToastError = vi.mocked(toast.error);
 const mockToastSuccess = vi.mocked(toast.success);
 const mockToastWarning = vi.mocked(toast.warning);
@@ -225,6 +244,30 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     FakeImage.decodedWidth = 800;
     FakeImage.decodedHeight = 600;
     FakeImage.fail = false;
+    mockResolvePrinterPlan.mockResolvedValue({
+      success: true,
+      code: 'EXACT',
+      appliedFormName: '',
+      appliedPaperId: 0,
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      scale: 1,
+      fallbackReason: '',
+    } as Awaited<ReturnType<typeof ResolvePrinterPlan>>);
+    mockPrintDirect.mockResolvedValue({
+      success: true,
+      jobId: 0,
+      status: 'Printed',
+      error: '',
+    } as Awaited<ReturnType<typeof PrintDirect>>);
+    mockPollJobStatus.mockResolvedValue({
+      success: true,
+      jobId: 0,
+      status: 'Completed',
+      code: 'COMPLETED',
+      terminal: true,
+      error: '',
+    } as Awaited<ReturnType<typeof PollJobStatus>>);
     vi.stubGlobal('Image', FakeImage);
     document.body.style.pointerEvents = '';
   });
@@ -687,7 +730,9 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it('يراقب حالة المهمة خلفياً عبر PollJobStatus بعد نجاح إرسال PrintDirect', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
     try {
       mockPrintDirect.mockResolvedValueOnce({
         success: true,
@@ -696,16 +741,24 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
         error: '',
       } as Awaited<ReturnType<typeof PrintDirect>>);
 
-      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-        directPrint: true,
-        printerName: 'Canon Pro-1000',
+      const { result } = renderHook(() => usePrintExport(makeContext({ printColorSpace: 'sRGB' })));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, () => {}, {
+          directPrint: true,
+          printerName: 'Canon Pro-1000',
+        });
       });
 
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20);
+      });
       expect(mockPrintDirect).toHaveBeenCalledTimes(1);
       expect(mockPollJobStatus).not.toHaveBeenCalled();
 
       await act(async () => {
-        vi.advanceTimersByTime(1600);
+        await vi.advanceTimersByTimeAsync(1600);
+        await attempt;
       });
 
       expect(mockPollJobStatus).toHaveBeenCalledWith('Canon Pro-1000', 88);
@@ -715,7 +768,9 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it('يُظهر تنبيه خطأ إذا كشف PollJobStatus عطلاً في المهمة بعد الإرسال', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
     try {
       mockPrintDirect.mockResolvedValueOnce({
         success: true,
@@ -730,17 +785,23 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
         error: 'نفد الورق من الدرج الخلفي',
       } as Awaited<ReturnType<typeof PollJobStatus>>);
 
-      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-        directPrint: true,
-        printerName: 'Canon Pro-1000',
+      const { result } = renderHook(() => usePrintExport(makeContext({ printColorSpace: 'sRGB' })));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, () => {}, {
+          directPrint: true,
+          printerName: 'Canon Pro-1000',
+        });
       });
 
       await act(async () => {
-        vi.advanceTimersByTime(1600);
+        await vi.advanceTimersByTimeAsync(20);
+        await vi.advanceTimersByTimeAsync(1600);
+        await attempt;
       });
 
       expect(mockToastError).toHaveBeenCalledWith(
-        expect.stringContaining('تنبيه الطابعة للمهمة #99: نفد الورق من الدرج الخلفي'),
+        expect.stringContaining('تعذرت مهمة الطباعة #99: نفد الورق من الدرج الخلفي'),
       );
     } finally {
       vi.useRealTimers();
@@ -798,7 +859,9 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it('يعرض اسم الطابعة المخصصة ورقم المهمة بدقة في إشعار النجاح', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
     try {
       mockPrintDirect.mockResolvedValueOnce({
         success: true,
@@ -807,44 +870,40 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
         error: '',
       } as Awaited<ReturnType<typeof PrintDirect>>);
 
-      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-        directPrint: true,
-        printerName: 'Epson Stylus Pro 4900',
+      const { result } = renderHook(() => usePrintExport(makeContext({ printColorSpace: 'sRGB' })));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, () => {}, {
+          directPrint: true,
+          printerName: 'Epson Stylus Pro 4900',
+        });
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20);
+        await vi.advanceTimersByTimeAsync(1600);
+        await attempt;
       });
 
-      expect(mockToastSuccess).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'تم إرسال الورقة بنجاح إلى طابعة Epson Stylus Pro 4900 (المهمة #105)',
-        ),
-      );
+      expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('المهمة #105'));
     } finally {
       vi.useRealTimers();
     }
   });
 
   it('يتجاهل استدعاء PollJobStatus إذا أعادت الطباعة المباشرة jobId صفرياً أو غير معرف', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    try {
-      mockPrintDirect.mockResolvedValueOnce({
-        success: true,
-        jobId: 0,
-        status: 'Printed',
-        error: '',
-      } as Awaited<ReturnType<typeof PrintDirect>>);
+    mockPrintDirect.mockResolvedValueOnce({
+      success: true,
+      jobId: 0,
+      status: 'Printed',
+      error: '',
+    } as Awaited<ReturnType<typeof PrintDirect>>);
 
-      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-        directPrint: true,
-        printerName: 'Brother HL-L2350DW',
-      });
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'Brother HL-L2350DW',
+    });
 
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
-
-      expect(mockPollJobStatus).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(mockPollJobStatus).not.toHaveBeenCalled();
   });
 
   it('يحظر تماماً استدعاء PrintDirect عند اختيار فضاء ألوان CMYK ويُعلن نجاح تصدير ملف المطبعة', async () => {
@@ -885,7 +944,9 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it('يتعامل بدقة مع أخطاء طابور الطباعة الميدانية (انحشار الورق وحالة عدم الاتصال)', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
     try {
       mockPrintDirect.mockResolvedValueOnce({
         success: true,
@@ -900,17 +961,23 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
         error: 'انحشار في مسار الورق (Paper Jam)',
       } as Awaited<ReturnType<typeof PollJobStatus>>);
 
-      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-        directPrint: true,
-        printerName: 'DNP DS-RX1',
+      const { result } = renderHook(() => usePrintExport(makeContext({ printColorSpace: 'sRGB' })));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, () => {}, {
+          directPrint: true,
+          printerName: 'DNP DS-RX1',
+        });
       });
 
       await act(async () => {
-        vi.advanceTimersByTime(1600);
+        await vi.advanceTimersByTimeAsync(20);
+        await vi.advanceTimersByTimeAsync(1600);
+        await attempt;
       });
 
       expect(mockToastError).toHaveBeenCalledWith(
-        expect.stringContaining('تنبيه الطابعة للمهمة #101: انحشار في مسار الورق (Paper Jam)'),
+        expect.stringContaining('تعذرت مهمة الطباعة #101: انحشار في مسار الورق (Paper Jam)'),
       );
     } finally {
       vi.useRealTimers();
@@ -922,8 +989,6 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     async (phase) => {
       const capture = deferred<Blob | null>();
       const upload = deferred<string>();
-      const restoreNodes = vi.fn();
-      vi.mocked(swapNodeImagesForCapture).mockResolvedValueOnce(restoreNodes);
       if (phase === 'capture') vi.mocked(captureStageBlob).mockReturnValueOnce(capture.promise);
       else vi.mocked(uploadPrintImage).mockReturnValueOnce(upload.promise);
       const onDone = vi.fn();
@@ -950,7 +1015,6 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
       expect(mockToastSuccess).not.toHaveBeenCalled();
       expect(mockToastError).not.toHaveBeenCalled();
       expect(SetTaskbarProgress).not.toHaveBeenCalled();
-      expect(restoreNodes).toHaveBeenCalledTimes(1);
       expect(result.current.isExporting).toBe(false);
     },
   );

@@ -1,6 +1,7 @@
 import { isElementFullyOutsideCanvas } from '@/lib/canvas/element-geometry';
 import { resolveBatchImageDimensions } from '@/lib/canvas/image-dimensions';
 import { MM_PER_INCH } from '@/lib/canvas/units';
+import { computeSlotCrop } from '@/lib/export/export-primitives';
 
 import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
@@ -14,7 +15,7 @@ import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
    التصنيف (نفس عقد الكولاج):
    - blocking: مصدر غير مقروء — الناتج سيكون ناقصاً بصمت.
-   - warnings: دقة فعالة منخفضة بعد التمديد على مقاسها المطبوع.
+   - warnings: دقة فعالة منخفضة بعد نافذة قص cover على مقاسها المطبوع.
    ═══════════════════════════════════════════════════════════════ */
 
 export interface FreeformPreflightInput {
@@ -96,12 +97,16 @@ export function runFreeformPreflight(input: FreeformPreflightInput): FreeformPre
 
     const widthMM = el.width * canvasWidthMM;
     const heightMM = el.height * canvasHeightMM;
-    if (!(widthMM > 0) || !(heightMM > 0)) continue;
+    const widthPx = el.width * canvasWidthPx;
+    const heightPx = el.height * canvasHeightPx;
+    if (!(widthMM > 0) || !(heightMM > 0) || !(widthPx > 0) || !(heightPx > 0)) continue;
 
-    // العنصر يُمدَّد داخل مستطيله (stretch مطابق للمحرر ومسار Go) — لذا نقارن
-    // كل محور من محاور المصدر بمحور الرسم الفيزيائي المقابل.
-    const dpiX = dims.width / (widthMM / MM_PER_INCH);
-    const dpiY = dims.height / (heightMM / MM_PER_INCH);
+    // نفس عقد المحرر والمسار السريع: object-fit: cover يستهلك نافذة من المصدر
+    // بنسبة مستطيل الرسم الفعلية على الكانفس، ثم تُقاس بكسلات النافذة المرئية
+    // على المقاس الفيزيائي النهائي بدلاً من احتساب بكسلات سيقصّها cover.
+    const crop = computeSlotCrop(dims, widthPx, heightPx, {});
+    const dpiX = crop.sw / (widthMM / MM_PER_INCH);
+    const dpiY = crop.sh / (heightMM / MM_PER_INCH);
     const effectiveDpi = Math.min(dpiX, dpiY);
     if (Number.isFinite(effectiveDpi) && effectiveDpi < minDpi) {
       warnings.push({

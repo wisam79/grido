@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -42,14 +43,40 @@ const (
 	// maxExpandedPrintCells أعلى عدد خلايا مرسومة بعد التوسيع (قالب 48×24 الشائع
 	// = 1,152 خلية؛ السقف يترك هامش ×20 مع بقاء زمن الرسم محدوداً).
 	maxExpandedPrintCells = 25000
+	// maxBackgroundBlocks bounds page-local fills independently of print items.
+	maxBackgroundBlocks = 1000
 	// maxCanvasPixels سقف بكسل المخرج (الورقة أو كانفس التركيب) — مصدر واحد
 	// للسياسة: 144 ميغابكسل (مثال: 12000×12000 بكسل @600DPI).
 	maxCanvasPixels = 144_000_000
 	// maxCanvasSidePx أقصى طول لضلع واحد بالبكسل (سقف آمن لأبعاد gg/imaging).
 	maxCanvasSidePx = 65535
+	// Client-owned generation IDs are deliberately narrow: they cross IPC, become
+	// registry keys, and are echoed in cancellation errors/logs.
+	maxPrintJobIDLength = 96
 )
 
+var safePrintJobID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
+
 type PrintService struct{}
+
+type printGenerationStage uint8
+
+const (
+	printStageRegistered printGenerationStage = iota
+	printStageComposeWorkerBefore
+	printStageComposeWorkerAfter
+	printStageDrawBefore
+	printStageSaveBefore
+	printStageSaveAfter
+)
+
+type printGenerationBarrier func(stage printGenerationStage, index int)
+
+func reachPrintGenerationBarrier(barrier printGenerationBarrier, stage printGenerationStage, index int) {
+	if barrier != nil {
+		barrier(stage, index)
+	}
+}
 
 // printJobSem يمنع تنفيذ طلبتَي طباعة معاً: كل طلب يخصّص كانفس الورقة +
 // كانفس التركيب + صور العناصر المعالَجة، وتزامن طلبين كان يضاعف الذروة.
@@ -75,16 +102,46 @@ var activePrintJobs = struct {
 // printJobSeq مولّد تفرد لمعرّفات المهام (زمنياً + عدّاد) ضد أي تصادم.
 var printJobSeq atomic.Int64
 
-// newPrintJob يسجّل مهمة توليد جديدة في السجل ويعيد (المعرّف، السياق
-// القابل للإلغاء). التسجيل قبل الاستحواذ على الـsemaphore كي يصل الإلغاء
-// حتى وهي في الطابور.
-func newPrintJob(parent context.Context) (string, context.Context, context.CancelFunc) {
+// normalizeRequestedPrintJobID accepts only a bounded, log-safe identifier. An
+// empty value preserves legacy callers by selecting a generated identifier.
+func normalizeRequestedPrintJobID(requested string) (string, error) {
+	if requested == "" {
+		return "", nil
+	}
+	if requested != strings.TrimSpace(requested) {
+		return "", fmt.Errorf("invalid print job id: leading or trailing whitespace is not allowed")
+	}
+	if len(requested) > maxPrintJobIDLength || !safePrintJobID.MatchString(requested) {
+		return "", fmt.Errorf("invalid print job id: use 1-%d ASCII letters, digits, dot, underscore, or hyphen", maxPrintJobIDLength)
+	}
+	return requested, nil
+}
+
+func generatedPrintJobID() string {
+	return fmt.Sprintf("print-%d-%d", time.Now().UnixNano(), printJobSeq.Add(1))
+}
+
+// newPrintJob registers before semaphore acquisition so cancellation also reaches
+// queued jobs. A caller-supplied ID must be unique among active jobs.
+func newPrintJob(parent context.Context, requested string) (string, context.Context, context.CancelFunc, error) {
+	jobID, err := normalizeRequestedPrintJobID(requested)
+	if err != nil {
+		return "", nil, nil, err
+	}
+	if jobID == "" {
+		jobID = generatedPrintJobID()
+	}
+
 	ctx, cancel := context.WithCancel(parent)
-	jobID := fmt.Sprintf("print-%d-%d", time.Now().UnixNano(), printJobSeq.Add(1))
 	activePrintJobs.mu.Lock()
+	if _, exists := activePrintJobs.jobs[jobID]; exists {
+		activePrintJobs.mu.Unlock()
+		cancel()
+		return "", nil, nil, fmt.Errorf("print job id is already active: %s", jobID)
+	}
 	activePrintJobs.jobs[jobID] = cancel
 	activePrintJobs.mu.Unlock()
-	return jobID, ctx, cancel
+	return jobID, ctx, cancel, nil
 }
 
 // removePrintJob يمسح المهمة من السجل ويحرر موارد السياق — يُستدعى بـ defer
@@ -96,21 +153,41 @@ func removePrintJob(jobID string, cancel context.CancelFunc) {
 	cancel()
 }
 
+// completePrintJob atomically closes the registry race at successful return:
+// cancellation that acquires the same lock first wins; cancellation after deletion
+// receives "not found" and cannot claim that a completed output was cancelled.
+func completePrintJob(jobID string, ctx context.Context, cancel context.CancelFunc) error {
+	activePrintJobs.mu.Lock()
+	if err := ctx.Err(); err != nil {
+		activePrintJobs.mu.Unlock()
+		return err
+	}
+	delete(activePrintJobs.jobs, jobID)
+	activePrintJobs.mu.Unlock()
+	cancel()
+	return nil
+}
+
 // CancelPrintJob يلغي مهمة توليد ورقة طباعة جارية بمعرّفها المسجّل — تتوقف
 // عند أول نقطة تحقق (انتظار الـsemaphore، بدء معالجة عنصر، حد الدفعة، قبل
 // الحفظ). معرّف غير موجود أو مهمة انتهت أصلاً = خطأ صريح واضح.
 func CancelPrintJob(jobID string) error {
-	jobID = strings.TrimSpace(jobID)
-	if jobID == "" {
+	validated, err := normalizeRequestedPrintJobID(jobID)
+	if err != nil {
+		return err
+	}
+	if validated == "" {
 		return fmt.Errorf("print job id is empty")
 	}
 	activePrintJobs.mu.Lock()
-	cancel, ok := activePrintJobs.jobs[jobID]
+	cancel, ok := activePrintJobs.jobs[validated]
+	if ok {
+		cancel()
+	}
 	activePrintJobs.mu.Unlock()
 	if !ok {
-		return fmt.Errorf("print job not found (unknown id or already finished): %s", jobID)
+		return fmt.Errorf("print job not found (unknown id or already finished): %s", validated)
 	}
-	cancel()
 	return nil
 }
 
@@ -153,8 +230,115 @@ func NewPrintService() *PrintService {
 	return &PrintService{}
 }
 
+func enumAllowed(value string, allow ...string) bool {
+	for _, candidate := range allow {
+		if strings.EqualFold(value, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func validatePrintItem(item domain.PrintItem, index int, scope string) error {
+	fields := []struct {
+		name  string
+		value float64
+	}{
+		{"x", item.X}, {"y", item.Y}, {"w", item.W}, {"h", item.H},
+		{"cropX", item.CropX}, {"cropY", item.CropY}, {"cropW", item.CropW}, {"cropH", item.CropH},
+		{"cornerRadiusMM", item.CornerRadiusMM}, {"borderWidthMM", item.BorderWidthMM},
+		{"rotation", item.Rotation}, {"slotAspect", item.SlotAspect}, {"zoom", item.Zoom},
+		{"dragX", item.DragX}, {"dragY", item.DragY},
+		{"copyStepX", item.CopyStepX}, {"copyStepY", item.CopyStepY},
+	}
+	for _, field := range fields {
+		if math.IsNaN(field.value) || math.IsInf(field.value, 0) {
+			return fmt.Errorf("%s item %d %s has invalid NaN or Inf value (غير منتهية)", scope, index+1, field.name)
+		}
+	}
+	if err := ValidatePrintImageFilter(item.Filter); err != nil {
+		return fmt.Errorf("%s item %d: %w", scope, index+1, err)
+	}
+	if err := ValidatePrintImageAdjustments(item.Brightness, item.Contrast, item.Saturation); err != nil {
+		return fmt.Errorf("%s item %d: %w", scope, index+1, err)
+	}
+	return nil
+}
+
+func validateCutLines(lines []domain.CutLine) error {
+	for i, line := range lines {
+		fields := []struct {
+			name  string
+			value float64
+		}{{"x1", line.X1}, {"y1", line.Y1}, {"x2", line.X2}, {"y2", line.Y2}}
+		for _, field := range fields {
+			if math.IsNaN(field.value) || math.IsInf(field.value, 0) {
+				return fmt.Errorf("cut line %d %s must be finite", i+1, field.name)
+			}
+		}
+	}
+	return nil
+}
+
+func validateBackgroundBlocks(blocks []domain.PrintBackgroundBlock, paperW, paperH float64) error {
+	if len(blocks) > maxBackgroundBlocks {
+		return fmt.Errorf("too many background blocks: %d (max limit is %d)", len(blocks), maxBackgroundBlocks)
+	}
+	for i, block := range blocks {
+		fields := []struct {
+			name  string
+			value float64
+		}{{"x", block.X}, {"y", block.Y}, {"w", block.W}, {"h", block.H}, {"angle", block.Angle}}
+		for _, field := range fields {
+			if math.IsNaN(field.value) || math.IsInf(field.value, 0) {
+				return fmt.Errorf("background block %d %s must be finite", i+1, field.name)
+			}
+		}
+		if block.Angle < 0 || block.Angle > 360 {
+			return fmt.Errorf("background block %d angle %.4g must be between 0 and 360 degrees", i+1, block.Angle)
+		}
+		if block.W <= 0 || block.H <= 0 || block.X < 0 || block.Y < 0 ||
+			block.X+block.W > paperW || block.Y+block.H > paperH {
+			return fmt.Errorf("background block %d must fit within paper %.2fx%.2f mm", i+1, paperW, paperH)
+		}
+		if err := validatePrintColor(block.Color, false); err != nil {
+			return fmt.Errorf("background block %d color: %w", i+1, err)
+		}
+		if block.Color2 != "" {
+			if err := validatePrintColor(block.Color2, false); err != nil {
+				return fmt.Errorf("background block %d color2: %w", i+1, err)
+			}
+		}
+	}
+	return nil
+}
+
 // validatePrintRequest يتحقق من صحة بيانات طلب الطباعة وحجم الكانفس
 func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, error) {
+	if _, err := normalizeRequestedPrintJobID(req.JobID); err != nil {
+		return 0, 0, err
+	}
+	if math.IsNaN(req.PaperWidthMM) || math.IsInf(req.PaperWidthMM, 0) ||
+		math.IsNaN(req.PaperHeightMM) || math.IsInf(req.PaperHeightMM, 0) ||
+		math.IsNaN(req.MarginMM) || math.IsInf(req.MarginMM, 0) ||
+		math.IsNaN(req.GapMM) || math.IsInf(req.GapMM, 0) {
+		return 0, 0, fmt.Errorf("paper width, height, margin, and gap must be finite")
+	}
+	if req.MarginMM < 0 || req.GapMM < 0 {
+		return 0, 0, fmt.Errorf("paper margin and gap must be non-negative")
+	}
+	if !enumAllowed(req.Orientation, "", "portrait", "landscape") {
+		return 0, 0, fmt.Errorf("unsupported print orientation %q", req.Orientation)
+	}
+	if !enumAllowed(req.CutLineStyle, "", "dashed", "dotted", "solid", "cropmarks") {
+		return 0, 0, fmt.Errorf("unsupported cut line style %q", req.CutLineStyle)
+	}
+	if !enumAllowed(req.ColorSpace, "", "sRGB", "CMYK") {
+		return 0, 0, fmt.Errorf("unsupported print color space %q", req.ColorSpace)
+	}
+	if !enumAllowed(req.ExportFormat, "", "png", "jpeg", "jpg", "tiff", "tif", "pdf") {
+		return 0, 0, fmt.Errorf("unsupported print export format %q", req.ExportFormat)
+	}
 	if req.DPI < 50 || req.DPI > 600 {
 		return 0, 0, fmt.Errorf("invalid DPI: %d (must be between 50 and 600)", req.DPI)
 	}
@@ -166,6 +350,17 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	}
 	if len(req.Items) > 1000 {
 		return 0, 0, fmt.Errorf("too many items: %d (max limit is 1000)", len(req.Items))
+	}
+	if err := validateBackgroundBlocks(req.BackgroundBlocks, req.PaperWidthMM, req.PaperHeightMM); err != nil {
+		return 0, 0, err
+	}
+	for i, item := range req.Items {
+		if err := validatePrintItem(item, i, "print"); err != nil {
+			return 0, 0, err
+		}
+	}
+	if err := validateCutLines(req.CutLines); err != nil {
+		return 0, 0, err
 	}
 
 	widthPx := int(math.Round(mmToPx(req.PaperWidthMM, req.DPI)))
@@ -289,12 +484,9 @@ func validateCanvasComposition(comp *domain.CanvasComposition, dpi int) error {
 			outW, outH, maxCanvasPixels/1_000_000, maxCanvasSidePx)
 	}
 
-	// 🛡️ أبعاد العناصر غير المنتهية كانت تتسلل من حارس composeCanvas (W <= 0
-	// لا يلتقط NaN)؛ الأبعاد ≤0 تبقى تُتخطى عمداً كما كان.
 	for i, item := range comp.Items {
-		if math.IsNaN(item.W) || math.IsInf(item.W, 0) || math.IsNaN(item.H) || math.IsInf(item.H, 0) {
-			return fmt.Errorf("أبعاد العنصر %d في كانفس التركيب غير صالحة (قيم غير منتهية): العرض=%v الارتفاع=%v",
-				i+1, item.W, item.H)
+		if err := validatePrintItem(item, i, "composition"); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -426,20 +618,63 @@ func itemSourceDims(cache map[string][2]int64, imageSrc string) (int64, int64, b
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
 // التوقيع محفوظ للربطات الحالية — الإلغاء عبر GeneratePrintSheetWithContext.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
-	return s.generatePrintSheet(context.Background(), req)
+	return s.generatePrintSheet(context.Background(), req, nil)
 }
 
 // GeneratePrintSheetWithContext نسخة واعية بالسياق لنفس التوليد: تمكّن
 // الإلغاء الخارجي (service.CancelPrintJob) وتوقف العمل فعلياً عند نقاط
 // التحقق. PrintService ليس على سطح عقود IPC فلا يتغير شيء للربطات.
 func (s *PrintService) GeneratePrintSheetWithContext(ctx context.Context, req domain.PrintRequest) (string, string, error) {
-	return s.generatePrintSheet(ctx, req)
+	return s.generatePrintSheet(ctx, req, nil)
 }
 
-func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintRequest) (string, string, error) {
-	// 🛑 سجل المهمة للإلغاء (C4) + المسح الذري في كل المخارج.
-	jobID, jobCtx, cancelJob := newPrintJob(ctx)
-	defer removePrintJob(jobID, cancelJob)
+func removeGeneratedPrintOutput(imagePath string) {
+	if imagePath == "" {
+		return
+	}
+	_ = os.Remove(imagePath)
+	base := strings.TrimSuffix(imagePath, filepath.Ext(imagePath))
+	_ = os.Remove(base + ".html")
+	_ = os.Remove(base + "_preview.png")
+	_ = os.Remove(base + "_preview.jpg")
+	_ = os.Remove(imagePath + ".tmp")
+	_ = os.Remove(base + ".html.tmp")
+	_ = os.Remove(base + "_preview.png.tmp")
+	_ = os.Remove(base + "_preview.jpg.tmp")
+}
+
+func (s *PrintService) saveOutputCancellable(ctx context.Context, dc *gg.Context, req domain.PrintRequest, barrier printGenerationBarrier) (string, string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", "", err
+	}
+	imagePath, htmlDoc, err := s.saveOutput(dc, req)
+	if err != nil {
+		return "", "", err
+	}
+	reachPrintGenerationBarrier(barrier, printStageSaveAfter, -1)
+	if err := ctx.Err(); err != nil {
+		removeGeneratedPrintOutput(imagePath)
+		return "", "", err
+	}
+	return imagePath, htmlDoc, nil
+}
+
+func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintRequest, barrier printGenerationBarrier) (string, string, error) {
+	// Reject malformed caller-owned IDs before they can enter the cancellation registry.
+	if _, err := normalizeRequestedPrintJobID(req.JobID); err != nil {
+		return "", "", err
+	}
+	jobID, jobCtx, cancelJob, err := newPrintJob(ctx, req.JobID)
+	if err != nil {
+		return "", "", err
+	}
+	jobCompleted := false
+	defer func() {
+		if !jobCompleted {
+			removePrintJob(jobID, cancelJob)
+		}
+	}()
+	reachPrintGenerationBarrier(barrier, printStageRegistered, -1)
 
 	// طلب واحد في كل مرة — يمنع مضاعفة ذروة الذاكرة عند نقرتين متتاليتين،
 	// والاستحواذ الآن واعٍ بالسياق: إلغاء مهمة معلقة في الطابور يوقفها فوراً.
@@ -490,6 +725,7 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 	bgColor := parseColor(req.BackgroundColor)
 	dc.SetColor(bgColor)
 	dc.Clear()
+	drawBackgroundBlocks(dc, req.BackgroundBlocks, req.DPI)
 
 	imgCache := &imageCache{
 		images: make(map[string]image.Image),
@@ -508,8 +744,11 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 
 	// 0. تركيب كانفاس الوضع الحر (اختياري): يُرسم مرة واحدة بدقة الطباعة
 	// ثم تُستنسخ نسخه في الخلايا — بدل لقطة كانفس + إعادة ترميز
-	composedCanvas, err := s.composeCanvas(req, imgCache)
+	composedCanvas, err := s.composeCanvas(jobCtx, req, imgCache, barrier)
 	if err != nil {
+		if cerr := jobCtx.Err(); cerr != nil {
+			return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, cerr)
+		}
 		return "", "", err
 	}
 
@@ -551,17 +790,20 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 				continue
 			}
 			i := i
+			if err := jobCtx.Err(); err != nil {
+				return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+			}
 			g.Go(func() (err error) {
-				// 🛑 لا تبدأ معالجة عنصر جديد بعد الإلغاء (C4)
 				if cerr := jobCtx.Err(); cerr != nil {
 					return fmt.Errorf("print job %s cancelled: %w", jobID, cerr)
 				}
-				// 🛡️ أي panic داخل عامل المعالجة يتحول لخطأ يصل للمستخدم بدل
-				// إسقاط العملية كاملاً (errgroup لا يلتقط panics بذاته)
 				defer recoverPrintWorkerPanic(i, &err)
 				img, err := s.loadAndProcessImage(req.Items[i], req.DPI, imgCache, procCache)
 				if err != nil {
 					return err
+				}
+				if cerr := jobCtx.Err(); cerr != nil {
+					return fmt.Errorf("print job %s cancelled: %w", jobID, cerr)
 				}
 				batch[i-start] = img
 				return nil
@@ -573,6 +815,13 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 
 		// 2. Draw sequentially (gg.Context is NOT thread-safe)
 		for i := start; i < end; i++ {
+			if err := jobCtx.Err(); err != nil {
+				return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+			}
+			reachPrintGenerationBarrier(barrier, printStageDrawBefore, i)
+			if err := jobCtx.Err(); err != nil {
+				return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+			}
 			drawItem(i, batch[i-start])
 		}
 		clear(batch)
@@ -596,6 +845,19 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 	if err := jobCtx.Err(); err != nil {
 		return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
 	}
+	reachPrintGenerationBarrier(barrier, printStageSaveBefore, -1)
+	if err := jobCtx.Err(); err != nil {
+		return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+	}
 
-	return s.saveOutput(dc, req)
+	imagePath, htmlDoc, err := s.saveOutputCancellable(jobCtx, dc, req, barrier)
+	if err != nil {
+		return "", "", fmt.Errorf("print job %s failed or cancelled: %w", jobID, err)
+	}
+	if err := completePrintJob(jobID, jobCtx, cancelJob); err != nil {
+		removeGeneratedPrintOutput(imagePath)
+		return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+	}
+	jobCompleted = true
+	return imagePath, htmlDoc, nil
 }

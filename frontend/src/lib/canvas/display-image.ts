@@ -194,13 +194,39 @@ function getRegisteredOriginalSrc(
   return displayOwnership.get(displayElement) ?? null;
 }
 
-// جسر الالتقاط العابر: عنصر العرض ← عنصر الأصل المفكوك. يُملأ عبر
-// getOriginalForDisplayedElement قبل ترقية التصدير ويُفرغ في finally بعد
-// الاستعادة (releaseCaptureOriginals) — الأصل كامل الدقة لا يبقى حياً خارج
-// نافذة الالتقاط وإلا أُلغي مكسب الذاكرة كله، لذلك لا WeakMap هنا.
-const captureOriginals = new Map<HTMLImageElement, HTMLImageElement>();
 // كاش وعود جلب الأصول: نداءان متزامنان لنفس الرابط يفكّان ترميزه مرة واحدة.
+// يبقى الوعد مشتركاً فقط أثناء التحميل؛ كل التقاط يحتفظ بالأصل في lease مستقل
+// حتى لا يستطيع انتهاء التقاط مسرح أن يحرر أصول مسرح آخر يعمل بالتوازي.
 const pendingOriginals = new Map<string, Promise<HTMLImageElement | null>>();
+
+export interface CaptureOriginalLease {
+  readonly released: boolean;
+  get(displayElement: HTMLImageElement): HTMLImageElement | null;
+  set(displayElement: HTMLImageElement, original: HTMLImageElement): void;
+  release(): void;
+}
+
+/** ينشئ ملكية أصول مستقلة لعملية التقاط واحدة. */
+export function createCaptureOriginalLease(): CaptureOriginalLease {
+  const originals = new Map<HTMLImageElement, HTMLImageElement>();
+  let released = false;
+  return {
+    get released() {
+      return released;
+    },
+    get(displayElement) {
+      return released ? null : (originals.get(displayElement) ?? null);
+    },
+    set(displayElement, original) {
+      if (!released) originals.set(displayElement, original);
+    },
+    release() {
+      if (released) return;
+      released = true;
+      originals.clear();
+    },
+  };
+}
 
 function loadOriginalElement(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -216,9 +242,8 @@ function loadOriginalElement(src: string): Promise<HTMLImageElement | null> {
 }
 
 /**
- * يجلب الأصل الكامل عبر new Image() للرابط المُمرَّر ويخزنه في جسر الالتقاط
- * عند غيابه، مع كاش الوعد ومنع التكرار. الفشل يعيد null فيبقى المتصل على
- * نسخة العرض كما هي (fallback كامل — لا استثناءات تُرمى).
+ * يجلب الأصل الكامل عبر new Image() للرابط المُمرَّر. المشاركة محصورة في وعد
+ * التحميل الجاري فقط؛ المرجع القوي بعد التحميل يملكه CaptureOriginalLease.
  */
 export function getOriginalForCapture(src: string): Promise<HTMLImageElement | null> {
   if (!src) return Promise.resolve(null);
@@ -226,46 +251,41 @@ export function getOriginalForCapture(src: string): Promise<HTMLImageElement | n
   if (cached) return cached;
   const job = loadOriginalElement(src);
   pendingOriginals.set(src, job);
-  // الفشل يخرج من الكاش ليسمح بمحاولة لاحقة؛ النجاح يبقى داخل نافذة الالتقاط.
-  job.then((el) => {
-    if (!el) pendingOriginals.delete(src);
+  void job.finally(() => {
+    if (pendingOriginals.get(src) === job) pendingOriginals.delete(src);
   });
   return job;
 }
 
-/** نسخة عنصر العرض: تقرأ ملكية العرض ثم تجلب الأصل وتملأ الجسر. */
+/** نسخة عنصر العرض: تقرأ ملكية العرض ثم تجلب الأصل داخل lease الالتقاط. */
 export async function getOriginalForDisplayedElement(
   displayElement: HTMLImageElement | null | undefined,
+  lease: CaptureOriginalLease,
 ): Promise<HTMLImageElement | null> {
-  if (!displayElement) return null;
+  if (!displayElement || lease.released) return null;
   const src = getRegisteredOriginalSrc(displayElement);
   if (!src) return null;
-  const bridged = captureOriginals.get(displayElement);
+  const bridged = lease.get(displayElement);
   if (bridged) return bridged;
   const original = await getOriginalForCapture(src);
-  if (original) captureOriginals.set(displayElement, original);
-  return original;
+  if (original) lease.set(displayElement, original);
+  return lease.released ? null : original;
 }
 
-/** قراءة متزامنة من جسر الالتقاط — مسار upgradeImagesToFullResolution. */
+/** قراءة متزامنة من lease الالتقاط — مسار upgradeImagesToFullResolution. */
 export function getCapturedOriginal(
   displayElement: HTMLImageElement | null | undefined,
+  lease: CaptureOriginalLease,
 ): HTMLImageElement | null {
   if (!displayElement || !(displayElement instanceof HTMLImageElement)) return null;
-  return captureOriginals.get(displayElement) ?? null;
+  return lease.get(displayElement);
 }
 
-/** يفرغ جسر الالتقاط وكاش العود بعد انتهاء التقاط المسرح (استدعِ في finally). */
-export function releaseCaptureOriginals(): void {
-  captureOriginals.clear();
-  pendingOriginals.clear();
-}
-
-/** يفرغ كاش نسخ العرض بالكامل مع جسر الالتقاط — عند استبدال المستند. */
+/** يفرغ كاش نسخ العرض بالكامل؛ leases النشطة مستقلة وتتحرر لدى مالكيها. */
 export function clearDisplayCache(): void {
   displayCache.clear();
   pendingProxy.clear();
   displayBytes.clear();
+  pendingOriginals.clear();
   totalDisplayBytes = 0;
-  releaseCaptureOriginals();
 }

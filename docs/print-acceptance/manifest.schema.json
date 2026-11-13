@@ -1,0 +1,1605 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://grido.local/schemas/print-acceptance-manifest-1.0.0.json",
+  "title": "Grido physical-printer acceptance manifest",
+  "description": "Strict evidence record for Windows printing on a physical printer. Automated results and Microsoft Print to PDF never satisfy this schema's acceptance decision; CMYK TIFF is a separate external-tool flow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordKind",
+    "acceptanceId",
+    "policy",
+    "software",
+    "windowsBuild",
+    "printer",
+    "connection",
+    "instruments",
+    "artifacts",
+    "execution",
+    "testCases",
+    "colorRecord",
+    "cmykTiff",
+    "attestations",
+    "decision"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "recordKind": { "const": "physical-printer-acceptance" },
+    "acceptanceId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxDimensionalErrorMM",
+        "maxRunToRunVariationMM",
+        "maxAnisotropyPercent",
+        "maxCropCutErrorMM",
+        "colorPolicy",
+        "iccStatus",
+        "automatedResultEqualsRealPrinterAcceptance",
+        "microsoftPrintToPdfEqualsRealPrinterAcceptance",
+        "cmykTiffAcceptanceFlow"
+      ],
+      "properties": {
+        "maxDimensionalErrorMM": { "const": 0.5 },
+        "maxRunToRunVariationMM": { "const": 0.3 },
+        "maxAnisotropyPercent": { "const": 0.5 },
+        "maxCropCutErrorMM": { "const": 0.5 },
+        "colorPolicy": { "const": "record-only" },
+        "iccStatus": { "const": "deferred" },
+        "automatedResultEqualsRealPrinterAcceptance": { "const": false },
+        "microsoftPrintToPdfEqualsRealPrinterAcceptance": { "const": false },
+        "cmykTiffAcceptanceFlow": { "const": "separate-external-tool-flow" }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commitSha", "appName", "appVersion", "buildId", "windowsArtifact"],
+      "properties": {
+        "commitSha": { "$ref": "#/definitions/nullableCommitSha" },
+        "appName": { "const": "Grido Studio" },
+        "appVersion": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "buildId": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "windowsArtifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fileName", "sha256"],
+          "properties": {
+            "fileName": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "sha256": { "$ref": "#/definitions/nullableSha256" }
+          }
+        }
+      }
+    },
+    "windowsBuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edition", "version", "build", "architecture", "webView2Version"],
+      "properties": {
+        "edition": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "version": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "build": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "architecture": {
+          "type": ["string", "null"],
+          "enum": ["x64", "arm64", "x86", null]
+        },
+        "webView2Version": { "$ref": "#/definitions/nullableNonEmptyString" }
+      }
+    },
+    "printer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "model",
+        "serialNumber",
+        "firmwareVersion",
+        "queueName",
+        "driver"
+      ],
+      "properties": {
+        "manufacturer": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "model": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "serialNumber": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "firmwareVersion": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "queueName": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "driver": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version", "architecture"],
+          "properties": {
+            "name": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "version": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "architecture": {
+              "type": ["string", "null"],
+              "enum": ["x64", "arm64", "x86", "unknown", null]
+            }
+          }
+        }
+      }
+    },
+    "connection": {
+      "oneOf": [
+        { "$ref": "#/definitions/usbConnection" },
+        { "$ref": "#/definitions/networkConnection" }
+      ]
+    },
+    "instruments": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/instrument" },
+      "uniqueItems": true
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/artifact" }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "operator", "location", "startedAt", "completedAt", "notes"],
+      "properties": {
+        "status": {
+          "enum": ["pending", "in-progress", "completed"]
+        },
+        "operator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "organization", "initialsOrSignature"],
+          "properties": {
+            "name": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "organization": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "initialsOrSignature": { "$ref": "#/definitions/nullableNonEmptyString" }
+          }
+        },
+        "location": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "startedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "completedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "notes": { "type": "string" }
+      }
+    },
+    "testCases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "geometry_a4_portrait",
+        "geometry_a4_landscape",
+        "geometry_4x6_borderless_portrait",
+        "geometry_4x6_borderless_landscape",
+        "geometry_custom_portrait",
+        "geometry_custom_landscape",
+        "content_fidelity",
+        "fault_offline",
+        "fault_paper_out",
+        "fault_cancel"
+      ],
+      "properties": {
+        "geometry_a4_portrait": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_a4_portrait" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "a4" },
+                    "widthMM": { "const": 210 },
+                    "heightMM": { "const": 297 },
+                    "orientation": { "const": "portrait" },
+                    "borderless": { "const": false }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "geometry_a4_landscape": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_a4_landscape" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "a4" },
+                    "widthMM": { "const": 297 },
+                    "heightMM": { "const": 210 },
+                    "orientation": { "const": "landscape" },
+                    "borderless": { "const": false }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "geometry_4x6_borderless_portrait": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_4x6_borderless_portrait" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "photo-4x6" },
+                    "widthMM": { "const": 101.6 },
+                    "heightMM": { "const": 152.4 },
+                    "orientation": { "const": "portrait" },
+                    "borderless": { "const": true }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "geometry_4x6_borderless_landscape": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_4x6_borderless_landscape" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "photo-4x6" },
+                    "widthMM": { "const": 152.4 },
+                    "heightMM": { "const": 101.6 },
+                    "orientation": { "const": "landscape" },
+                    "borderless": { "const": true }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "geometry_custom_portrait": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_custom_portrait" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "custom" },
+                    "orientation": { "const": "portrait" }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "geometry_custom_landscape": {
+          "allOf": [
+            { "$ref": "#/definitions/geometryCase" },
+            {
+              "properties": {
+                "caseId": { "const": "geometry_custom_landscape" },
+                "target": {
+                  "properties": {
+                    "paperKind": { "const": "custom" },
+                    "orientation": { "const": "landscape" }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "content_fidelity": {
+          "allOf": [
+            { "$ref": "#/definitions/contentCase" },
+            { "properties": { "caseId": { "const": "content_fidelity" } } }
+          ]
+        },
+        "fault_offline": {
+          "allOf": [
+            { "$ref": "#/definitions/faultCase" },
+            {
+              "properties": {
+                "caseId": { "const": "fault_offline" },
+                "faultType": { "const": "offline" },
+                "expectedStatusCode": { "const": "PRINTER_OFFLINE" }
+              }
+            }
+          ]
+        },
+        "fault_paper_out": {
+          "allOf": [
+            { "$ref": "#/definitions/faultCase" },
+            {
+              "properties": {
+                "caseId": { "const": "fault_paper_out" },
+                "faultType": { "const": "paper-out" },
+                "expectedStatusCode": { "const": "OUT_OF_PAPER" }
+              }
+            }
+          ]
+        },
+        "fault_cancel": {
+          "allOf": [
+            { "$ref": "#/definitions/faultCase" },
+            {
+              "properties": {
+                "caseId": { "const": "fault_cancel" },
+                "faultType": { "const": "cancel" },
+                "expectedStatusCode": { "const": "JOB_DELETED" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "colorRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "iccStatus",
+        "viewingConditions",
+        "observations",
+        "evidenceArtifactIds"
+      ],
+      "properties": {
+        "policy": { "const": "record-only" },
+        "iccStatus": { "const": "deferred" },
+        "viewingConditions": { "type": "string" },
+        "observations": { "type": "string" },
+        "evidenceArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "cmykTiff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "countsTowardPhysicalPrinterDecision",
+        "externalTool",
+        "reportArtifactIds",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["not-evaluated", "separate-pending", "separate-pass", "separate-fail"]
+        },
+        "countsTowardPhysicalPrinterDecision": { "const": false },
+        "externalTool": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "reportArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "attestations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "automatedResultsDoNotEqualRealPrinterAcceptance",
+        "microsoftPrintToPdfDoesNotEqualRealPrinterAcceptance",
+        "cmykTiffIsSeparateExternalToolFlow",
+        "physicalPrinterWasUsed",
+        "acknowledgedBy",
+        "acknowledgedAt"
+      ],
+      "properties": {
+        "automatedResultsDoNotEqualRealPrinterAcceptance": { "const": true },
+        "microsoftPrintToPdfDoesNotEqualRealPrinterAcceptance": { "const": true },
+        "cmykTiffIsSeparateExternalToolFlow": { "const": true },
+        "physicalPrinterWasUsed": { "type": "boolean" },
+        "acknowledgedBy": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "acknowledgedAt": { "$ref": "#/definitions/nullableDateTime" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "decidedAt",
+        "decidedBy",
+        "summary",
+        "failedCaseIds",
+        "blockedCaseIds"
+      ],
+      "properties": {
+        "result": { "enum": ["pending", "pass", "fail", "blocked"] },
+        "decidedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "decidedBy": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "summary": { "type": "string" },
+        "failedCaseIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/caseId" },
+          "uniqueItems": true
+        },
+        "blockedCaseIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/caseId" },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": { "status": { "const": "completed" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["execution"]
+      },
+      "then": {
+        "properties": {
+          "software": { "$ref": "#/definitions/completeSoftware" },
+          "windowsBuild": { "$ref": "#/definitions/completeWindowsBuild" },
+          "printer": { "$ref": "#/definitions/completePrinter" },
+          "connection": { "$ref": "#/definitions/completeConnection" },
+          "instruments": { "minItems": 1 },
+          "artifacts": {
+            "minItems": 4,
+            "items": {
+              "allOf": [
+                { "$ref": "#/definitions/artifact" },
+                { "properties": { "sha256": { "$ref": "#/definitions/sha256" } } }
+              ]
+            },
+            "allOf": [
+              { "contains": { "properties": { "role": { "const": "windows-build" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "source-fixture" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "generated-output" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "log" } }, "required": ["role"] } }
+            ]
+          },
+          "execution": { "$ref": "#/definitions/completedExecution" },
+          "attestations": {
+            "properties": {
+              "physicalPrinterWasUsed": { "const": true },
+              "acknowledgedBy": { "type": "string", "minLength": 1 },
+              "acknowledgedAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "decision": {
+            "properties": { "result": { "enum": ["pass", "fail"] } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "result": { "const": "pass" } },
+            "required": ["result"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "execution": { "$ref": "#/definitions/completedExecution" },
+          "artifacts": {
+            "minItems": 4,
+            "items": {
+              "allOf": [
+                { "$ref": "#/definitions/artifact" },
+                { "properties": { "sha256": { "$ref": "#/definitions/sha256" } } }
+              ]
+            },
+            "allOf": [
+              { "contains": { "properties": { "role": { "const": "windows-build" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "source-fixture" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "generated-output" } }, "required": ["role"] } },
+              { "contains": { "properties": { "role": { "const": "log" } }, "required": ["role"] } }
+            ]
+          },
+          "testCases": {
+            "properties": {
+              "geometry_a4_portrait": { "properties": { "status": { "const": "pass" } } },
+              "geometry_a4_landscape": { "properties": { "status": { "const": "pass" } } },
+              "geometry_4x6_borderless_portrait": { "properties": { "status": { "const": "pass" } } },
+              "geometry_4x6_borderless_landscape": { "properties": { "status": { "const": "pass" } } },
+              "geometry_custom_portrait": { "properties": { "status": { "const": "pass" } } },
+              "geometry_custom_landscape": { "properties": { "status": { "const": "pass" } } },
+              "content_fidelity": { "properties": { "status": { "const": "pass" } } },
+              "fault_offline": { "properties": { "status": { "const": "pass" } } },
+              "fault_paper_out": { "properties": { "status": { "const": "pass" } } },
+              "fault_cancel": { "properties": { "status": { "const": "pass" } } }
+            }
+          },
+          "attestations": {
+            "properties": {
+              "physicalPrinterWasUsed": { "const": true },
+              "acknowledgedBy": { "type": "string", "minLength": 1 },
+              "acknowledgedAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "decision": {
+            "properties": {
+              "decidedAt": { "type": "string", "format": "date-time" },
+              "decidedBy": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string", "minLength": 1 },
+              "failedCaseIds": { "maxItems": 0 },
+              "blockedCaseIds": { "maxItems": 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "result": { "const": "fail" } },
+            "required": ["result"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "properties": {
+              "decidedAt": { "type": "string", "format": "date-time" },
+              "decidedBy": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string", "minLength": 1 },
+              "failedCaseIds": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "result": { "const": "blocked" } },
+            "required": ["result"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "properties": {
+              "decidedAt": { "type": "string", "format": "date-time" },
+              "decidedBy": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string", "minLength": 1 },
+              "blockedCaseIds": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "nullableNonEmptyString": {
+      "oneOf": [
+        { "$ref": "#/definitions/nonEmptyString" },
+        { "type": "null" }
+      ]
+    },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "nullableDateTime": {
+      "oneOf": [
+        { "$ref": "#/definitions/dateTime" },
+        { "type": "null" }
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "nullableSha256": {
+      "oneOf": [
+        { "$ref": "#/definitions/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{40}$"
+    },
+    "nullableCommitSha": {
+      "oneOf": [
+        { "$ref": "#/definitions/commitSha" },
+        { "type": "null" }
+      ]
+    },
+    "artifactId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "caseId": {
+      "enum": [
+        "geometry_a4_portrait",
+        "geometry_a4_landscape",
+        "geometry_4x6_borderless_portrait",
+        "geometry_4x6_borderless_landscape",
+        "geometry_custom_portrait",
+        "geometry_custom_landscape",
+        "content_fidelity",
+        "fault_offline",
+        "fault_paper_out",
+        "fault_cancel"
+      ]
+    },
+    "caseStatus": {
+      "enum": ["pending", "pass", "fail", "blocked"]
+    },
+    "gateResult": {
+      "enum": ["not-evaluated", "pass", "fail"]
+    },
+    "usbConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "portOrDeviceId", "notes"],
+      "properties": {
+        "type": { "const": "usb" },
+        "portOrDeviceId": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "notes": { "type": "string" }
+      }
+    },
+    "networkConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "protocol", "addressOrQueueUri", "notes"],
+      "properties": {
+        "type": { "const": "network" },
+        "protocol": {
+          "type": ["string", "null"],
+          "enum": ["tcp-ip", "ipp", "ipps", "smb", "wsd", "other", null]
+        },
+        "addressOrQueueUri": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "notes": { "type": "string" }
+      }
+    },
+    "instrument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instrumentId",
+        "kind",
+        "manufacturer",
+        "model",
+        "serialNumber",
+        "resolutionMM",
+        "calibratedAt",
+        "notes"
+      ],
+      "properties": {
+        "instrumentId": { "$ref": "#/definitions/artifactId" },
+        "kind": { "enum": ["ruler", "caliper"] },
+        "manufacturer": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "model": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "serialNumber": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "resolutionMM": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.5 },
+        "calibratedAt": {
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "null" }
+          ]
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId", "role", "path", "sha256", "bytes", "capturedAt", "description"],
+      "properties": {
+        "artifactId": { "$ref": "#/definitions/artifactId" },
+        "role": {
+          "enum": [
+            "windows-build",
+            "source-fixture",
+            "generated-output",
+            "scan",
+            "photo",
+            "log",
+            "barcode-payload",
+            "external-tool-report",
+            "other"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/definitions/nullableSha256" },
+        "bytes": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "capturedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "printPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["form", "paper", "orientation", "media", "quality", "borderless", "color", "copies"],
+      "properties": {
+        "form": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name"],
+          "properties": {
+            "id": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0, "maximum": 65535 },
+                { "type": "null" }
+              ]
+            },
+            "name": { "$ref": "#/definitions/nullableNonEmptyString" }
+          }
+        },
+        "paper": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "widthMM", "heightMM"],
+          "properties": {
+            "kind": {
+              "type": ["string", "null"],
+              "enum": ["a4", "photo-4x6", "custom", null]
+            },
+            "widthMM": {
+              "oneOf": [
+                { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+                { "type": "null" }
+              ]
+            },
+            "heightMM": {
+              "oneOf": [
+                { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+                { "type": "null" }
+              ]
+            }
+          }
+        },
+        "orientation": {
+          "type": ["string", "null"],
+          "enum": ["portrait", "landscape", null]
+        },
+        "media": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "vendorName"],
+          "properties": {
+            "type": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "vendorName": { "$ref": "#/definitions/nullableNonEmptyString" }
+          }
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "dpiX", "dpiY"],
+          "properties": {
+            "name": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "dpiX": {
+              "oneOf": [
+                { "type": "integer", "minimum": 1, "maximum": 9600 },
+                { "type": "null" }
+              ]
+            },
+            "dpiY": {
+              "oneOf": [
+                { "type": "integer", "minimum": 1, "maximum": 9600 },
+                { "type": "null" }
+              ]
+            }
+          }
+        },
+        "borderless": { "type": ["boolean", "null"] },
+        "color": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "colorSpace", "iccProfile"],
+          "properties": {
+            "mode": {
+              "type": ["string", "null"],
+              "enum": ["color", "grayscale", null]
+            },
+            "colorSpace": {
+              "type": ["string", "null"],
+              "enum": ["sRGB", "driver-managed", "grayscale", null]
+            },
+            "iccProfile": { "$ref": "#/definitions/nullableNonEmptyString" }
+          }
+        },
+        "copies": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "maximum": 5000 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "completePrintPlan": {
+      "allOf": [
+        { "$ref": "#/definitions/printPlan" },
+        {
+          "properties": {
+            "form": {
+              "properties": {
+                "id": { "type": "integer", "minimum": 0, "maximum": 65535 },
+                "name": { "type": "string", "minLength": 1 }
+              }
+            },
+            "paper": {
+              "properties": {
+                "kind": { "enum": ["a4", "photo-4x6", "custom"] },
+                "widthMM": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+                "heightMM": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 }
+              }
+            },
+            "orientation": { "enum": ["portrait", "landscape"] },
+            "media": {
+              "properties": {
+                "type": { "type": "string", "minLength": 1 },
+                "vendorName": { "type": "string", "minLength": 1 }
+              }
+            },
+            "quality": {
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "dpiX": { "type": "integer", "minimum": 1, "maximum": 9600 },
+                "dpiY": { "type": "integer", "minimum": 1, "maximum": 9600 }
+              }
+            },
+            "borderless": { "type": "boolean" },
+            "color": {
+              "properties": {
+                "mode": { "enum": ["color", "grayscale"] },
+                "colorSpace": { "enum": ["sRGB", "driver-managed", "grayscale"] }
+              }
+            },
+            "copies": { "type": "integer", "minimum": 1, "maximum": 5000 }
+          }
+        }
+      ]
+    },
+    "planComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "fallbackUsed", "fallbackReason", "differences"],
+      "properties": {
+        "status": { "enum": ["not-evaluated", "exact", "unapproved-difference"] },
+        "fallbackUsed": { "type": ["boolean", "null"] },
+        "fallbackReason": { "type": ["string", "null"] },
+        "differences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field", "requested", "applied", "note"],
+            "properties": {
+              "field": { "type": "string", "minLength": 1 },
+              "requested": {},
+              "applied": {},
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "exactPlanComparison": {
+      "allOf": [
+        { "$ref": "#/definitions/planComparison" },
+        {
+          "properties": {
+            "status": { "const": "exact" },
+            "fallbackUsed": { "const": false },
+            "fallbackReason": { "type": "null" },
+            "differences": { "maxItems": 0 }
+          }
+        }
+      ]
+    },
+    "timelineEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "status", "code", "success", "terminal", "note", "artifactIds"],
+      "properties": {
+        "at": { "$ref": "#/definitions/dateTime" },
+        "status": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "minLength": 1 },
+        "success": { "type": "boolean" },
+        "terminal": { "type": "boolean" },
+        "note": { "type": "string" },
+        "artifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidenceRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["photoArtifactIds", "scanArtifactIds", "logArtifactIds"],
+      "properties": {
+        "photoArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "scanArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "logArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "geometryTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paperKind", "widthMM", "heightMM", "orientation", "borderless"],
+      "properties": {
+        "paperKind": { "enum": ["a4", "photo-4x6", "custom"] },
+        "widthMM": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+        "heightMM": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+        "orientation": { "enum": ["portrait", "landscape"] },
+        "borderless": { "type": "boolean" }
+      }
+    },
+    "geometryMeasurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "cropCutOffset"],
+      "properties": {
+        "width": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "top", "horizontalCenter", "bottom"],
+          "properties": {
+            "target": { "type": "number", "exclusiveMinimum": 0 },
+            "top": { "type": "number", "exclusiveMinimum": 0 },
+            "horizontalCenter": { "type": "number", "exclusiveMinimum": 0 },
+            "bottom": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "height": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "left", "verticalCenter", "right"],
+          "properties": {
+            "target": { "type": "number", "exclusiveMinimum": 0 },
+            "left": { "type": "number", "exclusiveMinimum": 0 },
+            "verticalCenter": { "type": "number", "exclusiveMinimum": 0 },
+            "right": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "cropCutOffset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top", "right", "bottom", "left", "maxAbs"],
+          "properties": {
+            "top": { "type": "number" },
+            "right": { "type": "number" },
+            "bottom": { "type": "number" },
+            "left": { "type": "number" },
+            "maxAbs": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "geometryRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runId",
+        "status",
+        "sampleId",
+        "instrumentId",
+        "jobId",
+        "startedAt",
+        "completedAt",
+        "timeline",
+        "measurementsMM",
+        "notes"
+      ],
+      "properties": {
+        "runId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$" },
+        "status": { "enum": ["pending", "completed", "aborted"] },
+        "sampleId": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "instrumentId": { "$ref": "#/definitions/nullableNonEmptyString" },
+        "jobId": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "startedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "completedAt": { "$ref": "#/definitions/nullableDateTime" },
+        "timeline": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/timelineEvent" }
+        },
+        "measurementsMM": {
+          "oneOf": [
+            { "$ref": "#/definitions/geometryMeasurements" },
+            { "type": "null" }
+          ]
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "completedGeometryRun": {
+      "allOf": [
+        { "$ref": "#/definitions/geometryRun" },
+        {
+          "properties": {
+            "status": { "const": "completed" },
+            "sampleId": { "type": "string", "minLength": 1 },
+            "instrumentId": { "type": "string", "minLength": 1 },
+            "jobId": { "type": "integer", "minimum": 1 },
+            "startedAt": { "$ref": "#/definitions/dateTime" },
+            "completedAt": { "$ref": "#/definitions/dateTime" },
+            "timeline": { "minItems": 2 },
+            "measurementsMM": { "$ref": "#/definitions/geometryMeasurements" }
+          }
+        }
+      ]
+    },
+    "geometryEvaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxDimensionalErrorMM",
+        "maxRunToRunVariationMM",
+        "anisotropyPercent",
+        "maxCropCutErrorMM",
+        "gateResult",
+        "calculationNotes"
+      ],
+      "properties": {
+        "maxDimensionalErrorMM": {
+          "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "maxRunToRunVariationMM": {
+          "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "anisotropyPercent": {
+          "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "maxCropCutErrorMM": {
+          "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "gateResult": { "$ref": "#/definitions/gateResult" },
+        "calculationNotes": { "type": "string" }
+      }
+    },
+    "geometryCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "status",
+        "blockReason",
+        "target",
+        "requestedPlan",
+        "appliedPlan",
+        "planComparison",
+        "sourceArtifactIds",
+        "outputArtifactIds",
+        "runs",
+        "evaluation",
+        "evidence",
+        "observations"
+      ],
+      "properties": {
+        "caseId": { "$ref": "#/definitions/caseId" },
+        "status": { "$ref": "#/definitions/caseStatus" },
+        "blockReason": { "type": ["string", "null"] },
+        "target": { "$ref": "#/definitions/geometryTarget" },
+        "requestedPlan": { "$ref": "#/definitions/printPlan" },
+        "appliedPlan": { "$ref": "#/definitions/printPlan" },
+        "planComparison": { "$ref": "#/definitions/planComparison" },
+        "sourceArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "outputArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "runs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/geometryRun" }
+        },
+        "evaluation": { "$ref": "#/definitions/geometryEvaluation" },
+        "evidence": { "$ref": "#/definitions/evidenceRefs" },
+        "observations": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "pass" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "blockReason": { "type": "null" },
+              "requestedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "appliedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "planComparison": { "$ref": "#/definitions/exactPlanComparison" },
+              "sourceArtifactIds": { "minItems": 1 },
+              "outputArtifactIds": { "minItems": 1 },
+              "runs": {
+                "minItems": 3,
+                "items": { "$ref": "#/definitions/completedGeometryRun" }
+              },
+              "evaluation": {
+                "properties": {
+                  "maxDimensionalErrorMM": { "type": "number", "minimum": 0, "maximum": 0.5 },
+                  "maxRunToRunVariationMM": { "type": "number", "minimum": 0, "maximum": 0.3 },
+                  "anisotropyPercent": { "type": "number", "minimum": 0, "maximum": 0.5 },
+                  "maxCropCutErrorMM": { "type": "number", "minimum": 0, "maximum": 0.5 },
+                  "gateResult": { "const": "pass" },
+                  "calculationNotes": { "type": "string", "minLength": 1 }
+                }
+              },
+              "evidence": {
+                "properties": {
+                  "photoArtifactIds": { "minItems": 1 },
+                  "scanArtifactIds": { "minItems": 1 },
+                  "logArtifactIds": { "minItems": 1 }
+                }
+              },
+              "observations": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "blocked" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "blockReason": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    },
+    "contentAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "observed", "result", "artifactIds"],
+      "properties": {
+        "expected": { "type": "string" },
+        "observed": { "type": "string" },
+        "result": { "$ref": "#/definitions/gateResult" },
+        "artifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "contentCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "status",
+        "blockReason",
+        "requestedPlan",
+        "appliedPlan",
+        "planComparison",
+        "sourceArtifactIds",
+        "outputArtifactIds",
+        "jobId",
+        "timeline",
+        "assertions",
+        "barcodeVerification",
+        "evidence",
+        "observations"
+      ],
+      "properties": {
+        "caseId": { "$ref": "#/definitions/caseId" },
+        "status": { "$ref": "#/definitions/caseStatus" },
+        "blockReason": { "type": ["string", "null"] },
+        "requestedPlan": { "$ref": "#/definitions/printPlan" },
+        "appliedPlan": { "$ref": "#/definitions/printPlan" },
+        "planComparison": { "$ref": "#/definitions/planComparison" },
+        "sourceArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "outputArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "jobId": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "timeline": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/timelineEvent" }
+        },
+        "assertions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cover", "filter", "alpha", "text", "barcode", "grid"],
+          "properties": {
+            "cover": { "$ref": "#/definitions/contentAssertion" },
+            "filter": { "$ref": "#/definitions/contentAssertion" },
+            "alpha": { "$ref": "#/definitions/contentAssertion" },
+            "text": { "$ref": "#/definitions/contentAssertion" },
+            "barcode": { "$ref": "#/definitions/contentAssertion" },
+            "grid": { "$ref": "#/definitions/contentAssertion" }
+          }
+        },
+        "barcodeVerification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decoder", "expectedPayloadSha256", "decodedPayloadSha256", "result"],
+          "properties": {
+            "decoder": { "$ref": "#/definitions/nullableNonEmptyString" },
+            "expectedPayloadSha256": { "$ref": "#/definitions/nullableSha256" },
+            "decodedPayloadSha256": { "$ref": "#/definitions/nullableSha256" },
+            "result": { "$ref": "#/definitions/gateResult" }
+          }
+        },
+        "evidence": { "$ref": "#/definitions/evidenceRefs" },
+        "observations": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "pass" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "blockReason": { "type": "null" },
+              "requestedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "appliedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "planComparison": { "$ref": "#/definitions/exactPlanComparison" },
+              "sourceArtifactIds": { "minItems": 1 },
+              "outputArtifactIds": { "minItems": 1 },
+              "jobId": { "type": "integer", "minimum": 1 },
+              "timeline": { "minItems": 2 },
+              "assertions": {
+                "properties": {
+                  "cover": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } },
+                  "filter": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } },
+                  "alpha": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } },
+                  "text": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } },
+                  "barcode": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } },
+                  "grid": { "properties": { "result": { "const": "pass" }, "artifactIds": { "minItems": 1 } } }
+                }
+              },
+              "barcodeVerification": {
+                "properties": {
+                  "decoder": { "type": "string", "minLength": 1 },
+                  "expectedPayloadSha256": { "$ref": "#/definitions/sha256" },
+                  "decodedPayloadSha256": { "$ref": "#/definitions/sha256" },
+                  "result": { "const": "pass" }
+                }
+              },
+              "evidence": {
+                "properties": {
+                  "photoArtifactIds": { "minItems": 1 },
+                  "scanArtifactIds": { "minItems": 1 },
+                  "logArtifactIds": { "minItems": 1 }
+                }
+              },
+              "observations": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "blocked" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "blockReason": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    },
+    "faultAssertionResult": {
+      "enum": ["not-evaluated", "pass", "fail", "not-applicable"]
+    },
+    "faultCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "faultType",
+        "status",
+        "blockReason",
+        "setup",
+        "requestedPlan",
+        "appliedPlan",
+        "planComparison",
+        "sourceArtifactIds",
+        "outputArtifactIds",
+        "expectedStatusCode",
+        "observedStatusCodes",
+        "targetJobId",
+        "unrelatedJobId",
+        "timeline",
+        "assertions",
+        "recovery",
+        "evidence",
+        "observations"
+      ],
+      "properties": {
+        "caseId": { "$ref": "#/definitions/caseId" },
+        "faultType": { "enum": ["offline", "paper-out", "cancel"] },
+        "status": { "$ref": "#/definitions/caseStatus" },
+        "blockReason": { "type": ["string", "null"] },
+        "setup": { "type": "string" },
+        "requestedPlan": { "$ref": "#/definitions/printPlan" },
+        "appliedPlan": { "$ref": "#/definitions/printPlan" },
+        "planComparison": { "$ref": "#/definitions/planComparison" },
+        "sourceArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "outputArtifactIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactId" },
+          "uniqueItems": true
+        },
+        "expectedStatusCode": { "enum": ["PRINTER_OFFLINE", "OUT_OF_PAPER", "JOB_DELETED"] },
+        "observedStatusCodes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "targetJobId": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "unrelatedJobId": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "timeline": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/timelineEvent" }
+        },
+        "assertions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "noFalseCompletion",
+            "expectedStatusObserved",
+            "applicationResponsive",
+            "recoveredOrCancelled",
+            "targetJobIsolation"
+          ],
+          "properties": {
+            "noFalseCompletion": { "$ref": "#/definitions/faultAssertionResult" },
+            "expectedStatusObserved": { "$ref": "#/definitions/faultAssertionResult" },
+            "applicationResponsive": { "$ref": "#/definitions/faultAssertionResult" },
+            "recoveredOrCancelled": { "$ref": "#/definitions/faultAssertionResult" },
+            "targetJobIsolation": { "$ref": "#/definitions/faultAssertionResult" }
+          }
+        },
+        "recovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["restored", "completedAt", "notes"],
+          "properties": {
+            "restored": { "type": ["boolean", "null"] },
+            "completedAt": { "$ref": "#/definitions/nullableDateTime" },
+            "notes": { "type": "string" }
+          }
+        },
+        "evidence": { "$ref": "#/definitions/evidenceRefs" },
+        "observations": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "pass" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "blockReason": { "type": "null" },
+              "setup": { "type": "string", "minLength": 1 },
+              "requestedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "appliedPlan": { "$ref": "#/definitions/completePrintPlan" },
+              "planComparison": { "$ref": "#/definitions/exactPlanComparison" },
+              "sourceArtifactIds": { "minItems": 1 },
+              "outputArtifactIds": { "minItems": 1 },
+              "observedStatusCodes": { "minItems": 1 },
+              "timeline": { "minItems": 2 },
+              "assertions": {
+                "properties": {
+                  "noFalseCompletion": { "const": "pass" },
+                  "expectedStatusObserved": { "const": "pass" },
+                  "applicationResponsive": { "const": "pass" },
+                  "recoveredOrCancelled": { "const": "pass" }
+                }
+              },
+              "recovery": {
+                "properties": {
+                  "restored": { "const": true },
+                  "completedAt": { "$ref": "#/definitions/dateTime" },
+                  "notes": { "type": "string", "minLength": 1 }
+                }
+              },
+              "evidence": {
+                "properties": {
+                  "photoArtifactIds": { "minItems": 1 },
+                  "logArtifactIds": { "minItems": 1 }
+                }
+              },
+              "observations": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": { "const": "pass" },
+              "faultType": { "const": "cancel" }
+            },
+            "required": ["status", "faultType"]
+          },
+          "then": {
+            "properties": {
+              "targetJobId": { "type": "integer", "minimum": 1 },
+              "unrelatedJobId": { "type": "integer", "minimum": 1 },
+              "assertions": {
+                "properties": { "targetJobIsolation": { "const": "pass" } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": { "const": "pass" },
+              "faultType": { "enum": ["offline", "paper-out"] }
+            },
+            "required": ["status", "faultType"]
+          },
+          "then": {
+            "properties": {
+              "assertions": {
+                "properties": { "targetJobIsolation": { "enum": ["pass", "not-applicable"] } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "blocked" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "blockReason": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    },
+    "completeConnection": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/definitions/usbConnection" },
+            {
+              "properties": {
+                "portOrDeviceId": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/definitions/networkConnection" },
+            {
+              "properties": {
+                "protocol": { "enum": ["tcp-ip", "ipp", "ipps", "smb", "wsd", "other"] },
+                "addressOrQueueUri": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "completeSoftware": {
+      "allOf": [
+        {
+        "properties": {
+          "commitSha": { "$ref": "#/definitions/commitSha" },
+          "appName": { "const": "Grido Studio" },
+          "appVersion": { "type": "string", "minLength": 1 },
+            "buildId": { "type": "string", "minLength": 1 },
+            "windowsArtifact": {
+              "properties": {
+                "fileName": { "type": "string", "minLength": 1 },
+                "sha256": { "$ref": "#/definitions/sha256" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "completeWindowsBuild": {
+      "properties": {
+        "edition": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "build": { "type": "string", "minLength": 1 },
+        "architecture": { "enum": ["x64", "arm64", "x86"] },
+        "webView2Version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "completePrinter": {
+      "properties": {
+        "manufacturer": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "serialNumber": { "type": "string", "minLength": 1 },
+        "firmwareVersion": { "type": "string", "minLength": 1 },
+        "queueName": { "type": "string", "minLength": 1 },
+        "driver": {
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "architecture": { "enum": ["x64", "arm64", "x86", "unknown"] }
+          }
+        }
+      }
+    },
+    "completedExecution": {
+      "properties": {
+        "status": { "const": "completed" },
+        "operator": {
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "organization": { "type": "string", "minLength": 1 },
+            "initialsOrSignature": { "type": "string", "minLength": 1 }
+          }
+        },
+        "location": { "type": "string", "minLength": 1 },
+        "startedAt": { "$ref": "#/definitions/dateTime" },
+        "completedAt": { "$ref": "#/definitions/dateTime" }
+      }
+    }
+  }
+}

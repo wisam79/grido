@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/color"
@@ -30,6 +31,30 @@ func parseHexPair(s string) (uint8, bool) {
 		return 0, false
 	}
 	return uint8(v), true
+}
+
+func validatePrintColor(value string, allowEmpty bool) error {
+	raw := strings.TrimSpace(value)
+	if raw == "" {
+		if allowEmpty {
+			return nil
+		}
+		return fmt.Errorf("color is empty")
+	}
+	if strings.EqualFold(raw, "transparent") {
+		return nil
+	}
+	hex := strings.TrimPrefix(raw, "#")
+	if len(hex) != 3 && len(hex) != 4 && len(hex) != 6 && len(hex) != 8 {
+		return fmt.Errorf("unsupported color %q", value)
+	}
+	for i := 0; i < len(hex); i++ {
+		c := hex[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return fmt.Errorf("unsupported color %q", value)
+		}
+	}
+	return nil
 }
 
 // parseColor يفهم #RGB/#RGBA/#RRGGBB/#RRGGBBAA و"transparent".
@@ -180,6 +205,36 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		dc.DrawLine(x1, y1, x2, y2)
 	}
 	dc.Stroke()
+}
+
+func drawBackgroundBlocks(dc *gg.Context, blocks []domain.PrintBackgroundBlock, dpi int) {
+	for _, block := range blocks {
+		x := mmToPx(block.X, dpi)
+		y := mmToPx(block.Y, dpi)
+		w := mmToPx(block.W, dpi)
+		h := mmToPx(block.H, dpi)
+		if strings.TrimSpace(block.Color2) == "" {
+			dc.SetColor(parseColor(block.Color))
+			dc.DrawRectangle(x, y, w, h)
+			dc.Fill()
+			continue
+		}
+
+		rad := block.Angle * math.Pi / 180
+		dx := math.Cos(rad) * 0.5
+		dy := math.Sin(rad) * 0.5
+		gradient := gg.NewLinearGradient(
+			x+(0.5-dx)*w,
+			y+(0.5-dy)*h,
+			x+(0.5+dx)*w,
+			y+(0.5+dy)*h,
+		)
+		gradient.AddColorStop(0, parseColor(block.Color))
+		gradient.AddColorStop(1, parseColor(block.Color2))
+		dc.SetFillStyle(gradient)
+		dc.DrawRectangle(x, y, w, h)
+		dc.Fill()
+	}
 }
 
 // drawItemImage يرسم صورة معالجة داخل مستطيل العنصر بالمليمتر مع القص الدائري والإطار.
@@ -359,9 +414,14 @@ func cropMarkSegments(req domain.PrintRequest) []domain.CutLine {
 // عقد الإرجاع: صورة مركبة، أو (nil, nil) عند غياب التركيب أو أبعاد غير صالحة
 // (تُسجَّل تحذيراً وتُتجاوز — المتصل يرسم الخلايا الفارغة أو يتخطاها).
 func (s *PrintService) composeCanvas(
+	ctx context.Context,
 	req domain.PrintRequest,
 	imgCache *imageCache,
+	barrier printGenerationBarrier,
 ) (image.Image, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	comp := req.Composition
 	if comp == nil {
 		return nil, nil
@@ -403,18 +463,29 @@ func (s *PrintService) composeCanvas(
 	}
 	g.SetLimit(maxConcurrency)
 	for i, item := range comp.Items {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		if item.ImageSrc == "" || item.W <= 0 || item.H <= 0 {
 			continue
 		}
 		i, item := i, item
 		g.Go(func() (err error) {
-			// 🛡️ أي panic داخل العامل (مثل imaging.Resize على هدف ضخم) يتحول
-			// لخطأ يحمل فهرس العنصر بدل إسقاط التطبيق كاملاً
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			reachPrintGenerationBarrier(barrier, printStageComposeWorkerBefore, i)
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			defer recoverPrintWorkerPanic(i, &err)
 			filePath := resolveLocalPath(item.ImageSrc)
 			cacheKey := computeImageCacheKey(filePath)
 			img, err := loadRawImage(filePath, cacheKey, imgCache)
 			if err != nil {
+				return err
+			}
+			if err := ctx.Err(); err != nil {
 				return err
 			}
 
@@ -444,16 +515,27 @@ func (s *PrintService) composeCanvas(
 				return fmt.Errorf("العنصر %d في كانفس التركيب كبير جداً: %d×%d بكسل يتجاوز الحد الأقصى (%d ميغابكسل)",
 					i+1, targetW, targetH, maxCanvasPixels/1_000_000)
 			}
-			prepared[i] = &preparedItem{item: item, processedImg: applyImageProcessing(img, item, targetW, targetH)}
+			processedImg := applyImageProcessing(img, item, targetW, targetH)
+			reachPrintGenerationBarrier(barrier, printStageComposeWorkerAfter, i)
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			prepared[i] = &preparedItem{item: item, processedImg: processedImg}
 			return nil
 		})
 	}
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	// المرحلة 2 — رسم تسلسلي بالترتيب الأصلي
 	for _, p := range prepared {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		if p == nil {
 			continue
 		}

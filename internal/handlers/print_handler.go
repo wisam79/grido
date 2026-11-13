@@ -134,6 +134,24 @@ func (h *PrintHandler) PollJobStatus(printerName string, jobID int32) domain.Dir
 	return result
 }
 
+// ResolvePrinterPlan يعيد خطة الورق والمساحة القابلة للطباعة التي قبلها الدرايفر
+// قبل إرسال أي بايتات للطابور، كي تعرض الواجهة أي تحجيم أو fallback بصدق.
+func (h *PrintHandler) ResolvePrinterPlan(req domain.PrinterPlanRequest) domain.PrinterPlanResult {
+	result, err := h.printService.ResolvePrinterPlan(req)
+	if err != nil {
+		result.Success = false
+		if result.Error == "" {
+			result.Error = err.Error()
+		}
+	}
+	return result
+}
+
+// CancelSpoolJob يلغي مهمة موجودة فعلياً في Windows Spooler عبر SetJobW.
+func (h *PrintHandler) CancelSpoolJob(printerName string, jobID int32) error {
+	return h.printService.CancelSpoolJob(printerName, jobID)
+}
+
 // CancelPrintJob يلغي مهمة توليد ورقة طباعة جارية بمعرّفها المسجّل (C4 —
 // عقد IPC جديد: الوكيل المتكامل يولّد الربطات ولا تُلمس ملفات الواجهة هنا).
 // تتوقف المهمة عند أول نقطة تحقق (انتظار الطابور، بدء عنصر، حد الدفعة، قبل

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"image"
 	"image/color"
 	"math"
@@ -254,7 +255,7 @@ func TestComposeCanvas_InvalidDimsSecondBarrierFallback(t *testing.T) {
 	}
 
 	for i, comp := range invalids {
-		img, err := svc.composeCanvas(domain.PrintRequest{DPI: 150, Composition: comp}, cache)
+		img, err := svc.composeCanvas(context.Background(), domain.PrintRequest{DPI: 150, Composition: comp}, cache, nil)
 		if err != nil {
 			t.Fatalf("case %d: second barrier must not error, got: %v", i, err)
 		}

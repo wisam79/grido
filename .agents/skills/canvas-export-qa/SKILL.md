@@ -10,11 +10,13 @@ description: "فحص وإجراءات محرك الرسم Konva Canvas وجود�
 
 ---
 
-## 1. فحص كاش الفلاتر بنسبة التصدير (High-DPI Filter Cache Check)
-عند استخدام `captureStageDataUrl` في `frontend/src/lib/canvas/konva-export-utils.ts`:
-- التحقق من حصر العناصر المفلترة والمحفوظة في الكاش (`node.isCached()`).
-- إعادة بناء الكاش بالنسبة المستهدفة للتصدير `pixelRatio: Math.max(1, targetPixelRatio)`.
-- استعادة كاش الشاشة العادي فوراً داخل كتلة `finally`.
+## 1. فحص معاملة التقاط Stage وكاش الفلاتر (Capture Transaction & High-DPI Cache)
+عند استخدام `captureStageBlob` في `frontend/src/lib/canvas/konva-export-utils.ts`:
+- التحقق من تسلسل كل الالتقاطات على الـStage نفسه ومن وجود مهلة مستقلة للطابور والجاهزية و`toBlob` مع `AbortSignal`.
+- انتظار الخطوط وصور العقد المرئية عند طلب readiness، ثم ترقية مشتقات العرض 2048px وبدائل الصور داخل القفل وحده.
+- حصر العقد المفلترة، حفظ نسبة كاش الشاشة المقاسة، وترقية الكاش ضمن ميزانية التصدير قبل `stage.toCanvas()`.
+- التحقق من استعادة الموضع/المقياس والصور والقص والكاش والرؤية وlease الأصل حتمياً داخل `finally` في النجاح والخطأ والمهلة والإلغاء.
+- يُمنع تعديل عقدة/كاش خارج المعاملة أو افتراض `pixelRatio: 1` للاستعادة إن كان الكاش السابق مختلفاً.
 
 ---
 
@@ -39,3 +41,24 @@ description: "فحص وإجراءات محرك الرسم Konva Canvas وجود�
 ## 5. فحص طبقة السحب الرسمية (Official Drag-Layer Check)
 - التأكد من رفع العناصر النشطة والمحوّل لشارة الأبعاد إلى طبقة السحب المخصصة (`liftToDragLayer`).
 - التأكد من إسقاط العقدة وإعادتها لطبقتها الأصلية (`dropFromDragLayer`) مع استعادة `{parent, zIndex}` قبل كتابة أي إحداثيات للـ store.
+
+---
+
+## 6. فحص عقد cover والفلاتر المستقلة (Cover & Canonical Filter Contract)
+- صور الوضع الحر تستخدم `cover` نفسه في preflight والمسار السريع وGo: تُحل أبعاد المصدر بعد EXIF، تُحسب نافذة القص مرة، وتُمرر `cropX/Y/W/H` صراحةً.
+- `print-filter-contract.ts` يحكم ترتيب الوصفة ثم brightness → contrast → saturation؛ يجب أن يستهلكه Konva وأن يعكسه Go حرفياً، مع رفض المرشحات/القيم غير القانونية.
+- تحقق من `test-fixtures/print-rgba/manifest.json` و`node test-fixtures/print-rgba/generate-fixtures.mjs --verify`. المتوقعات مستقلة عن الإنتاج؛ ممنوع auto-bless أو تشغيل `--write` في CI.
+
+---
+
+## 7. فحص النزيف وCMYK والقرارات المحمية
+- صفر نزيف يعيد Blob نفسه؛ النزيف الموجب يفشل صراحةً عند القيمة/الأبعاد/فك الصورة/السياق/الترميز/الإلغاء ولا يسقط إلى الملف الأصلي.
+- fallback الحفظ لا يمرر Blob فارغاً، ويتحقق من توقيع TIFF.
+- JPEG افتراضي للطباعة وPNG مدعوم اختيارياً، وكلاهما sRGB؛ **CMYK الحقيقي TIFF فقط**.
+- `fillPatternImage` يبقى على مشتق 2048px، و`cutShapeType` دليل/بيانات لا clipping، وICC/soft proof مؤجلان بلا ادعاء قبول لوني.
+
+---
+
+## 8. حدود القبول
+- `TestGDIPure_*` وCI يثبتان العقود البرمجية ولا يثبتان الورق.
+- `docs/print-acceptance/` حزمة SOP/manifest؛ لا تُعلن Pass قبل تشغيل عتاد المالك وقياس الأدلة. التحقق من اكتمال orchestration الواجهية ونتائجها يسبق ذلك ويبقى منفصلاً عن القبول الفيزيائي.

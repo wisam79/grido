@@ -4,17 +4,14 @@
  */
 import { collageCut, collageEndCut } from '@/lib/canvas/canvas-colors';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { createLogger } from '@/lib/logger';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeSheetGrid, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
-import { renderWithPixelFilter } from './export-pixel-filter';
+import { renderWithCanonicalPrintFilters } from './export-pixel-filter';
 import {
   applySlotTransform,
   drawRoundRect,
-  drawSlotImage,
   drawSlotImageLocal,
   getSlotLocalSize,
   loadImage,
@@ -165,30 +162,15 @@ export async function renderCollageBranch(
     if (slot.imageSrc && slotImageMap[slot.id]) {
       const img = slotImageMap[slot.id];
       const localSize = getSlotLocalSize(width, height, slot.rotation);
-      // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
-      if (isPixelFilter(slot.filter)) {
-        const off = renderWithPixelFilter(
-          localSize.width,
-          localSize.height,
-          slot.filter,
-          (octx) => {
-            // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
-            octx.filter = buildAdjustmentCSS(slot);
-            drawSlotImageLocal(octx, img, width, height, slot);
-          },
-        );
-        if (off) {
-          applySlotTransform(ctx, left, top, width, height, slot);
-          ctx.drawImage(off, 0, 0, localSize.width, localSize.height);
-        }
-      } else {
-        // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
-        const filterStr = buildCSSFilter(slot);
-        if (filterStr && filterStr !== 'none') {
-          ctx.filter = filterStr;
-        }
-        drawSlotImage(ctx, img, left, top, width, height, slot);
-        ctx.filter = 'none';
+      const filtered = renderWithCanonicalPrintFilters(
+        localSize.width,
+        localSize.height,
+        slot,
+        (octx) => drawSlotImageLocal(octx, img, width, height, slot),
+      );
+      if (filtered) {
+        applySlotTransform(ctx, left, top, width, height, slot);
+        ctx.drawImage(filtered, 0, 0, localSize.width, localSize.height);
       }
     }
     ctx.restore();

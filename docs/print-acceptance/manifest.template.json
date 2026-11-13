@@ -1,0 +1,620 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordKind": "physical-printer-acceptance",
+  "acceptanceId": "PA-YYYYMMDD-PRINTER-CONNECTION-BUILD",
+  "policy": {
+    "maxDimensionalErrorMM": 0.5,
+    "maxRunToRunVariationMM": 0.3,
+    "maxAnisotropyPercent": 0.5,
+    "maxCropCutErrorMM": 0.5,
+    "colorPolicy": "record-only",
+    "iccStatus": "deferred",
+    "automatedResultEqualsRealPrinterAcceptance": false,
+    "microsoftPrintToPdfEqualsRealPrinterAcceptance": false,
+    "cmykTiffAcceptanceFlow": "separate-external-tool-flow"
+  },
+  "software": {
+    "commitSha": null,
+    "appName": "Grido Studio",
+    "appVersion": null,
+    "buildId": null,
+    "windowsArtifact": {
+      "fileName": null,
+      "sha256": null
+    }
+  },
+  "windowsBuild": {
+    "edition": null,
+    "version": null,
+    "build": null,
+    "architecture": null,
+    "webView2Version": null
+  },
+  "printer": {
+    "manufacturer": null,
+    "model": null,
+    "serialNumber": null,
+    "firmwareVersion": null,
+    "queueName": null,
+    "driver": {
+      "name": null,
+      "version": null,
+      "architecture": null
+    }
+  },
+  "connection": {
+    "type": "usb",
+    "portOrDeviceId": null,
+    "notes": "غيّر type وبنية الاتصال إلى network عند اختبار الشبكة؛ استخدم manifest منفصلاً لكل اتصال."
+  },
+  "instruments": [],
+  "artifacts": [],
+  "execution": {
+    "status": "pending",
+    "operator": {
+      "name": null,
+      "organization": null,
+      "initialsOrSignature": null
+    },
+    "location": null,
+    "startedAt": null,
+    "completedAt": null,
+    "notes": "قالب فقط؛ لم يحدث تشغيل طابعة فعلية."
+  },
+  "testCases": {
+    "geometry_a4_portrait": {
+      "caseId": "geometry_a4_portrait",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "a4",
+        "widthMM": 210,
+        "heightMM": 297,
+        "orientation": "portrait",
+        "borderless": false
+      },
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 210, "heightMM": 297 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": {
+        "status": "not-evaluated",
+        "fallbackUsed": null,
+        "fallbackReason": null,
+        "differences": []
+      },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        {
+          "runId": "a4p-run-1",
+          "status": "pending",
+          "sampleId": null,
+          "instrumentId": null,
+          "jobId": null,
+          "startedAt": null,
+          "completedAt": null,
+          "timeline": [],
+          "measurementsMM": null,
+          "notes": ""
+        },
+        {
+          "runId": "a4p-run-2",
+          "status": "pending",
+          "sampleId": null,
+          "instrumentId": null,
+          "jobId": null,
+          "startedAt": null,
+          "completedAt": null,
+          "timeline": [],
+          "measurementsMM": null,
+          "notes": ""
+        },
+        {
+          "runId": "a4p-run-3",
+          "status": "pending",
+          "sampleId": null,
+          "instrumentId": null,
+          "jobId": null,
+          "startedAt": null,
+          "completedAt": null,
+          "timeline": [],
+          "measurementsMM": null,
+          "notes": ""
+        }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "geometry_a4_landscape": {
+      "caseId": "geometry_a4_landscape",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "a4",
+        "widthMM": 297,
+        "heightMM": 210,
+        "orientation": "landscape",
+        "borderless": false
+      },
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 297, "heightMM": 210 },
+        "orientation": "landscape",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": {
+        "status": "not-evaluated",
+        "fallbackUsed": null,
+        "fallbackReason": null,
+        "differences": []
+      },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        { "runId": "a4l-run-1", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "a4l-run-2", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "a4l-run-3", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "geometry_4x6_borderless_portrait": {
+      "caseId": "geometry_4x6_borderless_portrait",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "photo-4x6",
+        "widthMM": 101.6,
+        "heightMM": 152.4,
+        "orientation": "portrait",
+        "borderless": true
+      },
+      "requestedPlan": {
+        "form": { "id": null, "name": "4x6 Borderless" },
+        "paper": { "kind": "photo-4x6", "widthMM": 101.6, "heightMM": 152.4 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": true,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        { "runId": "4x6p-run-1", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "4x6p-run-2", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "4x6p-run-3", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "geometry_4x6_borderless_landscape": {
+      "caseId": "geometry_4x6_borderless_landscape",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "photo-4x6",
+        "widthMM": 152.4,
+        "heightMM": 101.6,
+        "orientation": "landscape",
+        "borderless": true
+      },
+      "requestedPlan": {
+        "form": { "id": null, "name": "4x6 Borderless" },
+        "paper": { "kind": "photo-4x6", "widthMM": 152.4, "heightMM": 101.6 },
+        "orientation": "landscape",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": true,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        { "runId": "4x6l-run-1", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "4x6l-run-2", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "4x6l-run-3", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "geometry_custom_portrait": {
+      "caseId": "geometry_custom_portrait",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "custom",
+        "widthMM": 54,
+        "heightMM": 86,
+        "orientation": "portrait",
+        "borderless": false
+      },
+      "requestedPlan": {
+        "form": { "id": 256, "name": "Custom 54x86 mm" },
+        "paper": { "kind": "custom", "widthMM": 54, "heightMM": 86 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        { "runId": "customp-run-1", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "customp-run-2", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "customp-run-3", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "geometry_custom_landscape": {
+      "caseId": "geometry_custom_landscape",
+      "status": "pending",
+      "blockReason": null,
+      "target": {
+        "paperKind": "custom",
+        "widthMM": 86,
+        "heightMM": 54,
+        "orientation": "landscape",
+        "borderless": false
+      },
+      "requestedPlan": {
+        "form": { "id": 256, "name": "Custom 54x86 mm" },
+        "paper": { "kind": "custom", "widthMM": 86, "heightMM": 54 },
+        "orientation": "landscape",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 3
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "runs": [
+        { "runId": "customl-run-1", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "customl-run-2", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" },
+        { "runId": "customl-run-3", "status": "pending", "sampleId": null, "instrumentId": null, "jobId": null, "startedAt": null, "completedAt": null, "timeline": [], "measurementsMM": null, "notes": "" }
+      ],
+      "evaluation": {
+        "maxDimensionalErrorMM": null,
+        "maxRunToRunVariationMM": null,
+        "anisotropyPercent": null,
+        "maxCropCutErrorMM": null,
+        "gateResult": "not-evaluated",
+        "calculationNotes": ""
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "content_fidelity": {
+      "caseId": "content_fidelity",
+      "status": "pending",
+      "blockReason": null,
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 210, "heightMM": 297 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 1
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "jobId": null,
+      "timeline": [],
+      "assertions": {
+        "cover": { "expected": "تطابق قص cover مع علامات fixture", "observed": "", "result": "not-evaluated", "artifactIds": [] },
+        "filter": { "expected": "تطابق الفلتر المعرّف في fixture", "observed": "", "result": "not-evaluated", "artifactIds": [] },
+        "alpha": { "expected": "تسطيح alpha على الخلفية المحددة بلا سواد أو هالة", "observed": "", "result": "not-evaluated", "artifactIds": [] },
+        "text": { "expected": "النص العربي واللاتيني كاملان ومقروءان وبلا قص", "observed": "", "result": "not-evaluated", "artifactIds": [] },
+        "barcode": { "expected": "يفك barcode إلى الحمولة ذات SHA-256 المسجلة", "observed": "", "result": "not-evaluated", "artifactIds": [] },
+        "grid": { "expected": "الشبكة والخطوط الرفيعة والمحاذاة بلا فقد أو انزياح مرئي", "observed": "", "result": "not-evaluated", "artifactIds": [] }
+      },
+      "barcodeVerification": {
+        "decoder": null,
+        "expectedPayloadSha256": null,
+        "decodedPayloadSha256": null,
+        "result": "not-evaluated"
+      },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "fault_offline": {
+      "caseId": "fault_offline",
+      "faultType": "offline",
+      "status": "pending",
+      "blockReason": null,
+      "setup": "افصل الاتصال بعد تجهيز الطلب وقبل اكتمال المهمة، من دون تغيير بقية الخطة.",
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 210, "heightMM": 297 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 1
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "expectedStatusCode": "PRINTER_OFFLINE",
+      "observedStatusCodes": [],
+      "targetJobId": null,
+      "unrelatedJobId": null,
+      "timeline": [],
+      "assertions": {
+        "noFalseCompletion": "not-evaluated",
+        "expectedStatusObserved": "not-evaluated",
+        "applicationResponsive": "not-evaluated",
+        "recoveredOrCancelled": "not-evaluated",
+        "targetJobIsolation": "not-applicable"
+      },
+      "recovery": { "restored": null, "completedAt": null, "notes": "" },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "fault_paper_out": {
+      "caseId": "fault_paper_out",
+      "faultType": "paper-out",
+      "status": "pending",
+      "blockReason": null,
+      "setup": "أفرغ درج الوسيط المستهدف قبل الإرسال ثم أعد تزويده بعد رصد الحالة.",
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 210, "heightMM": 297 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 1
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "expectedStatusCode": "OUT_OF_PAPER",
+      "observedStatusCodes": [],
+      "targetJobId": null,
+      "unrelatedJobId": null,
+      "timeline": [],
+      "assertions": {
+        "noFalseCompletion": "not-evaluated",
+        "expectedStatusObserved": "not-evaluated",
+        "applicationResponsive": "not-evaluated",
+        "recoveredOrCancelled": "not-evaluated",
+        "targetJobIsolation": "not-applicable"
+      },
+      "recovery": { "restored": null, "completedAt": null, "notes": "" },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    },
+    "fault_cancel": {
+      "caseId": "fault_cancel",
+      "faultType": "cancel",
+      "status": "pending",
+      "blockReason": null,
+      "setup": "أرسل مهمة اختبار بطيئة ومهمة ضابطة مستقلة؛ ألغ targetJobId فقط قبل اكتماله.",
+      "requestedPlan": {
+        "form": { "id": 9, "name": "A4" },
+        "paper": { "kind": "a4", "widthMM": 210, "heightMM": 297 },
+        "orientation": "portrait",
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": false,
+        "color": { "mode": "color", "colorSpace": "sRGB", "iccProfile": null },
+        "copies": 1
+      },
+      "appliedPlan": {
+        "form": { "id": null, "name": null },
+        "paper": { "kind": null, "widthMM": null, "heightMM": null },
+        "orientation": null,
+        "media": { "type": null, "vendorName": null },
+        "quality": { "name": null, "dpiX": null, "dpiY": null },
+        "borderless": null,
+        "color": { "mode": null, "colorSpace": null, "iccProfile": null },
+        "copies": null
+      },
+      "planComparison": { "status": "not-evaluated", "fallbackUsed": null, "fallbackReason": null, "differences": [] },
+      "sourceArtifactIds": [],
+      "outputArtifactIds": [],
+      "expectedStatusCode": "JOB_DELETED",
+      "observedStatusCodes": [],
+      "targetJobId": null,
+      "unrelatedJobId": null,
+      "timeline": [],
+      "assertions": {
+        "noFalseCompletion": "not-evaluated",
+        "expectedStatusObserved": "not-evaluated",
+        "applicationResponsive": "not-evaluated",
+        "recoveredOrCancelled": "not-evaluated",
+        "targetJobIsolation": "not-evaluated"
+      },
+      "recovery": { "restored": null, "completedAt": null, "notes": "" },
+      "evidence": { "photoArtifactIds": [], "scanArtifactIds": [], "logArtifactIds": [] },
+      "observations": ""
+    }
+  },
+  "colorRecord": {
+    "policy": "record-only",
+    "iccStatus": "deferred",
+    "viewingConditions": "",
+    "observations": "",
+    "evidenceArtifactIds": []
+  },
+  "cmykTiff": {
+    "status": "separate-pending",
+    "countsTowardPhysicalPrinterDecision": false,
+    "externalTool": null,
+    "reportArtifactIds": [],
+    "notes": "قبول CMYK TIFF منفصل بأداة خارجية ولا يثبت قبول طابعة Windows الفعلية."
+  },
+  "attestations": {
+    "automatedResultsDoNotEqualRealPrinterAcceptance": true,
+    "microsoftPrintToPdfDoesNotEqualRealPrinterAcceptance": true,
+    "cmykTiffIsSeparateExternalToolFlow": true,
+    "physicalPrinterWasUsed": false,
+    "acknowledgedBy": null,
+    "acknowledgedAt": null
+  },
+  "decision": {
+    "result": "pending",
+    "decidedAt": null,
+    "decidedBy": null,
+    "summary": "قالب معلق؛ لم يُنفذ تشغيل طابعة فعلية ولم يصدر حكم قبول.",
+    "failedCaseIds": [],
+    "blockedCaseIds": []
+  }
+}
