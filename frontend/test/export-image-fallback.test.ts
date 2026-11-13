@@ -45,6 +45,7 @@ function makeRecordingContext() {
   };
   const ops = [
     'fillRect',
+    'clearRect',
     'drawImage',
     'save',
     'restore',
@@ -67,6 +68,15 @@ function makeRecordingContext() {
       calls.push({ op, args });
     };
   }
+  ctx.getImageData = (_x: number, _y: number, w: number, h: number) =>
+    new ImageData(
+      new Uint8ClampedArray(Math.max(1, w) * Math.max(1, h) * 4),
+      Math.max(1, w),
+      Math.max(1, h),
+    );
+  ctx.putImageData = (...args: unknown[]) => {
+    calls.push({ op: 'putImageData', args });
+  };
   return { ctx, calls };
 }
 
@@ -228,8 +238,11 @@ describe('export-image manual fallback — golden tests', () => {
       .filter((_, i) => i % 2 === 0);
     const drawImages = calls.filter((c) => c.op === 'drawImage');
 
-    // كل خانة مرسومة مرة واحدة (صورة + قص)
-    expect(drawImages).toHaveLength(2);
+    // كل خانة تُرسم مرة إلى وسيط RGBA قانوني ثم يُركّب الوسيط مرة على الورقة.
+    const sourceDraws = drawImages.filter((call) => call.args[0] instanceof FakeImage);
+    const compositeDraws = drawImages.filter((call) => call.args[0] instanceof HTMLCanvasElement);
+    expect(sourceDraws).toHaveLength(2);
+    expect(compositeDraws).toHaveLength(2);
 
     // مراكز الخانات تطابق computeSlotRectMM تماماً (x + w/2، y + h/2)
     const expectedCenters = slots.map((s: CanvasSlot) => {

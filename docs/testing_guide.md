@@ -6,7 +6,7 @@
 
 ## إغلاق عقود الطباعة والتصدير — 13 نوفمبر 2026
 
-> الجرد التالي يصف اختبارات موجودة في شجرة العمل. لم تُشغَّل الحزمة الكاملة أو E2E أو البناء محلياً، ولم يحدث قبول على طابعة فعلية. سقالات printer plan/status/spool cancellation موجودة في الواجهة، لكن اكتمال استدعاء الخطة وملكية JobID/السبول ونتائج الاختبار تنتظر تأكيد الوالد؛ القبول الفيزيائي ينتظر المالك.
+> الجرد التالي يصف اختبارات موجودة في شجرة العمل. شُغّلت محلياً استهدافات fallback وChromium للطباعة/parity في 13 نوفمبر 2026، أما الحزمة الكاملة والتغطية والبناء فتبقى بوابات CI. عقود printer plan/status/spool cancellation موصولة ومختبرة آلياً، لكن لم يحدث قبول على طابعة فعلية؛ القبول الفيزيائي ينتظر المالك.
 
 ### Fixtures مستقلة وغير قابلة للـauto-bless
 
@@ -35,9 +35,15 @@ node test-fixtures/print-rgba/generate-fixtures.mjs --verify
 | Vitest | ملف متأثر واحد بعامل واحد ودون coverage | `validate-frontend` يشغّل الحزمة والتغطية |
 | Go | `go test ./internal/service -run '^TestName$'` أو ملف/مجموعة مسماة خفيفة | `validate-backend` يشغّل `go test -v ./internal/...` |
 | GDI pure | لا يحتاج طابعة، لكن يُفضّل Windows فقط | `windows-build` يشغّل `go test ... -run '^TestGDIPure_'`؛ لا `TestGDILive_*` |
-| Printer plan/spool | seams نقية للعقود فقط | السقالات الواجهية موجودة، لكن اكتمال الاستدعاءات ونتائج الاختبار ما زالا pending؛ القبول الفيزيائي يحتاج طابعة المالك |
+| Printer plan/spool | seams نقية للعقود + محاكاة Wails للواجهة | `ResolvePrinterPlan` وpolling حتى terminal وإلغاء spool موصولة؛ القبول الفيزيائي فقط يحتاج طابعة المالك |
 | الأداء | لا probe كامل محلياً | `print-performance-report` مجدول/يدوي، report-only، ويرفع artifacts لمدة 30 يوماً |
-| E2E/WebView2 | لا تشغيل محلي للحزمة | Chromium shards + WebKit smoke؛ لا يعادلان طابعة فعلية |
+| E2E/WebView2 | استهداف Chromium عند إغلاق انحراف CI | Chromium shards + WebKit smoke؛ لا يعادلان طابعة فعلية |
+
+### متابعة parity وإغلاق انحراف CI
+
+- `frontend/test/export-image-fallback.test.ts` يحاكي `clearRect/getImageData/putImageData` لأن الرسم اليدوي يمر أولاً بوسيط RGBA القانوني؛ ويتحقق منفصلاً من رسم المصدر مرتين وتركيب وسيطَي Canvas مرتين بدل افتراض عدد `drawImage` القديم.
+- `frontend/e2e/print-export.spec.ts` ينتظر الرسالة النهائية «اكتملت طباعة المهمة» بعد وصول polling إلى حالة spool نهائية، لا رسالة الإرسال المبكر القديمة. `frontend/e2e/print-rgba-parity.spec.ts` يقارن التقاط Konva الحقيقي مع التصدير اليدوي لنفس cover وترتيب الفلاتر.
+- تحقق 13 نوفمبر 2026: `export-image-fallback.test.ts` نجح **12/12** بعامل واحد ودون coverage، وPlaywright Chromium للملفين السابقين نجح **5/5** بعامل واحد. هذه نتائج استهداف محلي، لا ادعاء للحزمة الكاملة أو WebKit أو طابعة فعلية.
 
 ### طباعة Windows النقية وتقرير الأداء
 

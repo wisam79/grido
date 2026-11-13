@@ -110,7 +110,7 @@ test.describe('Print & Export Workflows E2E', () => {
 
     // العملية تتم للنهاية: الحوار يُغلق ومسار الطباعة المباشرة ينجح
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(/تم إرسال الورقة بنجاح/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/اكتملت طباعة المهمة/)).toBeVisible({ timeout: 15000 });
   });
 
   test('shows explicit error toast and prevents DOM pollution when direct print fails', async ({
