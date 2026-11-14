@@ -6,6 +6,8 @@
 
 فحوص مستهدفة وخفيفة بعد صقل `frontend/src/` وتوحيد الطبقات الثلاث وتطوير شريط التبويبات وشريط الأدوات العلوي وكبسولة العرض والزوم في الشريط السفلي وتبويبَي تعبئة وفرز الخانات وتبويب النصوص ورأس لوحة الخصائص (لا تمثّل تشغيل الحزمة الكاملة أو E2E أو بناء سطح المكتب المحلي):
 
+- بعد متابعة إصلاحات CI و`MultiSelectionProperties` (`multi-selection-properties.tsx` و`ux-keyboard.spec.ts` و`admin-web/e2e/ux-smoke.spec.ts`):
+  `npm --prefix frontend run test -- test/multi-selection-properties.test.tsx test/ui-compliance.test.ts` → **ملفان / 76 اختباراً ناجحاً** (`ui-compliance` 54/54، `multi-selection-properties` 22/22)، و`npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check` و`npm --prefix admin-web run lint && npm --prefix admin-web run build` (**PASS**).
 - بعد تطوير تبويب النصوص ورأس لوحة الخصائص (`ElementHeaderActions` و`PropertiesPanel` و`PanelShell` وتبويبات النصوص ومواءمة `frontend/test/text-effects-catalog.test.ts`):
   `npm --prefix frontend run test -- test/panel-shell-visual.test.tsx test/freeform-text-tab.test.tsx test/font-selector.test.tsx test/text-effects-catalog.test.ts test/element-properties-tabs.test.tsx test/ui-compliance.test.ts` → **6 ملفات / 132 اختباراً ناجحاً** (`ui-compliance` 54/54، `element-properties-tabs` 41/41، `font-selector` 14/14، `text-effects-catalog` 9/9، `panel-shell-visual` 8/8، `freeform-text-tab` 6/6)، و`npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check` (**PASS**).
 - بعد تطوير تبويبَي تعبئة وفرز الخانات (`CustomCollageCard` و`CollageAutofillTab` و`CollageArrangeTab`):

@@ -279,13 +279,13 @@ test('scanner corner keys change the submitted quad, not sidebar keys or editor 
   await seedSelection(page, 'single');
   const data = await page.evaluate(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 480;
-    canvas.height = 640;
+    canvas.width = 640;
+    canvas.height = 480;
     const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = '#334155';
-    ctx.fillRect(0, 0, 480, 640);
+    ctx.fillRect(0, 0, 640, 480);
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(40, 40, 400, 560);
+    ctx.fillRect(40, 40, 560, 400);
     return canvas.toDataURL('image/png').split(',')[1];
   });
   await page.route('**/local-image/ux-scanner.png*', (route) =>
@@ -312,9 +312,9 @@ test('scanner corner keys change the submitted quad, not sidebar keys or editor 
   });
   const initialQuad = [
     { x: 40, y: 40 },
-    { x: 440, y: 40 },
-    { x: 440, y: 600 },
-    { x: 40, y: 600 },
+    { x: 600, y: 40 },
+    { x: 600, y: 440 },
+    { x: 40, y: 440 },
   ];
   await page.route('**/api/scanner-detect', (route) =>
     route.fulfill({
@@ -322,8 +322,8 @@ test('scanner corner keys change the submitted quad, not sidebar keys or editor 
         status: 'success',
         corners: initialQuad,
         confidence: 0.99,
-        width: 480,
-        height: 640,
+        width: 640,
+        height: 480,
       },
     }),
   );
@@ -331,7 +331,7 @@ test('scanner corner keys change the submitted quad, not sidebar keys or editor 
   await page.route('**/api/scanner-warp', async (route) => {
     submitted.push(route.request().postDataJSON() as { corners: Array<{ x: number; y: number }> });
     await route.fulfill({
-      json: { status: 'success', url: '/local-image/ux-scanner.png', width: 480, height: 640 },
+      json: { status: 'success', url: '/local-image/ux-scanner.png', width: 640, height: 480 },
     });
   });
   const editorBefore = await selectionState(page);

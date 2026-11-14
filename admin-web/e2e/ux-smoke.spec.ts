@@ -109,6 +109,17 @@ const test = base.extend<{ api: MockState }>({
         await route.continue();
         return;
       }
+      if (
+        url.origin === "https://fonts.googleapis.com" ||
+        url.origin === "https://fonts.gstatic.com"
+      ) {
+        await route.fulfill({
+          status: 200,
+          contentType: "text/css",
+          body: "",
+        });
+        return;
+      }
       if (url.origin !== MOCK_ORIGIN) {
         state.unexpected.push(
           `${request.method()} ${url.origin}${url.pathname}`,
@@ -119,7 +130,8 @@ const test = base.extend<{ api: MockState }>({
       const headers = {
         "access-control-allow-origin": localOrigin,
         // Authorization is not covered by the CORS wildcard-header shorthand.
-        "access-control-allow-headers": "authorization, apikey, x-client-info, content-type, prefer, range, cache-control, x-upsert",
+        "access-control-allow-headers":
+          "authorization, apikey, x-client-info, content-type, prefer, range, cache-control, x-upsert",
         "access-control-allow-methods": "GET,HEAD,POST,PATCH,OPTIONS",
         "access-control-expose-headers": "content-range",
       };

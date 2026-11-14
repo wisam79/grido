@@ -188,6 +188,7 @@ function SelectionDraftField({
 export const MultiSelectionProperties = memo(function MultiSelectionProperties({
   elements,
 }: MultiSelectionPropertiesProps) {
+  const filterSelectId = useId();
   const model = deriveSelectionProperties(elements);
   const ids = elements.map((element) => element.id);
   // Capture the render/gesture's document, not whatever document happens to be
@@ -277,13 +278,19 @@ export const MultiSelectionProperties = memo(function MultiSelectionProperties({
           <div>
             {model.fields.map((field) =>
               field.kind === 'filter' ? (
-                <label
+                <div
                   key={field.key}
-                  className="flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0 py-2 text-xs font-medium text-foreground/90"
+                  className="flex items-center justify-between gap-2 border-b border-border/30 last:border-b-0 py-2"
                 >
-                  {field.label}
+                  <label
+                    htmlFor={filterSelectId}
+                    className="text-xs font-medium text-foreground/90"
+                  >
+                    {field.label}
+                  </label>
                   <div className="relative shrink-0">
                     <select
+                      id={filterSelectId}
                       aria-label={field.label}
                       disabled={!model.eligibleCount}
                       value={field.state.kind === 'mixed' ? '' : field.state.value}
@@ -314,7 +321,7 @@ export const MultiSelectionProperties = memo(function MultiSelectionProperties({
                       aria-hidden="true"
                     />
                   </div>
-                </label>
+                </div>
               ) : (
                 // Field value updates keep both the DOM focus and the user's active draft.
                 <SelectionDraftField
