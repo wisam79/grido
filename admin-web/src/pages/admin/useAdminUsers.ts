@@ -9,6 +9,7 @@ import {
   computeAdminUserMetrics,
   downloadTextFile,
   fetchAllPaged,
+  getUserAccountState,
   resolveExpiresAtInput,
 } from '../../lib/admin-utils';
 import type { AiUsageRecord, UserProfile, UserStatusFilter } from './types';
@@ -43,6 +44,8 @@ export function useAdminUsers(
   const [editStatus, setEditStatus] = useState('active');
   const [editExpiresAt, setEditExpiresAt] = useState('');
   const [savingUser, setSavingUser] = useState(false);
+  const [extendingUserId, setExtendingUserId] = useState<string | null>(null);
+  const extendingUserRef = useRef<string | null>(null);
 
   const fetchReqIdRef = useRef(0);
 
@@ -50,6 +53,7 @@ export function useAdminUsers(
     invalidateOwnership();
     saveReqIdRef.current += 1;
     fetchReqIdRef.current += 1;
+    extendingUserRef.current = null;
     setUsers([]);
     setAiUsageLogs([]);
     setAiRunsTotal(0);
@@ -65,12 +69,13 @@ export function useAdminUsers(
     setEditStatus('active');
     setEditExpiresAt('');
     setSavingUser(false);
+    setExtendingUserId(null);
   }, [invalidateOwnership]);
 
   // Load Dashboard Data (paginated to prevent PostgREST 1000-row silent truncation)
-  const loadUsersData = useCallback(async () => {
+  const loadUsersData = useCallback(async (): Promise<boolean> => {
     const ownsOperation = captureOwner();
-    if (!supabase || !ownsOperation()) return;
+    if (!supabase || !ownsOperation()) return false;
     const reqId = ++fetchReqIdRef.current;
     const ownsFetch = () => ownsOperation() && reqId === fetchReqIdRef.current;
     setLoading(true);
@@ -89,7 +94,7 @@ export function useAdminUsers(
         supabase.from('ai_usage').select('*', { count: 'exact', head: true }),
       ]);
 
-      if (!ownsFetch()) return;
+      if (!ownsFetch()) return false;
 
       const errors: string[] = [];
       if (profilesRes.error) {
@@ -120,14 +125,17 @@ export function useAdminUsers(
       if (errors.length > 0) {
         console.error('Supabase dashboard query errors:', errors);
         notify(`تعذر تحميل بعض بيانات المستخدمين: ${errors[0]}`, 'error');
+        return false;
       }
+      return true;
     } catch (err) {
-      if (!ownsFetch()) return;
+      if (!ownsFetch()) return false;
       console.error('Error fetching dashboard data:', err);
       notify(
         'تعذر تحميل بيانات المستخدمين: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'),
         'error',
       );
+      return false;
     } finally {
       if (ownsFetch()) {
         setLoading(false);
@@ -138,7 +146,9 @@ export function useAdminUsers(
   // Operations — capture before confirmation and keep fetch refreshes independent.
   const handleExtendLicense = async (userUUID: string, months: number) => {
     const ownsOperation = captureOwner();
-    if (!supabase || !ownsOperation()) return;
+    if (!supabase || !ownsOperation() || extendingUserRef.current === userUUID) return;
+    extendingUserRef.current = userUUID;
+    setExtendingUserId(userUUID);
     try {
       const { error } = await supabase.rpc('admin_extend_license', {
         p_user_id: userUUID,
@@ -152,6 +162,11 @@ export function useAdminUsers(
     } catch (err) {
       if (!ownsOperation()) return;
       notify('فشلت عملية التمديد: ' + (err as Error).message, 'error');
+    } finally {
+      if (extendingUserRef.current === userUUID) {
+        extendingUserRef.current = null;
+        if (ownsOperation()) setExtendingUserId(null);
+      }
     }
   };
 
@@ -275,8 +290,7 @@ export function useAdminUsers(
       if (statusFilter === 'free')
         return user.plan !== 'pro' && user.plan !== 'enterprise' && user.plan !== 'trial';
       if (statusFilter === 'expired') {
-        const isExpiredDate = user.expires_at && new Date(user.expires_at) <= new Date();
-        return user.status === 'expired' || isExpiredDate;
+        return getUserAccountState(user) === 'expired';
       }
       return true;
     })
@@ -335,6 +349,7 @@ export function useAdminUsers(
     editExpiresAt,
     setEditExpiresAt,
     savingUser,
+    extendingUserId,
     loadUsersData,
     resetUsersData,
     handleExtendLicense,

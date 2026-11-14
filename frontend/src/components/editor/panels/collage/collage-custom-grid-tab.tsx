@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { FluentSection } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, X, BookmarkSimple, CornersOut, ArrowClockwise } from '@/components/ui/icons';
+import {
+  Plus,
+  Minus,
+  X,
+  BookmarkSimple,
+  CornersOut,
+  ArrowClockwise,
+  GridFour,
+  Rows,
+} from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { pxToMm } from '@/lib/canvas/units';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from '@/lib/templates';
 import { cn } from '@/lib/utils';
+import { usePanelFooterPortal } from '../panel-footer-portal';
 import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
 import type { PhotoGridType, GridAlignment } from './collage-grid-math';
 import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
@@ -51,7 +62,7 @@ const ALIGNMENT_LABELS: Record<GridAlignment, string> = {
 const PHOTO_TYPE_OPTIONS = [
   { value: 'iq-national-id', label: 'وطنية' },
   { value: 'iq-civil-id', label: 'أحوال' },
-  { value: 'visa', label: 'فيزا' },
+  { value: 'us-visa', label: 'فيزا' },
   { value: 'iq-general-id', label: 'عامة' },
   { value: 'iq-transactions', label: 'معاملات' },
   { value: 'stretch', label: 'تمدد حر' },
@@ -99,6 +110,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   onGridAlignChange,
   onSaveCurrentAsTemplate,
 }: CollageCustomGridTabProps) {
+  const footerPortal = usePanelFooterPortal();
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [collapsePrefs, setCollapsePrefs] =
@@ -185,26 +197,101 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
     <div className={cn('grid gap-2', photoType === 'stretch' ? 'grid-cols-2' : 'grid-cols-1')}>
       <Button
         type="button"
-        variant="secondary"
+        variant="outline"
         onClick={() => onApply(maxRows, maxCols, photoType, gridAlign)}
         title={`ملء الورقة فوراً — ${maxRows * maxCols} صورة`}
         aria-label="ملء الورقة فوراً"
-        className="h-8 min-w-0 justify-between px-2 text-xs font-medium shadow-none"
+        className="h-8 min-w-0 justify-between px-2.5 text-xs font-medium shadow-none"
       >
-        <span>ملء الورقة</span>
-        <span className="tabular-nums text-muted-foreground">{maxRows * maxCols}</span>
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <GridFour className="size-3.5 shrink-0 text-primary" />
+          <span className="truncate">ملء الورقة</span>
+        </span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-mini font-mono tabular-nums text-foreground/85">
+          {maxRows * maxCols}
+        </span>
       </Button>
       <Button
         type="button"
-        variant="secondary"
+        variant="outline"
         onClick={() => onApply(1, Math.min(4, maxCols), photoType, 'top-left')}
         title={`صف بـ ${Math.min(4, maxCols)} صور`}
-        className="h-8 min-w-0 justify-between px-2 text-xs font-medium shadow-none"
+        className="h-8 min-w-0 justify-between px-2.5 text-xs font-medium shadow-none"
       >
-        <span>شريط علوي</span>
-        <span className="tabular-nums text-muted-foreground">{Math.min(4, maxCols)}</span>
+        <span className="inline-flex items-center gap-1.5 min-w-0">
+          <Rows className="size-3.5 shrink-0 text-primary" />
+          <span className="truncate">شريط علوي</span>
+        </span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-mini font-mono tabular-nums text-foreground/85">
+          {Math.min(4, maxCols)}
+        </span>
       </Button>
     </div>
+  );
+
+  const footerBar = (
+    <>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant={isGridApplied ? 'secondary' : 'default'}
+          className={cn(
+            'h-8 min-w-0 flex-1 font-medium shadow-none',
+            isGridApplied &&
+              'border border-border/70 bg-secondary text-foreground hover:bg-secondary/85',
+          )}
+          onClick={() => onApply(rows, cols, photoType, gridAlign)}
+          title={isGridApplied ? 'إعادة تطبيق الشبكة على الكانفس' : 'تطبيق الشبكة على الكانفس'}
+        >
+          {isGridApplied && <ArrowClockwise className="size-3.5" />}
+          <span>تطبيق الشبكة</span>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-8 px-2 font-medium text-foreground/80 hover:text-foreground"
+          onClick={() => {
+            const photoLabel =
+              photoType === 'stretch'
+                ? 'تمدد حر'
+                : getPhotoDimensions(photoType).label.split(' / ')[0];
+            setSaveName(`شبكة ${rows}×${cols} — ${photoLabel}`);
+            setShowSaveForm(true);
+          }}
+          title="حفظ في المكتبة"
+        >
+          <BookmarkSimple className="size-4" />
+          <span>حفظ كقالب</span>
+        </Button>
+      </div>
+      {showSaveForm && (
+        <form onSubmit={handleSave} className="mt-2 flex items-center gap-1.5">
+          <Input
+            type="text"
+            value={saveName}
+            onChange={(event) => setSaveName(event.target.value)}
+            placeholder="اسم القالب"
+            aria-label="اسم القالب"
+            className="min-w-0 flex-1 text-start font-cairo"
+            onKeyDown={handleSaveKeyDown}
+          />
+          <Button type="submit" onKeyDown={handleSaveKeyDown}>
+            حفظ
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSaveForm(false)}
+            onKeyDown={handleSaveKeyDown}
+            title="إلغاء"
+            aria-label="إلغاء حفظ القالب"
+          >
+            <X className="size-3.5" />
+          </Button>
+        </form>
+      )}
+    </>
   );
 
   return (
@@ -223,6 +310,12 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           {PHOTO_TYPE_OPTIONS.map((option) => {
             const active = photoType === option.value;
             const dimensions = getPhotoDimensions(option.value);
+            const titleHint =
+              option.value === 'iq-national-id'
+                ? 'بطاقة وطنية / جواز / شنغن'
+                : option.value === 'us-visa'
+                  ? 'فيزا أمريكية / DS-160'
+                  : option.label;
             const dimLabel =
               option.value === 'stretch' ? 'ملء الحيز' : `${dimensions.wMM}×${dimensions.hMM}`;
             return (
@@ -230,7 +323,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 key={option.value}
                 type="button"
                 aria-pressed={active}
-                title={`${option.label} — ${dimLabel}${option.value === 'stretch' ? '' : ' مم'}`}
+                title={`${titleHint} — ${dimLabel}${option.value === 'stretch' ? '' : ' مم'}`}
                 onClick={() => onPhotoTypeChange(option.value)}
                 className={cn(
                   'relative flex min-w-0 flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors duration-150 cursor-pointer',
@@ -256,7 +349,16 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   )}
                 </span>
                 <span className="truncate text-xs font-semibold">{option.label}</span>
-                <span className="font-mono text-mini text-muted-foreground">{dimLabel}</span>
+                {option.value === 'stretch' ? (
+                  <span className="font-mono text-mini text-muted-foreground">ملء الحيز</span>
+                ) : (
+                  <span className="inline-flex items-baseline gap-0.5 text-mini text-muted-foreground">
+                    <span dir="ltr" className="font-mono tabular-nums">
+                      {dimensions.wMM}×{dimensions.hMM}
+                    </span>
+                    <span>مم</span>
+                  </span>
+                )}
               </button>
             );
           })}
@@ -271,11 +373,12 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         onOpenChange={setCardOpen('dims')}
         action={
           <span
-            className="font-mono text-mini font-normal tabular-nums text-muted-foreground"
+            className="inline-flex items-center gap-1 font-mono text-mini font-normal tabular-nums text-muted-foreground"
             title="نسبة تغطية الورقة"
-            aria-label="نسبة تغطية الورقة"
+            aria-label={`نسبة تغطية الورقة ${coverage}%`}
           >
-            تغطية {coverage}%
+            <span>تغطية</span>
+            <span dir="ltr">{coverage}%</span>
           </span>
         }
       >
@@ -289,7 +392,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 {counter.label}
               </span>
               <div
-                className="flex items-center justify-between h-10 rounded-lg border border-border/70 bg-muted/30 hover:bg-muted/40 transition-colors px-1"
+                className="flex items-center justify-between h-9 rounded-md border border-control-border/70 bg-muted/25 hover:bg-muted/40 transition-colors px-1"
                 role="group"
                 aria-label={`عدد ${counter.label}`}
                 dir="ltr"
@@ -300,7 +403,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.max(1, counter.value - 1))}
                   title={`تقليل ${counter.single}`}
                   aria-label={`تقليل عدد ${counter.label}`}
-                  className="size-8 shrink-0 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed"
+                  className="coarse-touch-target size-7 shrink-0 rounded-sm text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 >
                   <Minus className="size-4" weight="bold" />
                 </button>
@@ -316,7 +419,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   onClick={() => counter.change(Math.min(counter.max, counter.value + 1))}
                   title={`إضافة ${counter.single}`}
                   aria-label={`زيادة عدد ${counter.label}`}
-                  className="size-8 shrink-0 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed"
+                  className="coarse-touch-target size-7 shrink-0 rounded-sm text-foreground/80 hover:text-foreground hover:bg-muted/80 flex items-center justify-center cursor-pointer transition-colors active:scale-95 disabled:opacity-25 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 >
                   <Plus className="size-4" weight="bold" />
                 </button>
@@ -377,68 +480,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         </FluentSection>
       )}
 
-      <div className="sticky bottom-0 z-10 border-t border-border/50 bg-sidebar py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={isGridApplied ? 'ghost' : 'default'}
-            className={cn(
-              'h-8 min-w-0 flex-1 font-medium shadow-none',
-              isGridApplied &&
-                'border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-            )}
-            onClick={() => onApply(rows, cols, photoType, gridAlign)}
-            title={isGridApplied ? 'إعادة تطبيق الشبكة على الكانفس' : 'تطبيق الشبكة على الكانفس'}
-          >
-            {isGridApplied && <ArrowClockwise className="size-3.5" />}
-            <span>تطبيق الشبكة</span>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-8 px-2 font-medium text-muted-foreground"
-            onClick={() => {
-              const photoLabel =
-                photoType === 'stretch'
-                  ? 'تمدد حر'
-                  : getPhotoDimensions(photoType).label.split(' / ')[0];
-              setSaveName(`شبكة ${rows}×${cols} — ${photoLabel}`);
-              setShowSaveForm(true);
-            }}
-            title="حفظ في المكتبة"
-          >
-            <BookmarkSimple className="size-4" />
-            <span>حفظ كقالب</span>
-          </Button>
-        </div>
-        {showSaveForm && (
-          <form onSubmit={handleSave} className="mt-2 flex items-center gap-1.5">
-            <Input
-              type="text"
-              value={saveName}
-              onChange={(event) => setSaveName(event.target.value)}
-              placeholder="اسم القالب"
-              aria-label="اسم القالب"
-              className="min-w-0 flex-1 text-start font-cairo"
-              onKeyDown={handleSaveKeyDown}
-            />
-            <Button type="submit" onKeyDown={handleSaveKeyDown}>
-              حفظ
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowSaveForm(false)}
-              onKeyDown={handleSaveKeyDown}
-              title="إلغاء"
-              aria-label="إلغاء حفظ القالب"
-            >
-              <X className="size-3.5" />
-            </Button>
-          </form>
-        )}
-      </div>
+      {footerPortal ? (
+        createPortal(footerBar, footerPortal)
+      ) : (
+        <div className="border-t border-border/50 pt-2.5 mt-1">{footerBar}</div>
+      )}
     </div>
   );
 });

@@ -5,6 +5,9 @@ import type { CanvasDisplay, CanvasFitMode } from './fit';
 /** Canvas-owned transform notification for DOM overlays outside the paper. */
 export const CANVAS_VIEW_TRANSFORM_EVENT = 'grido:canvas-view-transform';
 
+/** Shared pixel thickness of the four canvas viewport edge rails (rulers & scrollbars). */
+export const CANVAS_RAIL_THICKNESS = 20;
+
 export interface ViewportSize {
   w: number;
   h: number;

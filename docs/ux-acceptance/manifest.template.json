@@ -1,0 +1,264 @@
+{
+  "formatVersion": 1,
+  "kind": "template-not-evidence",
+  "date": "2026-11-13",
+  "plan": "docs/plans/2026-11-13-comprehensive-ux-development-plan.md",
+  "status": "pending",
+  "operator": null,
+  "revision": null,
+  "reportedInitialRevision": "7fa01cd5",
+  "reportedInitialRevisionBoundary": "actual git before package-only changes; not a per-artifact tree hash",
+  "todo0ScaffoldingAndInitialBaseline": "done-reported",
+  "privacy": {
+    "fixtures": "synthetic-only",
+    "fixturesCreated": false,
+    "reviewedForSecrets": false,
+    "redactions": [],
+    "binaryEvidenceOutsideDocs": true
+  },
+  "scope": {
+    "realPrinters": false,
+    "liveCloudOrSupabase": false,
+    "nativeWails": false,
+    "appData": false,
+    "testRunsByDocsOwner": false,
+    "buildOrE2ERunsByDocsOwner": false
+  },
+  "baseline": {
+    "status": "partial-captured-reported",
+    "capturedBeforeDevelopment": null,
+    "capturedAt": null,
+    "revision": null,
+    "environment": { "localPort": 9315, "route": "/__ux-preview", "viewportCssPx": [1280, 720], "runtime": "browser-preview-with-mock", "syntheticInput": "mockGetStartupFile initial image" },
+    "snapshotRefs": ["sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_1OAkqyxnLNLtqjM66yok5iH1-tool-result-6b9cacbd-4fa7-4651-be7a-7376d819b69b.png"],
+    "snapshotRefRoot": "external-ZCode-artifacts-not-repository",
+    "measurementRefs": [],
+    "visualAcceptance": "pending-media-omitted-no-vision",
+    "domReported": ["roles", "canvas image", "state", "panels visible"],
+    "missingBaselineReason": "Only initial editor/admin states captured; exact timestamps must come from artifacts and remain null. Remaining states/timings/coarse-pointer/after pending. Initial git revision 7fa01cd5 confirmed before package-only changes; no per-artifact tree hash.",
+    "adminCapturesReported": [
+      { "scenario": "admin-edit-dialog-initial", "viewportCssPx": [1280, 720], "snapshotRef": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_QNIL8CBJNptZvH6tA9Eeylge-tool-result-3a8a7114-ac35-459a-9a6f-05115871a24e.png", "capturedAt": null, "status": "captured-reported-no-visual-judgement" },
+      { "scenario": "admin-dangerous-confirm-initial", "snapshotRef": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_99qcXtvPkazydw5bm7OjlrJx-tool-result-84996961-9322-4317-ad0a-89179451e34d.png", "capturedAt": null, "domReported": "delete active in initial state", "status": "captured-reported-no-visual-judgement" }
+    ],
+    "visionLimitation": "Media omitted; separate agent Read also reported vision unavailable. No visual acceptance."
+  },
+  "waveStatuses": {
+    "0": "partial-acceptance-not-closed",
+    "1": "subset-implemented-acceptance-pending",
+    "2": "safe-subset-implemented-acceptance-pending",
+    "3": "css-toolbar-subsets-implemented-acceptance-pending",
+    "4": "helper-ui-central-integration-subsets-acceptance-pending",
+    "5": "independent-tests-recorded-save-recovery-print-pending",
+    "6": "subsets-tested-admin-keyboard-dom-partial-acceptance",
+    "7": "provisional-report-written-ci-not-run-acceptance-pending"
+  },
+  "requiredStates": [
+    "idle", "empty", "loading", "run", "progress", "cancel",
+    "success", "partial-success", "error", "retry", "focus", "undo",
+    "disabled-or-locked", "stale-result"
+  ],
+  "journeys": [
+    { "id": "J1", "name": "ID photo: input/crop/frame/adjust/copies/save/print", "status": "pending", "evidenceIds": [] },
+    { "id": "J2", "name": "Collage: grid/template/freeform/batch/reorder/cell/save template or project/output", "status": "pending", "evidenceIds": [] },
+    { "id": "J3", "name": "Single: images/text/shapes/mixed selection/align/layers/undo/export", "status": "pending", "evidenceIds": [] },
+    { "id": "J4", "name": "Admin: login/search user/edit or keys/confirm/cancel/logout", "status": "pending", "evidenceIds": [] },
+    { "id": "J5", "name": "Phone: session/camera permission/capture or pick/upload/retry", "status": "pending", "evidenceIds": [] }
+  ],
+  "scenarioTemplate": {
+    "id": null,
+    "wave": null,
+    "journeyId": null,
+    "state": null,
+    "status": "pending",
+    "notApplicableReason": null,
+    "operator": null,
+    "capturedAt": null,
+    "revision": null,
+    "environment": {
+      "os": null,
+      "runtime": null,
+      "mockedServices": null,
+      "viewportCssPx": null,
+      "theme": null,
+      "direction": null,
+      "uiZoomPercent": null,
+      "osScalingPercent": null,
+      "canvasZoom": null,
+      "pointerType": null
+    },
+    "syntheticFixtureId": null,
+    "steps": [],
+    "expected": null,
+    "observed": null,
+    "beforeSnapshotRef": null,
+    "afterSnapshotRef": null,
+    "codeEvidenceRefs": [],
+    "testEvidenceRefs": [],
+    "measurementRefs": [],
+    "limitations": []
+  },
+  "scenarios": [
+    {
+      "id": "admin-after-labels-focus-cancel-20261113",
+      "wave": 6,
+      "journeyId": "J4",
+      "status": "partial-keyboard-dom-observed-not-full-acceptance",
+      "reportedDate": "2026-11-13",
+      "capturedAt": null,
+      "revision": null,
+      "afterSnapshotRef": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_cb1gfIrALWLtK7i6zOGXKEIj-tool-result-8ef439f9-8125-4100-bf2d-4a17ffee2e48.png",
+      "observed": ["Reload Edit: every label linked and name focused", "cancel.pressEnter removes Edit dialog", "dangerous trigger.pressEnter opens alertdialog titled تأكيد إجراء خطير", "Cancel active versus baseline delete active", "cancel.pressEnter removes confirmation"],
+      "limitations": ["Click attempts that timed out are not successes", "Accepted observations only successful key events and DOM", "No vision or AA judgement", "Full journey and artifact timestamp pending"]
+    }
+  ],
+  "acceptance": {
+    "wcag22AA": "pending-measurement-not-class-names",
+    "contrastMinimumRatios": { "normalText": 4.5, "largeText": 3, "functionalNonText": 3 },
+    "hitboxMinimumCssPx": [24, 24],
+    "hitboxExceptionsRequireReason": true,
+    "designTargetsNotWcagCertificateCssPx": { "mouse": 28, "coarsePointer": 44 },
+    "keyboardAndFocus": "pending",
+    "rtlAndLtr": "pending",
+    "uiZoom200Percent": "pending",
+    "singleOperationOwner": "pending",
+    "cropGeometryAndUndoPreserved": "pending",
+    "cmykTiffOnlyAndSrgbJpegPngPreserved": "pending"
+  },
+  "performance": {
+    "status": "pending-baseline",
+    "policy": "report-only-no-p95-or-percent-improvement-before-baseline",
+    "measurements": [],
+    "conclusion": null
+  },
+  "controllerResults": [
+    {
+      "id": "baseline-editor-initial-20261113",
+      "reportedDate": "2026-11-13",
+      "type": "partial-baseline-capture-and-dom-report-not-test-result",
+      "source": "controller-message",
+      "status": "partial-captured-no-visual-acceptance",
+      "scenario": "initial-synthetic-editor-image",
+      "snapshotRef": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_1OAkqyxnLNLtqjM66yok5iH1-tool-result-6b9cacbd-4fa7-4651-be7a-7376d819b69b.png",
+      "limitations": ["Image produced by browser but model received Media omitted", "Separate image agent Read also vision unavailable; no judgement", "Artifact timestamp and per-artifact tree hash pending; initial git revision separately confirmed", "Remaining states, timings, coarse pointer and after pending", "Wave 0 acceptance partial, not closed"]
+    },
+    {
+      "id": "rules-safe-subset-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 0,
+      "type": "implementation-and-targeted-tests-reported",
+      "implementationFilesReported": 7,
+      "tests": [
+        { "label": "ui-compliance", "passed": 54, "total": 54, "workers": 1, "singleFile": true, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/ui-compliance.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "fileRef": "frontend/test/ui-compliance.test.ts" },
+        { "label": "ui-compliance-guard", "passed": 8, "total": 8, "workers": 1, "singleFile": true, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/ui-compliance-guard.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "fileRef": "frontend/test/ui-compliance-guard.test.ts" }
+      ],
+      "limitations": ["Full implementation file references pending", "Not full-wave acceptance or visual WCAG evidence"]
+    },
+    {
+      "id": "mixed-inspector-safe-subset-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 2,
+      "type": "safe-subset-implementation-and-test-reported",
+      "implementationFilesReported": 5,
+      "implemented": ["typed eligibility", "blind broadcast removed", "locked inert", "one history step per gesture"],
+      "test": { "passed": 21, "total": 21, "realStore": true, "reactTestingLibrary": true, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/multi-selection-properties.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "fileRef": "frontend/test/multi-selection-properties.test.tsx", "recheckStatus": "final-targeted-21-replaces-16-not-summed" },
+      "excluded": ["fontFamily", "text content", "rotation", "group ratio", "gradients"],
+      "limitations": ["Safe subset only, not complete wave 2", "Full implementation file references pending", "Full journey and visual acceptance pending"]
+    },
+    {
+      "id": "wave1-keyboard-subset-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 1,
+      "status": "subset-implemented-not-full-acceptance",
+      "implementationFilesReported": 7,
+      "tests": [
+        { "fileRef": "frontend/test/fluent-blocks.test.tsx", "passed": 28, "total": 28, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/fluent-blocks.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false" },
+        { "fileRef": "frontend/test/freeform-keyboard.test.tsx", "passed": 23, "total": 23, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/freeform-keyboard.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false" },
+        { "fileRef": "frontend/test/scanner-keyboard.test.tsx", "passed": 10, "total": 10, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/scanner-keyboard.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false" }
+      ],
+      "limitations": ["Final targeted results, not full wave or GUI acceptance", "No native scanner/service acceptance"]
+    },
+    {
+      "id": "wave3-css-toolbar-subsets-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 3,
+      "status": "subsets-implemented-not-full-acceptance",
+      "cssTest": { "fileRef": "frontend/test/ux-accessibility-styles.test.ts", "passed": 8, "total": 8, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/ux-accessibility-styles.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "source tokens/focus/forced-colors/reduced-transparency; runtime and coarse consumers pending" },
+      "toolbarTest": { "fileRef": "frontend/test/toolbar-responsive.test.tsx", "passed": 9, "total": 9, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/toolbar-responsive.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "native overflow chevrons/focus reveal/mobile sheet restore; 4 source files, no hook/rail changes; initial renderer scaffold" },
+      "toastDurationMsReported": 3000,
+      "checksReported": "frontend and admin light gates + docsstrict 174/32/67/6 PASS after diagnostic fixes",
+      "limitations": ["No complete responsive/AA/focus/RTL/200% GUI acceptance", "Runtime CSS and coarse pointer consumers pending", "No final aggregate test or docs metric count"]
+    },
+    {
+      "id": "wave5-targeted-tests-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 5,
+      "status": "independent-tests-not-save-recovery-print-implementation",
+      "tests": [
+        { "fileRef": "frontend/test/projects-dialog-backup.test.tsx", "passed": 13, "total": 13, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/projects-dialog-backup.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false --no-file-parallelism" },
+        { "fileRef": "frontend/test/export-dialog.test.tsx", "passed": 38, "total": 38, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/export-dialog.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false --no-file-parallelism" }
+      ],
+      "limitations": ["SaveRecovery and print changes not done yet", "No full wave or output/native acceptance"]
+    },
+    {
+      "id": "wave6-admin-phone-targeted-20261113",
+      "reportedDate": "2026-11-13",
+      "source": "controller-message",
+      "wave": 6,
+      "status": "subsets-tested-and-admin-keyboard-dom-observed",
+      "tests": [
+        { "fileRef": "admin-web/src/components/common/feedback-provider.test.tsx", "passed": 7, "total": 7, "command": "node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run src/components/common/feedback-provider.test.tsx --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --coverage.enabled=false" },
+        { "fileRef": "admin-web/src/pages/admin/components/edit-user-modal.test.tsx", "passed": 5, "total": 5, "command": "node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run src/pages/admin/components/edit-user-modal.test.tsx --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --coverage.enabled=false" },
+        { "fileRef": "admin-web/src/pages/phone-camera-page.test.tsx", "passed": 15, "total": 15, "actualUiWithMocks": true, "command": "node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run src/pages/phone-camera-page.test.tsx --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --coverage.enabled=false" }
+      ],
+      "scenarioIds": ["admin-after-labels-focus-cancel-20261113"],
+      "limitations": ["Not full wave acceptance", "No live Supabase, camera, upload or pairing acceptance", "No visual or AA judgement"]
+    }
+  ],
+  "docsMetrics": { "status": "final-controller-docs-strict-pass-after-all-visual-changes", "command": "node scripts/docs-gate.mjs --strict-refs", "result": { "vitestTestFiles": 174, "e2eSpecFiles": 32, "goTestFiles": 67, "rootDocsFiles": 6, "inventory": 20, "assertions": 53, "gateStatus": "PASS", "priorResult": "FAIL metric only documented173 actual174 after panel-shell file; corrected and rerun" } },
+  "acceptanceReport": { "path": "docs/reviews/25-ux-development-acceptance-2026-11-13.md", "status": "provisional-limited-screenshot-review-no-full-aa" },
+  "visualScreenshotReview": {
+    "status": "limited-main-controller-review-not-formal-independent-acceptance",
+    "artifacts": [
+      { "theme": "dark", "viewportCssPx": [1280, 720], "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_mvWYCwP0GkmLyJBam8c2uLlM-tool-result-2b115558-dbcb-4df7-affc-f26136122c61.png" },
+      { "theme": "dark", "viewportWidth": 1024, "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_fgUlviZgGx64CC5UrVbF1KJJ-tool-result-97eb38a9-455c-47bf-88ff-788972522c11.png" },
+      { "theme": "dark", "viewportWidth": 1600, "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_eMGOpGIs3lg3HX7UVwSvZfig-tool-result-64f85548-798a-4a13-b673-0aa82f5ad9df.png" },
+      { "theme": "light", "viewportWidth": 1600, "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_52GeKiUxbbCEWQKcBlvgJISN-tool-result-f64c3cb7-d43d-45d7-8f5b-98f481eb0aef.png" },
+      { "theme": "light", "viewportWidth": 1600, "state": "final-after-panel-header-strengthening", "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_ZAEkxnY1cEwBd4GAX83Bh7Bh-tool-result-cfc0f6f9-d73d-4e63-a2b8-5b8316d65027.png" },
+      { "theme": "light", "viewportWidth": 1600, "state": "collage", "ref": "sess_3b59bfb6-1d68-4235-8d8d-dad892b00774/call_DPVhgEnKsyYB02kZipNwJnB2-tool-result-326eb1b0-a2cd-4a23-825b-3879ed165f1a.png" }
+    ],
+    "observed": ["No visible clipping at 1024/1280/1600", "1024 drawer hidden and canvas remains useful", "1600 composition balanced", "Light contrast judged good", "Final light screenshot shows improved panel header and selected tab", "Wide toolbar labels Save/Export and primary Print", "Compact 1024 folds labels without overlap", "Freeform library cards visually stronger", "Light collage has no visible clipping; tiny slots are expected physical geometry"],
+    "afterLightCaptureChange": "panel header strengthened to bg-card/55, border-border/70, selected border-primary/35; final screenshot captured",
+    "excludedAttempt": "Dark collage screenshot timed out; not acceptance and not retried",
+    "pending": ["Mixed-selection screenshot", "Phone device", "AA contrast measurement", "RTL/200%/coarse/runtime", "Formal independent visual judge unavailable"]
+  },
+  "panelVisualTests": [
+    { "label": "combined-central-visual-run", "passed": 38, "total": 38, "status": "final", "files": ["frontend/test/toolbar-height-uniformity.test.ts", "frontend/test/toolbar-responsive.test.tsx", "frontend/test/panel-shell-visual.test.tsx", "frontend/test/libraries-discovery.test.tsx", "frontend/test/collage-presets-tab.test.tsx"], "breakdown": { "toolbarHeight": 5, "toolbarResponsive": 9, "panelShell": 7, "librariesDiscovery": 12, "collagePresets": 5 }, "knownNonFailWarnings": ["browser mode warning", "NaN test warning"] },
+    { "fileRef": "frontend/test/fluent-blocks.test.tsx", "passed": 33, "total": 33, "status": "additional individual" },
+    { "fileRef": "frontend/test/template-panel.test.tsx", "passed": 8, "total": 8, "status": "additional individual" }
+  ],
+  "wave4Results": {
+    "status": "helper-component-and-central-consumer-subsets-only",
+    "tests": [
+      { "fileRef": "frontend/test/asset-favorites.test.ts", "passed": 12, "total": 12, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/asset-favorites.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "before consumer integration" },
+      { "fileRef": "frontend/test/libraries-discovery.test.tsx", "passed": 12, "total": 12, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/libraries-discovery.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "central final; replaces10/10" },
+      { "fileRef": "frontend/test/template-panel.test.tsx", "passed": 8, "total": 8, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/template-panel.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "final8 replaces7; loading/failure/retry empty; ambiguous status selector corrected, no source bug" },
+      { "fileRef": "frontend/test/collage-presets-tab.test.tsx", "passed": 5, "total": 5, "command": "node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/collage-presets-tab.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false", "scope": "central final; replaces4/4" }
+    ],
+    "sourceIntegration": ["template-panel status/loading/error/retry", "custom-collage-card status/retry/customize", "sticker-studio-dialog catalog discovery state"],
+    "limitations": ["scrollState source only, owner test pending", "No complete onboarding/import/collage/library acceptance"]
+  },
+  "coreRegressionResults": [
+    { "fileRef": "frontend/test/freeform-collage.test.ts", "passed": 87, "total": 87, "replacesPriorResult": "64/64 not summed" },
+    { "fileRef": "frontend/test/element-properties-tabs.test.tsx", "passed": 39, "total": 39, "replacesPriorResult": "16/16 not summed" }
+  ],
+  "ciWrittenNotRun": { "frontendSpec": "frontend/e2e/ux-keyboard.spec.ts", "frontendScenarios": 6, "adminSpec": "admin-web/e2e/ux-smoke.spec.ts", "adminScenarios": 4, "playwrightVersion": "1.61.1", "adminVitestExcludesE2E": true, "workflow": ".github/workflows/ci.yml", "artifact": "admin-ux-smoke-evidence", "retentionDays": 7, "status": "NOT RUN", "wailsBuildRuntimeChanged": false },
+  "finalCentralGates": { "frontendTypecheck": "PASS", "frontendLint": "PASS", "frontendFormat": "PASS", "adminLint": "PASS", "adminTscApp": "PASS", "docsStrict": "PASS 174/32/67/6 inventory20 assertions53", "diffCheck": "PASS", "manifestJson": "valid", "ciE2eBuild": "NOT RUN" },
+  "futureGates": { "stagedTestDocumentationGate": "pending", "centralChecks": "FINAL PASS after all visual changes", "docsGateRecheck": "FINAL PASS 174/32/67/6 inventory20 assertions53", "ciAndScheduledJobs": "not-run-await-user-push-permission", "finalPanelHeaderScreenshot": "captured-and-main-controller-reviewed", "librariesAndPresetsCentralRerun": "PASS libraries12/12 and presets5/5 within combined38/38", "actualUiZoom200": "pending", "phoneDevice": "pending", "screenReader": "pending", "onboardingTiming": "pending", "saveRecoveryAndPrint": "pending" },
+  "currentCompletion": { "plan": "partial-not-complete", "visualDevelopment": "responsive panel/toolbar/library/collage subsets observed in screenshots; broad journey coverage incomplete", "implementedChanges": "behavioral and visual subsets", "visualAcceptance": "limited main-controller screenshot review including final light header and light collage; no AA or formal independent judgement", "additionalCodeWork": "controller full gates running" },
+  "decision": { "status": "pending", "reviewer": null, "decidedAt": null, "evidenceIds": [], "limitations": [] }
+}

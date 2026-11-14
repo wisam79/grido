@@ -155,12 +155,13 @@ export const StickerProperties = React.memo(function StickerProperties({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background/20 select-none">
+    <div className="flex flex-col h-full overflow-hidden bg-sidebar select-none">
       {/* ── Subheader / Tabs Header ── */}
-      <div className="p-2.5 border-b border-border/30 shrink-0 bg-muted/15">
+      <div className="p-2.5 border-b border-border/30 shrink-0 bg-sidebar">
         {/* Fluent Segmented Tabs: Design vs Sheet vs Presets */}
         <FluentSegmentedControl<'design' | 'sheet' | 'presets'>
           layoutId="sticker-properties-tabs"
+          variant="panel"
           value={activeTab}
           onChange={setActiveTab}
           size="sm"

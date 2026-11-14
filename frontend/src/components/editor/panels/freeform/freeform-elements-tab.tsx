@@ -229,7 +229,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             data-testid="element-open-sticker-studio"
             onClick={handleOpenFullStickerStudio}
             variant="outline"
-            className="w-full h-8 px-2.5 rounded-md text-control font-semibold transition-colors flex items-center justify-between cursor-pointer select-none"
+            className="coarse-touch-target w-full h-9 px-3 rounded-md text-control font-semibold transition-colors flex items-center justify-between cursor-pointer select-none border-control-border bg-background"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="truncate">استوديو الملصقات</span>
@@ -254,7 +254,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
             ]}
           />
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة ورشيقة */}
-          <div className="grid grid-cols-2 gap-1.5 px-0.5">
+          <div className="grid grid-cols-2 gap-2">
             {!stickerGroups && !stickerLoadError && (
               <div className="col-span-2 flex items-center justify-center py-6 text-xs text-muted-foreground">
                 جاري تحميل الملصقات...
@@ -286,7 +286,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                   aria-label={stickerLabel}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={tmpl.name}
-                  className="group relative bg-muted/20 hover:bg-muted/40 border border-transparent hover:border-border focus-visible:border-border rounded-md p-1 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="coarse-touch-target group relative bg-card hover:bg-accent border border-border/70 hover:border-primary/40 focus-visible:border-primary rounded-md p-2 transition-colors duration-150 flex flex-col items-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* سطح محايد ومعاينة أكبر بلا إطار داخلي يزاحم تفاصيل الملصق */}
                   <div className="w-full h-28 rounded-md bg-preview-surface flex items-center justify-center p-1 relative overflow-hidden">
@@ -316,7 +316,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
 
                   {/* اسم القالب: سطران كحد أقصى — سطر واحد كان يقتطع أسماء
                       حقيقية مثل «صُنع في العراق (منتج وطني)» في شبكة عمودين */}
-                  <span className="text-control font-semibold text-foreground mt-1 min-h-9 w-full text-center line-clamp-2">
+                  <span className="text-control font-semibold text-foreground mt-2 min-h-9 w-full text-start line-clamp-2">
                     {tmpl.name}
                   </span>
                 </button>
@@ -354,7 +354,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
                       onClick={() => handleAddShape(shape)}
                       title={shape.label}
                       aria-label={shape.label}
-                      className="group flex items-center justify-center h-10 bg-muted/15 hover:bg-muted/30 border border-border/40 hover:border-border rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none"
+                      className="group flex items-center justify-center h-10 bg-card hover:bg-accent border border-border/70 hover:border-control-border rounded-md transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none"
                     >
                       <ShapeGlyph
                         kind={shape.kind}

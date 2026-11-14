@@ -405,7 +405,7 @@ describe('actual admin hook fetch/session lifecycle', () => {
     const hooks = await mountHooks();
     const pending = deferred<Result>();
     mock.read.mockReturnValue(pending.promise as ReturnType<typeof mock.read>);
-    let operation!: Promise<void>;
+    let operation!: Promise<boolean>;
     await act(async () => { operation = kind === 'keys'
       ? hooks.current.keys.loadKeysData() : hooks.current.users.loadUsersData(); });
     act(() => hooks.current.session.clearSession());
@@ -423,10 +423,10 @@ describe('actual admin hook fetch/session lifecycle', () => {
     const newPending = deferred<Result>();
     mock.read.mockReturnValue(oldPending.promise as ReturnType<typeof mock.read>);
     const load = () => kind === 'keys' ? hooks.current.keys.loadKeysData() : hooks.current.users.loadUsersData();
-    let oldOperation!: Promise<void>;
+    let oldOperation!: Promise<boolean>;
     await act(async () => { oldOperation = load(); });
     mock.read.mockReturnValue(newPending.promise as ReturnType<typeof mock.read>);
-    let newOperation!: Promise<void>;
+    let newOperation!: Promise<boolean>;
     await act(async () => { newOperation = load(); });
     await settle(oldPending, failure, oldOperation);
     expect(feedback.notify).not.toHaveBeenCalled();
@@ -444,14 +444,14 @@ describe('actual admin hook fetch/session lifecycle', () => {
     const newPending = deferred<Result>();
     const load = () => kind === 'keys' ? hooks.current.keys.loadKeysData() : hooks.current.users.loadUsersData();
     mock.read.mockReturnValue(oldPending.promise as ReturnType<typeof mock.read>);
-    let oldOperation!: Promise<void>;
+    let oldOperation!: Promise<boolean>;
     await act(async () => { oldOperation = load(); });
     act(() => {
       if (kind === 'keys') hooks.current.keys.resetKeysData();
       else hooks.current.users.resetUsersData();
     });
     mock.read.mockReturnValue(newPending.promise as ReturnType<typeof mock.read>);
-    let newOperation!: Promise<void>;
+    let newOperation!: Promise<boolean>;
     await act(async () => { newOperation = load(); });
     await settle(oldPending, failure, oldOperation);
     expect(feedback.notify).not.toHaveBeenCalled();

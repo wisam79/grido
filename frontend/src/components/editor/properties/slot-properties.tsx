@@ -77,7 +77,7 @@ const SIZE_INPUT_CLASS =
 const PRESET_PHOTO_TYPES: PhotoGridType[] = [
   'iq-national-id',
   'iq-civil-id',
-  'visa',
+  'us-visa',
   'iq-general-id',
   'iq-transactions',
 ];
@@ -502,22 +502,26 @@ export const SlotProperties = React.memo(function SlotProperties({
 
   return (
     <div className="min-w-0 font-cairo select-none pb-2" dir="rtl">
-      {/* شريط التبويبات القياسي اللاصق الأربعة الموحد */}
-      <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
-          <FluentSegmentedControl<string>
-            layoutId="slot-properties-tabs"
-            variant="tabs"
-            value={activeTab}
-            onChange={setActiveTab}
-            size="md"
-            idPrefix="slot-properties-tabs"
-            options={SLOT_PROPERTIES_TABS}
-          />
-        </div>
+      {/* شريط التبويبات القياسي المؤطر على سطح اللوحة الموحد */}
+      <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full gap-3">
+        <FluentSegmentedControl<string>
+          layoutId="slot-properties-tabs"
+          variant="panel"
+          ariaLabel="خصائص الخلية"
+          value={activeTab}
+          onChange={setActiveTab}
+          size="md"
+          idPrefix="slot-properties-tabs"
+          options={SLOT_PROPERTIES_TABS}
+        />
 
         {/* 1. تبويب التنسيق (Style) — بطاقة الصورة والذكاء الاصطناعي في الصدارة كأولوية تفاعلية، يليها مقاس الخلية */}
-        <TabsContent value="style" className="mt-0 space-y-2.5 focus-visible:outline-none">
+        <TabsContent
+          value="style"
+          id="slot-properties-tabs-content-style"
+          aria-labelledby="slot-properties-tabs-trigger-style"
+          className="mt-0 space-y-2.5 focus-visible:outline-none"
+        >
           {/* الصورة والتحسينات */}
           {slot.imageSrc ? (
             <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2">
@@ -843,7 +847,12 @@ export const SlotProperties = React.memo(function SlotProperties({
         </TabsContent>
 
         {/* 2. تبويب الضبط (Adjust) — الخلفية، السطوع، التباين، والتشبع */}
-        <TabsContent value="adjust" className="mt-0 space-y-2.5 focus-visible:outline-none">
+        <TabsContent
+          value="adjust"
+          id="slot-properties-tabs-content-adjust"
+          aria-labelledby="slot-properties-tabs-trigger-adjust"
+          className="mt-0 space-y-2.5 focus-visible:outline-none"
+        >
           {slot.imageSrc ? (
             <FluentSection
               title="ألوان الصورة"
@@ -953,7 +962,12 @@ export const SlotProperties = React.memo(function SlotProperties({
         </TabsContent>
 
         {/* 3. تبويب التأثيرات (Effects) — المرشحات */}
-        <TabsContent value="effects" className="mt-0 space-y-2.5 focus-visible:outline-none">
+        <TabsContent
+          value="effects"
+          id="slot-properties-tabs-content-effects"
+          aria-labelledby="slot-properties-tabs-trigger-effects"
+          className="mt-0 space-y-2.5 focus-visible:outline-none"
+        >
           {slot.imageSrc ? (
             <FluentSection
               title="المرشحات"

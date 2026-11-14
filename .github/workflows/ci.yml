@@ -558,12 +558,49 @@ jobs:
       - name: Test Admin Web (Vitest)
         id: test
         working-directory: ./admin-web
-        run: npm test
+        run: npm test -- --exclude 'e2e/**'
 
       - name: Build Admin Web (production)
         id: build
         working-directory: ./admin-web
         run: npm run build
+
+      # Smoke uses only the independent local Vite server + intercepted APIs.
+      # Production build above and shared job credentials remain unchanged.
+      - name: Cache Admin Playwright Browsers
+        id: cache-admin-playwright
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-admin-playwright-${{ hashFiles('admin-web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-admin-playwright-
+            ${{ runner.os }}-playwright-
+
+      - name: Install Admin Chromium Browser
+        if: steps.cache-admin-playwright.outputs.cache-hit != 'true'
+        working-directory: ./admin-web
+        run: npx --no-install playwright install chromium
+
+      - name: Install Admin Chromium System Dependencies
+        working-directory: ./admin-web
+        run: npx --no-install playwright install-deps chromium
+
+      - name: Run Admin UX Smoke (Offline Fixtures)
+        id: ux_smoke
+        working-directory: ./admin-web
+        run: npx --no-install playwright test --config=playwright.config.ts --project=chromium
+
+      - name: Upload Admin UX Smoke Evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: admin-ux-smoke-evidence
+          path: |
+            admin-web/playwright-report/
+            admin-web/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Generate Admin Web Step Summary
         if: always()
@@ -574,7 +611,8 @@ jobs:
             --row "TypeScript Typecheck=${{ steps.typecheck.outcome }}" \
             --row "Oxlint (0 warnings)=${{ steps.lint.outcome }}" \
             --row "Vitest Unit Tests=${{ steps.test.outcome }}" \
-            --row "Production Build=${{ steps.build.outcome }}"
+            --row "Production Build=${{ steps.build.outcome }}" \
+            --row "Offline Admin UX Smoke=${{ steps.ux_smoke.outcome }}"
 
   # ───────────────────────────────────────────────
   # Job 4: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)

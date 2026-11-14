@@ -283,6 +283,12 @@ describe('Component Testing: UI Rendering', () => {
     expect(await screen.findByText('GRIDO')).toBeInTheDocument();
     expect(await screen.findByLabelText('إدراج صورة جديدة')).toBeInTheDocument();
     expect(await screen.findByLabelText('مكتبة المشاريع')).toBeInTheDocument();
+    const compactCollageTab = screen.getByRole('tab', { name: 'وضع الكولاج', hidden: true });
+    const compactSingleTab = screen.getByRole('tab', { name: 'وضع التعديل الحر', hidden: true });
+    expect(compactCollageTab).toHaveClass('coarse-touch-target');
+    expect(compactSingleTab).toHaveClass('coarse-touch-target');
+    expect(compactCollageTab.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(compactSingleTab.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {

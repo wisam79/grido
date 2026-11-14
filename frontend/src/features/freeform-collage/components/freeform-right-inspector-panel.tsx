@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 import { FreeformToolButton } from './freeform-top-action-bar';
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
+import { fitLockedDimensions } from '../lib/slots/slot-resize';
 
 import type { FreeformSlot, PhotoPresetType } from '../types';
 
@@ -91,46 +92,51 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
     const wMM = Math.round(slot.w * paperWidthMM * 10) / 10;
     const hMM = Math.round(slot.h * paperHeightMM * 10) / 10;
 
-    const handleWidthChange = (valStr: string) => {
-      const num = parseFloat(valStr);
-      if (!Number.isFinite(num) || num <= 0) return;
-      if (slot.lockAspect && slot.w > 0 && slot.h > 0 && paperWidthMM > 0 && paperHeightMM > 0) {
-        const aspect = (slot.w * paperWidthMM) / (slot.h * paperHeightMM);
-        const maxWMM = Math.min((1 - slot.x) * paperWidthMM, (1 - slot.y) * paperHeightMM * aspect);
-        const minWMM = Math.min(maxWMM, Math.max(5, 5 * aspect));
-        const targetWMM = Math.min(maxWMM, Math.max(minWMM, num));
-        const targetHMM = targetWMM / aspect;
-        onUpdateSlot({
-          w: Math.min(1 - slot.x, targetWMM / paperWidthMM),
-          h: Math.min(1 - slot.y, targetHMM / paperHeightMM),
-        });
-      } else {
-        const clampedMM = Math.min(paperWidthMM - xMM, Math.max(5, num));
-        onUpdateSlot({ w: clampedMM / paperWidthMM });
-      }
-    };
-
-    const handleHeightChange = (valStr: string) => {
-      const num = parseFloat(valStr);
-      if (!Number.isFinite(num) || num <= 0) return;
-      if (slot.lockAspect && slot.w > 0 && slot.h > 0 && paperWidthMM > 0 && paperHeightMM > 0) {
-        const aspect = (slot.w * paperWidthMM) / (slot.h * paperHeightMM);
-        const maxHMM = Math.min(
-          (1 - slot.y) * paperHeightMM,
-          ((1 - slot.x) * paperWidthMM) / aspect,
+    const handleDimensionChange = (axis: 'w' | 'h', valStr: string) => {
+      if (valStr.trim() === '') return;
+      const num = Number(valStr);
+      if (
+        ![num, paperWidthMM, paperHeightMM, slot.x, slot.y, slot.w, slot.h].every(
+          Number.isFinite,
+        ) ||
+        num <= 0 ||
+        paperWidthMM <= 0 ||
+        paperHeightMM <= 0 ||
+        slot.x < 0 ||
+        slot.y < 0 ||
+        slot.w <= 0 ||
+        slot.h <= 0
+      )
+        return;
+      // All fitting values are millimetres; normalization happens only afterwards.
+      const maxWMM = (1 - slot.x) * paperWidthMM;
+      const maxHMM = (1 - slot.y) * paperHeightMM;
+      if (slot.lockAspect) {
+        const physicalRatio = (slot.w * paperWidthMM) / (slot.h * paperHeightMM);
+        const fitted = fitLockedDimensions(
+          axis === 'w' ? num : num * physicalRatio,
+          axis === 'h' ? num : num / physicalRatio,
+          5,
+          5,
+          maxWMM,
+          maxHMM,
         );
-        const minHMM = Math.min(maxHMM, Math.max(5, 5 / aspect));
-        const targetHMM = Math.min(maxHMM, Math.max(minHMM, num));
-        const targetWMM = targetHMM * aspect;
-        onUpdateSlot({
-          h: Math.min(1 - slot.y, targetHMM / paperHeightMM),
-          w: Math.min(1 - slot.x, targetWMM / paperWidthMM),
-        });
+        if (!fitted) return;
+        const w = fitted.w / paperWidthMM;
+        const h = fitted.h / paperHeightMM;
+        if (Math.abs(w - slot.w) > 1e-12 || Math.abs(h - slot.h) > 1e-12) {
+          onUpdateSlot({ w, h });
+        }
       } else {
-        const clampedMM = Math.min(paperHeightMM - yMM, Math.max(5, num));
-        onUpdateSlot({ h: clampedMM / paperHeightMM });
+        const maxMM = axis === 'w' ? maxWMM : maxHMM;
+        if (maxMM < 5) return;
+        const next =
+          Math.min(maxMM, Math.max(5, num)) / (axis === 'w' ? paperWidthMM : paperHeightMM);
+        if (Math.abs(next - slot[axis]) > 1e-12) onUpdateSlot({ [axis]: next });
       }
     };
+    const handleWidthChange = (raw: string) => handleDimensionChange('w', raw);
+    const handleHeightChange = (raw: string) => handleDimensionChange('h', raw);
 
     const handleXChange = (valStr: string) => {
       const num = parseFloat(valStr);

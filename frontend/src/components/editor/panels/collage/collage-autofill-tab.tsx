@@ -272,10 +272,10 @@ export function CollageAutofillTab() {
         className={cn(
           'relative h-9 rounded-md border flex items-center justify-center overflow-hidden transition-colors select-none',
           assignment
-            ? 'border-primary/50 bg-primary/10 text-foreground'
+            ? 'border-primary/45 bg-card text-foreground shadow-2xs ring-1 ring-primary/15'
             : isPreserved
-              ? 'border-border bg-muted text-muted-foreground'
-              : 'border-dashed border-muted-foreground/60 bg-background text-muted-foreground',
+              ? 'border-border/80 bg-card/60 text-muted-foreground'
+              : 'border-dashed border-border/80 bg-background/50 text-muted-foreground/70',
         )}
       >
         {thumbSrc && (
@@ -300,14 +300,16 @@ export function CollageAutofillTab() {
 
         {assignment ? (
           thumbSrc ? (
-            <span className="absolute start-0.5 top-0.5 min-w-4 h-4 px-1 rounded-sm bg-primary-action text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center shadow-xs">
+            <span className="absolute start-1 top-1 flex min-w-4 h-4 px-1 rounded-sm bg-primary-action text-primary-foreground text-2xs font-mono font-bold tabular-nums items-center justify-center shadow-2xs">
               {assignment.order}
             </span>
           ) : (
-            <span className="text-mini font-mono font-bold">{assignment.order}</span>
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-sm bg-primary/12 px-1 text-mini font-mono font-bold tabular-nums text-primary">
+              {assignment.order}
+            </span>
           )
         ) : isPreserved ? (
-          <span className="relative flex size-4 items-center justify-center rounded-sm bg-background text-foreground">
+          <span className="relative flex size-4 items-center justify-center rounded-sm border border-border/70 bg-background/90 text-foreground shadow-2xs">
             <Check className="size-3" weight="bold" aria-hidden="true" />
           </span>
         ) : (
@@ -328,7 +330,7 @@ export function CollageAutofillTab() {
         className="border-border/40 py-2.5"
         badge={
           autofillImages.length > 0 ? (
-            <span className="text-mini tabular-nums text-muted-foreground">
+            <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-sm border border-border/60 bg-muted px-1.5 font-mono text-2xs font-semibold tabular-nums text-muted-foreground">
               {autofillImages.length}
             </span>
           ) : undefined
@@ -339,6 +341,7 @@ export function CollageAutofillTab() {
               type="button"
               variant="ghost"
               size="icon-sm"
+              className="h-6 w-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setAutofillImages([])}
               title="إفراغ قائمة الصور"
               aria-label="إفراغ قائمة الصور"
@@ -348,17 +351,32 @@ export function CollageAutofillTab() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <Button
             type="button"
-            variant={autofillImages.length > 0 ? 'outline' : 'default'}
-            className="h-8 min-w-0 px-2"
+            variant={autofillImages.length > 0 ? 'secondary' : 'default'}
+            className={cn(
+              'h-8 min-w-0 gap-1.5 px-2.5 text-xs',
+              autofillImages.length > 0
+                ? 'rounded-md border border-border/80 bg-card font-medium text-foreground shadow-2xs hover:bg-accent dark:border-white/10'
+                : 'font-semibold shadow-2xs',
+            )}
             onClick={() => pickImages(false)}
             disabled={isPicking || atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : 'اختيار صور متعددة'}
           >
-            {isPicking ? <Spinner size={14} /> : <Images className="w-4 h-4" weight="bold" />}
-            <span>
+            {isPicking ? (
+              <Spinner size={14} />
+            ) : (
+              <Images
+                className={cn(
+                  'w-3.5 h-3.5 shrink-0',
+                  autofillImages.length > 0 && 'text-muted-foreground',
+                )}
+                weight={autofillImages.length > 0 ? 'duotone' : 'bold'}
+              />
+            )}
+            <span className="truncate">
               {isPicking
                 ? 'جاري الاستيراد ...'
                 : autofillImages.length > 0
@@ -368,14 +386,14 @@ export function CollageAutofillTab() {
           </Button>
           <Button
             type="button"
-            variant="outline"
-            className="h-8 min-w-0 px-2"
+            variant="secondary"
+            className="h-8 min-w-0 gap-1.5 rounded-md border border-border/80 bg-card px-2.5 text-xs font-medium text-foreground shadow-2xs hover:bg-accent dark:border-white/10"
             onClick={() => pickImages(true)}
             disabled={isPicking || atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : 'استيراد مجلد صور'}
           >
-            <FolderOpen className="w-4 h-4" weight="bold" />
-            <span>مجلد كامل</span>
+            <FolderOpen className="w-3.5 h-3.5 shrink-0 text-muted-foreground" weight="duotone" />
+            <span className="truncate">مجلد كامل</span>
           </Button>
         </div>
 
@@ -383,6 +401,7 @@ export function CollageAutofillTab() {
           <Button
             type="button"
             variant="outline"
+            className="h-8 w-full justify-center gap-1.5 rounded-md border-dashed border-primary/40 bg-primary/8 text-xs font-medium text-primary hover:bg-primary/15"
             onClick={absorbPendingCollageImages}
             disabled={atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : undefined}
@@ -399,7 +418,7 @@ export function CollageAutofillTab() {
               dir="ltr"
               role="list"
               aria-label="ترتيب صور التوزيع"
-              className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-0.5"
+              className="grid max-h-60 grid-cols-4 gap-1.5 overflow-y-auto rounded-lg border border-border/70 bg-muted p-1.5"
             >
               {visibleImages.map((src, index) => {
                 const isUnused = usedPoolCount > 0 && index >= usedPoolCount;
@@ -456,8 +475,8 @@ export function CollageAutofillTab() {
                         }
                       }}
                       className={cn(
-                        'relative block w-full h-full rounded-md border overflow-hidden bg-muted/40 outline-none transition-all',
-                        'border-border/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                        'relative block h-full w-full overflow-hidden rounded-md border bg-card shadow-2xs outline-none transition-all',
+                        'border-border/80 hover:border-foreground/30 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                         !shuffle && 'cursor-grab active:cursor-grabbing',
                         dragOverIndex === index &&
                           dragIndex !== index &&
@@ -478,7 +497,7 @@ export function CollageAutofillTab() {
                           image.src = src;
                         }}
                       />
-                      <span className="absolute left-0 top-0 h-3.5 min-w-3.5 px-0.5 rounded-br-sm bg-background/90 border-r border-b border-border/60 text-2xs font-mono font-bold text-foreground flex items-center justify-center">
+                      <span className="absolute left-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-sm border border-border/70 bg-background/90 px-1 font-mono text-2xs font-bold tabular-nums text-foreground shadow-2xs backdrop-blur-xs">
                         {sourceNumber}
                       </span>
                     </button>
@@ -487,7 +506,7 @@ export function CollageAutofillTab() {
                       onClick={() => removeImage(index)}
                       title={`حذف صورة ${sourceNumber}`}
                       aria-label={`حذف صورة ${sourceNumber}`}
-                      className="absolute right-0 top-0 size-7 rounded-md bg-card/95 flex items-center justify-center text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                      className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-sm border border-border/70 bg-background/90 text-muted-foreground opacity-0 backdrop-blur-xs transition-all group-hover:opacity-100 group-focus-within:opacity-100 hover:border-destructive hover:bg-destructive hover:text-white cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     >
                       <X className="w-3 h-3" weight="bold" />
                     </button>
@@ -495,14 +514,14 @@ export function CollageAutofillTab() {
                 );
               })}
               {hiddenCount > 0 && (
-                <span className="shrink-0 text-2xs font-mono text-muted-foreground px-1">
+                <span className="col-span-4 flex items-center justify-center rounded-sm bg-background/60 py-1 font-mono text-2xs tabular-nums text-muted-foreground">
                   +{hiddenCount}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-micro text-muted-foreground/85 leading-tight">
+            <div className="flex items-center justify-between gap-2 px-0.5">
+              <span className="text-micro text-muted-foreground leading-tight">
                 {shuffle
                   ? 'الترتيب من الخلط — أوقف «خلط عشوائي» لإعادة الترتيب'
                   : 'اسحب لإعادة الترتيب · Alt+الأسهم للنقل · Delete للحذف'}
@@ -511,7 +530,7 @@ export function CollageAutofillTab() {
                 <button
                   type="button"
                   onClick={() => setShowAllImages((value) => !value)}
-                  className="shrink-0 text-mini font-bold text-primary hover:underline cursor-pointer"
+                  className="shrink-0 rounded-sm px-1.5 py-0.5 text-mini font-semibold text-primary hover:bg-primary/10 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 >
                   {showAllImages ? 'عرض أقل' : `عرض الكل (${displayedImages.length})`}
                 </button>
@@ -538,7 +557,6 @@ export function CollageAutofillTab() {
                   value={mode}
                   onChange={(value) => setAutofillSettings({ mode: value })}
                   size="sm"
-                  className="p-0.5 border-0 h-8"
                   options={[
                     { id: 'empty', label: 'الفارغة فقط' },
                     { id: 'all', label: 'كل الخانات' },
@@ -558,7 +576,6 @@ export function CollageAutofillTab() {
                   value={order}
                   onChange={(value) => setAutofillSettings({ order: value })}
                   size="sm"
-                  className="p-0.5 border-0 h-8"
                   options={[
                     {
                       id: 'row',
@@ -575,66 +592,66 @@ export function CollageAutofillTab() {
               }
             />
 
-            <FluentSettingRow
-              label="تكرار عند النقص"
-              control={
-                <Switch
-                  checked={repeat}
-                  onCheckedChange={(checked) => setAutofillSettings({ repeat: checked })}
-                  aria-label="تكرار الصور"
-                />
-              }
-            />
-
-            <FluentSettingRow
-              label="خلط عشوائي"
-              control={
-                <div className="flex items-center gap-1">
-                  {shuffle && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={reshuffle}
-                      title="خلط جديد"
-                      aria-label="إعادة الخلط"
-                    >
-                      <Shuffle className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
+            <div className="divide-y divide-border/40 rounded-lg border border-border/60 bg-muted/60 px-2.5 py-0.5">
+              <FluentSettingRow
+                className="py-1.5"
+                label="تكرار عند النقص"
+                control={
                   <Switch
-                    checked={shuffle}
-                    onCheckedChange={(checked) => {
-                      setAutofillSettings({
-                        shuffle: checked,
-                        ...(checked ? { seed: shuffleSeed + 1 } : {}),
-                      });
-                    }}
-                    aria-label="خلط عشوائي"
+                    checked={repeat}
+                    onCheckedChange={(checked) => setAutofillSettings({ repeat: checked })}
+                    aria-label="تكرار الصور"
                   />
-                </div>
-              }
-            />
-          </FluentSection>
-          <FluentSection title="معاينة التوزيع" className="border-border/40 py-2.5">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 px-0.5">
-                <span className="text-mini text-muted-foreground leading-relaxed">
-                  {grid.rows}×{grid.cols} · تُملأ {fillCount}
-                  {preservedCount > 0 ? ` · تبقى ${preservedCount}` : ''}
-                  {skippedCount > 0 ? ` · بلا صورة ${skippedCount}` : ''}
-                </span>
-              </div>
+                }
+              />
 
+              <FluentSettingRow
+                className="py-1.5"
+                label="خلط عشوائي"
+                control={
+                  <div className="flex items-center gap-1">
+                    {shuffle && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={reshuffle}
+                        title="خلط جديد"
+                        aria-label="إعادة الخلط"
+                      >
+                        <Shuffle className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <Switch
+                      checked={shuffle}
+                      onCheckedChange={(checked) => {
+                        setAutofillSettings({
+                          shuffle: checked,
+                          ...(checked ? { seed: shuffleSeed + 1 } : {}),
+                        });
+                      }}
+                      aria-label="خلط عشوائي"
+                    />
+                  </div>
+                }
+              />
+            </div>
+          </FluentSection>
+          <FluentSection
+            title="معاينة التوزيع"
+            className="border-border/40 py-2.5"
+            subtitle={`${grid.rows}×${grid.cols} · تُملأ ${fillCount}${preservedCount > 0 ? ` · تبقى ${preservedCount}` : ''}${skippedCount > 0 ? ` · بلا صورة ${skippedCount}` : ''}`}
+          >
+            <div className="space-y-2">
               <div
                 className={cn(
-                  'rounded-md bg-muted border border-border p-2',
+                  'rounded-lg border border-border/70 bg-muted p-2',
                   slots.length > 24 && 'max-h-44 overflow-y-auto',
                 )}
               >
                 <div
                   dir="ltr"
-                  className="grid gap-1"
+                  className="grid gap-1.5"
                   style={{
                     gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))`,
                   }}
@@ -646,9 +663,9 @@ export function CollageAutofillTab() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 text-micro text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1.5 text-micro text-muted-foreground">
                 {fillCount > 0 && (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-border/50 bg-muted/70 px-1.5 py-0.5">
                     <span aria-hidden="true" className="font-mono font-bold text-primary">
                       #
                     </span>
@@ -656,13 +673,13 @@ export function CollageAutofillTab() {
                   </span>
                 )}
                 {preservedCount > 0 && (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-border/50 bg-muted/70 px-1.5 py-0.5">
                     <Check className="size-3" weight="bold" aria-hidden="true" />
                     يبقى
                   </span>
                 )}
                 {skippedCount > 0 && (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-border/50 bg-muted/70 px-1.5 py-0.5">
                     <Minus className="size-3" weight="bold" aria-hidden="true" />
                     {autofillImages.length > 0 ? 'بلا صورة' : 'فارغة'}
                   </span>
@@ -670,20 +687,20 @@ export function CollageAutofillTab() {
               </div>
             </div>
           </FluentSection>
-          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/50 bg-sidebar py-2">
-            <div className="flex items-center gap-2">
+          <div className="sticky bottom-0 z-10 -mx-3 space-y-2 border-t border-border/60 bg-sidebar/95 px-3 py-2.5 backdrop-blur-xs">
+            <div className="flex items-center gap-1.5">
               <Button
                 type="button"
-                className="h-9 min-w-0 flex-1 shadow-none"
+                className="h-8 min-w-0 flex-1 gap-1.5 text-xs font-semibold shadow-2xs"
                 onClick={distribute}
                 disabled={!canApply}
                 title={applyBlockedReason}
                 aria-label="توزيع الصور على الخانات"
               >
                 {shuffle ? (
-                  <Shuffle className="w-4 h-4" weight="bold" />
+                  <Shuffle className="w-3.5 h-3.5 shrink-0" weight="bold" />
                 ) : (
-                  <GridFour className="w-4 h-4" weight="bold" />
+                  <GridFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
                 )}
                 <span>{canApply ? `وزّع ${imageCountLabel(fillCount)}` : 'وزّع الصور'}</span>
               </Button>
@@ -691,13 +708,14 @@ export function CollageAutofillTab() {
                 <>
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    variant="secondary"
+                    size="icon-sm"
+                    className="h-8 w-8 rounded-md border border-border/80 bg-card text-muted-foreground shadow-2xs hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive dark:border-white/10"
                     onClick={() => setConfirmClearOpen(true)}
                     title="إفراغ الخانات"
                     aria-label="إفراغ كل الخانات"
                   >
-                    <ArrowsClockwise className="w-4 h-4" />
+                    <ArrowsClockwise className="w-3.5 h-3.5" />
                   </Button>
                   {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
                   <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
@@ -725,12 +743,12 @@ export function CollageAutofillTab() {
             </div>
 
             {applyHint && (
-              <p className="text-micro text-amber-600 dark:text-amber-500 leading-tight px-0.5">
+              <p className="rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-micro text-amber-600 dark:text-amber-400 leading-tight">
                 {applyHint}
               </p>
             )}
             {!canApply && applyBlockedReason && (
-              <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
+              <p className="text-micro text-muted-foreground/85 leading-tight px-0.5">
                 {applyBlockedReason}
               </p>
             )}

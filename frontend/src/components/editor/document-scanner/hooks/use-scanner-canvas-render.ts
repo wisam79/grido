@@ -8,7 +8,7 @@ import {
   docScannerLoupe,
 } from '@/lib/canvas/canvas-colors';
 
-import type { Point, DetectedDocument, DocumentAspectType } from '../core';
+import type { Point, DetectedDocument } from '../core';
 
 function isPointInQuad(p: Point, quad: Point[]): boolean {
   if (!quad || quad.length < 4) return false;
@@ -31,6 +31,8 @@ export interface ScannerCanvasApi {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   loupeCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   activeCorner: number | null;
+  selectedCorner: number | null;
+  selectCorner: (index: number) => void;
   loupePos: { x: number; y: number } | null;
   handlePointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   handlePointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
@@ -50,16 +52,35 @@ export function useScannerCanvasRender(
   activeDocIndex: number,
   imgRef: React.RefObject<HTMLImageElement | null>,
   imgSize: { w: number; h: number },
+  // المالك يحدّث الأركان والنسبة ومعاينة المعالج معاً.
   onCornersChange: (corners: Point[]) => void,
-  onAspectChange: (aspect: DocumentAspectType) => void,
   selectDocument: (index: number) => void,
+  interactionLocked = false,
 ): ScannerCanvasApi {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loupeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const [activeCorner, setActiveCorner] = useState<number | null>(null);
+  const [selectedCorner, setSelectedCorner] = useState<number | null>(null);
   const [loupePos, setLoupePos] = useState<{ x: number; y: number } | null>(null);
+  const activeDocId = detectedDocs[activeDocIndex]?.id;
+  const selectCorner = useCallback(
+    (index: number) => {
+      if (
+        !open ||
+        isPreviewMode ||
+        interactionLocked ||
+        activeCorner !== null ||
+        corners.length !== 4 ||
+        index < 0 ||
+        index > 3
+      )
+        return;
+      setSelectedCorner(index);
+    },
+    [open, isPreviewMode, interactionLocked, activeCorner, corners.length],
+  );
 
   // حالة الـ hover في ref لا state: كل pointermove كان يُعيد render الحوار
   // كله (سايدبار + قائمة) ويُعيد إنشاء drawCanvas — الآن رسم أمر imperatively.
@@ -72,7 +93,7 @@ export function useScannerCanvasRender(
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
-    if (!canvas || !img) return;
+    if (!open || !canvas || !img) return;
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
@@ -177,7 +198,7 @@ export function useScannerCanvasRender(
       const px = pt.x * scale;
       const py = pt.y * scale;
 
-      const isActive = activeCorner === idx;
+      const isActive = activeCorner === idx || selectedCorner === idx;
       const isHover = isHoveringCornerRef.current === idx;
 
       ctx.beginPath();
@@ -195,7 +216,16 @@ export function useScannerCanvasRender(
     });
 
     ctx.restore();
-  }, [corners, activeCorner, isPreviewMode, detectedDocs, activeDocIndex, imgRef]);
+  }, [
+    open,
+    corners,
+    activeCorner,
+    selectedCorner,
+    isPreviewMode,
+    detectedDocs,
+    activeDocIndex,
+    imgRef,
+  ]);
 
   // رسم أمر imperatively (للـ hover) دون انتظار دورة render
   const requestDraw = useCallback(() => {
@@ -307,7 +337,7 @@ export function useScannerCanvasRender(
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (isPreviewMode || corners.length !== 4) return;
+      if (!open || isPreviewMode || interactionLocked || corners.length !== 4) return;
       const canvas = canvasRef.current;
       if (!canvas || !imgSize.w || !imgSize.h) return;
 
@@ -328,6 +358,8 @@ export function useScannerCanvasRender(
       });
 
       if (closestIdx !== -1) {
+        canvas.focus({ preventScroll: true });
+        setSelectedCorner(closestIdx);
         setActiveCorner(closestIdx);
         try {
           canvas.setPointerCapture(e.pointerId);
@@ -346,6 +378,8 @@ export function useScannerCanvasRender(
       }
     },
     [
+      open,
+      interactionLocked,
       isPreviewMode,
       corners,
       imgSize,
@@ -358,7 +392,7 @@ export function useScannerCanvasRender(
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (isPreviewMode) return;
+      if (!open || isPreviewMode || interactionLocked) return;
       const canvas = canvasRef.current;
       if (!canvas || !imgSize.w || !imgSize.h) return;
 
@@ -375,7 +409,6 @@ export function useScannerCanvasRender(
           idx === activeCorner ? { x: clampedX, y: clampedY } : pt,
         );
         onCornersChange(nextCorners);
-        onAspectChange('free');
 
         scheduleLoupeUpdate(activeCorner, e.clientX, e.clientY);
       } else {
@@ -396,12 +429,13 @@ export function useScannerCanvasRender(
       }
     },
     [
+      open,
+      interactionLocked,
       isPreviewMode,
       imgSize,
       activeCorner,
       corners,
       onCornersChange,
-      onAspectChange,
       scheduleLoupeUpdate,
       requestDraw,
     ],
@@ -409,6 +443,10 @@ export function useScannerCanvasRender(
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (loupeRafRef.current !== null) {
+        cancelAnimationFrame(loupeRafRef.current);
+        loupeRafRef.current = null;
+      }
       if (activeCorner !== null) {
         setActiveCorner(null);
         setLoupePos(null);
@@ -427,6 +465,26 @@ export function useScannerCanvasRender(
       }
     },
     [activeCorner],
+  );
+
+  // هوية المستند/قفل المعالجة ينهيان الإيماءة؛ pointerup وحده لا يمس الاختيار.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset selection and drag on document/session changes
+    setSelectedCorner(null);
+    setActiveCorner(null);
+    setLoupePos(null);
+    isHoveringCornerRef.current = null;
+    if (loupeRafRef.current !== null) {
+      cancelAnimationFrame(loupeRafRef.current);
+      loupeRafRef.current = null;
+    }
+  }, [open, isPreviewMode, interactionLocked, activeDocIndex, activeDocId]);
+
+  useEffect(
+    () => () => {
+      if (loupeRafRef.current !== null) cancelAnimationFrame(loupeRafRef.current);
+    },
+    [],
   );
 
   // 🔒 إلغاء إطارات الرسم المعلقة عند الإغلاق
@@ -452,6 +510,8 @@ export function useScannerCanvasRender(
     canvasRef,
     loupeCanvasRef,
     activeCorner,
+    selectedCorner,
+    selectCorner,
     loupePos,
     handlePointerDown,
     handlePointerMove,

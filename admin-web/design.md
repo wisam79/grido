@@ -8,6 +8,19 @@
 
 ---
 
+## متابعة تنفيذ UX محدودة — 2026-11-13
+
+**تثبيت الحالة الحالية:** فحوص `frontend` و`admin-web` الخفيفة (`lint`/`tsc`/`vitest` المستهدفة) وبوابة التوثيق `docsstrict` (**174/32/67/6**) **PASS** بعد إصلاحات التشخيص. المراجعة البصرية الرئيسية المحدودة تخص محرر desktop screenshots 1024/1280/1600 لا Admin full visual. Admin يبقى DOM/keyboard/tests فقط بلا Production/AA acceptance، وCI/E2E build معلق.
+
+هذا ملحق مؤرخ لا يغيّر مواصفات صفحة الهبوط التاريخية ولا يمنح شهادة production/AA جديدة. في شجرة العمل:
+
+- `src/components/common/accessible-dialog.tsx:40` يملك Radix Dialog/AlertDialog والتركيز الأولي/العائد وbusy guard، و`src/components/common/FeedbackProvider.tsx` يستهلكه للتأكيد الخطر مع Cancel بدل التركيز على الحذف ويستخدم توكنات `z-(--z-dialog)` و`z-(--z-toast)`. `src/pages/admin/components/EditUserModal.tsx` يربط label/field ويبدأ بالاسم ويعطل الحفظ/الإغلاق أثناء busy ويستخدم `z-(--z-dialog)` بدل القيم السحرية.
+- GUI بعد reload أكد DOM كل label مرتبطة والاسم focused؛ Enter cancel أغلق Edit، وEnter trigger فتح alertdialog «تأكيد إجراء خطير» مع cancel active مقابل delete في baseline، ثم Enter cancel أغلقه. **لا حكم بصري أو AA** لتعذر وصول الصور للنموذج؛ click timeouts ليست نجاحاً.
+- استهداف feedback7/7 وedit5/5 وphone actual UI mocks15/15 وأوامر admin light lint/typecheck ناجحة بحسب المنسّق؛ لا حسابات Supabase أو كاميرا/رفع/اقتران حيّ. المصدر `src/pages/PhoneCameraPage.tsx` لا يساوي قبول الهاتف الكامل.
+- `playwright.config.ts` و`e2e/ux-smoke.spec.ts` مع `@playwright/test`1.61.1 يضيفان smoke مستقلًا بـVite واعتراض APIs؛ Vitest يستبعد e2e، وCI يرفع evidence عند التشغيل. **المواصفات مكتوبة ولم تُشغّل**، ولا fullsuite/build/E2E محلي أو push بلا إذن.
+
+المراجع: [تقرير25 المؤقت](../docs/reviews/25-ux-development-acceptance-2026-11-13.md)، [دليل الاختبار](../docs/testing_guide.md#متابعة-تطوير-ux--2026-11-13)، و[الخطة](../docs/plans/2026-11-13-comprehensive-ux-development-plan.md). AA/hitbox/focus/RTL/200%/coarse/runtime والرحلات الكاملة والقياس معلّقة؛ tokens/classes ليست شهادة WCAG. التقرير24 محفوظ دون تعديل.
+
 ## 📑 Table of Contents | فهرس المحتويات
 1. [Product Context & Design Philosophy](#1-product-context--design-philosophy)
 2. [Design Tokens (The Foundation)](#2-design-tokens-the-foundation)
@@ -244,9 +257,11 @@
 - **زر التحميل:** `.btn-primary` مع وقع الإصدار من `useAppVersion()` بلا fallback مُخترع (يُخفى سطر الإصدار إن غاب).
 - **قائمة الجوال:** إفصاح غير نمطي (Non-modal disclosure) بـ `aria-expanded`/`aria-controls` و`hidden`، عناصر ≥44px، يُغلق بـ Escape أو النقر/التركيز خارجه أو التبديل إلى سطح المكتب `min-width: 80rem`.
 
-### E. Admin Dashboard Shell (قشرة اللوحة)
-- حلقة تركيز مزدوجة إلزامية: `0 0 0 2px canvas, 0 0 0 4px brand` على كل عنصر تفاعلي في `.admin-shell` و`.landing-shell` (`index.css:516-519,611-616`).
-- بطاقة `spotlight-card` تتبع المؤشر، دخول محتوى التبويب `tab-content-reveal`، وصفوف جداول بانتقال هادئ (`index.css:528-605`).
+### E. Admin Dashboard Shell (قشرة اللوحة بهوية التطبيق الأساسي — v2.8)
+- **الهوية البصرية المعزولة:** نطاق `.admin-shell` و`.admin-dialog-surface` في `admin-web/src/index.css:908` يتبنى لوحة Fluent 2 Pure Neutral Charcoal من التطبيق الأساسي (`#141414` أرضية، `#1a1a1a` شريط جانبي وترويسة، `#202020` بطاقات وحوارات، `#171717` إدخال ورؤوس جداول، `#333333` حدود شعرية، `#2563eb` إجراءات أساسية) وأنصاف أقطار مكتبية (`4px/6px/10px`) وشعار `<AdminBrandMark />` دون مساس بقشرة `.landing-shell`.
+- **ترويسات رشيقة وثابتة وتمرير للجداول فقط:** ترويسات رشيقة مضغوطة (`DashboardHeader`، `<h1>` بصف واحد، أشرطة تحكم `h-6/h-7`، وإمكانية طيّ/إظهار مولّد المفاتيح في `KeysTable`) مع تثبيتها مع `StatsCards` (في تبويب المشتركين فقط) وأشرطة التصفية وأسفل الصفحات (`shrink-0` و`md:h-screen md:overflow-hidden` على `<main>`)، بينما يقتصر التمرير على الجداول فقط مع رؤوس أعمدة `sticky top-0`.
+- **الفصل البصري بين الأعمدة والصفوف:** تطبيق `border-collapse: separate; border-spacing: 0` على الجداول داخل `.admin-shell` مع فواصل أعمدة عمودية (`border-inline-end`) وصفوف متناوبة هادئة، ما يحفظ حدود الترويسة اللاصقة أثناء التمرير.
+- **التنظيم والتصفح وإتاحة الوصول:** درج تفاصيل المشترك الجانبي (`UserDetailsDrawer` على `AccessibleDialog` بوضع `drawer`)، ربط المستخدمين عبر `UserIdentityLink` في جداول المفاتيح والسجلات، فرز وترقيم الصفحات، أزرار النسخ والمفاتيح، تصحيح تكلفة AI الصفرية عبر `resolveAiCostUsd`، حلقة تركيز مزدوجة، وصدق حالة المزامنة بدون شارة اتصال مزيفة.
 
 ---
 
@@ -384,3 +399,4 @@
 | **v2.5** | `2026-10-16` | **(جلسة 0.90 — إعادة وصف الأقسام وتوحيد التوكنات):** إعادة وصف واحد مختصر لكل قسم عبر `SectionHeader` الجديد (`description?: ReactNode` — `text-xs sm:text-sm text-text-secondary text-balance`، موسّط `max-w-2xl` أو `max-w-md` بمحاذاة البداية) للأقسام الثمانية، واستبدال كل القيم الحرفية القابلة للربط بأدوات التوكنات في 15 ملف هبوط (هيدر، هيرو، بنتو، AI، ويندوز، جمهور، ROI، مقارنة، آراء، أسعار، FAQ، ختام، فوتر، الصفحة) مع الإبقاء المقصود على لوحات الاستنساخ البصري (`AppMockup`/المشاهد 3D) والاستعارات (واتساب، CMYK)، وربط `.btn-secondary` بالتوكنات في `index.css`، وإسناد `role="group" aria-pressed` لمبدّلات بنتو. |
 | **v2.6** | `2026-10-25` | **(جلسة 1.46 — CRO وتقصير الصفحة):** حذف `AudienceSection` (عشرة أقسام بدل أحد عشر)، ومبدّل عرض ثنائي في الهيرو بين المحاكاة التفاعلية ولقطة `/grido-desktop-ui.png` مع `role="group"`/`aria-pressed`، ومبدّل عملة ثانٍ متزامن أعلى قسم الأسعار بموافقة المالك (يستبدل قاعدة «المبدّل الوحيد» في v2.5)، ومسار شراء عبر واتساب يحمل السعر والعملة في الرسالة مع زر تجربة مجانية وسطر ضمانات وبطاقة ضمان ثالثة، وتوضيح التجربة المجانية في الهيرو/الأسئلة، وتصحيح ادعاءات حاسبة العائد والمقارنة والآراء (حذف 140 استوديو/99.4%). |
 | **v2.7** | `2026-10-29` | **(جلسة 1.60 — إعادة بناء الهبوط والمجسمات):** إعادة بناء مشهدَي `Biometric3DCard` و`CMYK3DStack` على محرك مشترك `src/lib/landing/` (كاميرا ملائمة، إضاءة بيئية، حلقة 30fps توقف خارج الشاشة، سحب/أسهم، إيقاف/إعادة، بديل مصوّر عند فشل WebGL، تفريغ كامل) بإخراج بطاقة/صفائح توضيحية صادقة بدل الحلقات الزخرفية؛ حذف `Hero3DScene` وإضاءة CSS ثابتة؛ بدائيات `.landing-card/.landing-visual/.landing-switch/.landing-facts` بنطاق `.landing-shell` وحذف المستهلك الميت (`.ds-card*`, `.ds-icon-tile`, `.ds-elevate-*`, `.card-specular-edge`, `.text-gradient-brand`, `.spotlight-hover`, `.cta-shine`, `.ai-badge*`, `.fluent-specular`, `.no-scrollbar`)؛ حوار `<dialog>` مشترك (`LandingModal`) للجولة واللقطة المكبرة؛ توقيف محاكاة الهيرو خارج الشاشة/خلف الحوار/مع تقليل الحركة؛ حذف Magic Pill وشريط التقدم وتتبع المؤشر العام؛ أهداف لمس ≥44px وARIA موسّعة (FAQ، المقارنة، المشاهد)؛ تحويل الآراء إلى أمثلة استخدام وحذف الأرقام والادعاءات غير المسندة (Windows، المقارنة، الفوتر) مع الحفاظ على الأسعار ومسارات الشراء والتحميل ومبدّلَي العملة المتزامنين (قرار محمي). |
+| **v2.8** | `2026-11-14` | **(جلسة تحسين وتطوير لوحة الإدارة):** مواءمة `.admin-shell` و`.admin-dialog-surface` مع هوية Grido Studio المكتبية (`#141414`/`#1a1a1a`/`#202020`/`#171717`/`#2563eb` وأنصاف أقطار `4px/6px/10px`) مع إبقاء `.landing-shell` معزولة كلياً؛ ترويسات رشيقة ثابتة (`DashboardHeader` و`StatsCards` وأدوات `h-6/h-7` وطيّ مولّد المفاتيح) مع حصر التمرير في الجداول (`sticky thead`) وفصل عمودي للأعمدة (`border-collapse: separate` + `border-inline-end`)؛ إدراج شعار `AdminBrandMark`، درج التفاصيل `UserDetailsDrawer`، ربط أسماء المستخدمين (`UserIdentityLink`)، فرز وترقيم ونسخ دفعي، وإصلاح عرض تكلفة `$0.000` عبر `resolveAiCostUsd`. |

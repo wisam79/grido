@@ -75,7 +75,7 @@ export function StickerSheetTab({
       </Button>
 
       {/* Grid Presets */}
-      <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-md border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+      <div className="grid grid-cols-4 gap-1 bg-muted p-0.5 rounded-md border border-border/60">
         {[
           { r: 2, c: 2, label: '2×2' },
           { r: 3, c: 3, label: '3×3' },
@@ -102,7 +102,7 @@ export function StickerSheetTab({
       </div>
 
       {/* Sliders */}
-      <div className="p-2.5 rounded-md bg-card/40 border border-border/30 space-y-2.5">
+      <div className="p-2.5 rounded-md bg-muted border border-border/60 space-y-2.5">
         <FluentSliderField
           label="صفوف"
           value={gridConfig.rows}

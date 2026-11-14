@@ -107,6 +107,9 @@ export function getPhysicalCellSizeMM(
   if (type === 'visa') {
     return { wMM: 35, hMM: 45 };
   }
+  if (type === 'us-visa') {
+    return { wMM: 51, hMM: 51 };
+  }
   return null;
 }
 

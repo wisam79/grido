@@ -34,6 +34,8 @@
   --color-status-error: #ef4444;
 
   --breakpoint-xs: 24rem;
+  --z-dialog: 2000;
+  --z-toast: 3000;
 }
 
 :root {
@@ -841,6 +843,38 @@ html {
   }
 }
 
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+  }
+  :is(button, input, select, textarea, [role="button"]) {
+    border-color: CanvasText !important;
+  }
+  :is(:disabled, [aria-disabled="true"]) {
+    color: GrayText !important;
+    border-color: GrayText !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-mockup {
+    background: var(--grido-surface-card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Opt in on the control itself, never a containing row or a nested-control wrapper. */
+@media (pointer: coarse) {
+  .coarse-touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 /* ==========================================================================
    Grido App Mockup Advanced Biometric & AI Animations
    ========================================================================== */
@@ -870,4 +904,270 @@ html {
 .mockups-paused *::before,
 .mockups-paused *::after {
   animation-play-state: paused !important;
+}
+
+/* ==========================================================================
+   Grido Admin Shell — Main App Fluent 2 Pure Neutral Charcoal Identity
+   Scoped under .admin-shell and .admin-dialog-surface so .landing-shell
+   remains completely isolated and untouched.
+   ========================================================================== */
+.admin-shell,
+.admin-dialog-surface {
+  --admin-bg: #141414;
+  --admin-sidebar: #1a1a1a;
+  --admin-card: #202020;
+  --admin-card-hover: #252525;
+  --admin-inset: #171717;
+  --admin-hover: rgba(255, 255, 255, 0.06);
+  --admin-active: rgba(255, 255, 255, 0.09);
+  --admin-border: rgba(51, 51, 51, 0.75);
+  --admin-border-strong: #333333;
+  --admin-control-border: #454545;
+  --admin-text: #f5f5f5;
+  --admin-muted: #a9afaf;
+  --admin-muted-hover: #c9cfcf;
+  --admin-primary: #3b82f6;
+  --admin-primary-soft: rgba(59, 130, 246, 0.14);
+  --admin-primary-action: #2563eb;
+  --admin-primary-action-hover: #1d4ed8;
+  --admin-radius-sm: 4px;
+  --admin-radius-md: 6px;
+  --admin-radius-lg: 10px;
+  --grido-workspace-canvas: #141414;
+  --grido-brand-primary: #3b82f6;
+
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.admin-dialog-surface {
+  background-color: var(--admin-card);
+  border-color: var(--admin-border-strong);
+  border-radius: var(--admin-radius-lg);
+}
+
+.admin-shell .admin-card {
+  background-color: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-shell .admin-card-inset,
+.admin-dialog-surface .admin-card-inset {
+  background-color: var(--admin-inset);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+}
+
+.admin-shell .admin-panel-header {
+  background-color: var(--admin-sidebar);
+  border-bottom: 1px solid var(--admin-border);
+  min-height: 3rem;
+}
+
+.admin-shell .admin-input,
+.admin-dialog-surface .admin-input {
+  background-color: var(--admin-inset);
+  border: 1px solid var(--admin-control-border);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.admin-shell .admin-input::placeholder,
+.admin-dialog-surface .admin-input::placeholder {
+  color: var(--admin-muted);
+  opacity: 0.72;
+}
+
+.admin-shell .admin-input:hover:not(:disabled),
+.admin-dialog-surface .admin-input:hover:not(:disabled) {
+  border-color: #5a5a5a;
+}
+
+.admin-shell .admin-input:focus,
+.admin-dialog-surface .admin-input:focus {
+  border-color: var(--admin-primary);
+}
+
+.admin-shell .admin-btn-primary,
+.admin-dialog-surface .admin-btn-primary {
+  background-color: var(--admin-primary-action);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--admin-radius-sm);
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.admin-shell .admin-btn-primary:hover:not(:disabled),
+.admin-dialog-surface .admin-btn-primary:hover:not(:disabled) {
+  background-color: var(--admin-primary-action-hover);
+}
+
+.admin-shell .admin-btn-secondary,
+.admin-dialog-surface .admin-btn-secondary {
+  background-color: var(--admin-inset);
+  color: var(--admin-text);
+  border: 1px solid var(--admin-control-border);
+  border-radius: var(--admin-radius-sm);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.admin-shell .admin-btn-secondary:hover:not(:disabled),
+.admin-dialog-surface .admin-btn-secondary:hover:not(:disabled) {
+  background-color: var(--admin-active);
+  border-color: #5c5c5c;
+}
+
+.admin-shell table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-shell .admin-table-head th {
+  background-color: var(--admin-inset);
+  border-bottom: 1px solid var(--admin-border-strong);
+  border-inline-end: 1px solid rgba(51, 51, 51, 0.72);
+  color: var(--admin-muted-hover);
+  white-space: nowrap;
+}
+
+.admin-shell .admin-table-head th:last-child {
+  border-inline-end: 0;
+}
+
+.admin-shell .admin-table-row td {
+  border-bottom: 1px solid rgba(51, 51, 51, 0.55);
+  border-inline-end: 1px solid rgba(51, 51, 51, 0.45);
+  vertical-align: middle;
+  transition: background-color 0.12s ease;
+}
+
+.admin-shell .admin-table-row td:last-child {
+  border-inline-end: 0;
+}
+
+.admin-shell .admin-table-row:last-child td {
+  border-bottom: 0;
+}
+
+.admin-shell .admin-table-row:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.admin-shell .admin-table-row:hover td {
+  background-color: var(--admin-hover);
+}
+
+.admin-shell .admin-nav-item {
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-muted);
+  border: 1px solid transparent;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.admin-shell .admin-nav-item:hover {
+  background-color: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.admin-shell .admin-nav-item[aria-current="page"] {
+  background-color: var(--admin-active);
+  color: var(--admin-text);
+  border-color: var(--admin-border-strong);
+}
+
+.admin-shell .admin-segment {
+  background-color: var(--admin-inset);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  padding: 2px;
+}
+
+.admin-shell .admin-segment-btn {
+  border-radius: 3px;
+  color: var(--admin-muted);
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.admin-shell .admin-segment-btn:hover:not([aria-pressed="true"]) {
+  color: var(--admin-text);
+  background-color: var(--admin-hover);
+}
+
+.admin-shell .admin-segment-btn[aria-pressed="true"] {
+  background-color: var(--admin-active);
+  color: var(--admin-text);
+}
+
+.admin-shell .admin-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: admin-skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--admin-radius-sm);
+}
+
+@keyframes admin-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.admin-dialog-surface :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--admin-card),
+    0 0 0 4px var(--admin-primary);
+}
+
+.admin-shell ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+}
+
+.admin-shell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *,
+  .admin-shell *::before,
+  .admin-shell *::after,
+  .admin-dialog-surface *,
+  .admin-dialog-surface *::before,
+  .admin-dialog-surface *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

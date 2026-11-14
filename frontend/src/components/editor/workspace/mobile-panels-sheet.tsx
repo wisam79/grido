@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { SquaresFour, Faders } from '@/components/ui/icons';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -21,12 +21,28 @@ export const MobilePanelsSheet = React.memo(function MobilePanelsSheet({
   templatesContent,
   propertiesContent,
 }: MobilePanelsSheetProps) {
+  const openerRef = useRef<HTMLElement | null>(null);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="w-[88vw] sm:w-[380px] p-0 gap-0 font-cairo flex flex-col"
         dir="rtl"
+        aria-describedby={undefined}
+        onOpenAutoFocus={() => {
+          // This controlled sheet is opened externally, without a SheetTrigger.
+          openerRef.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          const opener = openerRef.current;
+          openerRef.current = null;
+          if (opener?.isConnected && !opener.closest('[inert]') && !opener.matches(':disabled')) {
+            event.preventDefault();
+            opener.focus();
+          }
+        }}
       >
         {/* العنوان للوصول فقط: شريط التبويبات نفسه يسمّي اللوحة، فرأس مرئي
             ثانٍ («لوحات العمل») كان سطر كروم بلا معلومة جديدة. */}

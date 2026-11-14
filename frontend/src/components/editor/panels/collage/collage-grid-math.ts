@@ -24,6 +24,7 @@ export type PhotoGridType =
   | 'passport'
   | 'id'
   | 'visa'
+  | 'us-visa'
   | 'iq-national-id'
   | 'iq-civil-id'
   | 'iq-general-id'
@@ -51,6 +52,8 @@ export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
       return { wMM: 35, hMM: 45, label: 'هوية قياسية' };
     case 'visa':
       return { wMM: 35, hMM: 45, label: 'فيزا شنغن' };
+    case 'us-visa':
+      return { wMM: 51, hMM: 51, label: 'فيزا أمريكية' };
     default:
       return { wMM: 35, hMM: 45, label: 'بطاقة وطنية' };
   }

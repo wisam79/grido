@@ -2,6 +2,90 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## متابعة صقل الواجهة وتطوير التبويبات وشريطي الأدوات — 2026-11-14
+
+فحوص مستهدفة وخفيفة بعد صقل `frontend/src/` وتوحيد الطبقات الثلاث وتطوير شريط التبويبات وشريط الأدوات العلوي وكبسولة العرض والزوم في الشريط السفلي وتبويبَي تعبئة وفرز الخانات وتبويب النصوص ورأس لوحة الخصائص (لا تمثّل تشغيل الحزمة الكاملة أو E2E أو بناء سطح المكتب المحلي):
+
+- بعد تطوير تبويب النصوص ورأس لوحة الخصائص (`ElementHeaderActions` و`PropertiesPanel` و`PanelShell` وتبويبات النصوص ومواءمة `frontend/test/text-effects-catalog.test.ts`):
+  `npm --prefix frontend run test -- test/panel-shell-visual.test.tsx test/freeform-text-tab.test.tsx test/font-selector.test.tsx test/text-effects-catalog.test.ts test/element-properties-tabs.test.tsx test/ui-compliance.test.ts` → **6 ملفات / 132 اختباراً ناجحاً** (`ui-compliance` 54/54، `element-properties-tabs` 41/41، `font-selector` 14/14، `text-effects-catalog` 9/9، `panel-shell-visual` 8/8، `freeform-text-tab` 6/6)، و`npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check` (**PASS**).
+- بعد تطوير تبويبَي تعبئة وفرز الخانات (`CustomCollageCard` و`CollageAutofillTab` و`CollageArrangeTab`):
+  `npm --prefix frontend run test -- test/collage-arrange-tab.test.tsx test/collage-autofill-tab.test.tsx test/ui-compliance.test.ts test/panel-shell-visual.test.tsx` → **4 ملفات / 85 اختباراً ناجحاً** (`ui-compliance` 54/54، `collage-autofill-tab` 14/14، `collage-arrange-tab` 9/9، `panel-shell-visual` 8/8).
+- بعد تطوير كبسولة العرض والزوم في الشريط السفلي (`FluentCapsuleButton` و`CanvasViewportDeck`، سابقاً على تعديل تبويبَي تعبئة وفرز الخانات):
+  `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/ui-compliance.test.ts test/accessibility.test.tsx test/App.test.tsx test/ux-accessibility-styles.test.ts --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **4 ملفات / 95 اختباراً ناجحاً** (`ui-compliance` 54/54، `App` 26/26، `ux-accessibility-styles` 8/8، `accessibility` 7/7).
+- بعد تطوير شريط الأدوات وإصلاح `buttonVariants` (`enabled:hover:*` → `hover:*`) ومواءمة `toolbar-height-uniformity.test.ts` (سابقاً على تعديل الشريط السفلي):
+  `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/toolbar-height-uniformity.test.ts test/toolbar-responsive.test.tsx test/ui-compliance.test.ts test/ux-accessibility-styles.test.ts test/ui-components.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **5 ملفات / 84 اختباراً ناجحاً** (`ui-compliance` 54/54، `toolbar-responsive` 9/9، `ui-components` 8/8، `ux-accessibility-styles` 8/8، `toolbar-height-uniformity` 5/5).
+- بعد تطوير شريط التبويبات وإزالة `border-primary/35` (سابقاً على تعديل شريط الأدوات):
+  `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/panel-shell-visual.test.tsx test/fluent-blocks.test.tsx test/ui-compliance.test.ts test/ui-components.test.tsx test/ux-accessibility-styles.test.ts test/toolbar-height-uniformity.test.ts test/element-properties-tabs.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **7 ملفات / 157 اختباراً ناجحاً** (`ui-compliance` 54/54، `element-properties-tabs` 41/41، `fluent-blocks` 33/33، `panel-shell-visual` 8/8، `ui-components` 8/8، `ux-accessibility-styles` 8/8، `toolbar-height-uniformity` 5/5).
+- بعد توحيد الطبقات اللونية الثلاث (`frontend/src/index.css` والخصائص):
+  `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/ui-compliance.test.ts test/ux-accessibility-styles.test.ts test/toolbar-height-uniformity.test.ts test/toolbar-responsive.test.tsx test/panel-shell-visual.test.tsx test/fluent-blocks.test.tsx test/collage-custom-grid-tab.test.tsx --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false` → **7 ملفات / 131 اختباراً ناجحاً** (`ui-compliance` 54/54، `fluent-blocks` 33/33، `collage-custom-grid-tab` 14/14، `toolbar-responsive` 9/9، `panel-shell-visual` 8/8، `ux-accessibility-styles` 8/8، `toolbar-height-uniformity` 5/5).
+- `npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check` → **PASS** (0 أخطاء / 0 تحذيرات).
+
+---
+
+## متابعة تطوير UX — 2026-11-13
+
+**الحالة الحالية:** فحوص التوافق والجودة الخفيفة (`frontend` و`admin-web` و`gofmt` و`git diff --check`) وبوابة التوثيق `docsstrict` بالجرد **174 Vitest / 32 E2E / 67 Go / 6 مستندات جذرية** (و`inventory 20 / assertions 53`) **PASS** بعد إغلاق إصلاحات التشخيص ومواءمة عقد `panel-shell.tsx` (`min-h-12`). لا `final global E2E/CI/build` محلي بعد. PASS173 السابق أدناه تاريخي لنقطة سابقة.
+
+نتائج مستهدفة فعلية، **كل ملف في تشغيل منفرد** بعامل واحد ودون coverage (باستثناء حالات المشاريع/التصدير المزودة بـ`--no-file-parallelism`). ليست حزمة كاملة أو قبول GUI/AA أو تشغيل Wails/طابعة/سحابة. الأعداد أدناه منفصلة ولا تُجمع.
+
+القالب التنفيذي الذي استُخدم لكل صف، باستبدال `<file>` بالقيمة في الجدول:
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false
+```
+
+| `<file>` داخل frontend | النتيجة المرسلة | ما تثبته وحدودها |
+| --- | --- | --- |
+| `test/App.test.tsx` | **26/26 — نهائي للاستهداف** | شاشة البداية والألواح والتبويب المدمج (`coarse-touch-target` + `aria-label`)؛ لا رحلة محرر كاملة |
+| `test/ui-compliance.test.ts` | 54/54 — بعد المواءمة | امتثال قواعد/مصدر وترويسة اللوح `min-h-12` (`bg-card/55` / `border-border/70`)؛ لا قياس AA أو GUI كامل |
+| `test/ui-compliance-guard.test.ts` | 8/8 | حارس قواعد وتوكنات `--z-*`؛ لا إغلاق قبول موجة 0 |
+| `test/fluent-blocks.test.tsx` | 33/33 — نهائي للاستهداف | panel/blocks subset؛ لا كامل visual acceptance |
+| `test/freeform-keyboard.test.tsx` | 23/23 — نهائي للاستهداف | subset لوحة المفاتيح؛ لا رحلة محرر كاملة |
+| `test/scanner-keyboard.test.tsx` | 10/10 — نهائي للاستهداف | لوحة مفاتيح الماسح؛ لا native scanner أو كشف حيّ |
+| `test/multi-selection-properties.test.tsx` | **22/22 — نهائي للاستهداف** | store حقيقي + React Testing Library، typed eligibility/locked inert/history واحد + المحاذاة الأيقونية وأهداف اللمس؛ **safe subset فقط**، لا fontFamily/content/rotation/group ratio/gradients |
+| `test/ux-accessibility-styles.test.ts` | 8/8 | وجود `--z-*`/focus/forced-colors/reduced-transparency بالمصدر و`z-(--z-toast)`؛ toast 3000ms، لا runtime AA كامل |
+| `test/toolbar-responsive.test.tsx` | 9/9 | responsive overflow/focus/mobile restore + `coarse-touch-target`؛ لا قبول الاستجابة كاملًا |
+| `test/toolbar-height-uniformity.test.ts` | 5/5 | توحيد ارتفاعات أزرار وتبويبات شريط الأدوات؛ حارس مصدر |
+| `test/panel-shell-visual.test.tsx` | **8/8 — نهائي للاستهداف** | حارس `panel-shell` و`PropertiesPanel`/`ElementProperties`/`SlotProperties` (`variant="panel"` موحّد، `h-9 text-control`)؛ لا screenshot/AA acceptance |
+| `test/asset-favorites.test.ts` | 12/12 — helper subset بحسب المنسّق | favorites محلية، لا قبول المكتبات كاملًا |
+| `test/libraries-discovery.test.tsx` | **12/12 — نهائي للاستهداف** | discovery + حارس منع حلقة تمرير معرض الملصقات؛ لا قبول المكتبات كاملًا |
+| `test/template-panel.test.tsx` | **8/8 — إعادة central integration نهائية** بدل7/7 | loading/failure/retry/empty؛ محاولة سابقة أخفقت بسبب selector يجد رسالتَي status ثم استهداف الرسالة صحح الاختبار، لا sourcebug |
+| `test/collage-presets-tab.test.tsx` | **5/5 — نهائي للاستهداف** | حالات تبويب القوالب الجاهزة (`grid-cols-2`)؛ لا الكولاج كاملًا |
+| `test/collage-image-crop.test.tsx` | 18/18 — نهائي للاستهداف | قص صورة الكولاج وحفظ الأصل والتراجع؛ لا acceptance فيزيائي |
+| `test/freeform-collage.test.ts` | **87/87 — نهائي للاستهداف** | يحل محل64/64 من الجولة السابقة، لا يُجمع معها |
+| `test/element-properties-tabs.test.tsx` | **41/41 — نهائي للاستهداف** | تبويبات خصائص العنصر + حارس التزام فك التركيب وجلسة المستند في `ElementArrangeTab` |
+
+### استهدافات المشاريع/التصدير والإدارة/الهاتف — نتائج منفصلة
+
+- `test/projects-dialog-backup.test.tsx` **13/13** و`test/export-dialog.test.tsx` **38/38**، كل ملف منفرد بالقالب frontend أعلاه مع **`--no-file-parallelism`** إضافي. نتائج الموجة 5 لا تثبت تنفيذ SaveRecovery أو تغيير الطباعة؛ هذان ما زالا غير منجزين في التحديث المرسل.
+- استهداف admin منفرد لكل صف باستخدام الأمر المؤكد التالي، دون تعميم النجاح على التكامل الحي:
+
+```bash
+node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --coverage.enabled=false
+```
+
+| `<file>` داخل admin-web | النتيجة المرسلة | الحد |
+| --- | --- | --- |
+| `src/components/common/feedback-provider.test.tsx` | 7/7 — نهائي للاستهداف | مكوّن feedback؛ ليس جميع عمليات الإدارة |
+| `src/pages/admin/components/edit-user-modal.test.tsx` | 6/6 — نهائي للاستهداف | تعديل المستخدم (مع خيار `trial`)؛ ليس جلسة/حساب Supabase حيّاً |
+| `src/pages/admin/components/admin-ui-components.test.tsx` | 10/10 — نهائي للاستهداف (2026-11-14) | مكوّنات الإدارة (`Sidebar`/`Header`/`StatsCards`/`UsersTable`/`KeysTable`/`UserDetailsDrawer`/`UsageLogsTable`/`StatsBreakdown`/`LoginForm`/`SettingsForm` واستعادة تركيز التأكيد المتداخل) في jsdom؛ بلا Supabase حيّ أو E2E محلي |
+| `src/lib/admin-utils.test.ts` | 23/23 — نهائي للاستهداف (2026-11-14) | دوال الإدارة النقية (حالات، فرز، عدادات، فلترة المفاتيح بالمالك، تفصيل AI، CSV) |
+| `src/pages/admin/__tests__/admin-integrated.test.ts` | 18/18 — نهائي للاستهداف (2026-11-14) | اختبارات منطق الإدارة المدمج بمُحاكيات |
+| `src/pages/admin/__tests__/admin-mutation-ownership.test.tsx` | 51/51 — نهائي للاستهداف (2026-11-14) | ملكية التعديلات وجلسة الخطافات بمُحاكيات؛ لا Supabase حيّ |
+| `src/pages/phone-camera-page.test.tsx` | 15/15 — نهائي للاستهداف | actual UI بمُحاكيات؛ لا كاميرا/رفع/اقتران حيّ |
+
+GUI بعد إعادة تحميل الإدارة: DOM يؤكد ارتباط كل label بحقلها وتركيز الاسم؛ `cancel.pressEnter` أزال حوار التعديل. `trigger.pressEnter` فتح `alertdialog` بعنوان **«تأكيد إجراء خطير»**، والإلغاء هو العنصر النشط مقابل delete في baseline، ثم `cancel.pressEnter` أزال التأكيد. هذه أحداث لوحة مفاتيح ونتائج DOM ناجحة فقط؛ **clicks التي انتهت بمهلة ليست نتائج نجاح**. لقطة after مرجعية في حزمة القبول، لكن الرؤية غير متاحة ولا قبول AA/بصري.
+
+### الجرد وCI المكتوب — ليس نتيجة تشغيل
+
+`node scripts/docs-gate.mjs --strict-refs` أعاد **174 Vitest / 32 frontend E2E / 67 Go / 6 docs-root وinventory 20 / assertions 53** (**PASS** بعد تحديث `docs-metrics` وإغلاق إصلاحات التشخيص ومواءمة عقد `panel-shell.tsx` `min-h-12`). سجل `FAIL metric Only 173→174` المرحلي السابق لم يعد قائماً؛ `staged matrix` و`admin tests/spec` خارج عداد `frontend`، والترحيل `supabase/migrations/20261113155602_phone_bridge_handshake_json_mime.sql` ما زال `LOCAL NOT APPLIED`.
+
+CI المكتوب فقط: `frontend/e2e/ux-keyboard.spec.ts` ستة سيناريوهات locked/rovingRTL/mixed/filter/scanner/overflow، و`admin-web/e2e/ux-smoke.spec.ts` أربعة edit/danger-confirm/missing-session/denied-camera-retry. admin config مستقل بـVite واعتراض APIs و`@playwright/test`1.61.1، مع `e2e/**` exclude في Vitest وworkflow. خطوة `Run Admin UX Smoke (Offline Fixtures)` ترفع `admin-ux-smoke-evidence` من playwright-report/test-results لمدة7 أيام. **لا specs/jobs شُغّلت**؛ CI/scheduled jobs بعد إذن push المستخدم، ولا scheduledjob = fullassert.
+
+فحوص الجودة الخفيفة في `admin-web` (`lint`، `tsc`، و`vitest` المستهدف 7+6+10+23+18+51+15) و`frontend` (`typecheck`، `lint`، `format:check`، وملفات Vitest المستهدفة أعلاه) و`gofmt` و`git diff --check` وبوابة `docsstrict` **PASS** بعد آخر تعديل. `panel-shell-visual` 8/8، `fluent-blocks` 33/33، `toolbar-responsive` 9/9، `toolbar-height-uniformity` 5/5، `libraries-discovery` 12/12، `collage-presets-tab` 5/5، `element-properties-tabs` 41/41، `multi-selection-properties` 22/22، و`App.test.tsx` 26/26، مع توثيق لقطتي `final light` و`collage light` في التقرير 25.
+
+---
+
 ## متابعة تدقيق UI/البنية — 2026-11-13
 
 المصدر التاريخي في [التقرير 24](reviews/24-ui-architecture-audit-disposition-2026-11-13.md#ملحق-disposition--2026-11-13) **بلا اختبارات تنفيذية**. مصفوفتُه تفصل code disposition عن test results؛ لا تُعتمد claims «100%/500+/50» السابقة كقياس لهذه المتابعة ولا تُجمع نتائج الملفات في إجمالي قبل اكتمال سجلاتها.
@@ -253,13 +337,13 @@ node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run test/App.test
 ```mermaid
 flowchart TD
     subgraph E2E ["End-to-End (E2E Layer)"]
-        PW["Playwright (31 ملف مواصفة؛ عدد الحالات ونتيجتها من `npx playwright test --list`/CI)"]
+        PW["Playwright (32 ملف مواصفة؛ عدد الحالات ونتيجتها من `npx playwright test --list`/CI)"]
         Bridge["Wails v3 Mock Bridge (/wails/runtime Route Interceptor)"]
         PW --> Bridge
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (166 ملف اختبار؛ نتيجة الحالات من CI)"]
+        VTests["Vitest + React Testing Library (174 ملف اختبار؛ نتيجة الحالات من CI)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand

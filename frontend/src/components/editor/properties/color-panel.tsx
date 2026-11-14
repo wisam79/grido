@@ -124,11 +124,17 @@ export function ColorField({
                 disabled={disabled}
                 aria-label={name}
                 className={cn(
-                  'relative h-6 w-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-black/15 shadow-2xs transition-[border-color,box-shadow] hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed dark:border-white/20',
+                  'relative h-6 w-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-black/20 shadow-2xs transition-[border-color,box-shadow] hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed dark:border-white/25',
                   open && 'border-primary/70',
                 )}
               >
                 {swatchFace}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-0.5 end-0.5 flex size-3 items-center justify-center rounded-xs bg-background/85 text-foreground/85 shadow-2xs"
+                >
+                  <Palette className="size-2.5" />
+                </span>
               </button>
             </PopoverTrigger>
 
@@ -137,6 +143,7 @@ export function ColorField({
             <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
               {QUICK_COLORS.map((quick) => {
                 const isActive = color.toLowerCase() === quick.hex.toLowerCase();
+                const isLightSwatch = quick.hex.toUpperCase() === '#FFFFFF';
                 return (
                   <button
                     key={quick.hex}
@@ -153,13 +160,23 @@ export function ColorField({
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'h-3.5 w-3.5 rounded-full border shadow-2xs transition-transform group-hover:scale-115',
+                        'flex h-4 w-4 items-center justify-center rounded-full border shadow-2xs transition-transform group-hover:scale-110',
                         isActive
                           ? 'border-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-card'
-                          : 'border-border/60 hover:border-foreground/40',
+                          : 'border-black/25 dark:border-white/35 hover:border-foreground/60',
                       )}
                       style={{ backgroundColor: quick.hex }}
-                    />
+                    >
+                      {isActive && (
+                        <Check
+                          className={cn(
+                            'size-2.5',
+                            isLightSwatch ? 'text-slate-900' : 'text-white',
+                          )}
+                          weight="bold"
+                        />
+                      )}
+                    </span>
                   </button>
                 );
               })}

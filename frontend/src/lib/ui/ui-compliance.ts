@@ -1,15 +1,13 @@
 /**
- * 🛡️ Grido UI Compliance Guard — R1-R40 + 600 violations enforcement
+ * Grido UI Compliance — local policy tokens and small development assertions.
  *
- * ملف واحد مركزي يمنع الـ 600 مخالفة برمجياً:
- * - توكنز موحدة (مسافات 4px، نصف قطر، Z-Index، حركة، ألوان)
- * - قاموس Wait UX العربي + رسائل AI الشفافة + رسائل الأخطاء القابلة للحل
- * - مدققات dev-only تكشف المخالفة فوراً في الكونسول
- *
- * القاعدة: أي مكون جديد يجب أن يستورد من هنا بدل القيم السحرية.
+ * Fluent 2/Radix are external references, not evidence for every local value.
+ * Source guards in test/ enforce selected contracts; this module is not a
+ * complete accessibility, actual hit-bound, or GUI audit.
+ * Safety, truthful state, clarity, and accessibility precede visual minimalism.
  */
 
-// ─── R4: سلم المسافات 4px — ممنوع أي قيمة خارجها ───
+// ─── R4: سلم المسافات المحلي، بأساس 4px وخطوات وسيطة ───
 export const SPACING_RAMP = [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 36, 40, 48, 56] as const;
 
 export function assertSpacing(value: number, where: string): void {
@@ -19,10 +17,10 @@ export function assertSpacing(value: number, where: string): void {
   }
 }
 
-// ─── R18: هرمية نصف القطر (طابع سطح المكتب الأصلي — 6px أساس) ───
+// ─── R18: هرمية نصف القطر المحلية (طابع سطح المكتب — 6px أساس) ───
 // الأساس في index.css هو `--radius: 0.375rem` (6px)، فالقيم الفعلية:
 // rounded-sm = 2px · rounded-md = 4px · rounded-lg = 6px · rounded-xl = 10px.
-// البطاقات المستديرة الكبيرة (16px+) إشارة بصرية «ويب/جوال» ومُنعت في محرر سطح المكتب.
+// البطاقات المستديرة الكبيرة (16px+) ممنوعة بسياسة محرر Grido، لا بمتطلب Fluent عام.
 export const RADIUS = {
   control: 'rounded-md', // 4px: أزرار/حقول/قوائم وعناصر تحكم
   inset: 'rounded-md', // 4px: أسطح داخلية (بطاقة داخل لوحة أو حوار)
@@ -32,12 +30,17 @@ export const RADIUS = {
   pill: 'rounded-full', // كبسولات/أفاتار
 } as const;
 
-// ─── R24/R36: الحد الأدنى للمس + حلقة التركيز ───
-export const TOUCH_TARGET_MIN = 44; // px
+// ─── R24/R36: حدود التفاعل الفعلية بحسب سياق الإدخال، لا حجم الأيقونة ───
+// Local product policy, not a universal Fluent/WCAG minimum. Keep the legacy
+// TOUCH_TARGET_MIN export for coarse/touch callers. Both dimensions of the
+// actual pointer-receiving bounds must meet the contextual minimum after
+// transforms, clipping, and occlusion; a token alone does not prove compliance.
+export const TOUCH_TARGET_MIN = 44; // px, coarse/touch
+export const COMPACT_TARGET_MIN = 28; // px, fine-pointer desktop only
 export const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
-// ─── Z-Index الموحد — يُمنع z-30/z-50 العشوائي ───
+// ─── Z-Index الموحد — يُمنع z-30/z-50 العشوائي خارج تراخيص overlay القائمة ───
 export const Z = {
   panel: 40,
   canvasOverlay: 45,
@@ -67,7 +70,7 @@ export function assertNoArbitraryZ(className: string, where: string): void {
   if (m) console.warn(`[UI-COMPLIANCE Z] استخدم z-(--z-*) بدل z-${m[1]} في ${where}`);
 }
 
-// ─── R23: أزمنة الحركة Fluent 2 ───
+// ─── R23: أزمنة/منحنيات حركة محلية مستلهمة من Fluent، لا ضمان GPU/أداء ───
 export const MOTION = {
   ultraFast: 50,
   faster: 100,
@@ -102,12 +105,24 @@ export const WAIT_COPY = {
   loadingUpdate: 'جاري تحميل التحديث ...',
 } as const;
 
+/** 'measured' means the operation supplies real progress, not a timed estimate. */
+export type WaitProgressCapability = 'indeterminate' | 'measured';
+
+/**
+ * Local wait-feedback policy. One-argument calls and the legacy return union
+ * remain supported; long waits now default to an indeterminate spinner.
+ * A duration never establishes completion percentage or a remaining-time ETA.
+ * Unknown/invalid durations stay indeterminate. Background toast and content
+ * skeleton selection need context and are not inferred from duration alone.
+ */
 export function pickWaitComponent(
   expectedMs: number,
+  progressCapability: WaitProgressCapability = 'indeterminate',
 ): 'none' | 'spinner' | 'progress' | 'toast' | 'skeleton' {
-  if (expectedMs < 1000) return 'none'; // منع الوميض
+  if (!Number.isFinite(expectedMs) || expectedMs < 0) return 'spinner';
+  if (expectedMs < 1000) return 'none'; // منع الوميض، لا إلغاء منع النقر المكرر
   if (expectedMs <= 3000) return 'spinner';
-  return 'progress';
+  return progressCapability === 'measured' ? 'progress' : 'spinner';
 }
 
 // ─── R28: شفافية AI ───
@@ -126,7 +141,7 @@ export function formatSolvableError(e: SolvableError): string {
   return `${e.reason} — الحل: ${e.fix}${e.code ? ` (كود: ${e.code})` : ''}`;
 }
 
-// ─── R12: مصطلحات مختصرة ───
+// ─── R12: مصطلحات مختصرة، دون حذف تسمية/تعليمات/تحذير لازم ───
 export const SHORT_LABELS = {
   openImage: 'فتح صورة...',
   projects: 'المشاريع...',
@@ -155,9 +170,9 @@ export function ltrSpan(value: string): { dir: 'ltr'; value: string } {
 
 // ─── RTL/LTR Direction Contract (تدقيق RTL 2026-10-13) ───
 // مصدر الحقيقة الوحيد: <html lang="ar" dir="rtl"> (frontend/index.html).
-// كل Portals (Dialog/Sheet/Dropdown/Popover/Select/Tooltip/Sonner) تُزرع في
-// document.body فترث rtl من html — لذلك كل Content يحمل dir="rtl" صريحاً
-// ولا يعتمد على وراثة الشجرة المستدعية (قد تكون داخل جزيرة ltr).
+// كل Content مشترك يحمل dir="rtl" صريحاً ولا يعتمد على وراثة المستدعي
+// (قد يكون داخل جزيرة ltr). Portal Radix الأصلي/الغلاف المشترك يحفظ نطاق
+// الحوار والتركيز والثيم؛ body حاوية ممكنة وليس إلزاماً لكل Portal.
 //
 // الجزر المسموحة بـ dir="ltr" حصراً (موثقة بتعليق /* ltr-island */ في موضعها):
 //  1) main التخطيط WorkspaceLayout — يفرض Rail يساراً والمفتش يميناً فيزيائياً لبرامج التصميم.

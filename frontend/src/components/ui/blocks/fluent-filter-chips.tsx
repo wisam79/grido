@@ -47,7 +47,7 @@ export function FluentFilterChips<T extends string = string>({
       role="group"
       aria-label="تصفية"
       className={cn(
-        'flex items-center gap-1 bg-muted/70 dark:bg-black/40 p-1 rounded-md border border-border/70 dark:border-white/10 fluent-specular shadow-inner overflow-x-auto scrollbar-none select-none min-w-0 max-w-full touch-pan-x',
+        'flex items-center gap-1 bg-muted p-0.5 rounded-md border border-border/60 overflow-x-auto scrollbar-none select-none min-w-0 max-w-full touch-pan-x',
         className,
       )}
       dir={dir}

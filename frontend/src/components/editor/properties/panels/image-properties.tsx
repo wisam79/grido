@@ -696,7 +696,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           <span className="text-mini font-normal text-muted-foreground block">
             قناع الشكل (Vector Mask)
           </span>
-          <div className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+          <div className="grid grid-cols-4 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
             {[
               { id: 'none', label: 'طبيعي' },
               { id: 'circle', label: 'دائري' },

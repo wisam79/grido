@@ -65,30 +65,33 @@ export function FluentSegmentedControl<T extends string = string>({
   const autoId = React.useId();
   const effectiveLayoutId = layoutId || `fluent-segmented-${autoId}`;
   const tablistId = `${effectiveLayoutId}-tablist`;
+  const tabStopId =
+    options.find((option) => option.id === value && !option.disabled)?.id ??
+    options.find((option) => !option.disabled)?.id;
 
-  /** تنقل لوحة المفاتيح بين التبويبات وفق نمط WAI-ARIA Tabs (أسهم → تغيير فوري للقيمة) */
+  /** تنقل محلي وفق محور التبويبات؛ الاتجاه الأفقي وحده يتبع RTL. */
   const handleTablistKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    if (!target.matches('[role="tab"]')) return;
+    if (e.defaultPrevented || e.nativeEvent.isComposing || e.ctrlKey || e.metaKey || e.altKey)
+      return;
+    const target = (e.target as HTMLElement).closest<HTMLButtonElement>('[role="tab"]');
+    if (!target || target.closest('[role="tablist"]') !== e.currentTarget) return;
     const enabled = options.filter((o) => !o.disabled);
-    if (enabled.length < 2) return;
-    const idx = enabled.findIndex((o) => o.id === (target as HTMLElement).dataset.tab);
-    const isRtl = dir === 'rtl';
+    const idx = enabled.findIndex((o) => o.id === target.dataset.tab);
+    if (idx < 0) return;
     let next = -1;
-    const nextKey = isRtl ? 'ArrowLeft' : 'ArrowRight';
-    const prevKey = isRtl ? 'ArrowRight' : 'ArrowLeft';
-    if (e.key === nextKey) next = (idx + 1 + enabled.length) % enabled.length;
+    const nextKey = stacked ? 'ArrowDown' : dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+    const prevKey = stacked ? 'ArrowUp' : dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
+    if (e.key === nextKey) next = (idx + 1) % enabled.length;
     else if (e.key === prevKey) next = (idx - 1 + enabled.length) % enabled.length;
     else if (e.key === 'Home') next = 0;
     else if (e.key === 'End') next = enabled.length - 1;
     if (next >= 0) {
       e.preventDefault();
-      onChange(enabled[next].id);
-      const container = e.currentTarget;
-      requestAnimationFrame(() => {
-        const tab = container.querySelector<HTMLButtonElement>(`[data-tab="${enabled[next].id}"]`);
-        tab?.focus();
-      });
+      if (enabled[next].id !== value) onChange(enabled[next].id);
+      const tab = Array.from(
+        e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+      ).find((button) => button.dataset.tab === enabled[next].id);
+      tab?.focus();
     }
   };
 
@@ -104,12 +107,12 @@ export function FluentSegmentedControl<T extends string = string>({
         // سطح مكتب: تبويبات مسطّحة بخط سفلي بدل كبسولة بيضية عائمة — نمط
         // ألواح الخصائص في محررات سطح المكتب (Figma/Photoshop/Office).
         'flex items-center gap-0.5 select-none min-w-0 max-w-full',
-        variant === 'field'
-          ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
-          : variant === 'panel'
-            ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/40 bg-muted/20'
-            : stacked
-              ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
+        stacked
+          ? 'flex-col gap-0.5 p-1 rounded-lg border border-border/70 bg-muted'
+          : variant === 'field'
+            ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/70 bg-muted'
+            : variant === 'panel'
+              ? 'flex-row gap-1 p-1 rounded-lg border border-border/70 bg-muted'
               : 'border-b border-border/60 rounded-none p-0',
         fullWidth ? 'w-full' : 'w-fit inline-flex',
         className,
@@ -146,7 +149,7 @@ export function FluentSegmentedControl<T extends string = string>({
             aria-label={accessibleLabel}
             title={titleText}
             disabled={opt.disabled}
-            tabIndex={isActive ? 0 : -1}
+            tabIndex={opt.id === tabStopId ? 0 : -1}
             onClick={() => onChange(opt.id)}
             className={cn(
               'relative flex items-center justify-center font-cairo cursor-pointer transition-colors duration-150 z-10 select-none min-w-0 overflow-hidden',
@@ -157,10 +160,10 @@ export function FluentSegmentedControl<T extends string = string>({
                     'rounded-sm',
                     iconInline && variant === 'field' ? 'gap-1.5' : 'flex-col gap-0.5',
                     variant === 'field' ? 'h-7 px-2 text-xs' : 'h-10 px-1 text-mini',
-                    isActive ? 'bg-card shadow-2xs' : 'hover:bg-accent/60',
+                    !isActive && 'hover:bg-accent/50',
                   )
                 : variant === 'panel'
-                  ? cn('gap-1.5 rounded-md h-8 px-2.5 text-xs', !isActive && 'hover:bg-accent/50')
+                  ? cn('gap-1.5 rounded-md h-7 px-2.5 text-xs', !isActive && 'hover:bg-accent/50')
                   : cn(
                       'gap-1.5 rounded-none',
                       size === 'sm'
@@ -170,7 +173,9 @@ export function FluentSegmentedControl<T extends string = string>({
                           : 'h-8 px-2.5 text-xs',
                       isActive ? 'bg-accent/40' : 'hover:bg-accent/50',
                     ),
-              isActive ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal',
+              isActive
+                ? 'text-foreground font-semibold'
+                : 'text-muted-foreground hover:text-foreground font-medium',
               opt.disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
               opt.className,
             )}
@@ -180,9 +185,9 @@ export function FluentSegmentedControl<T extends string = string>({
                 layoutId={effectiveLayoutId}
                 className={
                   variant === 'panel'
-                    ? 'absolute inset-0 bg-card border border-border/50 rounded-sm -z-10'
+                    ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/10 rounded-md shadow-2xs -z-10'
                     : stacked || variant === 'field'
-                      ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-sm shadow-2xs -z-10'
+                      ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/10 rounded-sm shadow-2xs -z-10'
                       : 'absolute inset-x-1 bottom-0 h-0.5 bg-primary rounded-full -z-10'
                 }
                 transition={{ duration: 0.12, ease: 'easeOut' }}

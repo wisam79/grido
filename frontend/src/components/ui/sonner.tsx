@@ -18,7 +18,7 @@ const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
       visibleToasts={1}
       theme={theme as ToasterProps['theme']}
       dir="rtl"
-      className="toaster group"
+      className="toaster group z-(--z-toast)"
       offset={offset}
       icons={{
         success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="fill" />,

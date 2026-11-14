@@ -10,10 +10,11 @@ import {
   buildCustomKey,
   downloadTextFile,
   fetchAllPaged,
+  filterLicenseKeys,
   parsePositiveInt,
   randomKeySuffix,
 } from '../../lib/admin-utils';
-import type { GenMode, GenPlan, KeyStatusFilter, LicenseKey } from './types';
+import type { GenMode, GenPlan, KeyStatusFilter, LicenseKey, UserProfile } from './types';
 
 /**
  * useAdminKeys — حالات المفاتيح + جلب مقسّم بالصفحات + معالجة أخطاء Supabase +
@@ -23,6 +24,7 @@ import type { GenMode, GenPlan, KeyStatusFilter, LicenseKey } from './types';
 export function useAdminKeys(
   supabase: SupabaseClient | null,
   sessionOwnerRef: AdminSessionOwnerRef,
+  usersLookup: Record<string, UserProfile> = {},
 ) {
   const { notify } = useFeedback();
   const { captureOwner, invalidateOwnership } = useAdminOperationOwnership(supabase, sessionOwnerRef);
@@ -63,9 +65,9 @@ export function useAdminKeys(
   }, [invalidateOwnership]);
 
   // Load Dashboard Data (paginated to prevent PostgREST 1000-row silent truncation)
-  const loadKeysData = useCallback(async () => {
+  const loadKeysData = useCallback(async (): Promise<boolean> => {
     const ownsOperation = captureOwner();
-    if (!supabase || !ownsOperation()) return;
+    if (!supabase || !ownsOperation()) return false;
     const reqId = ++fetchReqIdRef.current;
     const ownsFetch = () => ownsOperation() && reqId === fetchReqIdRef.current;
     setLoading(true);
@@ -83,7 +85,7 @@ export function useAdminKeys(
         supabase.from('license_keys').select('*', { count: 'exact', head: true }),
       ]);
 
-      if (!ownsFetch()) return;
+      if (!ownsFetch()) return false;
 
       const errors: string[] = [];
       if (keysRes.error) {
@@ -107,14 +109,17 @@ export function useAdminKeys(
       if (errors.length > 0) {
         console.error('Error fetching keys data:', errors);
         notify(`تعذر تحميل مفاتيح التراخيص: ${errors[0]}`, 'error');
+        return false;
       }
+      return true;
     } catch (err) {
-      if (!ownsFetch()) return;
+      if (!ownsFetch()) return false;
       console.error('Error fetching keys data:', err);
       notify(
         'تعذر تحميل مفاتيح التراخيص: ' + (err instanceof Error ? err.message : 'خطأ غير معروف'),
         'error',
       );
+      return false;
     } finally {
       if (ownsFetch()) {
         setLoading(false);
@@ -268,16 +273,7 @@ export function useAdminKeys(
   };
 
   // Filtering Keys
-  const filteredKeys = keys.filter((key) => {
-    const matchesSearch =
-      (key.key || '').toLowerCase().includes(keySearchQuery.toLowerCase()) ||
-      (key.user_id || '').toLowerCase().includes(keySearchQuery.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    if (keyStatusFilter === 'all') return true;
-    return key.status === keyStatusFilter;
-  });
+  const filteredKeys = filterLicenseKeys(keys, keySearchQuery, keyStatusFilter, usersLookup);
 
   // Dashboard Overview Metrics — جزء المفاتيح
   const totalKeys = keysTotal || keys.length;

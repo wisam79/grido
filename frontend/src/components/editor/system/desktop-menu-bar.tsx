@@ -247,7 +247,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             ملف
           </Button>
@@ -355,7 +355,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             تحرير
           </Button>
@@ -457,7 +457,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             عرض
           </Button>
@@ -533,7 +533,8 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Ruler className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">المساطر</span>
+            <span className="font-medium flex-1">المساطر</span>
+            {showRuler && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -541,7 +542,8 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <SquaresFour className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">الشبكة</span>
+            <span className="font-medium flex-1">الشبكة</span>
+            {showGrid && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -549,7 +551,10 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Eye className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">الخطوط الإرشادية</span>
+            <span className="font-medium flex-1">الخطوط الإرشادية</span>
+            {showUserGuides && (
+              <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />
+            )}
           </DropdownMenuItem>
 
           {userGuides.length > 0 && (
@@ -588,7 +593,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             كولاج
           </Button>
@@ -630,7 +635,10 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Scissors className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">علامات القص</span>
+            <span className="font-medium flex-1">علامات القص</span>
+            {collageShowCutLines && (
+              <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -641,7 +649,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             أدوات
           </Button>
@@ -701,7 +709,7 @@ export function DesktopMenuBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
           >
             مساعدة
           </Button>

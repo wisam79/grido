@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, EyeSlash, LockSimple, LockSimpleOpen } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 import type { CanvasElement } from '@/lib/editor-store';
@@ -34,17 +35,17 @@ export function ElementHeaderActions({ element, onUpdate }: ElementHeaderActions
             aria-pressed={isHidden}
             onClick={() => commit({ visible: isHidden ? true : false })}
             className={cn(
-              'flex size-7 items-center justify-center rounded-md transition-colors cursor-pointer',
-              'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'coarse-touch-target flex size-6 items-center justify-center rounded-sm border transition-colors cursor-pointer',
+              FOCUS_RING,
               isHidden
-                ? 'bg-warning/10 text-warning'
-                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                ? 'border-border/80 bg-card text-foreground shadow-2xs hover:bg-accent dark:border-white/10'
+                : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
             )}
           >
             {isHidden ? (
-              <EyeSlash className="size-4" weight="bold" />
+              <EyeSlash className="size-3.5" weight="duotone" aria-hidden="true" />
             ) : (
-              <Eye className="size-4" weight="regular" />
+              <Eye className="size-3.5" weight="regular" aria-hidden="true" />
             )}
           </button>
         </TooltipTrigger>
@@ -61,17 +62,17 @@ export function ElementHeaderActions({ element, onUpdate }: ElementHeaderActions
             aria-pressed={isLocked}
             onClick={() => commit({ locked: !isLocked })}
             className={cn(
-              'flex size-7 items-center justify-center rounded-md transition-colors cursor-pointer',
-              'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'coarse-touch-target flex size-6 items-center justify-center rounded-sm border transition-colors cursor-pointer',
+              FOCUS_RING,
               isLocked
-                ? 'bg-warning/10 text-warning'
-                : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                ? 'border-warning/30 bg-warning/15 text-warning shadow-2xs hover:bg-warning/20'
+                : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
             )}
           >
             {isLocked ? (
-              <LockSimple className="size-4" weight="fill" />
+              <LockSimple className="size-3.5" weight="duotone" aria-hidden="true" />
             ) : (
-              <LockSimpleOpen className="size-4" weight="regular" />
+              <LockSimpleOpen className="size-3.5" weight="regular" aria-hidden="true" />
             )}
           </button>
         </TooltipTrigger>

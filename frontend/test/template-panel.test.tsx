@@ -236,6 +236,33 @@ describe('TemplatePanel — library deletion preserves the applied snapshot', ()
   });
 });
 
+describe('TemplatePanel — verified library loading states', () => {
+  it('distinguishes loading, failure and a verified empty library without changing the design', async () => {
+    let rejectLoad!: (error: Error) => void;
+    ipc.get.mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectLoad = reject;
+      }),
+    );
+    render(
+      <TooltipProvider>
+        <TemplatePanel activeCollageTab="presets" />
+      </TooltipProvider>,
+    );
+    const initial = useEditorStore.getState();
+    expect(screen.getByText(/تحميل القوالب المحفوظة/)).toHaveAttribute('role', 'status');
+    expect(screen.queryByText('لا توجد قوالب محفوظة')).not.toBeInTheDocument();
+    await act(async () => rejectLoad(new Error('Library unavailable')));
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر');
+    ipc.get.mockResolvedValueOnce([]);
+    fireEvent.click(screen.getByRole('button', { name: /إعادة المحاولة/ }));
+    await screen.findByText('لا توجد قوالب محفوظة');
+    expect(ipc.get).toHaveBeenCalledTimes(2);
+    expect(useEditorStore.getState().slots).toBe(initial.slots);
+    expect(useEditorStore.getState().history).toBe(initial.history);
+  });
+});
+
 describe('TemplatePanel — imported cell validation', () => {
   it('excludes malformed, out-of-bounds and excessive saved cells without losing valid templates', async () => {
     ipc.get.mockResolvedValueOnce([

@@ -96,6 +96,8 @@
   --z-quick-bar: 500;
   --z-menu: 1000;
   --z-popover: 1500;
+  --z-dialog: 2000;
+  --z-toast: 3000;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -128,6 +130,22 @@
   --text-mini--line-height: 16px;
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  :is(.fluent-mica, .fluent-acrylic) {
+    background: var(--card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Opt in on the control itself, never a containing row or a nested-control wrapper. */
+@media (pointer: coarse) {
+  .coarse-touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 :root {
   --font-cairo: 'IBM Plex Sans Arabic', 'Readex Pro', 'Cairo', 'Inter', system-ui, sans-serif;
   --font-tajawal: 'IBM Plex Sans Arabic', 'Readex Pro', 'Tajawal', 'Inter', system-ui, sans-serif;
@@ -136,12 +154,7 @@
   --radius: 0.375rem;
 
   /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette for Windows 11 Mica) */
-  --background: rgba(
-    248,
-    250,
-    252,
-    0.82
-  ); /* Soft clean canvas workspace allowing Mica translucency */
+  --background: #eef1f6; /* Tier 1: خلفية الكانفاس والحقول الغائرة الموحدة */
   --foreground: #0f172a; /* Slate-900 high contrast */
   --card: #ffffff; /* أسطح البطاقات البيضاء النقية الصلبة وفق ويندوز 11 الأصلي */
   --card-foreground: #0f172a;
@@ -155,7 +168,7 @@
   --preview-surface: #e6e9ed;
   --secondary: rgba(239, 246, 255, 0.85); /* Soft blue secondary tint */
   --secondary-foreground: #1e40af;
-  --muted: rgba(241, 245, 249, 0.8); /* Recessed control track */
+  --muted: #eef1f6; /* Tier 1: مسارات التحكم الغائرة الموحدة */
   --muted-foreground: #64748b;
   --muted-foreground-hover: #475569; /* نص فوق سطح hover أفتح (أغمق في الوضع الفاتح) */
   --accent: rgba(239, 246, 255, 0.85);
@@ -165,8 +178,8 @@
   --accent-active: rgba(15, 23, 42, 0.08); /* Slate-900 @ 8% فوق الأسطح البيضاء */
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: rgba(226, 232, 240, 0.8); /* Crisp clean border */
-  --input: rgba(255, 255, 255, 0.85);
+  --border: #e2e8f0; /* Crisp clean border */
+  --input: #ffffff;
   --ring: #3b82f6;
 
   /* توكنز الحالة الدلالية (Light) */
@@ -182,13 +195,13 @@
   --window-close: #c42b1c;
   --window-close-active: #b22517;
 
-  --sidebar: rgba(248, 250, 252, 0.84); /* Clean off-white Mica sidebar */
+  --sidebar: #f8fafc; /* Tier 2: سطح الكروم الموحد للأشرطة والألواح */
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(239, 246, 255, 0.85);
   --sidebar-accent-foreground: #1e40af;
-  --sidebar-border: rgba(226, 232, 240, 0.8);
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Light) */
@@ -241,8 +254,8 @@
 
   /* Ruler Semantic Surfaces (Light) — أسطح المساطر الدلالية الموحدة مع مساحة العمل لتفادي التداخل البصري */
   --ruler-surface: var(--workspace-bg);
-  --ruler-corner: #e2e8f0;
-  --ruler-corner-hover: #cbd5e1;
+  --ruler-corner: var(--workspace-bg);
+  --ruler-corner-hover: #e2e8f0;
   --ruler-track: var(--workspace-bg);
   --ruler-border: rgba(148, 163, 184, 0.35);
   --ruler-tick: #cbd5e1;
@@ -287,32 +300,32 @@
      5. الحدود والفواصل الدقيقة (Borders & Dividers): #333333
      6. اللون المميز (Primary Accent): #3b82f6 (Vibrant Electric Blue)
   */
-  --background: rgba(20, 20, 20, 0.78); /* مساحة العمل الكلية الفحمية شبه الشفافة للميكا */
+  --background: #141414; /* Tier 1: خلفية مساحة العمل والحقول الغائرة الموحدة */
   --foreground: #f5f5f5; /* High contrast crisp neutral white text */
-  --card: #202020; /* أسطح البطاقات والألواح الفحمية الصلبة المطابقة لويندوز 11 الأصلي */
+  --card: #242424; /* Tier 3: أسطح البطاقات وعناصر التحكم البارزة الموحدة */
   --card-foreground: #f5f5f5;
-  --popover: #202020; /* أسطح القوائم والنوافذ المنبثقة الصلبة عالية التباين لمنع التلاشي الضبابي */
+  --popover: #242424; /* Tier 3: أسطح القوائم والنوافذ المنبثقة الصلبة */
   --popover-foreground: #f5f5f5;
   --primary: #3b82f6; /* Vibrant modern Electric Blue */
   --primary-foreground: #ffffff;
   --primary-action: #2563eb;
   --primary-action-hover: #1d4ed8;
-  --control-border: #454545;
+  --control-border: #383838;
   --preview-surface: #2a2b2f;
-  --secondary: rgba(31, 31, 31, 0.85); /* الأسطح التفاعلية الثانوية */
+  --secondary: #242424; /* Tier 3: الأسطح التفاعلية الثانوية */
   --secondary-foreground: #f5f5f5;
-  --muted: rgba(23, 23, 23, 0.8); /* الحقول والممرات الغائرة */
+  --muted: #141414; /* Tier 1: الحقول والممرات الغائرة */
   --muted-foreground: #a9afaf; /* Clear readable neutral secondary text — 4.6:1 على #141414 بدل 3.9:1 لـ A3A3A3 */
   --muted-foreground-hover: #c9cfcf; /* نص فوق سطح hover أفتح — 6.6:1 على #1A1A1A */
-  --accent: rgba(31, 31, 31, 0.85); /* Secondary hover and accents */
+  --accent: #242424; /* Tier 3: Secondary hover and accents */
   --accent-foreground: #f5f5f5; /* نص محايد عالي التباين — الأزرق لم يعد لوناً للحالة */
   /* سطح «العنصر النشط» المحايد — يطابق نهج ويندوز 11: بطاقة فحمية أفتح من الخلفية
-     بحد رقيق، بلا أي لون. (مقارنة بـ --card #242424: هنا نرفع السطح قليلاً فقط) */
+     بحد رقيق، بلا أي لون. */
   --accent-active: rgba(255, 255, 255, 0.09); /* White @ 9% فوق الفحمي */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(51, 51, 51, 0.75); /* الحدود والفواصل الرمادية المحايدة الدقيقة */
-  --input: rgba(23, 23, 23, 0.85); /* Inset inputs */
+  --border: #2b2b2b; /* الحدود والفواصل الرمادية المحايدة الدقيقة */
+  --input: #141414; /* Tier 1: Inset inputs */
   --ring: #3b82f6;
 
   /* توكنز الحالة الدلالية (Dark) */
@@ -326,13 +339,13 @@
   --window-close: #c42b1c;
   --window-close-active: #b22517;
 
-  --sidebar: rgba(26, 26, 26, 0.84); /* خلفية الأشرطة الجانبية والألواح الحاضنة */
+  --sidebar: #1a1a1a; /* Tier 2: سطح الكروم الموحد للأشرطة والألواح */
   --sidebar-foreground: #f5f5f5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(36, 36, 36, 0.88); /* أسطح البطاقات والقوائم النشطة */
+  --sidebar-accent: #242424; /* Tier 3: أسطح البطاقات والقوائم النشطة */
   --sidebar-accent-foreground: #60a5fa;
-  --sidebar-border: rgba(51, 51, 51, 0.75); /* الحدود والفواصل */
+  --sidebar-border: #2b2b2b; /* الحدود والفواصل */
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Dark) */
@@ -383,8 +396,8 @@
 
   /* Ruler Semantic Surfaces (Dark) — أسطح المساطر الفحمية المندمجة مع مساحة العمل */
   --ruler-surface: var(--workspace-bg);
-  --ruler-corner: #1c1c1f;
-  --ruler-corner-hover: #26262a;
+  --ruler-corner: var(--workspace-bg);
+  --ruler-corner-hover: #242424;
   --ruler-track: var(--workspace-bg);
   --ruler-border: rgba(255, 255, 255, 0.08);
   --ruler-tick: #2e2e33;
@@ -550,6 +563,22 @@
     outline-offset: 2px;
   }
 
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 2px solid Highlight !important;
+      outline-offset: 2px !important;
+      box-shadow: none !important;
+    }
+    :is(button, input, select, textarea, [role='button']) {
+      border-color: CanvasText !important;
+    }
+    :is(:disabled, [aria-disabled='true']) {
+      color: GrayText !important;
+      border-color: GrayText !important;
+      opacity: 1 !important;
+    }
+  }
+
   /* Desktop Drag Window Titles */
   .title-bar-draggable {
     --wails-draggable: drag;
@@ -623,6 +652,20 @@
 }
 
 @layer utilities {
+  .workspace-command-bar {
+    background: var(--sidebar);
+    border-bottom-color: var(--border);
+  }
+
+  [data-slot='ux-panel-header'] {
+    background-color: var(--sidebar);
+  }
+
+  .workspace-output-actions {
+    border-inline-start: 1px solid var(--border);
+    padding-inline-start: 8px;
+  }
+
   /* إخفاء شريط التمرير تماماً لمنع تشوهات Wails WebView2 */
   .scrollbar-none,
   .no-scrollbar {
@@ -698,29 +741,6 @@
     border: 1px solid var(--border);
   }
 
-  /* ─── Fluent 2 Windows 11 Native Materials ─────────────────── */
-  .fluent-mica {
-    background-color: var(--background);
-    backdrop-filter: blur(0px); /* يتيح لـ Win32 Mica الظهور أصلياً */
-  }
-
-  .fluent-acrylic {
-    background-color: var(--card);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-  }
-
-  .fluent-specular {
-    border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .fluent-smoke-backdrop {
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
   /* ─── Fluent 2 Panel Motion (Spring Curve) ─────────────────── */
   /* حركة فتح/طي الألواح الجانبية بمنحنى الزنبرك المعتمد في Fluent 2
      (cubic-bezier(0.1, 0.9, 0.2, 1)) — إحساس طبيعي وسلس مطابق لنوافذ ويندوز 11.
@@ -759,8 +779,8 @@
   /* ─── Microsoft Fluent 2 Surface & Material System ─────────── */
   .fluent-acrylic {
     background-color: var(--card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border: 1px solid var(--border);
   }
   .dark .fluent-acrylic {
@@ -986,10 +1006,10 @@
   overflow: hidden !important;
   min-height: 38px !important;
   padding: 8px 14px !important;
-  border-radius: 12px !important; /* شكل بطاقة Fluent 2 الأنيقة */
+  border-radius: var(--radius-lg) !important; /* 10px — متوافق مع سلم حواف Fluent 2 (4/6/10px) */
   background: var(--card) !important;
   color: var(--foreground) !important;
-  box-shadow: var(--fluent-shadow-8) !important;
+  box-shadow: var(--fluent-shadow-16) !important;
   width: auto !important;
   max-width: 440px !important;
   gap: 10px !important;

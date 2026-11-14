@@ -93,6 +93,7 @@ export function ProjectsDialog({
   const [projectName, setProjectName] = useState('');
   const [projectsList, setProjectsList] = useState<domain.Project[]>([]);
   const [isFetchingProjects, setIsFetchingProjects] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
   const isMountedRef = useRef(true);
   const isOpenRef = useRef(false);
@@ -154,6 +155,7 @@ export function ProjectsDialog({
     const fetchGen = ++fetchGenRef.current;
     const fetchDialogSession = dialogSessionRef.current;
     setIsFetchingProjects(true);
+    setProjectsError(null);
     try {
       const list = await GetAllProjects();
       if (
@@ -173,9 +175,15 @@ export function ProjectsDialog({
         return;
       }
       logger.error('Failed to load projects:', err);
-      toast.error(toErrorMessage(err, 'فشل تحميل المشاريع'));
+      const message = toErrorMessage(err, 'فشل تحميل المشاريع');
+      setProjectsError(message);
+      toast.error(message);
     } finally {
-      if (isMountedRef.current && fetchGen === fetchGenRef.current) {
+      if (
+        isMountedRef.current &&
+        fetchGen === fetchGenRef.current &&
+        dialogSessionRef.current === fetchDialogSession
+      ) {
         setIsFetchingProjects(false);
       }
     }
@@ -189,7 +197,8 @@ export function ProjectsDialog({
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTab(defaultTab);
       }
-      setIsFetchingProjects(false);
+      setIsFetchingProjects(true);
+      setProjectsError(null);
       setBackupActionLoading(false);
       Promise.resolve().then(() => {
         if (isMountedRef.current && isOpenRef.current) {
@@ -568,6 +577,7 @@ export function ProjectsDialog({
                   <div className="relative flex-1">
                     <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
                     <Input
+                      aria-label="بحث في المشاريع"
                       placeholder="بحث في المشاريع..."
                       className="pr-8 h-8 text-xs rounded-md"
                       value={searchQuery}
@@ -601,14 +611,41 @@ export function ProjectsDialog({
                 </div>
 
                 {isFetchingProjects ? (
-                  <ProjectsSkeleton rows={4} />
+                  <div role="status" aria-label="جاري تحميل المشاريع" aria-busy="true">
+                    <ProjectsSkeleton rows={4} />
+                    <span className="sr-only">جاري تحميل المشاريع</span>
+                  </div>
+                ) : projectsError ? (
+                  <div role="alert" className="py-6 space-y-3 text-center text-xs">
+                    <p className="text-destructive">تعذر تحميل المشاريع: {projectsError}</p>
+                    <Button
+                      variant="outline"
+                      className="coarse-touch-target"
+                      onClick={() => void fetchProjects()}
+                    >
+                      إعادة المحاولة
+                    </Button>
+                  </div>
                 ) : projectsList.length === 0 ? (
-                  <div className="text-center py-10 border-2 border-dashed rounded-md text-muted-foreground text-xs">
+                  <div
+                    role="status"
+                    className="text-center py-10 border-2 border-dashed rounded-md text-muted-foreground text-xs"
+                  >
                     لا توجد مشاريع محفوظة
                   </div>
                 ) : filteredProjects.length === 0 ? (
-                  <div className="text-center py-10 border border-dashed rounded-md text-muted-foreground text-xs">
-                    لا توجد نتائج
+                  <div
+                    role="status"
+                    className="text-center py-10 border border-dashed rounded-md text-muted-foreground text-xs space-y-3"
+                  >
+                    <p>لا توجد نتائج</p>
+                    <Button
+                      variant="outline"
+                      className="coarse-touch-target"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      مسح البحث
+                    </Button>
                   </div>
                 ) : (
                   <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">

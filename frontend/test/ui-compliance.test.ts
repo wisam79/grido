@@ -1,24 +1,24 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 
 import {
+  COMPACT_TARGET_MIN,
   FOCUS_RING,
   SPACING_RAMP,
   TOUCH_TARGET_MIN,
   RADIUS,
   MOTION,
   Z,
+  pickWaitComponent,
 } from '@/lib/ui/ui-compliance';
 
 /**
- * 🛡️ بوابة التوافق (UI Compliance Guard) — التنفيذ الحيّ لـ lib/ui/ui-compliance.ts.
- *
- * كان الملف حشواً موثّقاً بلا مستورد؛ هذه الاختبارات تحوّله إلى طبقة تنفيذ:
- * تتأكد أن الحلقة البؤرية موحّدة على عناصر التحكم الأساسية، وأن طبقات z-index
- * تستعمل التوكنز (لا قيماً عشوائية خارج التراخيص)، وأن كل توكن z-(--z-*) مُشار
- * إليه معرَّف فعلاً في index.css — ب guards قليلة عالية القيمة لا نسخة هشّة.
+ * UI Compliance Guard — selected local token and source contracts.
+ * These checks are not a full accessibility or actual pointer-bound audit.
+ * Existing code evidence remains enforced; policy changes do not license
+ * bypassing source guards or assertions in scripts/docs-gate.mjs.
  */
 
 const SRC = join(__dirname, '../src');
@@ -67,8 +67,11 @@ describe('UI Compliance Guard — ثوابت الحارس الداخلية', () 
     }
   });
 
-  it('الحد الأدنى لهدف اللمس 44px وسلاسل التوكنز معرّفة', () => {
+  it('سياسة coarse 44px منفصلة عن compact 28px وسلاسل التوكنز معرّفة', () => {
+    // Constants describe local policy; rendered hit bounds need separate verification.
     expect(TOUCH_TARGET_MIN).toBe(44);
+    expect(COMPACT_TARGET_MIN).toBe(28);
+    expect(COMPACT_TARGET_MIN).toBeLessThan(TOUCH_TARGET_MIN);
     expect(RADIUS.control).toBe('rounded-md');
     expect(RADIUS.modal).toBe('rounded-xl');
     expect(typeof MOTION.normal).toBe('number');
@@ -81,6 +84,64 @@ describe('UI Compliance Guard — ثوابت الحارس الداخلية', () 
     for (const token of ['focus-visible:ring-2', 'focus-visible:ring-primary']) {
       expect(FOCUS_RING).toContain(token);
     }
+  });
+});
+
+describe('UI Compliance Guard — truthful wait capability', () => {
+  it('keeps the one-argument call and legacy return union source-compatible', () => {
+    const legacyPicker: (
+      expectedMs: number,
+    ) => 'none' | 'spinner' | 'progress' | 'toast' | 'skeleton' = pickWaitComponent;
+    expectTypeOf(pickWaitComponent).returns.toEqualTypeOf<
+      'none' | 'spinner' | 'progress' | 'toast' | 'skeleton'
+    >();
+    expect(legacyPicker(4000)).toBe('spinner');
+    expect(pickWaitComponent(4000, undefined)).toBe('spinner');
+  });
+
+  it.each([
+    [0, 'none'],
+    [999, 'none'],
+    [999.9, 'none'],
+    [1000, 'spinner'],
+    [3000, 'spinner'],
+    [3000.1, 'spinner'],
+    [3001, 'spinner'],
+    [60000, 'spinner'],
+  ] as const)('defaults to truthful feedback at %sms: %s', (expectedMs, component) => {
+    expect(pickWaitComponent(expectedMs)).toBe(component);
+    expect(pickWaitComponent(expectedMs, 'indeterminate')).toBe(component);
+  });
+
+  it.each([
+    [0, 'none'],
+    [999, 'none'],
+    [1000, 'spinner'],
+    [3000, 'spinner'],
+    [3000.1, 'progress'],
+    [3001, 'progress'],
+    [60000, 'progress'],
+  ] as const)('selects measured progress only for a long known estimate: %sms', (ms, result) => {
+    expect(pickWaitComponent(ms, 'measured')).toBe(result);
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, -1])(
+    'treats invalid or unknown duration %s as indeterminate, even with capability',
+    (ms) => {
+      expect(pickWaitComponent(ms)).toBe('spinner');
+      expect(pickWaitComponent(ms, 'indeterminate')).toBe('spinner');
+      expect(pickWaitComponent(ms, 'measured')).toBe('spinner');
+    },
+  );
+
+  it('does not derive progress from repeated elapsed-time estimates or invent context', () => {
+    for (const ms of [1000, 3000, 5000, 10000, 30000, 120000]) {
+      // A growing duration cannot create progress, a background toast, or a skeleton.
+      expect(pickWaitComponent(ms)).toBe('spinner');
+    }
+    // Capability belongs to each call, not a sticky/global state after a measured run.
+    expect(pickWaitComponent(5000, 'measured')).toBe('progress');
+    expect(pickWaitComponent(5000)).toBe('spinner');
   });
 });
 
@@ -121,10 +182,8 @@ describe('UI Compliance Guard — هرمية نصف القطر (طابع سطح 
 
 describe('UI Compliance Guard — ميزانية الأيقونات في المفتش', () => {
   it('صفوف الإعدادات (سلايدر/صف) بلا أيقونة مكرّرة للتسمية', () => {
-    // قاعدة 21 أكتوبر 2026: الأيقونة حاجة بصرية لا فرض ولا زينة. أيقونة
-    // بجوار تسمية صريحة («السطوع»، «إزاحة أفقية») تكرّر النص وتقتطع عرض
-    // التسمية في عمود الخصائص (296px). المسموح: أيقونة رأس المجموعة
-    // (FluentSection) وأيقونات الأزرار.
+    // الأيقونة حاجة بصرية لا فرض ولا زينة. صفوف الإعدادات بلا أيقونة مكررة؛
+    // FluentSection لا يقبل icon كذلك. أيقونات الأفعال ذات المعنى مستقلة.
     const inspectorDir = join(SRC, 'components/editor/properties');
     const offenders: string[] = [];
 
@@ -199,10 +258,11 @@ describe('UI Compliance Guard — سطوح الألواح المسطّحة', () 
     expect(source).toContain('h-0.5');
   });
 
-  it('ألواح الخصائص: رأس مضغوط 36px بدل 48px', () => {
+  it('ألواح الخصائص: رأس بحد أدنى 48px وحد فاصل وسطحيّة خفيفة بلا بطاقة عائمة', () => {
     const source = read('components/editor/panels/panel-shell.tsx');
-    expect(source).toContain('h-9');
-    expect(source).not.toContain('min-h-12');
+    expect(source).toContain('min-h-12');
+    expect(source).toContain('bg-card/55');
+    expect(source).toContain('border-b border-border/70');
   });
 });
 

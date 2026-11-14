@@ -33,6 +33,18 @@
 
 ## ملخص النتائج
 
+### متابعة قبول UX المؤقتة — التقرير 25 (2026-11-13)
+
+[التقرير25](./25-ux-development-acceptance-2026-11-13.md): **Provisional**؛ subsets وظيفية ومراجعة screenshots محدودة بالنموذج الرئيسي. لا clipping ظاهر عبر dark1024/1280/1600 وlight1600 ولا في لقطتي `final light` و`collage light` الملحقتين، لكن لا AA/formal independent judge أو fullwave. الجرد الحالي **174/32/67/6** (`inventory 20 / assertions 53`) **PASS** بعد إغلاق إصلاحات التشخيص ومواءمة عقد `panel-shell.tsx` (`min-h-12`) واجتياز الفحوص الخفيفة لـ`frontend` و`admin-web`؛ CI/E2E السحابي معلق بانتظار الدفع. onboarding/SaveRecovery/print وبقية القياس معلّقة؛ التقرير 24 intact.
+
+### متابعة نهائية مؤرخة للتقرير 25 وإغلاق التشخيص — 2026-11-13
+
+فحوص الجودة الخفيفة لـ`frontend` و`admin-web` و`gofmt` وبوابة `docsstrict` (174/32/67/6) **PASS** بعد إغلاق إصلاحات التشخيص وتوحيد تبويبات المفتش (`variant="panel"`) وربط توكنات `--z-toast`/`--z-dialog` وحارس التمرير/فك التركيب. التنفيذ البصري محدود ولقطاته موثقة، لا allplanDone/AA/fullwave. onboarding/SaveRecovery/print/القياس معلّقة؛ التقرير 24 دون تعديل.
+
+### تحديث بصري وجرد 174 للتقرير 25 — 2026-11-13
+
+راجع المنسّق بالنموذج الرئيسي dark1280/1024/1600 وlight1600 ثم `final light` (بعد تقوية رأس اللوحة `bg-card/55`) و`collage light`: لا clipping ظاهر، responsive canvas/toolbar/panels مقبولة ضمن اللقطات؛ هذا screenshot review محدود بلا AA/formal independent judge. `panel-shell-visual.test.tsx` رفع Vitest إلى 174 مع اجتياز `docsstrict` و`ui-compliance.test.ts` (بعد مواءمة `min-h-12`)؛ التقرير 25 Provisional والخطة غير مكتملة، التقرير 24 intact.
+
 ### التقييم الشامل (التقرير 1)
 - **التقييم العام:** ⭐⭐⭐⭐ (4/5) — تحسّن من 3.5 إلى 4 بعد جلسة المراجعة
 - **تم إصلاح 9 مشاكل حرجة** منذ المراجعة السابقة (في `docs/development-plan/`)

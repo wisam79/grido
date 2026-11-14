@@ -4,15 +4,13 @@ import * as path from 'path';
 import { describe, it, expect } from 'vitest';
 
 /**
- * 🛡️ حارس الاتساق البصري (UI Compliance Guard) — تنفيذ فعلي لقواعد كان مستندها
- * `src/lib/ui/ui-compliance.ts` بلا مُنفِّذ (0 مستورِد). هذا الاختبار يمشي على كل
- * ملفات `.tsx` في `src` ويفشل البناء عند أي مخالفة قابلة للقياس:
- *   - z-index سحري `z-[N]` بدل مقياس `--z-*`
- *   - حجم خط اعتباطي `text-[Npx]` بدل مقياس `--text-*`
- *   - لون hex خام داخل `className` بدل توكنات الثيم
+ * Selected measurable local source rules, not a complete GUI/accessibility audit.
+ * Existing production guards remain unchanged. Owned rules/skill TSX examples
+ * must not teach styling that those guards forbid in the desktop editor.
  */
 
 const SRC = path.resolve(__dirname, '../src');
+const ROOT = path.resolve(__dirname, '../..');
 
 function walk(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -27,6 +25,12 @@ function rel(file: string): string {
 }
 
 const FILES = walk(SRC);
+const POLICY_FILES = [
+  '.agents/rules/ui-ux-fluent.md',
+  '.agents/skills/fluent2-design-system/SKILL.md',
+  '.agents/skills/grido-ui-designer-guide/SKILL.md',
+  '.agents/skills/radix-ui-accessibility-ux/SKILL.md',
+];
 
 describe('UI Compliance Guard (R-series enforcement)', () => {
   it('لا يوجد z-index سحري z-[N] — يُستعمل مقياس --z-*', () => {
@@ -57,5 +61,37 @@ describe('UI Compliance Guard (R-series enforcement)', () => {
         });
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('UI Compliance Guard — owned policy examples', () => {
+  it.each(POLICY_FILES)('%s TSX examples preserve local token/radius evidence', (file) => {
+    const markdown = fs.readFileSync(path.join(ROOT, file), 'utf-8');
+    const css = fs.readFileSync(path.join(SRC, 'index.css'), 'utf-8');
+    const shadows = new Set([...css.matchAll(/--fluent-shadow-(\d+)\s*:/g)].map((m) => m[1]));
+    const layers = new Set([...css.matchAll(/--z-([a-z-]+)\s*:/g)].map((m) => m[1]));
+    // Fenced example code only: prose may name a forbidden token to explain it.
+    // No production exceptions are widened, including the existing z-50 license.
+    for (const [index, block] of [...markdown.matchAll(/```tsx\s*\n([\s\S]*?)```/g)].entries()) {
+      const code = block[1];
+      const context = `${file}, TSX example ${index + 1}`;
+      expect(code, context).not.toMatch(/\brounded-(?:2xl|3xl)\b/);
+      expect(code, context).not.toMatch(/(?:^|[\s"'`])z-\[\d/);
+      expect(code, context).not.toMatch(/text-\[\d+(?:\.\d+)?px\]/);
+      expect(code, context).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+      expect(code, context).not.toMatch(/\bbg-primary\s[^"'`]*\btext-primary-foreground\b/);
+      for (const match of code.matchAll(/shadow-fluent-(\d+)/g)) {
+        expect(shadows.has(match[1]), `${context}: ${match[0]} must exist`).toBe(true);
+      }
+      for (const match of code.matchAll(/z-\(--z-([a-z-]+)\)/g)) {
+        expect(layers.has(match[1]), `${context}: ${match[0]} must exist`).toBe(true);
+      }
+    }
+  });
+
+  it('skills retain executable example fences so the example guard cannot silently go vacuous', () => {
+    for (const file of POLICY_FILES.filter((name) => name.endsWith('/SKILL.md'))) {
+      expect(fs.readFileSync(path.join(ROOT, file), 'utf-8'), file).toMatch(/```tsx\s*\n/);
+    }
   });
 });

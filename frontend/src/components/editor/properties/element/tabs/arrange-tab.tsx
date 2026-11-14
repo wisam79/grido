@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   AlignLeftIcon,
@@ -18,6 +18,7 @@ import {
 } from '@/lib/canvas/element-geometry';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { cn } from '@/lib/utils';
 
 import type { CanvasElement } from '@/lib/editor-store';
@@ -32,112 +33,250 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   onUpdate,
 }: ElementArrangeTabProps) {
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
-  // 🛡️ علم «هل تغيّر شيء فعلاً؟» لحقول X/Y/W/H الرقمية: onBlur كان يدفع سجل
-  // تراجع عند كل فقدان تركيز — حتى نقرة على الحقل بلا تعديل — فيمتلئ سقف
-  // الثلاثين خطوة بإدخالات متطابقة ويصبح التراجع بلا أثر مرئي (فيضان سجل التراجع).
-  const coordDirtyRef = useRef(false);
-  const skipCommitRef = useRef(false);
+  // X/Y retain their existing commit behavior; size gestures are field-local.
+  const coordDirtySessionRef = useRef<number | null>(null);
   const pushCoordHistory = useCallback(() => {
-    if (!coordDirtyRef.current) return;
-    coordDirtyRef.current = false;
+    const dirtySession = coordDirtySessionRef.current;
+    coordDirtySessionRef.current = null;
+    if (dirtySession === null || dirtySession !== getDocumentSession()) return;
     useEditorStore.getState().pushHistory();
   }, []);
 
-  const [widthDraft, setWidthDraft] = useState<{ elementId: string; text: string } | null>(null);
-  const [heightDraft, setHeightDraft] = useState<{ elementId: string; text: string } | null>(null);
-
+  type Axis = 'width' | 'height';
+  type SizeGesture = {
+    elementId: string;
+    documentSession: number;
+    axis: Axis;
+    type: CanvasElement['type'];
+    source: Record<string, unknown>;
+    owned: Record<string, unknown>;
+    raw: string | null;
+  };
+  const sizeGestureRef = useRef<SizeGesture | null>(null);
+  const [widthDraft, setWidthDraft] = useState<{
+    elementId: string;
+    documentSession: number;
+    text: string;
+  } | null>(null);
+  const [heightDraft, setHeightDraft] = useState<typeof widthDraft>(null);
+  const documentSession = getDocumentSession();
   const displayedWidth =
-    widthDraft && widthDraft.elementId === element.id
+    widthDraft?.elementId === element.id && widthDraft.documentSession === documentSession
       ? widthDraft.text
       : String(Math.round(element.width * 100));
   const displayedHeight =
-    heightDraft && heightDraft.elementId === element.id
+    heightDraft?.elementId === element.id && heightDraft.documentSession === documentSession
       ? heightDraft.text
       : String(Math.round(element.height * 100));
 
+  const beginSizeGesture = useCallback(
+    (axis: Axis) => {
+      if (axis === 'height' && element.type === 'text') return null;
+      const current = useEditorStore.getState().elements.find((item) => item.id === element.id);
+      if (!current) return null;
+      const values = current as unknown as Record<string, unknown>;
+      // Only the edited dimension and the decorations this gesture can scale.
+      const keys = [axis, 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY', 'cornerRadius'];
+      if (current.type === 'shape') keys.push('strokeWidth', 'radius');
+      if (current.type === 'text') keys.push('textSizing', 'textResizeAnchor');
+      const gesture: SizeGesture = {
+        elementId: current.id,
+        documentSession: getDocumentSession(),
+        axis,
+        type: current.type,
+        source: Object.fromEntries(keys.map((key) => [key, values[key]])),
+        owned: {},
+        raw: null,
+      };
+      sizeGestureRef.current = gesture;
+      (axis === 'width' ? setWidthDraft : setHeightDraft)(null);
+      return gesture;
+    },
+    [element],
+  );
+
   const applyDimension = useCallback(
-    (axis: 'width' | 'height', rawPercent: number) => {
-      if (axis === 'height' && element.type === 'text') return;
+    (gesture: SizeGesture, rawPercent: number) => {
+      if (
+        gesture.documentSession !== getDocumentSession() ||
+        gesture.elementId !== element.id ||
+        !Number.isFinite(rawPercent)
+      )
+        return;
+      const current = useEditorStore
+        .getState()
+        .elements.find((item) => item.id === gesture.elementId);
+      if (!current || current.type !== gesture.type || !Number.isFinite(current[gesture.axis]))
+        return;
+      const values = current as unknown as Record<string, unknown>;
+      if (
+        !Object.is(
+          values[gesture.axis],
+          Object.prototype.hasOwnProperty.call(gesture.owned, gesture.axis)
+            ? gesture.owned[gesture.axis]
+            : gesture.source[gesture.axis],
+        )
+      )
+        return; // Another writer owns the dimension now.
       const clamped = Math.max(0.05, rawPercent / 100);
-      if (axis === 'width') {
-        const deco =
-          element.type === 'text'
-            ? { textSizing: 'fixed' as const, textResizeAnchor: undefined }
-            : scaleElementDecorations(element, clamped / Math.max(1e-6, element.width), 1);
-        coordDirtyRef.current = true;
-        onUpdate(element.id, { width: clamped, ...deco });
-      } else {
-        const deco = scaleElementDecorations(element, 1, clamped / Math.max(1e-6, element.height));
-        coordDirtyRef.current = true;
-        onUpdate(element.id, { height: clamped, ...deco });
+      if (Math.abs(current[gesture.axis] - clamped) <= 1e-6) return;
+      const sourceDimension = Number(gesture.source[gesture.axis]);
+      if (!Number.isFinite(sourceDimension)) return;
+      const decorationSource = { ...current, ...gesture.source } as CanvasElement;
+      const deco =
+        current.type === 'text'
+          ? Math.abs(clamped - sourceDimension) <= 1e-6
+            ? {
+                textSizing: gesture.source.textSizing,
+                textResizeAnchor: gesture.source.textResizeAnchor,
+              }
+            : { textSizing: 'fixed' as const, textResizeAnchor: undefined }
+          : scaleElementDecorations(
+              decorationSource,
+              gesture.axis === 'width' ? clamped / Math.max(1e-6, sourceDimension) : 1,
+              gesture.axis === 'height' ? clamped / Math.max(1e-6, sourceDimension) : 1,
+            );
+      const patch: Record<string, unknown> = { [gesture.axis]: clamped };
+      // Include prior keys even when scale=1, so returning to start is a true no-op.
+      for (const key of new Set([...Object.keys(deco), ...Object.keys(gesture.owned)])) {
+        if (key === gesture.axis) continue;
+        const expected = Object.prototype.hasOwnProperty.call(gesture.owned, key)
+          ? gesture.owned[key]
+          : gesture.source[key];
+        if (Object.is(values[key], expected)) {
+          patch[key] = Object.prototype.hasOwnProperty.call(deco, key)
+            ? (deco as Record<string, unknown>)[key]
+            : gesture.source[key];
+        }
       }
+      const effectivePatch =
+        current.type === 'text' && 'textSizing' in patch && !('textResizeAnchor' in patch)
+          ? { ...patch, textResizeAnchor: current.textResizeAnchor }
+          : patch;
+      onUpdate(gesture.elementId, effectivePatch as Partial<CanvasElement>);
+      Object.assign(gesture.owned, patch);
     },
     [element, onUpdate],
   );
 
   const handleSizeChange = useCallback(
-    (axis: 'width' | 'height', raw: string) => {
+    (axis: Axis, raw: string) => {
       if (axis === 'height' && element.type === 'text') return;
-      const setDraft = axis === 'width' ? setWidthDraft : setHeightDraft;
-      setDraft({ elementId: element.id, text: raw });
-      if (raw.trim() === '') return;
-      const v = Number(raw);
-      if (!Number.isFinite(v) || v < 5) return;
-      applyDimension(axis, v);
+      const gesture = sizeGestureRef.current ?? beginSizeGesture(axis);
+      if (
+        !gesture ||
+        gesture.axis !== axis ||
+        gesture.elementId !== element.id ||
+        gesture.documentSession !== getDocumentSession()
+      )
+        return;
+      gesture.raw = raw;
+      (axis === 'width' ? setWidthDraft : setHeightDraft)({
+        elementId: element.id,
+        documentSession: gesture.documentSession,
+        text: raw,
+      });
+      const value = Number(raw);
+      if (raw.trim() !== '' && Number.isFinite(value) && value >= 5) applyDimension(gesture, value);
     },
-    [applyDimension, element.id, element.type],
+    [applyDimension, beginSizeGesture, element.id, element.type],
   );
 
-  const handleSizeCommit = useCallback(
-    (axis: 'width' | 'height') => {
-      if (skipCommitRef.current) {
-        skipCommitRef.current = false;
+  const finishSizeGesture = useCallback(
+    (axis: Axis, cancel: boolean) => {
+      const gesture = sizeGestureRef.current;
+      sizeGestureRef.current = null; // Clear before blur/Enter can fire a second commit.
+      (axis === 'width' ? setWidthDraft : setHeightDraft)(null);
+      if (
+        !gesture ||
+        gesture.axis !== axis ||
+        gesture.elementId !== element.id ||
+        gesture.documentSession !== getDocumentSession()
+      )
         return;
+      const raw = gesture.raw?.trim();
+      const value = raw ? Number(raw) : NaN;
+      if (!cancel && Number.isFinite(value)) applyDimension(gesture, value);
+      const current = useEditorStore
+        .getState()
+        .elements.find((item) => item.id === gesture.elementId);
+      if (!current || current.type !== gesture.type) return;
+      const values = current as unknown as Record<string, unknown>;
+      if (cancel || !Number.isFinite(value)) {
+        const restore = Object.fromEntries(
+          Object.entries(gesture.owned)
+            .filter(
+              ([key, preview]) =>
+                Object.is(values[key], preview) && !Object.is(values[key], gesture.source[key]),
+            )
+            .map(([key]) => [key, gesture.source[key]]),
+        );
+        if (Object.keys(restore).length) {
+          // Restoring sizing must not let the store clear an externally changed anchor.
+          if (
+            current.type === 'text' &&
+            'textSizing' in restore &&
+            !('textResizeAnchor' in restore)
+          ) {
+            restore.textResizeAnchor = current.textResizeAnchor;
+          }
+          onUpdate(gesture.elementId, restore as Partial<CanvasElement>);
+        }
+      } else if (
+        Object.is(values[axis], gesture.owned[axis]) &&
+        Object.entries(gesture.owned).some(
+          ([key, preview]) =>
+            Object.is(values[key], preview) && !Object.is(preview, gesture.source[key]),
+        )
+      ) {
+        useEditorStore.getState().pushHistory();
       }
-      const draft = axis === 'width' ? widthDraft : heightDraft;
-      const setDraft = axis === 'width' ? setWidthDraft : setHeightDraft;
-      if (draft && draft.elementId === element.id) {
-        const trimmed = draft.text.trim();
-        if (trimmed !== '') {
-          const v = Number(trimmed);
-          if (Number.isFinite(v)) {
-            const clamped = Math.max(0.05, v / 100);
-            const current = axis === 'width' ? element.width : element.height;
-            if (Math.abs(clamped - current) > 1e-6) {
-              applyDimension(axis, v);
-            }
+    },
+    [applyDimension, element.id, onUpdate],
+  );
+
+  // اعتماد تعديل الإحداثيات أو الأبعاد الحيّ في نفس الجلسة إذا أُزيل التبويب قبل Enter/blur، مع حماية المستند الجديد.
+  useEffect(() => {
+    return () => {
+      const gesture = sizeGestureRef.current;
+      sizeGestureRef.current = null;
+      const dirtyCoordSession = coordDirtySessionRef.current;
+      coordDirtySessionRef.current = null;
+      const activeSession = getDocumentSession();
+
+      if (gesture && gesture.documentSession === activeSession) {
+        const current = useEditorStore
+          .getState()
+          .elements.find((item) => item.id === gesture.elementId);
+        if (current && current.type === gesture.type) {
+          const values = current as unknown as Record<string, unknown>;
+          const ownedChanged =
+            Object.is(values[gesture.axis], gesture.owned[gesture.axis]) &&
+            Object.entries(gesture.owned).some(
+              ([key, preview]) =>
+                Object.is(values[key], preview) && !Object.is(preview, gesture.source[key]),
+            );
+          if (ownedChanged) {
+            useEditorStore.getState().pushHistory();
+            return;
           }
         }
-        setDraft(null);
       }
-      pushCoordHistory();
-    },
-    [
-      applyDimension,
-      element.height,
-      element.id,
-      element.width,
-      heightDraft,
-      pushCoordHistory,
-      widthDraft,
-    ],
-  );
+
+      if (dirtyCoordSession !== null && dirtyCoordSession === activeSession) {
+        useEditorStore.getState().pushHistory();
+      }
+    };
+  }, []);
 
   const handleSizeKeyDown = useCallback(
-    (axis: 'width' | 'height', e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSizeCommit(axis);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        skipCommitRef.current = true;
-        if (axis === 'width') setWidthDraft(null);
-        else setHeightDraft(null);
-        pushCoordHistory();
-        e.currentTarget.blur();
-      }
+    (axis: Axis, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== 'Enter' && e.key !== 'Escape') return;
+      e.preventDefault();
+      finishSizeGesture(axis, e.key === 'Escape');
+      e.currentTarget.blur();
     },
-    [handleSizeCommit, pushCoordHistory],
+    [finishSizeGesture],
   );
 
   const handleRotate90 = useCallback(() => {
@@ -281,7 +420,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               onChange={(e) => {
                 const v = Number(e.target.value);
                 if (e.target.value !== '' && Number.isFinite(v)) {
-                  coordDirtyRef.current = true;
+                  coordDirtySessionRef.current = getDocumentSession();
                   onUpdate(element.id, { x: Math.max(-1, Math.min(2, v / 100)) });
                 }
               }}
@@ -302,7 +441,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               onChange={(e) => {
                 const v = Number(e.target.value);
                 if (e.target.value !== '' && Number.isFinite(v)) {
-                  coordDirtyRef.current = true;
+                  coordDirtySessionRef.current = getDocumentSession();
                   onUpdate(element.id, { y: Math.max(-1, Math.min(2, v / 100)) });
                 }
               }}
@@ -322,7 +461,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               value={displayedWidth}
               onChange={(e) => handleSizeChange('width', e.target.value)}
               onKeyDown={(e) => handleSizeKeyDown('width', e)}
-              onBlur={() => handleSizeCommit('width')}
+              onFocus={() => beginSizeGesture('width')}
+              onBlur={() => finishSizeGesture('width', false)}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
@@ -345,7 +485,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               value={displayedHeight}
               onChange={(e) => handleSizeChange('height', e.target.value)}
               onKeyDown={(e) => handleSizeKeyDown('height', e)}
-              onBlur={() => handleSizeCommit('height')}
+              onFocus={() => beginSizeGesture('height')}
+              onBlur={() => finishSizeGesture('height', false)}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold disabled:cursor-not-allowed"
             />
           </div>

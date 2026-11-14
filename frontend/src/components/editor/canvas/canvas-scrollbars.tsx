@@ -218,7 +218,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`h-[20px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden ${className}`}
+      className={`h-[20px] w-full bg-ruler-surface flex items-center select-none text-muted-foreground z-20 group outline-hidden focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل العرض */}
@@ -335,7 +335,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       aria-valuemax={100}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden /* ltr-island */ ${className}`}
+      className={`w-[20px] h-full bg-ruler-surface border-l border-ruler-border flex justify-center select-none text-muted-foreground z-20 shrink-0 group outline-hidden focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary /* ltr-island */ ${className}`}
       dir="ltr"
     >
       {/* مسار التمرير الكامل بكامل الارتفاع */}
@@ -385,9 +385,9 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
             onClick={onResetPan}
             title="إعادة توسيط الكانفاس (Home)"
             aria-label="إعادة توسيط الكانفاس"
-            className="w-6 h-6 -m-0.5 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
+            className="w-full h-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-accent/70 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
           >
-            <Crosshair className="w-3 h-3" weight="regular" />
+            <Crosshair className="w-3.5 h-3.5" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" align="end" className="text-micro font-cairo">

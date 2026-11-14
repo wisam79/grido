@@ -22,7 +22,7 @@ export function ModeSwitcher({ className }: { className?: string }) {
       aria-label="وضع العمل"
       dir="rtl"
       className={cn(
-        'relative inline-flex items-center p-0.5 rounded-md bg-muted/40 dark:bg-black/20 border border-border/50 select-none',
+        'relative inline-flex items-center gap-1 p-1 rounded-lg bg-muted border border-border/70 select-none',
         className,
       )}
     >
@@ -36,21 +36,22 @@ export function ModeSwitcher({ className }: { className?: string }) {
         title="وضع الكولاج (Ctrl+Alt+1)"
         onClick={() => setMode('collage')}
         className={cn(
-          'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
+          'coarse-touch-target relative z-10 flex items-center gap-1.5 h-7 px-3 rounded-md text-xs transition-colors duration-150 cursor-pointer select-none',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           mode === 'collage'
-            ? 'text-foreground font-bold'
-            : 'text-muted-foreground hover:text-foreground',
+            ? 'text-foreground font-semibold'
+            : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 font-medium',
         )}
       >
         {mode === 'collage' && (
           <motion.span
             layoutId="workspace-mode-indicator"
-            className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+            className="absolute inset-0 bg-card border border-border/80 dark:border-white/10 rounded-md shadow-2xs -z-10"
             transition={{ duration: 0.12, ease: 'easeOut' }}
           />
         )}
         <SquaresFour
+          aria-hidden="true"
           className={cn(
             'w-3.5 h-3.5 shrink-0 transition-colors',
             mode === 'collage' ? 'text-foreground' : 'text-muted-foreground',
@@ -70,21 +71,22 @@ export function ModeSwitcher({ className }: { className?: string }) {
         title="وضع التعديل الحر (Ctrl+Alt+2)"
         onClick={() => setMode('single')}
         className={cn(
-          'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
+          'coarse-touch-target relative z-10 flex items-center gap-1.5 h-7 px-3 rounded-md text-xs transition-colors duration-150 cursor-pointer select-none',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           mode === 'single'
-            ? 'text-foreground font-bold'
-            : 'text-muted-foreground hover:text-foreground',
+            ? 'text-foreground font-semibold'
+            : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 font-medium',
         )}
       >
         {mode === 'single' && (
           <motion.span
             layoutId="workspace-mode-indicator"
-            className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+            className="absolute inset-0 bg-card border border-border/80 dark:border-white/10 rounded-md shadow-2xs -z-10"
             transition={{ duration: 0.12, ease: 'easeOut' }}
           />
         )}
         <Image
+          aria-hidden="true"
           className={cn(
             'w-3.5 h-3.5 shrink-0 transition-colors',
             mode === 'single' ? 'text-foreground' : 'text-muted-foreground',

@@ -231,7 +231,8 @@ describe('ExportDialog Component Tests', () => {
         expect(SendNotification).not.toHaveBeenCalled();
         expect(session.onOpenChange).not.toHaveBeenCalled();
         expect(SetTaskbarProgress).not.toHaveBeenCalled();
-        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.getByText('جاري إنشاء الصورة...')).toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'جاري التصدير ...' })).toBeDisabled();
       } finally {
         await act(async () => newCapture.resolve(new Blob(['new capture'])));
@@ -376,6 +377,252 @@ describe('ExportDialog Component Tests', () => {
       );
     });
   });
+
+  describe('batch result reporting', () => {
+    const startBatch = (withBleed = false) => {
+      useEditorStore.setState({
+        mode: 'collage',
+        template: null,
+        collageTemplate: null,
+        canvasWidth: 1200,
+        canvasHeight: 600,
+        collageMargin: 0,
+        collageGap: 0,
+        showBleedGuides: withBleed,
+        bleedMarginMM: 3,
+        slots: [0, 1, 2].map((index) => ({
+          id: `photo-${index}`,
+          cellIndex: index,
+          x: index / 3,
+          y: 0,
+          w: 1 / 3,
+          h: 1,
+          imageSrc: `/local-image/photo-${index}.jpg`,
+          zoom: 1,
+          dragX: 0,
+          dragY: 0,
+        })),
+        printSettings: { ...useEditorStore.getState().printSettings, dpi: 150 },
+      });
+      if (withBleed)
+        useEditorStore.setState({
+          template: {
+            id: 'custom',
+            name: 'Custom',
+            width: 1200,
+            height: 600,
+            widthMM: 203.2,
+            heightMM: 101.6,
+            dpi: 150,
+            category: 'collage',
+            background: '#fff',
+            backgroundHint: '',
+          },
+          printSettings: { ...useEditorStore.getState().printSettings, dpi: 600 },
+        });
+      const onOpenChange = vi.fn();
+      const ui = (open: boolean) => (
+        <TooltipProvider>
+          <ExportDialog open={open} onOpenChange={onOpenChange} />
+        </TooltipProvider>
+      );
+      const view = render(ui(true));
+      fireEvent.click(screen.getByRole('switch', { name: 'تصدير الصور كملفات منفصلة' }));
+      return { ...view, onOpenChange, setOpen: (open: boolean) => view.rerender(ui(open)) };
+    };
+
+    it('applies selected bleed/marks/DPI to every blob and reaches 100 only after the last save', async () => {
+      const blobs = [0, 1, 2].map((n) => new Blob([`raw-${n}`]));
+      const processed = [0, 1, 2].map((n) => new Blob([`bleed-${n}`]));
+      blobs.forEach((blob) => vi.mocked(exportSlotCanvas).mockResolvedValueOnce(blob));
+      processed.forEach((blob) => vi.mocked(applyBleedAndCropMarks).mockResolvedValueOnce(blob));
+      const lastSave = deferred<string>();
+      mockDownloadBlob
+        .mockResolvedValueOnce('success')
+        .mockResolvedValueOnce('success')
+        .mockReturnValueOnce(lastSave.promise);
+      const session = startBatch(true);
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockDownloadBlob).toHaveBeenCalledTimes(3));
+      expect(SelectExportDirectory).toHaveBeenCalledTimes(1);
+      expect(applyBleedAndCropMarks).toHaveBeenCalledTimes(3);
+      const signal = mockDownloadBlob.mock.calls[0][5];
+      blobs.forEach((blob, index) => {
+        expect(exportSlotCanvas).toHaveBeenNthCalledWith(index + 1, `photo-${index}`, 'png', 0.95);
+        expect(applyBleedAndCropMarks).toHaveBeenNthCalledWith(
+          index + 1,
+          blob,
+          3,
+          true,
+          'png',
+          0.95,
+          150,
+          signal,
+        );
+        expect(mockDownloadBlob).toHaveBeenNthCalledWith(
+          index + 1,
+          processed[index],
+          expect.stringMatching(/\.png$/),
+          'C:/mock/export',
+          150,
+          undefined,
+          signal,
+        );
+      });
+      expect(screen.getByText('جاري حفظ الصورة 3 من 3...')).toBeInTheDocument();
+      expect(screen.getByRole('progressbar', { name: 'الصور المحفوظة' })).toHaveAttribute(
+        'aria-valuenow',
+        '66',
+      );
+      expect(SetTaskbarProgress).not.toHaveBeenCalledWith(100, 'normal');
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(session.onOpenChange).not.toHaveBeenCalled();
+      await act(async () => lastSave.resolve('success'));
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'حُفظت 3 من 3 صورة؛ تعذر 0؛ أُلغي 0؛ لم تُعالج 0.',
+          expect.any(Object),
+        ),
+      );
+      expect(SetTaskbarProgress).toHaveBeenCalledWith(100, 'normal');
+      expect(SendNotification).toHaveBeenCalledTimes(1);
+      expect(session.onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it.each(['cancel', 'error'] as const)(
+      'distinguishes zero-save %s from success',
+      async (outcome) => {
+        mockDownloadBlob.mockResolvedValueOnce(outcome === 'cancel' ? '' : '"Permission denied"');
+        const session = startBatch();
+        await clickExportAndSettle();
+        const summary =
+          outcome === 'cancel'
+            ? 'حُفظت 0 من 3 صورة؛ تعذر 0؛ أُلغي 1؛ لم تُعالج 2.'
+            : 'حُفظت 0 من 3 صورة؛ تعذر 1؛ أُلغي 0؛ لم تُعالج 2.';
+        expect(outcome === 'cancel' ? toast.info : toast.error).toHaveBeenCalledWith(
+          expect.stringContaining(summary),
+        );
+        expect(screen.getByRole('status')).toHaveTextContent(summary);
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(toast.warning).not.toHaveBeenCalled();
+        expect(session.onOpenChange).not.toHaveBeenCalled();
+        expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+        expect(exportSlotCanvas).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it('reports directory cancellation without counting unattempted files as cancelled saves', async () => {
+      vi.mocked(SelectExportDirectory).mockResolvedValueOnce('');
+      const session = startBatch();
+      await clickExportAndSettle();
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'حُفظت 0 من 3 صورة؛ تعذر 0؛ أُلغي 0؛ لم تُعالج 3.',
+      );
+      expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('قبل اختيار المجلد'));
+      expect(mockDownloadBlob).not.toHaveBeenCalled();
+      expect(exportSlotCanvas).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+      expect(session.onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it.each(['bleed', 'save'] as const)(
+      'ignores stale batch %s after close/reopen',
+      async (step) => {
+        const pending = deferred<Blob>();
+        const pendingSave = deferred<string>();
+        if (step === 'bleed')
+          vi.mocked(applyBleedAndCropMarks).mockReturnValueOnce(pending.promise);
+        else mockDownloadBlob.mockReturnValueOnce(pendingSave.promise);
+        const session = startBatch(true);
+        fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+        await waitFor(() =>
+          expect(
+            step === 'bleed' ? applyBleedAndCropMarks : mockDownloadBlob,
+          ).toHaveBeenCalledTimes(1),
+        );
+        const signal = vi.mocked(applyBleedAndCropMarks).mock.calls[0][6];
+        session.setOpen(false);
+        session.setOpen(true);
+        vi.mocked(SetTaskbarProgress).mockClear();
+        vi.mocked(triggerMemoryTrim).mockClear();
+        await act(async () => {
+          if (step === 'bleed') pending.resolve(new Blob(['late']));
+          else pendingSave.resolve('success');
+        });
+        expect(signal?.aborted).toBe(true);
+        expect(exportSlotCanvas).toHaveBeenCalledTimes(1);
+        expect(mockDownloadBlob).toHaveBeenCalledTimes(step === 'bleed' ? 0 : 1);
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(toast.warning).not.toHaveBeenCalled();
+        expect(SendNotification).not.toHaveBeenCalled();
+        expect(SetTaskbarProgress).not.toHaveBeenCalled();
+        expect(triggerMemoryTrim).not.toHaveBeenCalled();
+        expect(session.onOpenChange).not.toHaveBeenCalled();
+        expect(screen.getByRole('button', { name: 'تصدير' })).toBeEnabled();
+      },
+    );
+
+    it.each(['cancel', 'refused', 'reject', 'capture-null'] as const)(
+      'reports partial %s counts and stops without retrying',
+      async (outcome) => {
+        mockDownloadBlob.mockResolvedValueOnce('success');
+        if (outcome === 'cancel') mockDownloadBlob.mockResolvedValueOnce('');
+        if (outcome === 'refused') mockDownloadBlob.mockResolvedValueOnce('"Access denied"');
+        if (outcome === 'reject') mockDownloadBlob.mockRejectedValueOnce(new Error('Disk full'));
+        if (outcome === 'capture-null')
+          vi.mocked(exportSlotCanvas)
+            .mockResolvedValueOnce(new Blob(['one']))
+            .mockResolvedValueOnce(null);
+        const session = startBatch();
+        await clickExportAndSettle();
+        const summary =
+          outcome === 'cancel'
+            ? 'حُفظت 1 من 3 صورة؛ تعذر 0؛ أُلغي 1؛ لم تُعالج 1.'
+            : 'حُفظت 1 من 3 صورة؛ تعذر 1؛ أُلغي 0؛ لم تُعالج 1.';
+        expect(screen.getByRole('status')).toHaveTextContent(summary);
+        expect(toast.warning).toHaveBeenCalledWith(
+          expect.stringContaining(summary),
+          expect.any(Object),
+        );
+        if (outcome === 'refused')
+          expect(screen.getByRole('status')).toHaveTextContent('Access denied');
+        if (outcome === 'reject') expect(screen.getByRole('status')).toHaveTextContent('Disk full');
+        expect(exportSlotCanvas).toHaveBeenCalledTimes(2);
+        expect(mockDownloadBlob).toHaveBeenCalledTimes(outcome === 'capture-null' ? 1 : 2);
+        expect(SelectExportDirectory).toHaveBeenCalledTimes(1);
+        expect(SetTaskbarProgress).not.toHaveBeenCalledWith(100, 'normal');
+        expect(toast.success).not.toHaveBeenCalled();
+        expect(SendNotification).not.toHaveBeenCalled();
+        expect(session.onOpenChange).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  it.each(['rgb', 'cmyk'] as const)(
+    'shows actual steps until the %s save resolves and does not reupload',
+    async (branch) => {
+      const save = deferred<string>();
+      mockDownloadBlob.mockReturnValueOnce(save.promise);
+      const onOpenChange = vi.fn();
+      renderWithProviders(<ExportDialog open onOpenChange={onOpenChange} />);
+      if (branch === 'cmyk') fireEvent.click(screen.getByText('CMYK'));
+      fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+      await waitFor(() => expect(mockDownloadBlob).toHaveBeenCalledTimes(1));
+      expect(
+        screen.getByText(branch === 'cmyk' ? 'جاري حفظ ملف CMYK...' : 'جاري حفظ الصورة...'),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(SetTaskbarProgress).toHaveBeenCalledWith(0, 'indeterminate');
+      expect(SetTaskbarProgress).not.toHaveBeenCalledWith(50, 'normal');
+      expect(SetTaskbarProgress).not.toHaveBeenCalledWith(100, 'normal');
+      expect(toast.success).not.toHaveBeenCalled();
+      await act(async () => save.resolve(''));
+      expect(screen.getByRole('status')).toHaveTextContent('تم إلغاء التصدير');
+      expect(toast.info).toHaveBeenCalledWith('تم إلغاء التصدير');
+      expect(onOpenChange).not.toHaveBeenCalled();
+      expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+    },
+  );
 
   describe('مدخل فضاء الألوان CMYK', () => {
     it('يعرض RGB افتراضياً مع صيغتي PNG/JPG فقط', () => {

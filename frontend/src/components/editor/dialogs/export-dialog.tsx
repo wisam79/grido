@@ -111,6 +111,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [loading, setLoading] = useState(false);
   const [batchExport, setBatchExport] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [exportStep, setExportStep] = useState('');
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [bleedMM, setBleedMM] = useState(0);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const stageRef = useStageRef();
@@ -155,6 +157,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
     setProgress(0);
+    setExportStep('');
+    setExportMessage(null);
     SetTaskbarProgress(0, 'none').catch(() => {});
     isCancelledRef.current = !open;
     return () => {
@@ -196,13 +200,19 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     const signal = abortController.signal;
     setLoading(true);
     setProgress(0);
+    setExportStep('جاري فحص الصور...');
+    setExportMessage(null);
     isCancelledRef.current = false;
     runTokenRef.current += 1;
     const myRun = runTokenRef.current;
     // توقف عند إغلاق المستخدم أو عند بدء جولة أحدث
     const shouldStop = () =>
       signal.aborted || isCancelledRef.current || runTokenRef.current !== myRun;
-    SetTaskbarProgress(0, 'normal').catch(() => {});
+    const showError = (message: string) => {
+      setExportMessage(message);
+      toast.error(message);
+    };
+    SetTaskbarProgress(0, 'indeterminate').catch(() => {});
     setTimeout(async () => {
       try {
         if (shouldStop()) return;
@@ -231,7 +241,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             failedSlotIds: loadResult.failedSlotIds,
           });
           if (preflight.blocking.length > 0) {
-            toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+            showError(`تعذر التصدير: ${preflight.blocking[0].message}`);
             return;
           }
           if (preflight.warnings.length > 0) {
@@ -257,7 +267,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             imageDimensions: dims,
           });
           if (preflight.blocking.length > 0) {
-            toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+            showError(`تعذر التصدير: ${preflight.blocking[0].message}`);
             return;
           }
           if (preflight.warnings.length > 0) {
@@ -276,9 +286,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           const widthMM = pxToMm(canvasWidth, dpi);
           const heightMM = pxToMm(canvasHeight, dpi);
 
-          setProgress(50);
-          SetTaskbarProgress(50, 'normal').catch(() => {});
-
+          setExportStep('جاري إنشاء ملف CMYK...');
           const { blob: cmykBlob, sourceFilename } = await runCmykExport({
             stage: stageRef.current,
             format: 'tiff',
@@ -298,6 +306,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
             : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
 
+          setExportStep('جاري حفظ ملف CMYK...');
           const res = await downloadBlob(
             cmykBlob,
             name,
@@ -308,17 +317,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           );
           // نتيجة الحفظ القديمة لا تملك تقدّم الجولة الجديدة ولا إشعاراتها.
           if (shouldStop()) return;
-          setProgress(100);
           SetTaskbarProgress(0, 'none').catch(() => {});
           const outcome = classifySaveResult(res);
           if (outcome === 'success') {
+            setProgress(100);
             toast.success('تم تصدير TIFF بنظام CMYK');
             SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
             onOpenChange(false);
           } else if (outcome === 'cancel') {
+            setExportMessage('تم إلغاء التصدير');
             toast.info('تم إلغاء التصدير');
           } else {
-            toast.error('فشل حفظ ملف CMYK');
+            showError(toErrorMessage(res, 'فشل حفظ ملف CMYK'));
           }
           return;
         }
@@ -333,21 +343,30 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           }
 
           // اختيار مجلد التصدير مرة واحدة لكافة الصور بدلاً من فتح نافذة لكل صورة
+          setExportStep('اختيار مجلد التصدير...');
           const targetDir = await SelectExportDirectory();
           if (shouldStop()) return;
           if (!targetDir) {
-            setLoading(false);
-            SetTaskbarProgress(0, 'none').catch(() => {});
+            const message = `تم إلغاء التصدير قبل اختيار المجلد — حُفظت 0 من ${validSlots.length} صورة؛ تعذر 0؛ أُلغي 0؛ لم تُعالج ${validSlots.length}.`;
+            setExportMessage(message);
+            toast.info(message);
             return;
           }
 
           let successCount = 0;
+          let refusedCount = 0;
+          let cancelledCount = 0;
+          let failureMessage = '';
           for (let i = 0; i < validSlots.length; i++) {
-            if (shouldStop()) break;
+            if (shouldStop()) return;
             const slot = validSlots[i];
-            const blob = await exportSlotCanvas(slot.id, format, quality / 100);
-            if (shouldStop()) break;
-            if (blob) {
+            const itemLabel = `${i + 1} من ${validSlots.length}`;
+            try {
+              setExportStep(`جاري إنشاء الصورة ${itemLabel}...`);
+              const blob = await exportSlotCanvas(slot.id, format, quality / 100);
+              if (shouldStop()) return;
+              if (!blob) throw new Error('تعذر إنشاء الصورة');
+              if (bleedMM > 0) setExportStep(`جاري تجهيز النزيف للصورة ${itemLabel}...`);
               const finalBlob =
                 bleedMM > 0
                   ? await applyBleedAndCropMarks(
@@ -360,9 +379,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                       signal,
                     )
                   : blob;
-              if (shouldStop()) break;
+              if (shouldStop()) return;
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
+              setExportStep(`جاري حفظ الصورة ${itemLabel}...`);
               const res = await downloadBlob(
                 finalBlob,
                 name,
@@ -371,45 +391,68 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 undefined,
                 signal,
               );
+              if (shouldStop()) return;
               const outcome = classifySaveResult(res);
-              if (outcome === 'success') {
-                successCount++;
-              } else if (outcome === 'cancel') {
+              if (outcome === 'cancel') {
+                cancelledCount++;
                 break;
               }
+              if (outcome === 'error') {
+                refusedCount++;
+                failureMessage = toErrorMessage(res, 'فشل حفظ الصورة');
+                break;
+              }
+              successCount++;
+              // التقدم يقيس الملفات المحفوظة، لا الالتقاط أو مرور الوقت.
+              const pct = Math.floor((successCount / validSlots.length) * 100);
+              setProgress(pct);
+              SetTaskbarProgress(pct, 'normal').catch(() => {});
+            } catch (err) {
+              if (shouldStop()) return;
+              refusedCount++;
+              failureMessage = toErrorMessage(err, 'حدث خطأ أثناء تصدير الصورة');
+              logger.error('Batch export item failed:', err);
+              break;
             }
-            if (shouldStop()) break;
-            const pct = Math.round(((i + 1) / validSlots.length) * 100);
-            setProgress(pct);
-            SetTaskbarProgress(pct, 'normal').catch(() => {});
 
-            await new Promise((r) => setTimeout(r, 60));
+            if (i + 1 < validSlots.length) {
+              await new Promise((r) => setTimeout(r, 60));
+            }
           }
 
           if (shouldStop()) return;
 
           SetTaskbarProgress(0, 'none').catch(() => {});
-          if (successCount > 0) {
-            toast.success(`تم تصدير ${successCount} صورة`, {
-              action: {
-                label: 'فتح المجلد',
-                onClick: () =>
-                  OpenFolder(targetDir).catch((err) => logger.error('فتح مجلد التصدير فشل:', err)),
-              },
-            });
+          const remaining = validSlots.length - successCount - refusedCount - cancelledCount;
+          const summary = `حُفظت ${successCount} من ${validSlots.length} صورة؛ تعذر ${refusedCount}؛ أُلغي ${cancelledCount}؛ لم تُعالج ${remaining}.`;
+          const message = failureMessage ? `${summary} ${failureMessage}` : summary;
+          setExportMessage(message);
+          const folderAction = {
+            action: {
+              label: 'فتح المجلد',
+              onClick: () =>
+                OpenFolder(targetDir).catch((err) => logger.error('فتح مجلد التصدير فشل:', err)),
+            },
+          };
+          if (successCount === validSlots.length) {
+            toast.success(message, folderAction);
             SendNotification('Grido Studio', `تم تصدير ${successCount} صورة للمجلد`, '').catch(
               () => {},
             );
             onOpenChange(false);
+          } else if (successCount > 0) {
+            toast.warning(message, folderAction);
+          } else if (cancelledCount > 0) {
+            toast.info(message);
           } else {
-            toast.error('تعذر تصدير الصور');
+            toast.error(message);
           }
         } else {
-          setProgress(50);
-          SetTaskbarProgress(50, 'normal').catch(() => {});
+          setExportStep('جاري إنشاء الصورة...');
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
           // المستخدم أغلق النافذة أثناء التصدير — لا نُظهر حوار الحفظ ولا رسائل (إصلاح Bug#9)
           if (blob && !shouldStop()) {
+            setExportStep('جاري تجهيز النزيف وعلامات القص...');
             const finalBlob = await applyBleedAndCropMarks(
               blob,
               bleedMM,
@@ -427,6 +470,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               : mode === 'collage'
                 ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
                 : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
+            setExportStep('جاري حفظ الصورة...');
             const res = await downloadBlob(
               finalBlob,
               name,
@@ -437,39 +481,40 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             );
             // المستخدم أغلق أثناء الحفظ — لا نغيّر حالة الجولة الجديدة.
             if (shouldStop()) return;
-            setProgress(100);
             SetTaskbarProgress(0, 'none').catch(() => {});
             const outcome = classifySaveResult(res);
             if (outcome === 'success') {
+              setProgress(100);
               toast.success('تم تصدير الصورة بنجاح');
               SendNotification('Grido Studio', 'تم تصدير الصورة وحفظها', '').catch(() => {});
               onOpenChange(false);
             } else if (outcome === 'cancel') {
+              setExportMessage('تم إلغاء التصدير');
               toast.info('تم إلغاء التصدير');
             } else {
-              toast.error('فشل حفظ الصورة');
+              showError(toErrorMessage(res, 'فشل حفظ الصورة'));
             }
           } else if (shouldStop()) {
             // إلغاء المستخدم — الجولة القديمة لا تملك مؤشرات الجولة الحالية.
             return;
           } else {
             SetTaskbarProgress(0, 'none').catch(() => {});
-            toast.error('تعذر إنشاء الصورة');
+            showError('تعذر إنشاء الصورة');
           }
         }
       } catch (e) {
         if (!shouldStop()) {
-          SetTaskbarProgress(100, 'error').catch(() => {});
+          SetTaskbarProgress(0, 'error').catch(() => {});
           setTimeout(() => {
             if (!shouldStop()) SetTaskbarProgress(0, 'none').catch(() => {});
           }, 2500);
           if (e instanceof CanvasTooLargeError) {
-            toast.error(
+            showError(
               `الأبعاد كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. اخفض المقاس أو DPI.`,
             );
           } else {
             logger.error('Export failed:', e);
-            toast.error(toErrorMessage(e, 'حدث خطأ أثناء التصدير'));
+            showError(toErrorMessage(e, 'حدث خطأ أثناء التصدير'));
           }
         }
       } finally {
@@ -719,14 +764,31 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
         </div>
 
-        {loading && progress > 0 && (
-          <div className="px-1 pb-2 space-y-1">
+        {loading && (
+          <div className="px-1 pb-2 space-y-1" role="status" aria-live="polite">
             <div className="flex justify-between text-xs text-muted-foreground font-medium">
-              <span>جاري التصدير ...</span>
-              <span className="font-mono font-bold text-primary">{Math.round(progress)}%</span>
+              <span>{exportStep}</span>
+              {batchExport && colorSpace === 'rgb' && mode === 'collage' && (
+                <span className="font-mono font-bold text-primary">{progress}% محفوظ</span>
+              )}
             </div>
-            <Progress value={progress} className="h-1.5" />
+            {batchExport && colorSpace === 'rgb' && mode === 'collage' && (
+              <Progress
+                value={progress}
+                aria-label="الصور المحفوظة"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-valuetext={`${progress}% من الصور محفوظة`}
+                className="h-1.5"
+              />
+            )}
           </div>
+        )}
+        {!loading && exportMessage && (
+          <p role="status" className="text-control text-foreground">
+            {exportMessage}
+          </p>
         )}
 
         <DialogFooter className="gap-2 border-t border-border/60 pt-3">

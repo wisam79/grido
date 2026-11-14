@@ -27,8 +27,14 @@ export interface ElementPropertiesProps {
   onUpdate: (id: string, patch: Partial<CanvasElement>) => void;
 }
 
-export function ElementProperties({ element, onUpdate }: ElementPropertiesProps) {
+function ElementPropertiesSession({ element, onUpdate: applyUpdate }: ElementPropertiesProps) {
   const [activeTab, setActiveTab] = useState<string>('style');
+  const onUpdate: ElementPropertiesProps['onUpdate'] = (id, patch) => {
+    const current = useEditorStore.getState().elements.find((item) => item.id === id) ?? element;
+    if (current.locked && Object.keys(patch).some((key) => key !== 'locked' && key !== 'visible'))
+      return;
+    applyUpdate(id, patch);
+  };
 
   const handleUnlock = () => {
     onUpdate(element.id, { locked: false });
@@ -42,60 +48,62 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
     : 'الألوان والتعبئة والتدرجات والصور';
 
   return (
-    <div className="space-y-2.5 font-cairo select-none">
+    <div className="space-y-3 font-cairo select-none">
       {/* تنبيه القفل — الشارات السياقية الدائمة (إظهار/قفل) في رأس اللوحة */}
       <ElementHeaderBadge element={element} onUnlock={handleUnlock} />
 
       {/* لوحة التبويبات القياسية الأربعة الموحدة لجميع العناصر (Zero Dead Tabs) */}
-      <div
-        className={cn('min-w-0', element.locked && 'pointer-events-none opacity-50 select-none')}
+      <fieldset
+        disabled={Boolean(element.locked)}
+        inert={Boolean(element.locked)}
+        aria-disabled={Boolean(element.locked)}
+        aria-label="خصائص العنصر القابلة للتعديل"
+        className={cn('min-w-0 border-0 p-0 m-0', element.locked && 'opacity-50 select-none')}
       >
         {/* Radix يفرض dir="ltr" افتراضياً على جذر Tabs فينقلب ترتيب حقول اللوحة العربية */}
-        <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* شريط تبويبات لاصق موحّد مع الكولاج (variant="tabs"): يبقى سياق التبويب ظاهراً أثناء تمرير الأقسام */}
-          <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
-            <FluentSegmentedControl<string>
-              layoutId="element-properties-tabs"
-              variant="tabs"
-              value={activeTab}
-              onChange={setActiveTab}
-              size="md"
-              idPrefix="element-properties-tabs"
-              options={[
-                {
-                  id: 'style',
-                  label: 'تنسيق',
-                  ariaLabel: 'التنسيق والقياسات',
-                  tooltip: 'التنسيق والقياسات',
-                },
-                {
-                  id: 'adjust',
-                  label: fillTabLabel,
-                  ariaLabel: isImage ? 'الألوان والضبط' : 'الألوان والتعبئة',
-                  tooltip: fillTabTooltip,
-                },
-                {
-                  id: 'effects',
-                  label: 'تأثير',
-                  ariaLabel: 'التأثيرات',
-                  tooltip: isImage ? 'التأثيرات وفلاتر الصورة' : 'التأثيرات والظلال',
-                },
-                {
-                  id: 'arrange',
-                  label: 'ترتيب',
-                  ariaLabel: 'الترتيب',
-                  tooltip: 'الترتيب — الموضع والمحاذاة والتدوير',
-                },
-              ]}
-            />
-          </div>
+        <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full gap-3">
+          {/* مبدّل سياقي مؤطّر على سطح اللوحة مباشرةً، بلا تثبيت أو بطاقة إضافية. */}
+          <FluentSegmentedControl<string>
+            layoutId="element-properties-tabs"
+            variant="panel"
+            value={activeTab}
+            onChange={setActiveTab}
+            size="md"
+            idPrefix="element-properties-tabs"
+            options={[
+              {
+                id: 'style',
+                label: 'تنسيق',
+                ariaLabel: 'التنسيق والقياسات',
+                tooltip: 'التنسيق والقياسات',
+              },
+              {
+                id: 'adjust',
+                label: fillTabLabel,
+                ariaLabel: isImage ? 'الألوان والضبط' : 'الألوان والتعبئة',
+                tooltip: fillTabTooltip,
+              },
+              {
+                id: 'effects',
+                label: 'تأثير',
+                ariaLabel: 'التأثيرات',
+                tooltip: isImage ? 'التأثيرات وفلاتر الصورة' : 'التأثيرات والظلال',
+              },
+              {
+                id: 'arrange',
+                label: 'ترتيب',
+                ariaLabel: 'الترتيب',
+                tooltip: 'الترتيب — الموضع والمحاذاة والتدوير',
+              },
+            ]}
+          />
 
           {/* 1. تبويب التنسيق (Style) */}
           <TabsContent
             value="style"
             id="element-properties-tabs-content-style"
             aria-labelledby="element-properties-tabs-trigger-style"
-            className="mt-2 space-y-0 animate-in fade-in duration-150"
+            className="mt-0 space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-100"
           >
             {element.type === 'image' && (
               <ImageStyleProperties element={element} onUpdate={onUpdate} />
@@ -121,7 +129,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="adjust"
             id="element-properties-tabs-content-adjust"
             aria-labelledby="element-properties-tabs-trigger-adjust"
-            className="mt-2 space-y-0 animate-in fade-in duration-150"
+            className="mt-0 space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-100"
           >
             {element.type === 'image' && (
               <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
@@ -147,7 +155,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="effects"
             id="element-properties-tabs-content-effects"
             aria-labelledby="element-properties-tabs-trigger-effects"
-            className="mt-2 space-y-0 animate-in fade-in duration-150"
+            className="mt-0 space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-100"
           >
             {element.type === 'text' && (
               <TextEffectsProperties
@@ -169,12 +177,21 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="arrange"
             id="element-properties-tabs-content-arrange"
             aria-labelledby="element-properties-tabs-trigger-arrange"
-            className="mt-2 space-y-0 animate-in fade-in duration-150"
+            className="mt-0 space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-100"
           >
             <ElementArrangeTab element={element} onUpdate={onUpdate} />
           </TabsContent>
         </Tabs>
-      </div>
+      </fieldset>
     </div>
+  );
+}
+
+export function ElementProperties(props: ElementPropertiesProps) {
+  return (
+    <ElementPropertiesSession
+      key={`${props.element.id}:${props.element.type}:${Boolean(props.element.locked)}`}
+      {...props}
+    />
   );
 }

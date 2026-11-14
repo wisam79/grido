@@ -128,7 +128,7 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
             >
               <SelectTrigger
                 aria-label="وزن الخط"
-                className="h-8 min-w-0 flex-1 border-border/60 bg-background px-2 text-xs font-normal text-foreground shadow-none hover:bg-accent/45"
+                className="h-8 min-w-0 flex-1 rounded-md border-border/80 bg-card px-2.5 text-xs font-medium text-foreground shadow-2xs hover:bg-accent dark:border-white/10"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -223,26 +223,34 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
 
           {/* مبرر بقاء اللون هنا رغم تبويب الألوان: تغيير اللون المصمت أكثر عملية
               على النص؛ ويظهر للتعبئة المصمتة فقط — التدرج والصورة حصراً في تبويب الألوان. */}
-          {isSolidFill && (
-            <FluentSettingRow label="اللون">
-              <ColorField
-                color={element.color || '#000000'}
-                onChange={(col) => onUpdate(element.id, { color: col })}
-                onCommit={pushHistory}
-                swatchOnly
-                ariaLabel="لون النص"
-              />
-            </FluentSettingRow>
-          )}
+          {(isSolidFill || showNumerals) && (
+            <div className="divide-y divide-border/40 rounded-lg border border-border/60 bg-muted/60 px-2.5 py-0.5">
+              {isSolidFill && (
+                <FluentSettingRow label="اللون" className="py-1.5">
+                  <ColorField
+                    color={element.color || '#000000'}
+                    onChange={(col) => onUpdate(element.id, { color: col })}
+                    onCommit={pushHistory}
+                    swatchOnly
+                    ariaLabel="لون النص"
+                  />
+                </FluentSettingRow>
+              )}
 
-          {showNumerals && (
-            <FluentSettingRow label="أرقام مشرقية" tooltip="عرض الأرقام بالصيغة ١٢٣ داخل النص">
-              <Switch
-                checked={isArabicNumerals}
-                onCheckedChange={(checked) => commit({ arabicNumerals: checked })}
-                aria-label="أرقام مشرقية"
-              />
-            </FluentSettingRow>
+              {showNumerals && (
+                <FluentSettingRow
+                  label="أرقام مشرقية"
+                  tooltip="عرض الأرقام بالصيغة ١٢٣ داخل النص"
+                  className="py-1.5"
+                >
+                  <Switch
+                    checked={isArabicNumerals}
+                    onCheckedChange={(checked) => commit({ arabicNumerals: checked })}
+                    aria-label="أرقام مشرقية"
+                  />
+                </FluentSettingRow>
+              )}
+            </div>
           )}
         </FluentSection>
 

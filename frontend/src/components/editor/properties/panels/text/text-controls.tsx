@@ -26,7 +26,7 @@ export function ToggleGroup({
       role="group"
       aria-label={label}
       className={cn(
-        'flex min-w-0 items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5',
+        'flex min-w-0 items-center gap-0.5 rounded-md border border-border/70 bg-muted p-0.5',
         className,
       )}
     >
@@ -65,8 +65,8 @@ export function ToggleItem({
         'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded-sm text-xs transition-colors duration-150 cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50',
         focusRing,
         active
-          ? 'bg-card font-bold text-primary shadow-2xs'
-          : 'font-medium text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+          ? 'border border-border/80 bg-card font-semibold text-foreground shadow-2xs dark:border-white/10'
+          : 'border border-transparent font-medium text-muted-foreground hover:bg-card/50 hover:text-foreground',
         className,
       )}
     >
@@ -117,10 +117,10 @@ export function EffectTile({
     >
       <span
         className={cn(
-          'flex h-12 w-full items-center justify-center overflow-hidden rounded-md border bg-background transition-colors duration-150',
+          'flex h-12 w-full items-center justify-center overflow-hidden rounded-md border transition-colors duration-150',
           active
-            ? 'border-primary ring-1 ring-primary/50'
-            : 'border-border/60 group-hover/tile:border-foreground/30 group-hover/tile:bg-accent/30',
+            ? 'border-border/90 bg-card text-foreground shadow-2xs ring-1 ring-foreground/15 dark:border-white/20'
+            : 'border-border/70 bg-muted/70 text-muted-foreground group-hover/tile:border-border group-hover/tile:bg-card/70 group-hover/tile:text-foreground',
         )}
         aria-hidden="true"
       >

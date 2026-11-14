@@ -61,6 +61,7 @@ export interface CollageTemplate {
       | 'iq-transactions'
       | 'passport'
       | 'visa'
+      | 'us-visa'
       | 'id'
       | 'iq-mixed'
       | 'combo-traveler';

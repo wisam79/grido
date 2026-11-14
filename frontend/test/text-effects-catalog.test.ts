@@ -186,18 +186,18 @@ describe('text effect controls', () => {
     inactive.unmount();
   });
 
-  it('broadcasts live badge and shadow changes to unlocked selection with one undo step each', () => {
+  it('applies live badge and shadow changes to single selection with one undo step each without borrowing multi-selection tabs', () => {
     const original = useEditorStore.getState();
-    const second = { ...element, id: 'effects-second', textBgRadius: TEXT_PILL_RADIUS };
+    const other = { ...element, id: 'effects-second', textBgRadius: TEXT_PILL_RADIUS };
     const locked = { ...element, id: 'effects-locked', locked: true };
     useEditorStore.setState({
       mode: 'single',
-      elements: [element, second, locked],
+      elements: [element, other, locked],
       selectedId: element.id,
-      selectedIds: [element.id, second.id, locked.id],
+      selectedIds: [element.id],
     });
     const pushHistory = vi.spyOn(useEditorStore.getState(), 'pushHistory');
-    const { unmount } = render(
+    const singleView = render(
       React.createElement(TooltipProvider, { children: React.createElement(PropertiesPanel) }),
     );
     try {
@@ -205,7 +205,7 @@ describe('text effect controls', () => {
       const x = screen.getByRole('textbox', { name: 'قيمة إزاحة X' });
       fireEvent.keyDown(x, { key: 'ArrowUp' });
       expect(useEditorStore.getState().elements.map((item) => item.shadowOffsetX)).toEqual([
-        5, 5, 4,
+        5, 4, 4,
       ]);
       expect(pushHistory).not.toHaveBeenCalled();
       fireEvent.keyUp(x, { key: 'ArrowUp' });
@@ -216,13 +216,30 @@ describe('text effect controls', () => {
       fireEvent.keyDown(width, { key: 'ArrowUp' });
       expect(
         useEditorStore.getState().elements.map((item) => (item as TextElement).textBgBorderWidth),
-      ).toEqual([1, 1, undefined]);
+      ).toEqual([1, undefined, undefined]);
       expect(pushHistory).toHaveBeenCalledTimes(1);
       fireEvent.keyUp(width, { key: 'ArrowUp' });
       expect(pushHistory).toHaveBeenCalledTimes(2);
     } finally {
-      unmount();
+      singleView.unmount();
       pushHistory.mockRestore();
+      useEditorStore.setState(original);
+    }
+
+    useEditorStore.setState({
+      mode: 'single',
+      elements: [element, other, locked],
+      selectedId: element.id,
+      selectedIds: [element.id, other.id, locked.id],
+    });
+    const multiView = render(
+      React.createElement(TooltipProvider, { children: React.createElement(PropertiesPanel) }),
+    );
+    try {
+      expect(screen.getByText('خصائص التحديد')).toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: 'التأثيرات' })).not.toBeInTheDocument();
+    } finally {
+      multiView.unmount();
       useEditorStore.setState(original);
     }
   });

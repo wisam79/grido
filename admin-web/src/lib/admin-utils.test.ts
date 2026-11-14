@@ -3,15 +3,23 @@ import {
   buildBatchCustomKey,
   buildBatchKeysCsv,
   buildCustomKey,
+  buildUserLookupMap,
   buildUsersCsv,
   computeAdminUserMetrics,
+  computeExtendedAdminBreakdown,
+  computeUserFilterCounts,
   csvCell,
   fetchAllPaged,
+  filterLicenseKeys,
+  getUserAccountState,
+  getUserDaysRemaining,
+  isUserExpired,
   parsePositiveInt,
   parseStoredLimit,
   randomKeySuffix,
   resolveAiCostUsd,
   resolveExpiresAtInput,
+  sortUsers,
 } from './admin-utils';
 
 describe('csvCell — تحصين ضد CSV Formula Injection', () => {
@@ -186,5 +194,124 @@ describe('Batch 1 P0 admin-utils — تحقق الجلسة والمفاتيح و
     expect(sampled.entPct).toBe(0);
     expect(sampled.freePct).toBe(0);
     expect(sampled.windowAiCost).toBeCloseTo(0.05, 6);
+  });
+
+  it('دوال الحالة والفرز والعدادات والتحليل الإضافي تعمل بدقة ومنطقية', () => {
+    const now = new Date('2026-06-15T00:00:00Z');
+    const users = [
+      {
+        id: 'u1',
+        name: 'أحمد',
+        email: 'a@example.com',
+        plan: 'pro',
+        status: 'active',
+        expires_at: '2026-06-25T00:00:00Z',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'u2',
+        name: 'سارة',
+        email: 's@example.com',
+        plan: 'enterprise',
+        status: 'banned',
+        expires_at: '2026-06-01T00:00:00Z',
+        created_at: '2026-02-01T00:00:00Z',
+      },
+      {
+        id: 'u3',
+        name: 'بدر',
+        email: 'b@example.com',
+        plan: 'trial',
+        status: 'active',
+        expires_at: '2026-06-10T00:00:00Z',
+        created_at: '2026-03-01T00:00:00Z',
+      },
+      {
+        id: 'u4',
+        name: 'خالد',
+        email: 'k@example.com',
+        plan: 'free',
+        status: 'active',
+        expires_at: null,
+        created_at: '2026-04-01T00:00:00Z',
+      },
+    ];
+
+    expect(isUserExpired(users[0], now)).toBe(false);
+    expect(isUserExpired(users[2], now)).toBe(true);
+    expect(getUserAccountState(users[1], now)).toBe('banned');
+    expect(getUserAccountState(users[2], now)).toBe('expired');
+    expect(getUserAccountState(users[0], now)).toBe('active');
+
+    expect(getUserDaysRemaining(users[0].expires_at, now)).toBe(10);
+    expect(getUserDaysRemaining(users[2].expires_at, now)).toBe(-5);
+    expect(getUserDaysRemaining(null, now)).toBeNull();
+
+    expect(sortUsers(users, 'newest').map((u) => u.id)).toEqual(['u4', 'u3', 'u2', 'u1']);
+    expect(sortUsers(users, 'plan').map((u) => u.id)).toEqual(['u2', 'u1', 'u3', 'u4']);
+    expect(sortUsers(users, 'expiry-asc').map((u) => u.id)).toEqual(['u2', 'u3', 'u1', 'u4']);
+
+    expect(computeUserFilterCounts(users, now)).toEqual({
+      all: 4,
+      pro: 1,
+      enterprise: 1,
+      trial: 1,
+      free: 1,
+      expired: 1,
+      banned: 1,
+    });
+
+    const lookup = buildUserLookupMap(users);
+    expect(lookup['u1']?.email).toBe('a@example.com');
+
+    const logs = [
+      { user_id: 'u1', image_bytes: 1024 * 1024, execution_seconds: 2, cost_usd: 0 },
+      { user_id: 'u1', image_bytes: 2 * 1024 * 1024, execution_seconds: 4, cost_usd: 0.02 },
+      { user_id: 'u3', image_bytes: 1024 * 1024, execution_seconds: 6, cost_usd: null },
+    ];
+    const breakdown = computeExtendedAdminBreakdown(users, logs, now);
+    expect(breakdown.trialCount).toBe(1);
+    expect(breakdown.bannedCount).toBe(1);
+    expect(breakdown.expiredCount).toBe(1); // u2 محظور فيحسب في bannedCount لا expiredCount
+    expect(breakdown.activeUsersCount).toBe(2); // u1 و u4
+    expect(breakdown.totalAiMb).toBeCloseTo(4, 5);
+    expect(breakdown.avgExecutionSeconds).toBeCloseTo(4, 5);
+    expect(breakdown.totalAiCostUsd).toBeCloseTo(0.032, 6);
+    expect(breakdown.topAiUsers[0]).toMatchObject({ userId: 'u1', runs: 2 });
+  });
+
+  it('computeAdminUserMetrics يستثني خطط pro و enterprise المنتهية بالوقت أو بالحالة', () => {
+    const now = new Date('2026-06-15T00:00:00Z');
+    const metrics = computeAdminUserMetrics(
+      [
+        { plan: 'pro', status: 'active', expires_at: '2026-07-01T00:00:00Z' },
+        { plan: 'pro', status: 'expired', expires_at: null },
+        { plan: 'enterprise', status: 'active', expires_at: '2026-06-01T00:00:00Z' },
+        { plan: 'enterprise', status: 'active', expires_at: '2026-08-01T00:00:00Z' },
+      ],
+      4,
+      [],
+      false,
+      now,
+    );
+    expect(metrics.activePro).toBe(1);
+    expect(metrics.activeEnt).toBe(1);
+    expect(metrics.estimatedMRR).toBe(15 + 49);
+  });
+
+  it('filterLicenseKeys يبحث في المفتاح ومعرف المستخدم والباقة واسم وبريد المالك مع فلتر الحالة', () => {
+    const keys = [
+      { key: 'GRIDO-PRO-1001', plan: 'pro', status: 'used', user_id: 'u1' },
+      { key: 'GRIDO-ENT-2002', plan: 'enterprise', status: 'unused', user_id: null },
+    ];
+    const lookup = {
+      u1: { name: 'أحمد المصور', email: 'ahmad@studio.test' },
+    };
+
+    expect(filterLicenseKeys(keys, 'أحمد', 'all', lookup)).toHaveLength(1);
+    expect(filterLicenseKeys(keys, 'AHMAD@STUDIO', 'all', lookup)).toHaveLength(1);
+    expect(filterLicenseKeys(keys, 'enterprise', 'unused', lookup)).toHaveLength(1);
+    expect(filterLicenseKeys(keys, 'enterprise', 'used', lookup)).toHaveLength(0);
+    expect(filterLicenseKeys(keys, '  ', 'all', lookup)).toHaveLength(2);
   });
 });

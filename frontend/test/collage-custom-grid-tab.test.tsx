@@ -239,10 +239,26 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByPlaceholderText(/اسم القالب/)).toBeInTheDocument();
     expect(screen.getByTitle('إلغاء')).toBeInTheDocument();
   });
+
+  it('isolates preset dimensions and coverage percentage in LTR and differentiates us-visa 51×51', () => {
+    const onPhotoTypeChange = vi.fn();
+    render(<CollageCustomGridTab {...defaultProps} onPhotoTypeChange={onPhotoTypeChange} />);
+
+    const dim35x45 = screen.getByText('35×45');
+    expect(dim35x45).toHaveAttribute('dir', 'ltr');
+    const dim51x51 = screen.getByText('51×51');
+    expect(dim51x51).toHaveAttribute('dir', 'ltr');
+
+    const coveragePercent = screen.getByText(/^\d+%$/);
+    expect(coveragePercent).toHaveAttribute('dir', 'ltr');
+
+    fireEvent.click(screen.getByText('فيزا'));
+    expect(onPhotoTypeChange).toHaveBeenCalledWith('us-visa');
+  });
 });
 
 describe('GeneralSettings (Paper Tab Properties)', () => {
-  it('renders canvas dimensions and paper background without a redundant workspace header', () => {
+  it('renders canvas dimensions section with unit badge and paper background without a redundant workspace header', () => {
     render(
       <TooltipProvider>
         <GeneralSettings />
@@ -250,6 +266,8 @@ describe('GeneralSettings (Paper Tab Properties)', () => {
     );
 
     expect(screen.queryByText('مساحة العمل')).not.toBeInTheDocument();
+    expect(screen.getByText('أبعاد الورقة')).toBeInTheDocument();
+    expect(screen.getByText('مم')).toBeInTheDocument();
     expect(screen.getByLabelText('المقاس: A4')).toBeInTheDocument();
     expect(screen.getByLabelText('العرض')).toBeInTheDocument();
     expect(screen.getByLabelText('الارتفاع')).toBeInTheDocument();

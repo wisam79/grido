@@ -91,8 +91,8 @@ describe('Accessibility (jest-axe)', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('FluentCapsuleButton exposes an accessible name', async () => {
-    const { container } = render(
+  it('FluentCapsuleButton exposes an accessible name and toggle state', async () => {
+    const { container, rerender } = render(
       <TooltipProvider>
         <FluentCapsuleButton
           icon={<Sparkle className="size-4 shrink-0" />}
@@ -104,7 +104,22 @@ describe('Accessibility (jest-axe)', () => {
         />
       </TooltipProvider>,
     );
+    expect(container.querySelector('button')).toHaveAttribute('aria-pressed', 'true');
     expect(await axe(container)).toHaveNoViolations();
+
+    rerender(
+      <TooltipProvider>
+        <FluentCapsuleButton
+          icon={<Sparkle className="size-4 shrink-0" />}
+          label="الخطوط الإرشادية"
+          tooltip="إظهار الخطوط الإرشادية"
+          shortcut="Ctrl+;"
+          active={false}
+          onClick={() => {}}
+        />
+      </TooltipProvider>,
+    );
+    expect(container.querySelector('button')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('FluentSliderField has no violations', async () => {

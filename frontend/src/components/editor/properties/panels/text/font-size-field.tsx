@@ -14,7 +14,7 @@ function parseSize(raw: string): number | null {
 }
 
 const stepButtonClassName =
-  'h-7 w-7 shrink-0 inline-flex items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground cursor-pointer disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+  'h-6.5 w-6.5 shrink-0 inline-flex items-center justify-center rounded-sm border border-border/70 bg-card text-muted-foreground shadow-2xs transition-colors duration-150 hover:bg-accent hover:text-foreground cursor-pointer disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10';
 
 /**
  * حقل حجم الخط: كتابة أي قيمة (6–500) + قفز بين درجات السلم.
@@ -49,7 +49,7 @@ export const FontSizeField = React.memo(function FontSizeField({
     <div
       dir="ltr"
       className={cn(
-        'flex h-8 items-center gap-0.5 rounded-md border border-border/60 bg-background p-0.5 focus-within:border-primary/60',
+        'flex h-8 items-center gap-0.5 rounded-md border border-border/70 bg-muted p-0.5 focus-within:border-ring',
         className,
       )}
     >

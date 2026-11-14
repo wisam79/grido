@@ -1,11 +1,22 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { CancellablePromise } from '@wailsio/runtime';
 import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { ProjectsDialog } from '../src/components/editor/dialogs/projects-dialog';
 import { useEditorStore } from '../src/lib/editor-store';
 import { ExportBackupToPath } from '../wailsjs/go/handlers/BackupHandler';
-import { SaveProject } from '../wailsjs/go/handlers/ProjectHandler';
+import { SaveProject, GetAllProjects } from '../wailsjs/go/handlers/ProjectHandler';
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new CancellablePromise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 vi.mock('../wailsjs/go/handlers/BackupHandler', () => ({
   // 🌊 عقد التصدير الجديد: يفتح الحوار الأصلي في Go ويبثّ الأرشيف مباشرة إلى
@@ -29,6 +40,7 @@ vi.mock('sonner', () => ({
 async function exportBackup() {
   render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
 
+  await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
   fireEvent.click(screen.getByRole('tab', { name: 'النسخ' }));
   fireEvent.click(await screen.findByRole('button', { name: 'تصدير JSON' }));
 
@@ -159,5 +171,105 @@ describe('ProjectsDialog backup export result handling', () => {
     });
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.info).not.toHaveBeenCalled();
+  });
+});
+
+describe('ProjectsDialog list states and fetch ownership', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useEditorStore.getState().reset();
+  });
+
+  const projectList = (name = 'مشروع') =>
+    [{ id: 'p1', name }] as unknown as Awaited<ReturnType<typeof GetAllProjects>>;
+
+  it('shows loading without claiming that the library is empty', async () => {
+    const request = deferred<Awaited<ReturnType<typeof GetAllProjects>>>();
+    vi.mocked(GetAllProjects).mockReturnValueOnce(request.promise);
+    render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
+    await screen.findByRole('status', { name: 'جاري تحميل المشاريع' });
+    expect(screen.queryByText('لا توجد مشاريع محفوظة')).not.toBeInTheDocument();
+    expect(screen.queryByText('لا توجد نتائج')).not.toBeInTheDocument();
+    await act(async () => request.resolve([]));
+    expect(screen.getByText('لا توجد مشاريع محفوظة')).toBeInTheDocument();
+  });
+
+  it('distinguishes a failed fetch from empty/search-empty and retries only the list', async () => {
+    vi.mocked(GetAllProjects).mockRejectedValueOnce('"تعذر الاتصال بالمكتبة"');
+    render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذر الاتصال بالمكتبة');
+    expect(screen.queryByText('لا توجد مشاريع محفوظة')).not.toBeInTheDocument();
+    expect(screen.queryByText('لا توجد نتائج')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+    await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+    expect(GetAllProjects).toHaveBeenCalledTimes(2);
+    expect(SaveProject).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('clears only the search when a populated library has no matches', async () => {
+    render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
+    await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+    const search = screen.getByRole('textbox', { name: 'بحث في المشاريع' });
+    fireEvent.change(search, { target: { value: 'غير موجود' } });
+    expect(screen.getByText('لا توجد نتائج')).toBeInTheDocument();
+    expect(screen.queryByText('لا توجد مشاريع محفوظة')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'مسح البحث' }));
+    expect(search).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'فتح المشروع مشروع' })).toBeInTheDocument();
+    expect(GetAllProjects).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a refresh error instead of exposing stale list actions', async () => {
+    render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
+    await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+    fireEvent.click(screen.getByRole('tab', { name: 'حفظ' }));
+    vi.mocked(GetAllProjects).mockRejectedValueOnce(new Error('refresh failed'));
+    fireEvent.click(screen.getByRole('tab', { name: 'المشاريع' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('refresh failed');
+    expect(screen.queryByRole('button', { name: 'فتح المشروع مشروع' })).not.toBeInTheDocument();
+  });
+
+  it.each(['resolve', 'reject'] as const)(
+    'ignores an old fetch %s/finally while a reopened session is loading',
+    async (completion) => {
+      const oldFetch = deferred<Awaited<ReturnType<typeof GetAllProjects>>>();
+      const newFetch = deferred<Awaited<ReturnType<typeof GetAllProjects>>>();
+      vi.mocked(GetAllProjects)
+        .mockReturnValueOnce(oldFetch.promise)
+        .mockReturnValueOnce(newFetch.promise);
+      const ui = (open: boolean) => (
+        <ProjectsDialog open={open} onOpenChange={vi.fn()} defaultTab="list" />
+      );
+      const view = render(ui(true));
+      await waitFor(() => expect(GetAllProjects).toHaveBeenCalledTimes(1));
+      view.rerender(ui(false));
+      view.rerender(ui(true));
+      await waitFor(() => expect(GetAllProjects).toHaveBeenCalledTimes(2));
+      await act(async () => {
+        if (completion === 'resolve') oldFetch.resolve(projectList('قديم'));
+        else oldFetch.reject(new Error('old failure'));
+      });
+      expect(screen.getByRole('status', { name: 'جاري تحميل المشاريع' })).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(toast.error).not.toHaveBeenCalled();
+      await act(async () => newFetch.resolve(projectList('جديد')));
+      expect(screen.getByRole('button', { name: 'فتح المشروع جديد' })).toBeInTheDocument();
+      expect(screen.queryByText('قديم')).not.toBeInTheDocument();
+    },
+  );
+
+  it('keeps the synchronous save guard during repeated Enter presses', async () => {
+    const save = deferred<string>();
+    vi.mocked(SaveProject).mockReturnValueOnce(save.promise as ReturnType<typeof SaveProject>);
+    render(<ProjectsDialog open onOpenChange={vi.fn()} />);
+    const name = screen.getByRole('textbox', { name: 'اسم المشروع' });
+    fireEvent.change(name, { target: { value: '  محفوظ  ' } });
+    fireEvent.keyDown(name, { key: 'Enter' });
+    fireEvent.keyDown(name, { key: 'Enter' });
+    expect(SaveProject).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(SaveProject).mock.calls[0][0]?.name).toBe('محفوظ');
+    await act(async () => save.resolve('success'));
+    expect(useEditorStore.getState().isDirty).toBe(false);
   });
 });

@@ -1,0 +1,63 @@
+---
+type: feat
+scope: ui
+related_files:
+  - admin-web/src/index.css:908
+  - admin-web/src/pages/AdminDashboard.tsx:1
+  - admin-web/src/pages/admin/components/AdminBrandMark.tsx:1
+  - admin-web/src/pages/admin/components/UserDetailsDrawer.tsx:1
+  - admin-web/src/pages/admin/components/admin-badges.tsx:1
+  - admin-web/src/pages/admin/components/Sidebar.tsx:1
+  - admin-web/src/pages/admin/components/DashboardHeader.tsx:1
+  - admin-web/src/pages/admin/components/StatsCards.tsx:1
+  - admin-web/src/pages/admin/components/UsersTable.tsx:1
+  - admin-web/src/pages/admin/components/KeysTable.tsx:1
+  - admin-web/src/pages/admin/components/UsageLogsTable.tsx:1
+  - admin-web/src/pages/admin/components/StatsBreakdown.tsx:1
+  - admin-web/src/pages/admin/components/SettingsForm.tsx:1
+  - admin-web/src/pages/admin/components/LoginForm.tsx:1
+  - admin-web/src/pages/admin/components/EditUserModal.tsx:1
+  - admin-web/src/components/common/accessible-dialog.tsx:1
+  - admin-web/src/components/common/FeedbackProvider.tsx:1
+  - admin-web/src/pages/admin/useAdminUsers.ts:1
+  - admin-web/src/pages/admin/useAdminKeys.ts:1
+  - admin-web/src/lib/admin-utils.ts:212
+  - admin-web/src/lib/admin-utils.test.ts:1
+  - admin-web/src/pages/admin/components/admin-ui-components.test.tsx:1
+  - admin-web/design.md:260
+  - frontend/src/index.css:303
+  - frontend/src/App.tsx:289
+  - frontend/src/components/editor/system/desktop-menu-bar.tsx:250
+  - frontend/src/components/editor/toolbar/toolbar.tsx:127
+  - frontend/src/components/editor/toolbar/toolbar-file-ops.tsx:243
+  - frontend/src/components/editor/toolbar/toolbar-selection-tools.tsx:129
+  - frontend/src/components/editor/toolbar/toolbar-history-tools.tsx:24
+  - frontend/src/components/editor/toolbar/toolbar-transfer-to-collage.tsx:142
+  - frontend/src/components/editor/toolbar/toolbar-image-filters.tsx:17
+  - frontend/src/components/editor/toolbar/mode-switcher.tsx:25
+  - frontend/src/components/ui/button.tsx:7
+  - frontend/src/components/editor/workspace/rail-settings-menu.tsx:89
+  - frontend/src/components/editor/panels/properties-panel.tsx:196
+  - frontend/src/components/editor/panels/custom-collage-card.tsx:314
+  - frontend/src/components/editor/panels/collage/collage-custom-grid-tab.tsx:395
+  - frontend/src/components/editor/panels/collage/collage-autofill-tab.tsx:328
+  - frontend/src/components/editor/panels/collage/collage-arrange-tab.tsx:375
+  - frontend/src/components/editor/panels/freeform/freeform-elements-tab.tsx:289
+  - frontend/src/components/editor/properties/element-properties.tsx:66
+  - frontend/src/components/editor/properties/slot-properties.tsx:507
+  - frontend/src/components/editor/properties/panels/shape-properties.tsx:84
+  - frontend/src/components/editor/properties/panels/image-properties.tsx:699
+  - frontend/src/components/ui/blocks/fluent-capsule-button.tsx:48
+  - frontend/src/components/ui/blocks/fluent-filter-chips.tsx:50
+  - frontend/src/components/ui/blocks/fluent-segmented-control.tsx:111
+  - frontend/src/components/ui/tabs.tsx:18
+  - frontend/src/features/stickers/components/sticker-properties.tsx:162
+  - frontend/src/features/stickers/components/sticker-sheet-tab.tsx:78
+  - frontend/src/components/editor/canvas/canvas-viewport-deck.tsx:159
+  - frontend/src/components/editor/canvas/canvas-scrollbars.tsx:221
+  - frontend/test/panel-shell-visual.test.tsx:193
+  - frontend/test/toolbar-height-uniformity.test.ts:111
+  - docs/features-tracker.md:3
+  - docs/testing_guide.md:5
+---
+تحسين وتطوير واجهة الإدارة (`admin-web` المسار `/admin`) بصرياً وتنظيمياً لتطابق هوية التطبيق الأساسي (Grido Studio Fluent 2 Pure Neutral Charcoal: `#141414`/`#1a1a1a`/`#202020`/`#171717`/`#2563eb` وزوايا `4/6/10px`) دون المساس بصفحة الهبوط `.landing-shell` أو عقود Supabase الخلفية: جعل الترويسات والأدوات وأشرطة التصفية رشيقة وثابتة (`h-6/h-7` وطيّ/إظهار مولّد المفاتيح) مع حصر التمرير في الجداول (`sticky thead` وفصل أعمدة عمودي عبر `border-collapse: separate` و`border-inline-end`)، إضافة شعار `AdminBrandMark`، شريط KPI تفاعلي على الشاشة الرئيسية فقط، درج تفاصيل المستخدم `UserDetailsDrawer`، ربط أسماء المستخدمين في جداول المفاتيح وسجل AI، فرز وترقيم ونسخ مفاتيح وإصلاح عرض تكلفة `$0.000` في `UsageLogsTable` عبر `resolveAiCostUsd`، بالإضافة إلى معالجة استعادة التركيز في الحوارات المتداخلة، ربط مؤشر المزامنة `lastSyncedAt` بنجاح الجلب وعزل الجلسة، خيار `trial` في تعديل المستخدم، توسيع بحث المفاتيح ليشمل المالك والباقة عبر `filterLicenseKeys`، توحيد منطق النشط والمنتهي عبر `getUserAccountState`، ومواءمة أسطح `FeedbackProvider` وحارس `extendingUserId`. كما شمل الصقل البصري النهائي للواجهة العامة للتطبيق (`frontend/src/`): إزالة التكرار المزدوج لفئات Fluent CSS ومواءمة نصف قطر وظل إشعارات Sonner (`--radius-lg` / `--fluent-shadow-16`)، إبراز حالة الفتح وعلامات `Check` النشطة في `DesktopMenuBar`، توحيد درجات الأسطح في نظام الطبقات الثلاث المعتمد (`#141414`/`#1a1a1a`/`#242424` داكن و`#eef1f6`/`#f8fafc`/`#ffffff` فاتح) عبر التوكنز ومبدّل الوضع والخصائص، ترقية شريط التنقل بين التبويبات (`FluentSegmentedControl` و`TabsList`/`TabsTrigger` وتبويبات المفتش واستوديو الملصقات) بمسار غائر وبطاقة نشطة مرتفعة محايدة مع إزالة الإطار الأزرق (`border-primary/35`) حول التبويب المفتوح مع الحفاظ على حلقة التركيز القياسية `R24/R36`، تطوير شريط الأدوات العلوي (`toolbar.tsx` و`toolbar-file-ops.tsx` و`mode-switcher.tsx` و`toolbar-history-tools.tsx` و`toolbar-transfer-to-collage.tsx` و`toolbar-selection-tools.tsx` و`toolbar-image-filters.tsx`) عبر إصلاح أولوية فئات التمرير في `button.tsx` ورفع أزرار `إدراج` و`حفظ` و`تصدير` إلى سطح البطاقة `bg-card` بحدود متزنة وظل `shadow-2xs` وفصل زر `حذف` وتوحيد تباين `hover:bg-accent`، وتطوير كبسولة أدوات العرض والزوم في الشريط السفلي (`FluentCapsuleButton` و`CanvasViewportDeck`) بإزالة الإطارات والخلفيات الزرقاء واستبدالها بمسارات غائرة (`bg-muted`) وبطاقات نشطة محايدة (`bg-card`) بحجم `w-6 h-6` وأيقونات `duotone` واضحة وفاصل قبل زر التركيز، إضافة لصقل زر تثبيت اللوحة `isPinned` وعدّادات الشبكة المخصصة وحلقات التركيز على أشرطة تمرير الكانفاس وزر الزاوية، وتطوير تصميم تبويبَي تعبئة وفرز الخانات (`CustomCollageCard` و`CollageAutofillTab` و`CollageArrangeTab`) بحاويات غائرة موحّدة لمصغّرات المصدر وخريطة النتيجة وشبكة الفرز مع مصغّرات الصور الفعلية وبطاقات إجراءات مرتفعة (`bg-card`) وشريط إجراء سفلي متماسك مع `backdrop-blur-xs`، وتطوير تبويب النصوص وتبويبات مفتش النص (`FreeformTextTab` و`TextControls` و`FontSizeField` و`FontSelector` و`TextTypeTab` و`TextColorTab` و`TextEffectsTab`) ومواءمة `frontend/test/text-effects-catalog.test.ts` مع عقد التحديد المتعدد والعنصر المفرد، وصقل رأس لوحة الخصائص (`ElementHeaderActions` و`PropertiesPanel` و`PanelShell`) عبر إزالة المربع الأزرق عن زر التثبيت `PushPin` وتجميع أزرار الإظهار والقفل والتثبيت في كبسولة غائرة موحدة مع فاصل قبل زر الطي وحفظ عقد الوصولية وحجم الخط `text-mini`.

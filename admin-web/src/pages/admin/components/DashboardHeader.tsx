@@ -2,43 +2,77 @@ import { BarChart3, Key, RefreshCw, Sliders, Users, Wand2 } from 'lucide-react';
 import type { ActiveTab } from '../types';
 
 /**
- * DashboardHeader — شريط العنوان وزر المزامنة، JSX منقول verbatim من AdminDashboard.tsx.
+ * DashboardHeader — شريط العنوان الرشيق وزر المزامنة على نمط Fluent 2.
  */
 
 interface DashboardHeaderProps {
   activeTab: ActiveTab;
   loading: boolean;
+  lastSyncedAt?: Date | null;
   onSync: () => void;
 }
 
-export function DashboardHeader({ activeTab, loading, onSync }: DashboardHeaderProps) {
+const TAB_HEADER_META: Record<ActiveTab, { title: string; Icon: typeof Users }> = {
+  users: {
+    title: 'إدارة الحسابات والمشتركين',
+    Icon: Users,
+  },
+  keys: {
+    title: 'إدارة وتوليد مفاتيح الترخيص',
+    Icon: Key,
+  },
+  usage: {
+    title: 'سجل استهلاك الذكاء الاصطناعي',
+    Icon: Wand2,
+  },
+  stats: {
+    title: 'مؤشرات الاشتراكات والإيرادات',
+    Icon: BarChart3,
+  },
+  settings: {
+    title: 'إعدادات وحصص النظام',
+    Icon: Sliders,
+  },
+};
+
+export function DashboardHeader({
+  activeTab,
+  loading,
+  lastSyncedAt = null,
+  onSync,
+}: DashboardHeaderProps) {
+  const { title, Icon } = TAB_HEADER_META[activeTab];
+
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#1E1E1E] border border-[#2C2C2C] p-5 rounded-2xl relative z-10 backdrop-blur-xl">
-      <div>
-        <h2 className="text-lg font-black font-display text-white flex items-center gap-2.5 tracking-tight">
-          {activeTab === 'users' && <Users className="w-5 h-5 text-white" />}
-          {activeTab === 'keys' && <Key className="w-5 h-5 text-white" />}
-          {activeTab === 'usage' && <Wand2 className="w-5 h-5 text-white" />}
-          {activeTab === 'stats' && <BarChart3 className="w-5 h-5 text-white" />}
-          {activeTab === 'settings' && <Sliders className="w-5 h-5 text-white" />}
-          {activeTab === 'users' && 'إدارة الحسابات والمشتركين'}
-          {activeTab === 'keys' && 'إدارة وتوليد مفاتيح الترخيص'}
-          {activeTab === 'usage' && 'سجل استهلاك الذكاء الاصطناعي'}
-          {activeTab === 'stats' && 'مؤشرات الاشتراكات والإيرادات'}
-          {activeTab === 'settings' && 'إعدادات وحصص النظام'}
-        </h2>
-        <p className="text-xs text-[#9E9E9E] mt-1 font-sans">
-          لوحة مركزية لإدارة التراخيص والمشتركين والخدمات السحابية
-        </p>
+    <div className="shrink-0 bg-[#1a1a1a] border border-[#333333]/75 rounded-[6px] px-3.5 py-2 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-6 h-6 rounded-sm bg-[#2563eb]/15 border border-[#3b82f6]/30 text-[#60a5fa] flex items-center justify-center shrink-0">
+          <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+        </div>
+        <h1 className="text-sm font-semibold text-[#f5f5f5] tracking-tight truncate">
+          {title}
+        </h1>
       </div>
 
-      <div className="flex items-center gap-2 self-end sm:self-auto">
+      <div className="flex items-center gap-2 shrink-0">
+        {lastSyncedAt && (
+          <span className="hidden sm:inline-flex items-center h-7 px-2 rounded-sm bg-[#171717] border border-[#333333]/75 text-[11px] font-mono tabular-nums text-[#a9afaf]">
+            {lastSyncedAt.toLocaleTimeString('ar-SA', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        )}
         <button
+          type="button"
           onClick={onSync}
           disabled={loading}
-          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium border border-[#2C2C2C] flex items-center gap-2 cursor-pointer transition-colors"
+          className="admin-btn-secondary h-7 px-2.5 text-[11px] font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-3 h-3 text-[#a9afaf] ${loading ? 'animate-spin' : ''}`}
+            aria-hidden="true"
+          />
           <span>تحديث البيانات</span>
         </button>
       </div>

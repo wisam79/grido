@@ -26,11 +26,12 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
   label,
   tooltip,
   shortcut,
-  active = false,
+  active,
   onClick,
   testId,
   className,
 }: FluentCapsuleButtonProps) {
+  const isToggle = active !== undefined;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -39,13 +40,13 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           onClick={onClick}
           data-testid={testId}
           aria-label={label}
+          aria-pressed={isToggle ? active : undefined}
           className={cn(
-            'w-7 h-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+            'coarse-touch-target relative w-6 h-6 flex items-center justify-center rounded-sm transition-colors duration-150 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-            // عند التفعيل نعتمد على تعبئة الأيقونة (Fill) بدون تعبئة المربع لتفادي الازدواجية البصرية
             active
-              ? 'text-foreground hover:bg-muted/50 border border-transparent'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent',
+              ? 'bg-card text-foreground border border-border/80 dark:border-white/10 shadow-2xs hover:bg-accent'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 border border-transparent',
             className,
           )}
         >

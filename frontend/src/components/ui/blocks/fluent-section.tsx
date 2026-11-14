@@ -36,6 +36,7 @@ export const FluentSection = React.memo(
     },
     ref,
   ) {
+    const headingId = React.useId();
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
     const isControlled = controlledOpen !== undefined;
     const isOpen = isControlled ? controlledOpen : uncontrolledOpen;
@@ -49,100 +50,101 @@ export const FluentSection = React.memo(
       onOpenChange?.(next);
     };
 
+    const heading = (
+      <>
+        {collapsible && (
+          <span
+            aria-hidden="true"
+            title={isOpen ? 'طي القسم' : 'توسيع القسم'}
+            className="size-4 flex items-center justify-center shrink-0 text-muted-foreground"
+          >
+            <CaretDown
+              weight="bold"
+              className={cn(
+                'size-3.5 shrink-0 transition-transform duration-150 ease-out motion-reduce:transition-none',
+                !isOpen && '-rotate-90 rtl:rotate-90',
+              )}
+            />
+          </span>
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span
+              id={`${headingId}-title`}
+              className={cn(
+                'min-w-0 text-control font-semibold break-words [overflow-wrap:anywhere] transition-colors duration-150 motion-reduce:transition-none',
+                isOpen
+                  ? 'text-foreground'
+                  : 'text-foreground/90 group-hover/sec-header:text-foreground',
+              )}
+            >
+              {title}
+            </span>
+            {badge != null && (
+              <span id={`${headingId}-badge`} className="shrink-0">
+                {badge}
+              </span>
+            )}
+          </span>
+          {subtitle && (
+            <span
+              id={`${headingId}-subtitle`}
+              className="block text-mini text-muted-foreground mt-0.5 leading-4 break-words [overflow-wrap:anywhere]"
+            >
+              {subtitle}
+            </span>
+          )}
+        </span>
+      </>
+    );
+
     return (
       <div
         ref={ref}
         className={cn(
-          'border-b border-border/40 py-2.5 first:pt-0 last:border-b-0 last:pb-0 transition-colors duration-150',
+          'border-b border-border/40 py-3 first:pt-0 last:border-b-0 last:pb-0 transition-colors duration-150 motion-reduce:transition-none',
           !isOpen && 'opacity-90',
           className,
         )}
         {...props}
       >
-        {/* Section Header */}
         <div
-          onClick={collapsible ? handleToggle : undefined}
-          onKeyDown={
-            collapsible
-              ? (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleToggle();
-                  }
-                }
-              : undefined
-          }
-          role={collapsible ? 'button' : undefined}
-          tabIndex={collapsible ? 0 : undefined}
-          aria-expanded={collapsible ? isOpen : undefined}
+          data-slot="ux-section-header"
           className={cn(
-            'flex items-center justify-between gap-2 select-none min-h-6',
-            isOpen ? 'mb-2' : 'mb-0',
-            collapsible &&
-              'cursor-pointer group/sec-header rounded-sm -mx-1 px-1 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-accent/50',
+            'flex items-center justify-between gap-3 select-none min-h-7',
+            isOpen ? 'mb-3' : 'mb-0',
             headerClassName,
           )}
         >
-          <div className="flex items-center gap-1.5 min-w-0">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'text-xs font-semibold truncate transition-colors duration-150',
-                    isOpen
-                      ? 'text-foreground'
-                      : 'text-foreground/90 group-hover/sec-header:text-foreground',
-                  )}
-                >
-                  {title}
-                </span>
-                {badge}
-              </div>
-              {subtitle && (
-                // بلا `truncate`: وصف القسم نصّي قصير ولا يجوز بتره (كان يقتطع
-                // مثل «الحد الأقصى 6×5 صور (30)» في لوح بعرض ~296px)
-                <p className="text-micro text-muted-foreground mt-0.5 leading-tight">{subtitle}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="shrink-0 flex items-center gap-1.5">
-            {action && (
-              <div
-                className="no-print"
-                role="presentation"
-                onClick={(e) => {
-                  if (collapsible) e.stopPropagation();
-                }}
-              >
-                {action}
-              </div>
-            )}
-            {collapsible && (
-              <div
-                title={isOpen ? 'طي القسم' : 'توسيع القسم'}
-                className={cn(
-                  'w-5 h-5 rounded-md flex items-center justify-center transition-colors duration-150 shrink-0',
-                  isOpen
-                    ? 'text-muted-foreground'
-                    : 'text-muted-foreground/65 group-hover/sec-header:text-foreground',
-                )}
-              >
-                <CaretDown
-                  weight="bold"
-                  className={cn(
-                    'size-3.5 shrink-0 transition-transform duration-150 ease-out',
-                    !isOpen && '-rotate-90 rtl:rotate-90',
-                  )}
-                />
-              </div>
-            )}
-          </div>
+          {collapsible ? (
+            <button
+              type="button"
+              onClick={handleToggle}
+              aria-expanded={isOpen}
+              aria-labelledby={[
+                `${headingId}-title`,
+                badge != null && `${headingId}-badge`,
+                subtitle && `${headingId}-subtitle`,
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              className="flex flex-1 min-w-0 min-h-7 coarse-touch-target items-center gap-2 py-1 text-start cursor-pointer group/sec-header rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-accent/50 transition-colors duration-150 motion-reduce:transition-none"
+            >
+              {heading}
+            </button>
+          ) : (
+            <div className="flex flex-1 min-w-0 items-center gap-2 text-start">{heading}</div>
+          )}
+          {action && <div className="shrink-0 no-print">{action}</div>}
         </div>
 
-        {/* Section Body Content — فوري وخفيف وأنيق بنمط وتلاشٍ رشيق */}
         {isOpen && (
-          <div className={cn('space-y-2 animate-in fade-in duration-100', contentClassName)}>
+          <div
+            className={cn(
+              'space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-100',
+              contentClassName,
+            )}
+          >
             {children}
           </div>
         )}

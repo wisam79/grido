@@ -44,6 +44,12 @@
 
 ---
 
+## متابعة تطوير UX — 2026-11-13
+
+**الحالة الحالية:** تنفيذ جزئي سلوكي وبصري محدود، لا اكتمال للخطة أو قبول AA. راجع المنسّق بصرياً dark1280/1024/1600 وlight1600 إضافةً إلى لقطتي `final light` (بعد تقوية `panelheader`) و`collage light` (تقرير 25): لا clipping ظاهر، 1024 drawer مخفي/canvas جيد، 1600 متوازن، toolbar wide labels وطباعة primary وcompact بلا overlap. فحوص `frontend` و`admin-web` الخفيفة و`docsstrict` (**174/32/67/6**) **PASS** بعد إصلاحات التشخيص ومواءمة عقد `panel-shell.tsx` (`min-h-12`). onboarding/SaveRecovery/print والقياس وCI/E2E/build معلّقة.
+
+تطوير جزئي في شجرة العمل: مفتش تحديد مختلط بأهلية typed وتحكم مقفل inert، overflow لشريط الأدوات مع كشف التركيز، مفضلة محلية للمكتبات وربط loading/error/retry/customize، وتحسين أسماء/تركيز وإلغاء حوارات الإدارة وحالات الهاتف. **ليس تنفيذ الخطة كاملة أو قبولاً بصرياً**؛ onboarding الكامل وSaveRecovery/تغييرات print وبقية الرحلات والقياسات معلّقة. أدلة keyboard/DOM الإدارة والاختبارات المستهدفة في [تقرير25 المؤقت](docs/reviews/25-ux-development-acceptance-2026-11-13.md)، والحدود الحية في [الخطة](docs/plans/2026-11-13-comprehensive-ux-development-plan.md).
+
 ## 📋 المتطلبات
 
 | الأداة | الإصدار |
@@ -110,6 +116,8 @@ wails3 task build
 يُبنى التطبيق ويُصدَّر كإصدار آلياً عند إضافة Tag بصيغة `v*`.
 خط الفحص (`ci.yml`): بوابة التوثيق إلزامية دائماً، والوظائف الثقيلة (الواجهة/Go/E2E/ويندوز/WebKit) تعمل فقط عند تغيّر مدخلاتها عبر فلترة المسارات — والصلاحيات للقراءة فقط افتراضياً (`contents: read`) مع مهلات صريحة لكل وظيفة. التحديثات الأمنية للدوال والحزم شهرية عبر Dependabot.
 
+متابعة 2026-11-13: أضيف admin UX smoke على Vite مستقل وfixtures/APIs معترضة، مع حفظ `admin-ux-smoke-evidence` (playwright-report/test-results لمدة7 أيام)، واستبعاد `e2e/**` من admin Vitest. اعتماد `@playwright/test` في admin مثبّت1.61.1، ومواصفات UX الجديدة frontend/admin **مكتوبة فقط ولم تُشغّل**. لا تغيير بناء Wails/NSIS أو شهادة قبول من هذه الإضافة؛ تشغيل CI الكامل ينتظر إذن push المستخدم. لا build/E2E محلي في جلسة التوثيق.
+
 > 🗂️ **سلامة بيانات الإزالة:** يحتفظ uninstall الافتراضي ببيانات Grido داخل AppData (المشاريع والقوالب والحفظ التلقائي والوسائط) لتمكين إعادة التثبيت دون فقدان العمل، ويحذف ملفات البرنامج والاختصارات والارتباطات فقط. وعند ترحيل نسخة قديمة، ينقل المثبت البيانات مؤقتاً إلى مجلد migration backup قبل تشغيل uninstaller القديم ثم يعيدها؛ أي فشل يوقف الترقية بدل المخاطرة بالحذف. حذف بيانات المستخدم إجراء صريح منفصل، وليس جزءاً من الإزالة الصامتة.
 
 المتغيرات المطلوبة في **Repository Secrets**:
@@ -146,8 +154,8 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (164 ملف اختبار — الأرقام المرجعية في docs/DOCUMENTATION_MAP.md)
-│   └── e2e/                   # اختبارات Playwright (31 ملف مواصفة)
+│   ├── test/                  # اختبارات Vitest (174 ملفاً — جرد المنسّق2026-11-13 في docs/DOCUMENTATION_MAP.md)
+│   └── e2e/                   # اختبارات Playwright (32 ملف مواصفة؛ العدّ ليس نتيجة تشغيل)
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)
 ├── admin-web/                 # صفحة هبوط + لوحة تحكم (React + Netlify)

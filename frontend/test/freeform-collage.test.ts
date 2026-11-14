@@ -487,6 +487,117 @@ describe('rotateSlot — proportional bounds and finite paper ratios', () => {
   });
 });
 
+describe('locked resize — single-scale constraints and active anchors', () => {
+  it.each([
+    { handle: 'e' as const, x: 0.1, y: 0.8, w: 0.2, h: 0.1, dx: 2, dy: 0 },
+    { handle: 's' as const, x: 0.8, y: 0.1, w: 0.1, h: 0.2, dx: 0, dy: 2 },
+    { handle: 'w' as const, x: 0.1, y: 0.8, w: 0.2, h: 0.1, dx: -2, dy: 0 },
+    { handle: 'n' as const, x: 0.8, y: 0.1, w: 0.1, h: 0.2, dx: 0, dy: -2 },
+    { handle: 'nw' as const, x: 0.2, y: 0.2, w: 0.2, h: 0.4, dx: -2, dy: -2 },
+    { handle: 'se' as const, x: 0.7, y: 0.7, w: 0.2, h: 0.2, dx: 2, dy: 2 },
+  ])(
+    'keeps ratio and opposite anchors at $handle / ($x, $y)',
+    ({ handle, dx, dy, ...geometry }) => {
+      const target: FreeformSlot = { id: 'target', ...geometry, rotation: 90, lockAspect: true };
+      const other: FreeformSlot = { id: 'other', x: 0, y: 0, w: 0.04, h: 0.04 };
+      const [result, untouched] = resizeSlot(
+        [target, other],
+        target.id,
+        handle,
+        dx,
+        dy,
+        target.w / target.h,
+      );
+      expect(result.w / result.h).toBeCloseTo(target.w / target.h, 12);
+      expect(result.w).toBeGreaterThanOrEqual(MIN_SIZE - 1e-12);
+      expect(result.h).toBeGreaterThanOrEqual(MIN_SIZE - 1e-12);
+      expect(result.x).toBeGreaterThanOrEqual(-1e-12);
+      expect(result.y).toBeGreaterThanOrEqual(-1e-12);
+      expect(result.x + result.w).toBeLessThanOrEqual(1 + 1e-12);
+      expect(result.y + result.h).toBeLessThanOrEqual(1 + 1e-12);
+      expect(handle.includes('w') ? result.x + result.w : result.x).toBeCloseTo(
+        handle.includes('w') ? target.x + target.w : target.x,
+        12,
+      );
+      expect(handle.includes('n') ? result.y + result.h : result.y).toBeCloseTo(
+        handle.includes('n') ? target.y + target.h : target.y,
+        12,
+      );
+      expect(result).toMatchObject({ rotation: 90, lockAspect: true });
+      expect(untouched).toBe(other);
+    },
+  );
+
+  it.each(['e', 's', 'w', 'n', 'nw', 'se'] as const)(
+    'raises locked minima proportionally instead of distorting at %s',
+    (handle) => {
+      const target: FreeformSlot = { id: 'target', x: 0.3, y: 0.3, w: 0.2, h: 0.1 };
+      const [result] = resizeSlot(
+        [target],
+        target.id,
+        handle,
+        handle.includes('w') ? 2 : -2,
+        handle.includes('n') ? 2 : -2,
+        2,
+      );
+      expect(result.w).toBeCloseTo(0.08, 12);
+      expect(result.h).toBeCloseTo(MIN_SIZE, 12);
+    },
+  );
+
+  it.each([
+    { handle: 'e' as const, x: 0.1, y: 0.97, w: 0.2, h: 0.02 },
+    { handle: 's' as const, x: 0.97, y: 0.1, w: 0.02, h: 0.2 },
+    { handle: 'nw' as const, x: 0, y: 0, w: 0.02, h: 0.2 },
+    { handle: 'se' as const, x: 0.1, y: 0.1, w: 0.2, h: 0.2, ratio: 100 },
+  ])(
+    'leaves impossible constraints completely unchanged at $handle',
+    ({ handle, ratio, ...geometry }) => {
+      const target: FreeformSlot = { id: 'target', ...geometry };
+      const slots = [target];
+      const result = resizeSlotWithSnap(
+        slots,
+        target.id,
+        handle,
+        2,
+        2,
+        ratio ?? target.w / target.h,
+        true,
+      );
+      expect(result.slots).toBe(slots);
+      expect(result.snapLines).toEqual([]);
+      expect(result.slots[0]).toBe(target);
+    },
+  );
+
+  it.each(['e', 'w', 's', 'n'] as const)('retains active-edge obstacle limits at %s', (handle) => {
+    const target: FreeformSlot = { id: 'target', x: 0.3, y: 0.3, w: 0.2, h: 0.2 };
+    const obstacle: FreeformSlot = { id: 'obstacle', x: 0.3, y: 0.3, w: 0.2, h: 0.2 };
+    if (handle === 'e') obstacle.x = 0.6;
+    if (handle === 'w') obstacle.x = 0;
+    if (handle === 's') obstacle.y = 0.6;
+    if (handle === 'n') obstacle.y = 0;
+    const [result] = resizeSlot(
+      [target, obstacle],
+      target.id,
+      handle,
+      handle === 'w' ? -2 : 2,
+      handle === 'n' ? -2 : 2,
+      1,
+    );
+    expect(result.w).toBeCloseTo(0.3, 12);
+    expect(result.h).toBeCloseTo(0.3, 12);
+    expect(result.w / result.h).toBeCloseTo(1, 12);
+  });
+
+  it.each([NaN, Infinity, -Infinity])('ignores non-finite deltas / ratio (%s)', (invalid) => {
+    const slots: FreeformSlot[] = [{ id: 'target', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }];
+    expect(resizeSlot(slots, 'target', 'e', invalid, 0, 1)).toBe(slots);
+    expect(resizeSlot(slots, 'target', 's', 0, invalid, 1)).toBe(slots);
+    expect(resizeSlot(slots, 'target', 'e', 0.1, 0, invalid)).toBe(slots);
+  });
+});
+
 describe('Multi-Select & Batch Editing', () => {
   const threeSlots: FreeformSlot[] = [
     { id: 'a', x: 0, y: 0, w: 0.3, h: 0.3 },

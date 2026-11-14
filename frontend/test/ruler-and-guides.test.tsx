@@ -6,6 +6,10 @@ import {
   ViewportFixedRulersHeader,
   ViewportFixedRulersSidebar,
 } from '../src/components/editor/canvas/canvas-rulers';
+import {
+  CanvasVerticalScrollbar,
+  CanvasScrollbarsBottomBar,
+} from '../src/components/editor/canvas/canvas-scrollbars';
 import { HorizontalRuler, VerticalRuler } from '../src/components/editor/canvas/ruler';
 import {
   getRulerSteps,
@@ -13,6 +17,7 @@ import {
   getUnitSpan,
 } from '../src/components/editor/canvas/ruler-utils';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { CANVAS_RAIL_THICKNESS } from '../src/lib/canvas/viewport-geometry';
 
 import type { RulerUnit } from '../src/components/editor/canvas/ruler';
 
@@ -220,5 +225,72 @@ describe('Ruler & User Guides Integration Tests', () => {
       />,
     );
     expect(c2.firstChild).toBeNull();
+  });
+
+  it('matches ruler rail and corner thickness with the opposite scrollbars (20px)', () => {
+    const railClassH = `h-[${CANVAS_RAIL_THICKNESS}px]`;
+    const railClassW = `w-[${CANVAS_RAIL_THICKNESS}px]`;
+
+    const { container: hRuler } = render(
+      <TooltipProvider>
+        <ViewportFixedRulersHeader
+          showRuler={true}
+          printMode={false}
+          viewportWidth={800}
+          originX={100}
+          displayW={600}
+          widthMM={150}
+          canvasPxW={1800}
+          rulerUnit="mm"
+          onChangeRulerUnit={() => {}}
+        />
+      </TooltipProvider>,
+    );
+    const { container: vRuler } = render(
+      <ViewportFixedRulersSidebar
+        showRuler={true}
+        printMode={false}
+        viewportHeight={600}
+        originY={50}
+        displayH={500}
+        heightMM={100}
+        canvasPxH={1200}
+        rulerUnit="mm"
+      />,
+    );
+    const { container: vScroll } = render(
+      <CanvasVerticalScrollbar
+        viewportWidth={800}
+        viewportHeight={600}
+        displayW={600}
+        displayH={500}
+        stagePosY={50}
+        onScrollY={() => {}}
+      />,
+    );
+    const { container: hBar } = render(
+      <TooltipProvider>
+        <CanvasScrollbarsBottomBar
+          viewportWidth={800}
+          viewportHeight={600}
+          displayW={600}
+          displayH={500}
+          stagePosX={100}
+          onScrollX={() => {}}
+          onResetPan={() => {}}
+        />
+      </TooltipProvider>,
+    );
+
+    expect(hRuler.firstElementChild?.className).toContain(railClassH);
+    expect(hRuler.querySelector('svg')).toHaveAttribute('height', String(CANVAS_RAIL_THICKNESS));
+    expect(hRuler.firstElementChild?.lastElementChild?.className).toContain(railClassW);
+    expect(hRuler.firstElementChild?.lastElementChild?.className).toContain(railClassH);
+
+    expect(vRuler.firstElementChild?.className).toContain(railClassW);
+    expect(vRuler.querySelector('svg')).toHaveAttribute('width', String(CANVAS_RAIL_THICKNESS));
+
+    expect(hBar.firstElementChild?.className).toContain(railClassH);
+    expect(vScroll.firstElementChild?.className).toContain(railClassW);
   });
 });

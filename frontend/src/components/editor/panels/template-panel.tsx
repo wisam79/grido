@@ -119,6 +119,10 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   );
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
+  const [savedTemplatesStatus, setSavedTemplatesStatus] = useState<'loading' | 'loaded' | 'error'>(
+    'loading',
+  );
+  const templateLoadGeneration = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة (P2-14).
@@ -152,8 +156,11 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   );
 
   const loadTemplates = useCallback(async () => {
+    const generation = ++templateLoadGeneration.current;
+    setSavedTemplatesStatus('loading');
     try {
       const templates = await GetCustomTemplates();
+      if (generation !== templateLoadGeneration.current) return;
       const mapped = (templates || []).flatMap((t) => {
         // #11 — try/catch مستقل لكل عنصر لمنع قالب تالف من إسقاط القائمة كلها
         let parsedCells: NormalizedCell[] | null = null;
@@ -190,14 +197,20 @@ export const TemplatePanel = React.memo(function TemplatePanel({
         ];
       });
       setSavedTemplates(mapped);
+      setSavedTemplatesStatus('loaded');
     } catch (e) {
+      if (generation !== templateLoadGeneration.current) return;
+      setSavedTemplatesStatus('error');
       logger.error('Failed to load user templates', e);
     }
   }, []);
 
   const templatesRevision = useFreeformDialogState((state) => state.templatesRevision);
   useEffect(() => {
-    loadTemplates();
+    void loadTemplates();
+    return () => {
+      templateLoadGeneration.current += 1;
+    };
   }, [loadTemplates, templatesRevision]);
 
   const handleSaveTemplate = async (name: string, cells: NormalizedCell[]) => {
@@ -300,6 +313,8 @@ export const TemplatePanel = React.memo(function TemplatePanel({
             activeTemplateId={collageTemplate?.id}
             onSaveTemplate={handleSaveTemplate}
             savedTemplates={savedTemplates}
+            savedTemplatesStatus={savedTemplatesStatus}
+            onRetryLoad={loadTemplates}
             onDeleteTemplate={handleDeleteTemplate}
             fileInputRef={fileInputRef}
             activeTab={activeCollageTab}

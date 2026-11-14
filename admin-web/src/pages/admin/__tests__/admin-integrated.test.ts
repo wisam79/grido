@@ -11,6 +11,7 @@ import {
   buildBatchKeysCsv,
   buildCustomKey,
   buildUsersCsv,
+  getUserAccountState,
   parseStoredLimit,
 } from '../../../lib/admin-utils';
 
@@ -327,8 +328,7 @@ describe('👥 لوحة الإدارة — محرك تصفية وفرز المش
         if (statusFilter === 'free')
           return user.plan !== 'pro' && user.plan !== 'enterprise' && user.plan !== 'trial';
         if (statusFilter === 'expired') {
-          const isExpiredDate = user.expires_at && new Date(user.expires_at) <= now;
-          return user.status === 'expired' || isExpiredDate;
+          return getUserAccountState(user, now) === 'expired';
         }
         return true;
       })
@@ -388,13 +388,12 @@ describe('📊 لوحة الإدارة — الحسابات المالية وا�
     const sampleTruncated = users.length < totalUsers;
 
     const activePro = users.filter(
-      (u) =>
-        u.plan === 'pro' &&
-        u.status !== 'banned' &&
-        (!u.expires_at || new Date(u.expires_at) > NOW),
+      (u) => u.plan === 'pro' && getUserAccountState(u, NOW) === 'active',
     ).length;
 
-    const activeEnt = users.filter((u) => u.plan === 'enterprise' && u.status !== 'banned').length;
+    const activeEnt = users.filter(
+      (u) => u.plan === 'enterprise' && getUserAccountState(u, NOW) === 'active',
+    ).length;
     const estimatedMRR = activePro * 15 + activeEnt * 49;
     const windowAiCost = aiLogs.reduce((acc, curr) => acc + (curr.cost_usd || 0.012), 0);
 

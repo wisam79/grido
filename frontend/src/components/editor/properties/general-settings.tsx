@@ -11,6 +11,7 @@ import { StudioCanvasColorDeck } from './shared-controls';
 
 export function GeneralSettings() {
   const {
+    rulerUnit,
     backgroundColor,
     setBackgroundColor,
     backgroundGradientColor2,
@@ -19,6 +20,7 @@ export function GeneralSettings() {
     setBackgroundGradientAngle,
   } = useEditorStore(
     useShallow((state) => ({
+      rulerUnit: state.rulerUnit,
       backgroundColor: state.backgroundColor,
       setBackgroundColor: state.setBackgroundColor,
       backgroundGradientColor2: state.backgroundGradientColor2,
@@ -28,6 +30,8 @@ export function GeneralSettings() {
     })),
   );
 
+  const unitLabel = rulerUnit === 'px' ? 'px' : 'مم';
+  const [dimsOpen, setDimsOpen] = useState(true);
   // أداة خلفية الورقة الوحيدة في التطبيق — مفتوحة افتراضياً وبأداة مبسّطة
   // (رقعة + قيمة + قطارة + عينات).
   const [paperOpen, setPaperOpen] = useState(true);
@@ -35,9 +39,24 @@ export function GeneralSettings() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="space-y-0 font-cairo" dir="rtl">
-        <div className="border-b border-border/40 pb-3">
+        <FluentSection
+          title="أبعاد الورقة"
+          headerClassName="min-h-7"
+          collapsible
+          open={dimsOpen}
+          onOpenChange={setDimsOpen}
+          action={
+            <span
+              dir="ltr"
+              className="font-mono text-mini font-normal text-muted-foreground"
+              title={`وحدة القياس الحالية: ${unitLabel}`}
+            >
+              {unitLabel}
+            </span>
+          }
+        >
           <CanvasDimensionsPanel />
-        </div>
+        </FluentSection>
 
         <FluentSection
           title="خلفية الورقة"

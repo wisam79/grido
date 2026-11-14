@@ -29,6 +29,8 @@ interface CustomCollageCardProps {
   activeTemplateId: string | undefined;
   onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
   savedTemplates?: CollageTemplate[];
+  savedTemplatesStatus?: 'loading' | 'loaded' | 'error';
+  onRetryLoad?: () => void;
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
   activeTab?: CollageTab;
@@ -40,6 +42,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   activeTemplateId,
   onSaveTemplate,
   savedTemplates = [],
+  savedTemplatesStatus,
+  onRetryLoad,
   onDeleteTemplate,
   fileInputRef,
   activeTab: propActiveTab,
@@ -307,13 +311,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   return (
     <div className="flex min-w-0 flex-col gap-2 font-cairo" dir="rtl">
       {collageTabOptions.length > 1 && (
-        <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
+        <div className="sticky top-0 z-20 -mx-3 mb-1 border-b border-border/50 bg-sidebar/95 px-3 pb-2.5 backdrop-blur-xs">
           <FluentSegmentedControl
             layoutId={`collage-section-tabs-${activeSection.id}`}
             idPrefix={`collage-section-${activeSection.id}`}
             ariaLabel={activeSection.title}
-            variant="tabs"
-            size="md"
+            variant="panel"
+            size="sm"
             options={collageTabOptions}
             value={effectiveTab}
             onChange={(val) => handleTabChange(val as CollageTab)}
@@ -387,6 +391,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             activeTemplateId={activeTemplateId}
             onSelect={onSelect}
             savedTemplates={savedTemplates}
+            savedTemplatesStatus={savedTemplatesStatus}
+            onRetryLoad={onRetryLoad}
+            onCustomizeClick={() => setFreeformDialogOpen(true)}
             onDeleteTemplate={onDeleteTemplate}
             onImportClick={() => fileInputRef?.current?.click()}
             onExportAllClick={handleExportAllSaved}

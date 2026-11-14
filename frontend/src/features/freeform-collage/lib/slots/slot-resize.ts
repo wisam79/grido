@@ -7,6 +7,34 @@ import type { ResizeHandle } from './constants';
 import type { FreeformSlot, SnapLine } from '../../types';
 
 /**
+ * Fits a locked pair with one scale. Each axis's request, minimum and maximum
+ * must use the same units (normalized canvas coordinates or millimetres).
+ * Incompatible minima/bounds are a no-op, never two independent clamps.
+ */
+export function fitLockedDimensions(
+  width: number,
+  height: number,
+  minWidth: number,
+  minHeight: number,
+  maxWidth: number,
+  maxHeight: number,
+): { w: number; h: number } | null {
+  if (
+    ![width, height, minWidth, minHeight, maxWidth, maxHeight].every(Number.isFinite) ||
+    Math.min(width, height, minWidth, minHeight, maxWidth, maxHeight) <= 0
+  ) {
+    return null;
+  }
+  const lower = Math.max(minWidth / width, minHeight / height);
+  const upper = Math.min(maxWidth / width, maxHeight / height);
+  if (!Number.isFinite(lower) || !Number.isFinite(upper) || lower > upper) return null;
+  const scale = clamp(1, lower, upper);
+  const w = width * scale;
+  const h = height * scale;
+  return Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0 ? { w, h } : null;
+}
+
+/**
  * تحجيم الخلية بمقابض 8 اتجاهات مع قفل اختياري لنسبة الأبعاد والمحاذاة المغناطيسية
  */
 export function resizeSlotWithSnap(
@@ -21,6 +49,15 @@ export function resizeSlotWithSnap(
   const idx = slots.findIndex((s) => s.id === targetId);
   if (idx === -1) return { slots, snapLines: [] };
   const slot = slots[idx];
+  if (
+    ![slot.x, slot.y, slot.w, slot.h, dx, dy].every(Number.isFinite) ||
+    slot.x < 0 ||
+    slot.y < 0 ||
+    slot.w <= 0 ||
+    slot.h <= 0 ||
+    (aspectRatio !== undefined && (!Number.isFinite(aspectRatio) || aspectRatio <= 0))
+  )
+    return { slots, snapLines: [] };
 
   const origL = slot.x;
   const origT = slot.y;
@@ -237,62 +274,40 @@ export function resizeSlotWithSnap(
   let w = right - left;
   let h = bottom - top;
 
-  // 3. قفل نسبة الأبعاد (Aspect Ratio Lock)
-  if (aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0) {
-    const origW = origR - origL;
-    const origH = origB - origT;
-
-    if (handle.includes('e') || handle.includes('w')) {
-      const maxH = handle.includes('n') ? bottom : 1 - top;
-      const minW = Math.max(MIN_SIZE, MIN_SIZE * aspectRatio);
-      const capW = Math.max(origW, w);
-      const upperW = Math.min(capW, maxH * aspectRatio);
-
-      if (upperW >= minW) {
-        w = clamp(w, minW, upperW);
-        h = clamp(w / aspectRatio, MIN_SIZE, maxH);
-      } else {
-        w = clamp(w, MIN_SIZE, Math.max(MIN_SIZE, capW));
-        h = clamp(w / aspectRatio, MIN_SIZE, maxH);
-      }
-
-      if (handle.includes('w')) {
-        left = right - w;
-      } else {
-        right = left + w;
-      }
-      if (handle.includes('n')) {
-        top = bottom - h;
-      } else {
-        bottom = top + h;
-      }
-    } else {
-      const maxW = 1 - left;
-      const minH = Math.max(MIN_SIZE, MIN_SIZE / aspectRatio);
-      const capH = Math.max(origH, h);
-      const upperH = Math.min(capH, maxW / aspectRatio);
-
-      if (upperH >= minH) {
-        h = clamp(h, minH, upperH);
-        w = clamp(h * aspectRatio, MIN_SIZE, maxW);
-      } else {
-        h = clamp(h, MIN_SIZE, Math.max(MIN_SIZE, capH));
-        w = clamp(h * aspectRatio, MIN_SIZE, maxW);
-      }
-
-      if (handle.includes('n')) {
-        top = bottom - h;
-      } else {
-        bottom = top + h;
-      }
-      right = left + w;
-    }
+  // 3. قفل النسبة: لا نعيد قص كل محور مستقلاً بعد الملاءمة.
+  const locked = aspectRatio !== undefined;
+  if (locked) {
+    const horizontal = handle.includes('e') || handle.includes('w');
+    const vertical = handle.includes('n') || handle.includes('s');
+    const maxW = Math.min(
+      handle.includes('w') ? right : 1 - left,
+      horizontal ? Math.max(slot.w, w) : Infinity,
+    );
+    const maxH = Math.min(
+      handle.includes('n') ? bottom : 1 - top,
+      vertical ? Math.max(slot.h, h) : Infinity,
+    );
+    const fitted = fitLockedDimensions(
+      horizontal ? w : h * aspectRatio,
+      horizontal ? w / aspectRatio : h,
+      MIN_SIZE,
+      MIN_SIZE,
+      maxW,
+      maxH,
+    );
+    if (!fitted) return { slots, snapLines: [] };
+    w = fitted.w;
+    h = fitted.h;
+    if (handle.includes('w')) left = right - w;
+    else right = left + w;
+    if (handle.includes('n')) top = bottom - h;
+    else bottom = top + h;
   }
 
-  const finalX = clamp(left, 0, 1 - MIN_SIZE);
-  const finalY = clamp(top, 0, 1 - MIN_SIZE);
-  const finalW = clamp(right - finalX, MIN_SIZE, 1 - finalX);
-  const finalH = clamp(bottom - finalY, MIN_SIZE, 1 - finalY);
+  const finalX = locked ? left : clamp(left, 0, 1 - MIN_SIZE);
+  const finalY = locked ? top : clamp(top, 0, 1 - MIN_SIZE);
+  const finalW = locked ? w : clamp(right - finalX, MIN_SIZE, 1 - finalX);
+  const finalH = locked ? h : clamp(bottom - finalY, MIN_SIZE, 1 - finalY);
 
   const uniqueSnapLinesMap = new Map<string, SnapLine>();
   for (const line of snapLines) {

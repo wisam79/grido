@@ -129,7 +129,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
       data-testid="toolbar-selection-group"
       className="flex items-center gap-0.5 animate-in fade-in-0 duration-100"
     >
-      <Separator orientation="vertical" className="h-4 mx-1 bg-border/60" />
+      <Separator orientation="vertical" className="h-4 mx-1.5 bg-border/80" />
 
       <div className="fluent-command-group">
         {!isSlotSelection && (
@@ -139,7 +139,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={() => actOnSelection(duplicateElement, duplicateElements)}
               aria-label="تكرار"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+              className="coarse-touch-target h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
             >
               <Copy className="w-4 h-4" />
             </Button>
@@ -156,7 +156,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               onClick={groupSelectedElements}
               aria-label="تجميع"
               // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط)
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+              className="coarse-touch-target h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
             >
               <Link className="w-4 h-4" />
             </Button>
@@ -170,7 +170,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={ungroupSelectedElements}
               aria-label="فك التجميع"
-              className="h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-colors cursor-pointer"
+              className="coarse-touch-target h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-colors cursor-pointer"
             >
               <LinkBreak className="w-4 h-4" />
             </Button>
@@ -183,7 +183,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer gap-1"
+                className="coarse-touch-target h-8 px-2 text-foreground/80 hover:text-foreground hover:bg-accent data-[state=open]:bg-accent data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer gap-1"
                 aria-label="محاذاة"
               >
                 <AlignCenterHorizontalIcon className="w-4 h-4" />
@@ -196,21 +196,21 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             >
               <DropdownMenuItem
                 onClick={() => alignElement('left')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignLeftIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">محاذاة لليسار</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => alignElement('center')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignCenterHorizontalIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">توسيط أفقي</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => alignElement('right')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignRightIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">محاذاة لليمين</span>
@@ -218,21 +218,21 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               <DropdownMenuSeparator className="my-1" />
               <DropdownMenuItem
                 onClick={() => alignElement('top')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignTopIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">محاذاة للأعلى</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => alignElement('middle')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignCenterVerticalIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">توسيط عمودي</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => alignElement('bottom')}
-                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+                className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 px-2.5 text-foreground/90 hover:text-foreground"
               >
                 <AlignBottomIcon className="w-4 h-4 text-muted-foreground" />
                 <span className="font-semibold">محاذاة للأسفل</span>
@@ -242,13 +242,17 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
         )}
 
         {/* حذف — أيقونة محايدة في الراحة وتتحول للأحمر عند التمرير لمنع التشتت البصري */}
+        <Separator
+          orientation="vertical"
+          className="mx-1 bg-border/60 data-[orientation=vertical]:h-3.5"
+        />
         <TooltipBtn content={isSlotSelection ? 'تفريغ الصورة (Delete)' : 'حذف (Delete)'}>
           <Button
             variant="ghost"
             size="sm"
             onClick={deleteSelection}
             aria-label={isSlotSelection ? 'تفريغ الصورة' : 'حذف'}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
+            className="coarse-touch-target h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
           >
             <Trash className="w-4 h-4" />
           </Button>

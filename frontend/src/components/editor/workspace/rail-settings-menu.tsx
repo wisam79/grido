@@ -87,9 +87,9 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
               data-testid="rail-settings-menu-trigger"
               aria-label="إعدادات ومظهر التطبيق"
               className={cn(
-                'h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer relative',
+                'coarse-touch-target h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer relative',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                'text-muted-foreground hover:text-foreground hover:bg-accent/60',
+                'text-muted-foreground hover:text-foreground hover:bg-accent/60 data-[state=open]:bg-accent/80 data-[state=open]:text-foreground',
                 className,
               )}
             >

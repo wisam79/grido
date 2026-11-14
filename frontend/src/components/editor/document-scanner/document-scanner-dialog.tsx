@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,8 @@ export function DocumentScannerDialog({
   const [aspect, setAspect] = useState<DocumentAspectType>('free');
   const [filter, setFilter] = useState<ScannerFilterMode>('original');
   const [rotation, setRotation] = useState<number>(0);
+  const cornersRef = useRef(corners);
+  const cornerHelpId = useId();
 
   // 🧹 تفريغ الذاكرة الأصلية عند إغلاق أو تفكيك نافذة الماسح الضوئي
   useEffect(() => {
@@ -107,7 +109,10 @@ export function DocumentScannerDialog({
   // 🔒 مزامنة الأركان مع المستند النشط في مصفوفة المستندات فورياً عند سحب الدبابيس بالماوس أو اللمس
   const handleCornersChange = useCallback(
     (nextCorners: Point[]) => {
+      cornersRef.current = nextCorners;
       setCorners(nextCorners);
+      setAspect('free');
+      resetProcessorPreview();
       setDetectedDocs((prev) =>
         prev.map((doc, idx) =>
           idx === detection.activeDocIndex
@@ -116,7 +121,7 @@ export function DocumentScannerDialog({
         ),
       );
     },
-    [detection.activeDocIndex, setDetectedDocs],
+    [detection.activeDocIndex, setDetectedDocs, resetProcessorPreview],
   );
 
   const handleAspectChange = useCallback(
@@ -144,14 +149,16 @@ export function DocumentScannerDialog({
     imgRef,
     imgSize,
     handleCornersChange,
-    handleAspectChange,
     stableSelectDocument,
+    isDetecting || processor.isPreviewing || processor.isExporting,
   );
   const {
     containerRef,
     canvasRef,
     loupeCanvasRef,
     activeCorner,
+    selectedCorner,
+    selectCorner,
     loupePos,
     handlePointerDown,
     handlePointerMove,
@@ -166,96 +173,69 @@ export function DocumentScannerDialog({
     });
   }, [setDetectionCallbacks]);
 
-  // مراجع حية للحالة سريعة التغير — معالج الكيبورد يبقى مربوطاً مرة واحدة
-  // بدل إعادة ربط window keydown مع كل حركة دبوس (عشرات/ثانية).
-  const cornersRef = useRef(corners);
+  // مراجع حية للبيانات المستخدمة في إيماءات متتابعة.
   const activeDocIndexRef = useRef(detection.activeDocIndex);
-  const docsLengthRef = useRef(detectedDocs.length);
   useEffect(() => {
     cornersRef.current = corners;
     activeDocIndexRef.current = detection.activeDocIndex;
-    docsLengthRef.current = detectedDocs.length;
   });
 
-  // 🔒 تحكم الأسهم الدقيق بالدبابيس واختصارات التبديل بين المستندات
-  useEffect(() => {
-    if (!open || isPreviewMode) return;
+  // نطاق محلي فقط: لا يختطف الأسهم أو الأرقام من Select/Slider/Tabs بالسايدبار.
+  const handleCornerKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (
+      e.defaultPrevented ||
+      e.nativeEvent.isComposing ||
+      e.ctrlKey ||
+      e.altKey ||
+      e.metaKey ||
+      !open ||
+      isPreviewMode ||
+      isDetecting ||
+      processor.isPreviewing ||
+      processor.isExporting ||
+      activeCorner !== null
+    )
+      return;
+    const target = e.target as HTMLElement;
+    if (!target.matches('[data-scanner-corner], [data-scanner-canvas]')) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target as HTMLElement)?.isContentEditable
-      ) {
-        return;
+    if (/^[1-9]$/.test(e.key)) {
+      const index = Number(e.key) - 1;
+      if (index < detectedDocs.length) {
+        e.preventDefault();
+        e.stopPropagation();
+        stableSelectDocument(index);
       }
+      return;
+    }
 
-      // التبديل السريع بين المستندات بالأرقام (1-9)
-      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
-        const num = parseInt(e.key, 10);
-        if (!isNaN(num) && num >= 1 && num <= docsLengthRef.current) {
-          stableSelectDocument(num - 1);
-          return;
-        }
-      }
+    if (selectedCorner === null || cornersRef.current.length !== 4 || !imgSize.w || !imgSize.h)
+      return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const scaleX = rect && rect.width > 0 ? rect.width / imgSize.w : 1;
+    const scaleY = rect && rect.height > 0 ? rect.height / imgSize.h : 1;
+    const baseStep = e.shiftKey ? 10 : 2;
+    let dx = 0;
+    let dy = 0;
+    if (e.key === 'ArrowLeft') dx = -Math.max(1, Math.round(baseStep / Math.max(0.05, scaleX)));
+    else if (e.key === 'ArrowRight')
+      dx = Math.max(1, Math.round(baseStep / Math.max(0.05, scaleX)));
+    else if (e.key === 'ArrowUp') dy = -Math.max(1, Math.round(baseStep / Math.max(0.05, scaleY)));
+    else if (e.key === 'ArrowDown') dy = Math.max(1, Math.round(baseStep / Math.max(0.05, scaleY)));
+    else return;
 
-      if (activeCorner === null || cornersRef.current.length !== 4) return;
-      const baseStep = e.shiftKey ? 10 : 2;
-      const canvasRect = canvasRef.current?.getBoundingClientRect();
-      const displayScale =
-        canvasRect && canvasRect.width > 0 ? canvasRect.width / Math.max(1, imgSize.w) : 1;
-      const step = Math.max(1, Math.round(baseStep / Math.max(0.05, displayScale)));
-
-      let dx = 0;
-      let dy = 0;
-      if (e.key === 'ArrowLeft') dx = -step;
-      else if (e.key === 'ArrowRight') dx = step;
-      else if (e.key === 'ArrowUp') dy = -step;
-      else if (e.key === 'ArrowDown') dy = step;
-      else return;
-
-      e.preventDefault();
-      setCorners((prev) => {
-        const next = [...prev];
-        const cur = next[activeCorner];
-        next[activeCorner] = {
-          x: Math.max(0, Math.min(imgSize.w, cur.x + dx)),
-          y: Math.max(0, Math.min(imgSize.h, cur.y + dy)),
-        };
-        return next;
-      });
-      setDetectedDocs((prev) =>
-        prev.map((doc, idx) =>
-          idx === activeDocIndexRef.current
-            ? {
-                ...doc,
-                aspectType: 'free',
-                corners: doc.corners.map((pt, cIdx) =>
-                  cIdx === activeCorner
-                    ? {
-                        x: Math.max(0, Math.min(imgSize.w, pt.x + dx)),
-                        y: Math.max(0, Math.min(imgSize.h, pt.y + dy)),
-                      }
-                    : pt,
-                ),
-              }
-            : doc,
-        ),
-      );
-      setAspect('free');
+    e.preventDefault();
+    e.stopPropagation();
+    const point = cornersRef.current[selectedCorner];
+    const nextPoint = {
+      x: Math.max(0, Math.min(imgSize.w, point.x + dx)),
+      y: Math.max(0, Math.min(imgSize.h, point.y + dy)),
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    open,
-    isPreviewMode,
-    activeCorner,
-    imgSize,
-    stableSelectDocument,
-    setDetectedDocs,
-    canvasRef,
-  ]);
+    if (point.x === nextPoint.x && point.y === nextPoint.y) return;
+    handleCornersChange(
+      cornersRef.current.map((corner, index) => (index === selectedCorner ? nextPoint : corner)),
+    );
+  };
 
   // 🔒 تنظيف حالة التدوير/الفلتر عند الإغلاق
   useEffect(() => {
@@ -272,13 +252,9 @@ export function DocumentScannerDialog({
   const handleResetCorners = useCallback(() => {
     if (!imgSize.w || !imgSize.h) return;
     const resetPts = defaultInsetCorners(imgSize.w, imgSize.h);
-    const activeIdx = activeDocIndexRef.current;
-    setCorners(resetPts);
-    setDetectedDocs((prev) =>
-      prev.map((doc, idx) => (idx === activeIdx ? { ...doc, corners: resetPts } : doc)),
-    );
+    handleCornersChange(resetPts);
     toast.info('أُعيد ضبط الأركان');
-  }, [imgSize, setDetectedDocs]);
+  }, [imgSize, handleCornersChange]);
 
   const rotateBy = useCallback(
     (deltaDeg: number) => {
@@ -319,6 +295,13 @@ export function DocumentScannerDialog({
   );
 
   const cornersReady = corners.length === 4;
+  const cornerControlsDisabled =
+    !cornersReady ||
+    isPreviewMode ||
+    isDetecting ||
+    processor.isPreviewing ||
+    processor.isExporting ||
+    activeCorner !== null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -358,97 +341,144 @@ export function DocumentScannerDialog({
 
         {/* Main Work Area */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 min-h-0 h-full">
-          {/* Canvas Main Container */}
+          {/* نطاق التركيز للأركان منفصل عن أدوات السايدبار. */}
           <div
-            ref={containerRef as React.RefObject<HTMLDivElement>}
-            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-md overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
+            role="group"
+            aria-label="ضبط أركان المستند"
+            className="flex-1 flex flex-col gap-2 min-w-0 min-h-0"
           >
-            {/* Top Floating Status Badge — aria-live لقارئ الشاشة */}
+            {/* Canvas Main Container */}
             <div
-              className={cn(
-                'absolute top-3 inset-x-0 mx-auto w-fit pointer-events-none',
-                Z_CLASS.panel,
-              )}
+              ref={containerRef as React.RefObject<HTMLDivElement>}
+              className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-md overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
             >
+              {/* Top Floating Status Badge — aria-live لقارئ الشاشة */}
               <div
-                role="status"
-                aria-live="polite"
-                className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-fluent-8 backdrop-blur-md flex items-center gap-2"
-              >
-                {isDetecting ? (
-                  <>
-                    <ArrowClockwise
-                      size={13}
-                      weight="bold"
-                      className="text-muted-foreground shrink-0 animate-spin"
-                    />
-                    <span>{WAIT_COPY.scanningDoc}</span>
-                  </>
-                ) : isPreviewMode ? (
-                  <>
-                    <Eye size={13} weight="duotone" className="text-foreground/80 shrink-0" />
-                    <span>معاينة المستند بعد الاستعدال</span>
-                  </>
-                ) : detectedDocs.length > 1 ? (
-                  <>
-                    <FileText size={13} weight="duotone" className="text-emerald-500 shrink-0" />
-                    <span>
-                      تم تحديد {detectedDocs.length} مستندات — اضغط (1-{detectedDocs.length})
-                      للتبديل
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkle size={13} weight="fill" className="text-amber-500 shrink-0" />
-                    <span>اسحب الدبابيس للضبط</span>
-                  </>
+                className={cn(
+                  'absolute top-3 inset-x-0 mx-auto w-fit pointer-events-none',
+                  Z_CLASS.panel,
                 )}
-              </div>
-            </div>
-
-            {isPreviewMode && processor.previewSrc ? (
-              <img
-                src={processor.previewSrc}
-                alt="المستند المستعدل"
-                onError={() => toast.error('تعذر عرض المعاينة — أعد المحاولة')}
-                className="max-h-full max-w-full object-contain rounded-md shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
-              />
-            ) : (
-              <div role="application" aria-label="لوحة ضبط زوايا المستند" className="relative">
-                <canvas
-                  ref={canvasRef as React.RefObject<HTMLCanvasElement>}
-                  aria-hidden="true"
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerUp}
-                  className={cn(
-                    'touch-none rounded-md cursor-crosshair transition-opacity duration-150',
-                    activeCorner !== null && 'cursor-grabbing',
+              >
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-fluent-8 backdrop-blur-md flex items-center gap-2"
+                >
+                  {isDetecting ? (
+                    <>
+                      <ArrowClockwise
+                        size={13}
+                        weight="bold"
+                        className="text-muted-foreground shrink-0 animate-spin"
+                      />
+                      <span>{WAIT_COPY.scanningDoc}</span>
+                    </>
+                  ) : isPreviewMode ? (
+                    <>
+                      <Eye size={13} weight="duotone" className="text-foreground/80 shrink-0" />
+                      <span>معاينة المستند بعد الاستعدال</span>
+                    </>
+                  ) : detectedDocs.length > 1 ? (
+                    <>
+                      <FileText size={13} weight="duotone" className="text-emerald-500 shrink-0" />
+                      <span>تم تحديد {detectedDocs.length} مستندات</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkle size={13} weight="fill" className="text-amber-500 shrink-0" />
+                      <span>اسحب الدبابيس للضبط</span>
+                    </>
                   )}
+                </div>
+              </div>
+
+              {isPreviewMode && processor.previewSrc ? (
+                <img
+                  src={processor.previewSrc}
+                  alt="المستند المستعدل"
+                  onError={() => toast.error('تعذر عرض المعاينة — أعد المحاولة')}
+                  className="max-h-full max-w-full object-contain rounded-md shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
+                />
+              ) : (
+                <div className="relative">
+                  <canvas
+                    ref={canvasRef as React.RefObject<HTMLCanvasElement>}
+                    data-scanner-canvas=""
+                    role="img"
+                    aria-label="لوحة ضبط أركان المستند"
+                    aria-describedby={cornerHelpId}
+                    tabIndex={0}
+                    onKeyDown={handleCornerKeyDown}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className={cn(
+                      'touch-none rounded-md cursor-crosshair transition-opacity duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      activeCorner !== null && 'cursor-grabbing',
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Loupe Glass Magnifier */}
+              <div
+                className={cn(
+                  'absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20',
+                  Z_CLASS.popover,
+                  loupePos && activeCorner !== null
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-90',
+                )}
+                style={{
+                  left: loupePos ? `${loupePos.x}px` : '0px',
+                  top: loupePos ? `${loupePos.y}px` : '0px',
+                  width: '115px',
+                  height: '115px',
+                }}
+              >
+                <canvas
+                  ref={loupeCanvasRef as React.RefObject<HTMLCanvasElement>}
+                  className="w-full h-full"
                 />
               </div>
-            )}
-
-            {/* Loupe Glass Magnifier */}
-            <div
-              className={cn(
-                'absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20',
-                Z_CLASS.popover,
-                loupePos && activeCorner !== null ? 'opacity-100 scale-100' : 'opacity-0 scale-90',
-              )}
-              style={{
-                left: loupePos ? `${loupePos.x}px` : '0px',
-                top: loupePos ? `${loupePos.y}px` : '0px',
-                width: '115px',
-                height: '115px',
-              }}
-            >
-              <canvas
-                ref={loupeCanvasRef as React.RefObject<HTMLCanvasElement>}
-                className="w-full h-full"
-              />
             </div>
+            {!isPreviewMode && (
+              <div className="shrink-0 space-y-1">
+                <div
+                  className="grid grid-cols-2 lg:grid-cols-4 gap-1"
+                  role="group"
+                  aria-label="اختيار الركن"
+                >
+                  {[
+                    'الركن العلوي الأيسر',
+                    'الركن العلوي الأيمن',
+                    'الركن السفلي الأيمن',
+                    'الركن السفلي الأيسر',
+                  ].map((label, index) => (
+                    <Button
+                      key={label}
+                      type="button"
+                      size="sm"
+                      variant={selectedCorner === index ? 'secondary' : 'outline'}
+                      data-scanner-corner={index}
+                      aria-pressed={selectedCorner === index}
+                      aria-describedby={cornerHelpId}
+                      disabled={cornerControlsDisabled}
+                      onClick={() => selectCorner(index)}
+                      onKeyDown={handleCornerKeyDown}
+                      className="coarse-touch-target h-7 px-2 text-mini"
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+                <p id={cornerHelpId} className="text-mini text-muted-foreground">
+                  اختر ركناً ثم حرّكه بالأسهم؛ Shift لخطوة أكبر.
+                  {detectedDocs.length > 1 && ' الأرقام 1–9 تبدّل المستند أثناء التركيز هنا.'}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right Control Sidebar */}

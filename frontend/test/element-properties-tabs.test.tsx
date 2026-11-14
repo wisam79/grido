@@ -5,9 +5,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
 import { useEditorStore } from '../src/lib/editor-store';
 
-import type { ShapeElement, TextElement, ImageElement } from '../src/lib/editor-store';
+import type { FreeformSlot } from '../src/features/freeform-collage/types';
+import type {
+  CanvasElement,
+  ShapeElement,
+  TextElement,
+  ImageElement,
+} from '../src/lib/editor-store';
 
 describe('ElementProperties Tab Structure and Deduplication Tests', () => {
   const mockOnUpdate = vi.fn();
@@ -129,6 +136,8 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     expect(screen.getByLabelText('H')).toBeDisabled();
 
     mockOnUpdate.mockClear();
+    useEditorStore.setState({ elements: [textElement] });
+    act(() => screen.getByLabelText('W').focus());
     fireEvent.change(screen.getByLabelText('W'), { target: { value: '45' } });
     expect(mockOnUpdate).toHaveBeenCalledWith(textElement.id, {
       width: 0.45,
@@ -323,7 +332,7 @@ describe('ElementArrangeTab — focused size drafts and history', () => {
   );
 
   it.each(['W', 'H'] as const)(
-    'Escape keeps the last valid live %s update and records it once',
+    'Escape restores the starting %s field and its decorations without history',
     (label) => {
       render(<Harness />);
       const input = screen.getByRole('spinbutton', { name: label });
@@ -339,10 +348,10 @@ describe('ElementArrangeTab — focused size drafts and history', () => {
       fireEvent.keyDown(input, { key: 'Escape' });
 
       expect(input).not.toHaveFocus();
-      expect(input).toHaveValue(45);
-      expect(useEditorStore.getState().elements[0][axis]).toBe(0.45);
-      expect(history).toHaveBeenCalledTimes(1);
-      expect(useEditorStore.getState().history).toHaveLength(2);
+      expect(input).toHaveValue(label === 'W' ? 30 : 25);
+      expect(useEditorStore.getState().elements[0]).toEqual(shape);
+      expect(history).not.toHaveBeenCalled();
+      expect(useEditorStore.getState().history).toHaveLength(1);
 
       // The cancellation guard must be consumed by blur, not leak into the next edit.
       act(() => input.focus());
@@ -350,8 +359,8 @@ describe('ElementArrangeTab — focused size drafts and history', () => {
       act(() => input.blur());
       expect(input).toHaveValue(5);
       expect(useEditorStore.getState().elements[0][axis]).toBe(0.05);
-      expect(history).toHaveBeenCalledTimes(2);
-      expect(useEditorStore.getState().history).toHaveLength(3);
+      expect(history).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().history).toHaveLength(2);
     },
   );
 
@@ -389,4 +398,333 @@ describe('ElementArrangeTab — focused size drafts and history', () => {
       expect(history).not.toHaveBeenCalled();
     },
   );
+
+  it.each(['W', 'H'] as const)(
+    'Escape preserves unrelated drawing and its history for %s',
+    (label) => {
+      useEditorStore.setState({
+        elements: [
+          { ...shape, radius: 12, shadowBlur: 8 },
+          { ...shape, id: 'other' },
+        ],
+      });
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '60' } });
+      const axis = label === 'W' ? 'width' : 'height';
+      const otherAxis = label === 'W' ? 'height' : 'width';
+      act(() => {
+        useEditorStore
+          .getState()
+          .updateElement(shape.id, { x: 0.7, [otherAxis]: 0.4, opacity: 0.5 });
+        useEditorStore.getState().updateElement('other', { rotation: 80 });
+        useEditorStore.getState().pushHistory();
+      });
+      const history = useEditorStore.getState().history;
+      const index = useEditorStore.getState().historyIndex;
+      fireEvent.keyDown(input, { key: 'Escape' });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        [axis]: shape[axis],
+        [otherAxis]: 0.4,
+        x: 0.7,
+        opacity: 0.5,
+        strokeWidth: 2,
+        radius: 12,
+        shadowBlur: 8,
+      });
+      expect(useEditorStore.getState().elements[1].rotation).toBe(80);
+      expect(useEditorStore.getState().history).toBe(history);
+      expect(useEditorStore.getState().historyIndex).toBe(index);
+    },
+  );
+
+  it.each(['W', 'H'] as const)('does not overwrite externally owned %s or decorations', (label) => {
+    useEditorStore.setState({ elements: [{ ...shape, radius: 12 }] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: label });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    const axis = label === 'W' ? 'width' : 'height';
+    act(() => useEditorStore.getState().updateElement(shape.id, { [axis]: 0.8, radius: 99 }));
+    fireEvent.change(input, { target: { value: '50' } });
+    expect(useEditorStore.getState().elements[0][axis]).toBe(0.8);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().elements[0]).toMatchObject({
+      [axis]: 0.8,
+      radius: 99,
+      strokeWidth: 2,
+    });
+    expect(useEditorStore.getState().history).toHaveLength(1);
+  });
+
+  it.each(['Escape', 'Enter', 'blur'])('protects a new document with reused id on %s', (action) => {
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    act(() => {
+      useEditorStore.getState().reset();
+      useEditorStore.setState({
+        elements: [{ ...shape, width: 0.6, radius: 44 }],
+        history: [],
+        historyIndex: -1,
+      });
+      useEditorStore.getState().pushHistory();
+    });
+    const elements = useEditorStore.getState().elements;
+    const history = useEditorStore.getState().history;
+    fireEvent.change(input, { target: { value: '80' } });
+    if (action === 'blur') act(() => input.blur());
+    else fireEvent.keyDown(input, { key: action });
+    expect(useEditorStore.getState().elements).toBe(elements);
+    expect(useEditorStore.getState().history).toBe(history);
+  });
+
+  it.each(['W', 'H'] as const)('captures latest %s at focus and commits once', (label) => {
+    render(<Harness />);
+    const axis = label === 'W' ? 'width' : 'height';
+    act(() => useEditorStore.getState().updateElement(shape.id, { [axis]: 0.4, radius: 18 }));
+    const input = screen.getByRole('spinbutton', { name: label });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().elements[0]).toMatchObject({ [axis]: 0.4, radius: 18 });
+    act(() => input.focus());
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    act(() => input.blur());
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().history).toHaveLength(2);
+    act(() => useEditorStore.getState().undo());
+    expect(useEditorStore.getState().elements[0][axis]).toBe(shape[axis]);
+  });
+
+  it.each(['W', 'H'] as const)('no history when %s returns to start', (label) => {
+    useEditorStore.setState({ elements: [{ ...shape, radius: 12, shadowBlur: 8 }] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: label });
+    act(() => input.focus());
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.change(input, { target: { value: label === 'W' ? '30' : '25' } });
+    act(() => input.blur());
+    expect(useEditorStore.getState().elements[0]).toEqual({ ...shape, radius: 12, shadowBlur: 8 });
+    expect(history).not.toHaveBeenCalled();
+  });
+
+  it('preserves image source, mask and coordinates on Escape', () => {
+    const image: ImageElement = {
+      ...shape,
+      type: 'image',
+      imageSrc: 'cropped.png',
+      originalImageSrc: 'original.png',
+      maskShape: 'heart',
+      cornerRadius: 10,
+    };
+    useEditorStore.setState({ elements: [image] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().elements[0]).toEqual(image);
+  });
+
+  it('restores text sizing without overwriting external anchor or derived height', () => {
+    const text: TextElement = {
+      ...shape,
+      type: 'text',
+      text: 'نص',
+      fontSize: 24,
+      textSizing: 'auto',
+      textResizeAnchor: 'bottom-right',
+    };
+    useEditorStore.setState({ elements: [text] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    act(() =>
+      useEditorStore
+        .getState()
+        .updateElement(shape.id, { height: 0.6, textResizeAnchor: 'top-left' }),
+    );
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().elements[0]).toMatchObject({
+      width: shape.width,
+      height: 0.6,
+      textSizing: 'auto',
+      textResizeAnchor: 'top-left',
+      fontSize: 24,
+    });
+  });
+  it('Escape restores the original text anchor and sizing without history', () => {
+    const text: TextElement = {
+      ...shape,
+      type: 'text',
+      text: 'نص',
+      fontSize: 24,
+      textSizing: 'auto',
+      textResizeAnchor: 'bottom-right',
+    };
+    useEditorStore.setState({ elements: [text] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().elements[0]).toEqual(text);
+    expect(useEditorStore.getState().history).toHaveLength(1);
+  });
+
+  it('text width returning to start restores sizing and anchor without history', () => {
+    const text: TextElement = {
+      ...shape,
+      type: 'text',
+      text: 'نص',
+      fontSize: 24,
+      textSizing: 'auto',
+      textResizeAnchor: 'bottom-right',
+    };
+    useEditorStore.setState({ elements: [text] });
+    render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    fireEvent.change(input, { target: { value: '60' } });
+    fireEvent.change(input, { target: { value: '30' } });
+    act(() => input.blur());
+    expect(useEditorStore.getState().elements[0]).toEqual(text);
+    expect(history).not.toHaveBeenCalled();
+  });
+
+  it('commits a single history entry when unmounting mid-edit after a live width preview', () => {
+    const { unmount } = render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    expect(useEditorStore.getState().elements[0].width).toBe(0.6);
+    expect(useEditorStore.getState().history).toHaveLength(1);
+    unmount();
+    expect(useEditorStore.getState().history).toHaveLength(2);
+    act(() => useEditorStore.getState().undo());
+    expect(useEditorStore.getState().elements[0].width).toBe(shape.width);
+  });
+
+  it('does not push history onto a new reset document when unmounting mid-edit', () => {
+    const { unmount } = render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'W' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    act(() => {
+      useEditorStore.getState().reset();
+      useEditorStore.setState({
+        elements: [{ ...shape, width: 0.7 }],
+        history: [],
+        historyIndex: -1,
+      });
+      useEditorStore.getState().pushHistory();
+    });
+    const historyAfterReset = useEditorStore.getState().history;
+    unmount();
+    expect(useEditorStore.getState().history).toBe(historyAfterReset);
+  });
+});
+
+describe('Freeform inspector — physical locked numeric bounds', () => {
+  function Harness({ paperW, paperH }: { paperW: number; paperH: number }) {
+    const element = useEditorStore((state) => state.elements[0]);
+    const slot: FreeformSlot = {
+      id: element.id,
+      x: element.x,
+      y: element.y,
+      w: element.width,
+      h: element.height,
+      lockAspect: true,
+    };
+    return (
+      <TooltipProvider>
+        <FreeformRightInspectorPanel
+          slot={slot}
+          multiSelectedCount={1}
+          paperWidthMM={paperW}
+          paperHeightMM={paperH}
+          onUpdateSlot={(patch) => {
+            const next: Partial<CanvasElement> = {};
+            if (patch.w !== undefined) next.width = patch.w;
+            if (patch.h !== undefined) next.height = patch.h;
+            useEditorStore.getState().updateElement(element.id, next);
+          }}
+        />
+      </TooltipProvider>
+    );
+  }
+  const shape: ShapeElement = {
+    id: 'numeric',
+    type: 'shape',
+    shape: 'rect',
+    x: 0.1,
+    y: 0.1,
+    width: 0.2,
+    height: 0.3,
+    rotation: 0,
+    opacity: 1,
+    zIndex: 1,
+  };
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState({ elements: [shape] });
+  });
+  it.each([
+    { label: 'العرض', x: 0.8, y: 0.1, w: 0.15, h: 0.3, paperW: 100, paperH: 150 },
+    { label: 'الارتفاع', x: 0.1, y: 0.8, w: 0.3, h: 0.15, paperW: 150, paperH: 100 },
+    { label: 'العرض', x: 0.1, y: 0.85, w: 0.3, h: 0.1, paperW: 100, paperH: 150 },
+    { label: 'الارتفاع', x: 0.85, y: 0.1, w: 0.1, h: 0.3, paperW: 150, paperH: 100 },
+  ])(
+    'fits $label in mm without distortion at ($x, $y)',
+    ({ label, x, y, w, h, paperW, paperH }) => {
+      useEditorStore.setState({ elements: [{ ...shape, x, y, width: w, height: h }] });
+      render(<Harness paperW={paperW} paperH={paperH} />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '999' } });
+      const result = useEditorStore.getState().elements[0];
+      expect((result.width * paperW) / (result.height * paperH)).toBeCloseTo(
+        (w * paperW) / (h * paperH),
+        12,
+      );
+      expect(result.width * paperW).toBeGreaterThanOrEqual(5 - 1e-12);
+      expect(result.height * paperH).toBeGreaterThanOrEqual(5 - 1e-12);
+      expect(result.x + result.width).toBeLessThanOrEqual(1 + 1e-12);
+      expect(result.y + result.height).toBeLessThanOrEqual(1 + 1e-12);
+      expect(result).toMatchObject({ x, y, rotation: 0 });
+    },
+  );
+  it.each(['العرض', 'الارتفاع'])(
+    'raises both physical minima with a shared scale for %s',
+    (label) => {
+      render(<Harness paperW={100} paperH={150} />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '1' } });
+      const result = useEditorStore.getState().elements[0];
+      expect(result.width * 100).toBeCloseTo(5, 12);
+      expect(result.height * 150).toBeCloseTo(11.25, 12);
+      expect(result.width / result.height).toBeCloseTo(shape.width / shape.height, 12);
+    },
+  );
+  it.each(['العرض', 'الارتفاع'])('leaves impossible mm minima unchanged for %s', (label) => {
+    useEditorStore.setState({ elements: [{ ...shape, x: 0.98, width: 0.02, height: 0.2 }] });
+    render(<Harness paperW={100} paperH={150} />);
+    const elements = useEditorStore.getState().elements;
+    const history = useEditorStore.getState().history;
+    const input = screen.getByRole('spinbutton', { name: label });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '999' } });
+    expect(useEditorStore.getState().elements).toBe(elements);
+    expect(useEditorStore.getState().history).toBe(history);
+  });
 });

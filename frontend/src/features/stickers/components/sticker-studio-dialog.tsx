@@ -48,6 +48,7 @@ import type {
   StickerCategoryGroupId,
   StickerParams,
   StickerShape,
+  StickerTemplate,
 } from '../types';
 import type { StickerElementSource } from '@/lib/store/types';
 
@@ -73,6 +74,20 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   >(initialCategory);
   const [selectedShape, setSelectedShape] = useState<StickerShape | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [catalogFavoritesOnly, setCatalogFavoritesOnly] = useState(false);
+  const [catalogRestoreScrollTop, setCatalogRestoreScrollTop] = useState(0);
+  const catalogScrollTopRef = useRef(0);
+  const handleCatalogDiscoveryChange = useCallback(
+    (next: { favoritesOnly: boolean; scrollTop: number }) => {
+      catalogScrollTopRef.current = next.scrollTop;
+      setCatalogFavoritesOnly((prev) => (prev === next.favoritesOnly ? prev : next.favoritesOnly));
+    },
+    [],
+  );
+  const catalogDiscovery = useMemo(
+    () => ({ favoritesOnly: catalogFavoritesOnly, scrollTop: catalogRestoreScrollTop }),
+    [catalogFavoritesOnly, catalogRestoreScrollTop],
+  );
   const [isVdpOpen, setIsVdpOpen] = useState(false);
 
   // حارس الإلغاء: أي دالة غير متزامنة (إدراج/شيت/تصدير) لا تُنتج عنصراً ولا
@@ -178,6 +193,14 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     [],
   );
 
+  const handleSelectGalleryTemplate = useCallback(
+    (template: StickerTemplate) => {
+      setCatalogRestoreScrollTop(catalogScrollTopRef.current);
+      handleSelectTemplate(template);
+    },
+    [handleSelectTemplate],
+  );
+
   // أبعاد ورقة الطباعة الفعالة لزر «ملاءمة تلقائية» في تبويب الشيت
   // (قراءة خفيفة من المتجر عند كل render — الورق لا يتغير والحوار مفتوح عادةً)
   const sheetMm = resolveStickerSheetMm();
@@ -270,11 +293,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
               selectedCategory={selectedCategory}
               selectedShape={selectedShape}
               selectedTemplateId={selectedTemplate.id}
-              onSelectTemplate={handleSelectTemplate}
+              onSelectTemplate={handleSelectGalleryTemplate}
               onSelectCategory={handleChangeCategory}
               onSelectShape={setSelectedShape}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
+              discoveryState={catalogDiscovery}
+              onDiscoveryStateChange={handleCatalogDiscoveryChange}
             />
           </div>
         ) : (

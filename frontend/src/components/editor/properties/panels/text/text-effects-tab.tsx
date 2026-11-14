@@ -111,7 +111,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           </div>
 
           {shadowActive && (
-            <div className="space-y-2.5 animate-in fade-in duration-100">
+            <div className="space-y-2.5 rounded-lg border border-border/60 bg-muted/50 p-2.5 animate-in fade-in duration-100">
               <ControlRow label="اللون">
                 <ColorField
                   color={element.shadowColor || '#000000'}
@@ -193,7 +193,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           </div>
 
           {bgMode !== 'none' && (
-            <div className="space-y-2.5 animate-in fade-in duration-100">
+            <div className="space-y-2.5 rounded-lg border border-border/60 bg-muted/50 p-2.5 animate-in fade-in duration-100">
               <ControlRow label="اللون">
                 <ColorField
                   color={element.textBgColor || TEXT_BACKGROUND_DEFAULT_COLOR}

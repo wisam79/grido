@@ -21,7 +21,7 @@ interface UseFreeformKeyboardParams {
 /**
  * اختصارات لوحة المفاتيح في حوار الكولاج الحر (تراجع/إعادة/مضاعفة/نسخ/لصق/
  * تحديد الكل/حذف/أسهم التحريك مع دفعة النبضة) — كانت تأثيراً بـ150 سطراً داخل
- * freeform-collage-modal. يُسجَّل على capture عمداً ليعمل فوق عناصر الحوار،
+ * freeform-collage-modal. يعمل في bubbling بعد المالك المحلي؛
  * ويُترك Escape لطبقة Radix (H14 من تدقيق 2026-10-08).
  */
 export function useFreeformKeyboard({
@@ -44,22 +44,41 @@ export function useFreeformKeyboard({
       const keyLower = e.key.toLowerCase();
       const isArrowKey = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(keyLower);
       if (!isArrowKey) finishNudgeBurst();
-      const activeEl = document.activeElement as HTMLElement | null;
+      // ننتظر مرحلة bubbling كي يحترم المالك المحلي preventDefault قبل الحجز.
+      const inputScope =
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), ' +
+        '[role="textbox"], [role="slider"], [role="spinbutton"], [role="switch"], ' +
+        '[role="checkbox"], [role="radio"], [role="radiogroup"], [role="tab"], ' +
+        '[role="tablist"], [role="menu"], [role="menuitem"], [role="tree"], ' +
+        '[role="treeitem"], [role="grid"], [role="listbox"], [role="option"], ' +
+        '[role="combobox"], [role="alertdialog"]';
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      const activeEl = document.activeElement;
       if (
-        activeEl &&
-        (activeEl.tagName === 'INPUT' ||
-          activeEl.tagName === 'TEXTAREA' ||
-          activeEl.tagName === 'SELECT' ||
-          activeEl.isContentEditable ||
-          activeEl.closest(
-            '[role="tablist"], [role="menu"], [role="listbox"], [role="combobox"], [role="alertdialog"]',
-          ))
+        e.defaultPrevented ||
+        e.isComposing ||
+        target?.isContentEditable ||
+        target?.closest(inputScope) ||
+        (activeEl instanceof HTMLElement &&
+          (activeEl.isContentEditable || activeEl.closest(inputScope)))
       ) {
         finishNudgeBurst();
         return;
       }
 
       const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+      if (isArrowKey) {
+        const selectedId = selectedSlotIdRef.current;
+        if (
+          isCmdOrCtrl ||
+          e.altKey ||
+          !selectedId ||
+          !slotsRef.current.some((slot) => slot.id === selectedId)
+        ) {
+          finishNudgeBurst();
+          return;
+        }
+      }
 
       // 🛡️ H14 من تدقيق 2026-10-08: Escape كان ضمن المفاتيح المحتجزة بـ
       // `stopImmediatePropagation` على مستوى capture، فلا يصله مستمع Radix على
@@ -117,8 +136,8 @@ export function useFreeformKeyboard({
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     open,
     handleUndo,

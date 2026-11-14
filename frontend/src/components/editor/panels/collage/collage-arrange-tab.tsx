@@ -2,18 +2,20 @@ import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
-import { FluentSection } from '@/components/ui/blocks';
+import { FluentEmptyState, FluentSection } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
   ArrowsDownUp,
   ArrowsClockwise,
   ArrowCounterClockwise,
+  GridFour,
   Shuffle,
   Rows,
   Columns,
   Repeat,
   ArrowsOutCardinal,
 } from '@/components/ui/icons';
+import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useEditorStore } from '@/lib/editor-store';
 import { getEffectiveDpi } from '@/lib/templates';
 import { cn } from '@/lib/utils';
@@ -275,7 +277,7 @@ export function CollageArrangeTab() {
       id: 'reverse-rows',
       label: 'عكس الصفوف',
       hint: 'داخل كل صف',
-      icon: <Rows className="w-3.5 h-3.5" weight="bold" />,
+      icon: <Rows className="w-3.5 h-3.5" weight="duotone" />,
       onClick: reverseRows,
       disabled: imageCount < 2,
       fullWidth: false,
@@ -284,7 +286,7 @@ export function CollageArrangeTab() {
       id: 'reverse-columns',
       label: 'عكس الأعمدة',
       hint: 'داخل كل عمود',
-      icon: <Columns className="w-3.5 h-3.5" weight="bold" />,
+      icon: <Columns className="w-3.5 h-3.5" weight="duotone" />,
       onClick: reverseColumns,
       disabled: imageCount < 2,
       fullWidth: false,
@@ -293,7 +295,7 @@ export function CollageArrangeTab() {
       id: 'transpose',
       label: 'تبديل المحاور',
       hint: 'قلب الصفوف والأعمدة',
-      icon: <ArrowsDownUp className="w-3.5 h-3.5" weight="bold" />,
+      icon: <ArrowsDownUp className="w-3.5 h-3.5" weight="duotone" />,
       onClick: transposeGrid,
       disabled: !collageTemplate || !grid.isComplete,
       fullWidth: false,
@@ -302,7 +304,7 @@ export function CollageArrangeTab() {
       id: 'shuffle',
       label: 'خلط عشوائي',
       hint: 'خلط مواضع الصور',
-      icon: <Shuffle className="w-3.5 h-3.5" weight="bold" />,
+      icon: <Shuffle className="w-3.5 h-3.5" weight="duotone" />,
       onClick: shuffleImages,
       disabled: imageCount < 2,
       fullWidth: false,
@@ -311,7 +313,7 @@ export function CollageArrangeTab() {
       id: 'repeat',
       label: 'تكرار الكل',
       hint: 'ملء الخانات دورياً',
-      icon: <Repeat className="w-3.5 h-3.5" weight="bold" />,
+      icon: <Repeat className="w-3.5 h-3.5" weight="duotone" />,
       onClick: repeatEverywhere,
       disabled: imageCount === 0,
       fullWidth: true,
@@ -323,7 +325,7 @@ export function CollageArrangeTab() {
       id: 'rotate-cw',
       label: 'لفّ يميناً',
       hint: 'تدوير 90° يميناً',
-      icon: <ArrowsClockwise className="w-3.5 h-3.5" weight="bold" />,
+      icon: <ArrowsClockwise className="w-3.5 h-3.5" weight="duotone" />,
       onClick: () => rotateAll(90),
       disabled: imageCount === 0,
       fullWidth: false,
@@ -332,7 +334,7 @@ export function CollageArrangeTab() {
       id: 'rotate-ccw',
       label: 'لفّ يساراً',
       hint: 'تدوير 90° يساراً',
-      icon: <ArrowCounterClockwise className="w-3.5 h-3.5" weight="bold" />,
+      icon: <ArrowCounterClockwise className="w-3.5 h-3.5" weight="duotone" />,
       onClick: () => rotateAll(-90),
       disabled: imageCount === 0,
       fullWidth: false,
@@ -341,7 +343,7 @@ export function CollageArrangeTab() {
       id: 'reset',
       label: 'تصفير التعديلات',
       hint: 'إرجاع كل التعديلات',
-      icon: <ArrowsOutCardinal className="w-3.5 h-3.5" weight="bold" />,
+      icon: <ArrowsOutCardinal className="w-3.5 h-3.5" weight="duotone" />,
       onClick: resetAllAdjustments,
       disabled: imageCount === 0,
       fullWidth: true,
@@ -350,6 +352,21 @@ export function CollageArrangeTab() {
 
   const emptyCount = slots.length - imageCount;
 
+  if (slots.length === 0) {
+    return (
+      <div
+        className="flex min-w-0 flex-col font-cairo select-none motion-safe:animate-in motion-safe:fade-in duration-150"
+        dir="rtl"
+      >
+        <FluentEmptyState
+          icon={<GridFour className="w-8 h-8 text-muted-foreground/60" weight="duotone" />}
+          title="لا توجد شبكة"
+          description="حدّد تخطيط الشبكة أولاً"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex min-w-0 flex-col font-cairo select-none motion-safe:animate-in motion-safe:fade-in duration-150"
@@ -357,44 +374,75 @@ export function CollageArrangeTab() {
     >
       <FluentSection
         title="مخطط الشبكة"
+        className="border-border/40 py-2.5"
         subtitle={`${grid.rows}×${grid.cols} · ${imageCount} صورة · ${emptyCount} فارغة`}
       >
-        <div
-          dir="ltr"
-          className="grid max-h-52 gap-1 overflow-y-auto rounded-md bg-muted/20 p-1.5"
-          style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
-          data-testid="collage-grid-preview"
-        >
-          {grid.matrix.flatMap((row, r) =>
-            row.map((slotId, c) => {
-              const src = slotId ? grid.srcBySlot.get(slotId) : undefined;
-              const index = r * grid.cols + c + 1;
-              const isFilled = isSrc(src);
-              return (
-                <div
-                  key={`cell-${r}-${c}`}
-                  role="img"
-                  aria-label={isFilled ? `خانة ${index} ممتلئة` : `خانة ${index} فارغة`}
-                  className={cn(
-                    'flex h-7 min-w-0 items-center justify-center rounded-sm border text-mini tabular-nums transition-colors',
-                    isFilled
-                      ? 'border-primary/30 bg-primary/10 text-foreground'
-                      : 'border-dashed border-border/60 text-muted-foreground',
-                  )}
-                >
-                  <span>{index}</span>
-                </div>
-              );
-            }),
-          )}
+        <div className="rounded-lg border border-border/70 bg-muted p-2">
+          <div
+            dir="ltr"
+            className="grid max-h-52 gap-1.5 overflow-y-auto"
+            style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
+            data-testid="collage-grid-preview"
+          >
+            {grid.matrix.flatMap((row, r) =>
+              row.map((slotId, c) => {
+                const src = slotId ? grid.srcBySlot.get(slotId) : undefined;
+                const index = r * grid.cols + c + 1;
+                const isFilled = isSrc(src);
+                const thumbSrc =
+                  isFilled && src && slots.length <= 24 ? getThumbnailSrc(src, 128) : null;
+                return (
+                  <div
+                    key={`cell-${r}-${c}`}
+                    role="img"
+                    aria-label={isFilled ? `خانة ${index} ممتلئة` : `خانة ${index} فارغة`}
+                    className={cn(
+                      'relative flex h-9 min-w-0 items-center justify-center overflow-hidden rounded-md border text-mini font-mono tabular-nums transition-colors',
+                      isFilled
+                        ? 'border-border/80 bg-card text-foreground shadow-2xs dark:border-white/10'
+                        : 'border-dashed border-border/70 bg-background/50 text-muted-foreground/70',
+                    )}
+                  >
+                    {thumbSrc && (
+                      <img
+                        src={thumbSrc}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onError={(event) => {
+                          const image = event.currentTarget;
+                          image.onerror = null;
+                          if (src) image.src = src;
+                        }}
+                      />
+                    )}
+                    <span
+                      className={cn(
+                        thumbSrc
+                          ? 'relative z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-sm border border-border/70 bg-background/85 px-1 text-2xs font-bold text-foreground shadow-2xs backdrop-blur-xs'
+                          : 'font-semibold',
+                      )}
+                    >
+                      {index}
+                    </span>
+                  </div>
+                );
+              }),
+            )}
+          </div>
         </div>
       </FluentSection>
 
-      <FluentSection title="ترتيب الصور">
+      <FluentSection title="ترتيب الصور" className="border-border/40 py-2.5">
         {!grid.isComplete && (
-          <p className="text-mini text-muted-foreground">العمليات على الممتلئة فقط</p>
+          <p className="rounded-md border border-border/50 bg-muted/60 px-2 py-1 text-mini text-muted-foreground">
+            العمليات على الممتلئة فقط
+          </p>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {arrangeActions.map((action) => (
             <Button
               key={action.id}
@@ -405,8 +453,8 @@ export function CollageArrangeTab() {
               title={action.hint}
               onClick={action.onClick}
               className={cn(
-                'h-8 min-w-0 justify-start gap-2 rounded-md px-2 text-start text-xs font-normal shadow-none',
-                action.fullWidth && 'col-span-2',
+                'h-8 min-w-0 justify-start gap-2 rounded-md border border-border/80 bg-card px-2.5 text-start text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent dark:border-white/10',
+                action.fullWidth && 'col-span-2 justify-center',
               )}
             >
               <span className="shrink-0 text-muted-foreground">{action.icon}</span>
@@ -416,8 +464,8 @@ export function CollageArrangeTab() {
         </div>
       </FluentSection>
 
-      <FluentSection title="تحويلات جماعية">
-        <div className="grid grid-cols-2 gap-2">
+      <FluentSection title="تحويلات جماعية" className="border-border/40 py-2.5">
+        <div className="grid grid-cols-2 gap-1.5">
           {transformActions.map((action) => (
             <Button
               key={action.id}
@@ -428,11 +476,20 @@ export function CollageArrangeTab() {
               title={action.hint}
               onClick={action.onClick}
               className={cn(
-                'h-8 min-w-0 justify-start gap-2 rounded-md px-2 text-start text-xs font-normal shadow-none',
-                action.fullWidth && 'col-span-2 text-muted-foreground hover:text-foreground',
+                'h-8 min-w-0 justify-start gap-2 rounded-md px-2.5 text-start text-xs font-medium transition-colors',
+                action.fullWidth
+                  ? 'col-span-2 justify-center border border-border/60 bg-muted/60 text-muted-foreground shadow-none hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive'
+                  : 'border border-border/80 bg-card text-foreground shadow-2xs hover:bg-accent dark:border-white/10',
               )}
             >
-              <span className="shrink-0 text-muted-foreground">{action.icon}</span>
+              <span
+                className={cn(
+                  'shrink-0',
+                  action.fullWidth ? 'text-current opacity-80' : 'text-muted-foreground',
+                )}
+              >
+                {action.icon}
+              </span>
               <span className="truncate">{action.label}</span>
             </Button>
           ))}

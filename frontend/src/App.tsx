@@ -38,6 +38,7 @@ import {
 } from '@/hooks/use-workspace-panels';
 import { useEditorStore } from '@/lib/editor-store';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 import { EventsOn, Quit } from '../wailsjs/runtime/runtime';
@@ -285,7 +286,7 @@ export default function App() {
               <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0" />
                     <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
                       <span>GRIDO</span>
                       <span className="sr-only">Grido Studio | استوديو الهوية</span>
@@ -304,23 +305,25 @@ export default function App() {
                     role="tablist"
                     aria-label="وضع العمل"
                     dir="rtl"
-                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted/40 dark:bg-black/20 border border-border/50 select-none title-bar-controls"
+                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted border border-border/70 select-none title-bar-controls"
                   >
                     <button
                       type="button"
                       role="tab"
                       aria-selected={mode === 'collage'}
+                      aria-label="وضع الكولاج"
                       title="وضع الكولاج (Ctrl+Alt+1)"
                       onClick={() => setMode('collage')}
                       className={cn(
-                        'h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                        FOCUS_RING,
                         mode === 'collage'
                           ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
                           : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       <SquaresFour
+                        aria-hidden="true"
                         className="w-3.5 h-3.5 shrink-0"
                         weight={mode === 'collage' ? 'fill' : 'regular'}
                       />
@@ -329,17 +332,19 @@ export default function App() {
                       type="button"
                       role="tab"
                       aria-selected={mode === 'single'}
+                      aria-label="وضع التعديل الحر"
                       title="وضع التعديل الحر (Ctrl+Alt+2)"
                       onClick={() => setMode('single')}
                       className={cn(
-                        'h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                        FOCUS_RING,
                         mode === 'single'
                           ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
                           : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       <Image
+                        aria-hidden="true"
                         className="w-3.5 h-3.5 shrink-0"
                         weight={mode === 'single' ? 'fill' : 'regular'}
                       />
@@ -357,7 +362,7 @@ export default function App() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="lg:hidden gap-1.5 h-7 px-2.5 rounded-md"
+                    className="coarse-touch-target lg:hidden gap-1.5 h-7 px-2.5 rounded-md text-foreground/80 hover:text-foreground"
                     onClick={() => panelsHook.openPanel('templates')}
                   >
                     <SidebarSimple className="w-4 h-4" />

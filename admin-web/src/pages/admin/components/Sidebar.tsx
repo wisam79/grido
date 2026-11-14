@@ -1,132 +1,201 @@
+import { useState } from 'react';
 import {
   BarChart3,
-  ChevronLeft,
   Key,
-  LayoutGrid,
   LogOut,
+  Menu,
   Sliders,
   Users,
   Wand2,
+  X,
 } from 'lucide-react';
 import type { ActiveTab } from '../types';
+import { AdminBrandMark } from './AdminBrandMark';
 
 /**
- * Sidebar — الشريط الجانبي، JSX منقول verbatim من AdminDashboard.tsx.
+ * Sidebar — الشريط الجانبي المكتبي (Fluent 2 Pure Charcoal) + شريط تنقل متجاوب للهواتف.
  */
 
 interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (t: ActiveTab) => void;
   onLogout: () => void;
+  loading?: boolean;
+  lastSyncedAt?: Date | null;
+  counts?: {
+    users?: number;
+    unusedKeys?: number;
+    aiRuns?: number;
+  };
 }
 
-export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
+interface NavItem {
+  id: ActiveTab;
+  label: string;
+  Icon: typeof Users;
+  badgeKey?: 'users' | 'unusedKeys' | 'aiRuns';
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'users', label: 'إدارة المشتركين', Icon: Users, badgeKey: 'users' },
+  { id: 'keys', label: 'مفاتيح التراخيص', Icon: Key, badgeKey: 'unusedKeys' },
+  { id: 'usage', label: 'سجل الذكاء الاصطناعي', Icon: Wand2, badgeKey: 'aiRuns' },
+  { id: 'stats', label: 'المؤشرات والإحصائيات', Icon: BarChart3 },
+  { id: 'settings', label: 'الإعدادات العامة', Icon: Sliders },
+];
+
+export function Sidebar({
+  activeTab,
+  onTabChange,
+  onLogout,
+  loading = false,
+  lastSyncedAt = null,
+  counts,
+}: SidebarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const syncText = loading
+    ? 'جارٍ مزامنة البيانات...'
+    : lastSyncedAt
+      ? `آخر مزامنة: ${lastSyncedAt.toLocaleTimeString('ar-SA', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`
+      : 'جاهز للمزامنة';
+
+  const renderNavButtons = (onSelectExtra?: () => void) =>
+    NAV_ITEMS.map(({ id, label, Icon, badgeKey }) => {
+      const isCurrent = activeTab === id;
+      const badgeValue = badgeKey && counts ? counts[badgeKey] : undefined;
+
+      return (
+        <button
+          key={id}
+          type="button"
+          onClick={() => {
+            onTabChange(id);
+            onSelectExtra?.();
+          }}
+          aria-current={isCurrent ? 'page' : undefined}
+          className="admin-nav-item w-full h-9 px-3 flex items-center justify-between gap-2 text-xs font-medium cursor-pointer relative"
+        >
+          <span className="flex items-center gap-2.5 min-w-0">
+            {isCurrent && (
+              <span
+                className="w-[3px] h-4 rounded-full bg-[#3b82f6] shrink-0"
+                aria-hidden="true"
+              />
+            )}
+            <Icon
+              className={`w-4 h-4 shrink-0 ${isCurrent ? 'text-[#3b82f6]' : 'text-[#a9afaf]'}`}
+              aria-hidden="true"
+            />
+            <span className="truncate">{label}</span>
+          </span>
+          {typeof badgeValue === 'number' && (
+            <span
+              className={`px-1.5 py-0.5 rounded-sm text-[10px] font-mono tabular-nums shrink-0 ${
+                isCurrent
+                  ? 'bg-[#3b82f6]/15 text-[#93c5fd]'
+                  : 'bg-white/[0.05] text-[#a9afaf]'
+              }`}
+            >
+              {badgeValue}
+            </span>
+          )}
+        </button>
+      );
+    });
+
   return (
-    <aside className="w-full md:w-64 bg-[#171717] text-slate-200 flex flex-col shrink-0 border-l border-[#2C2C2C]">
-      <div className="p-5 border-b border-[#2C2C2C] flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-white text-black rounded-xl">
-            <LayoutGrid className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold font-display text-sm text-white tracking-tight">
-              GRIDO STUDIO
+    <>
+      {/* Mobile / Compact Top Command Strip */}
+      <header className="md:hidden bg-[#1a1a1a] border-b border-[#333333]/75 sticky top-0 z-20">
+        <div className="min-h-12 px-3 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileOpen((prev) => !prev)}
+              aria-expanded={mobileOpen}
+              aria-controls="admin-mobile-nav"
+              aria-label={mobileOpen ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل'}
+              className="w-8 h-8 rounded-sm border border-[#454545] bg-[#171717] hover:bg-white/[0.08] text-[#f5f5f5] flex items-center justify-center shrink-0 cursor-pointer"
+            >
+              {mobileOpen ? (
+                <X className="w-4 h-4" aria-hidden="true" />
+              ) : (
+                <Menu className="w-4 h-4" aria-hidden="true" />
+              )}
+            </button>
+            <AdminBrandMark size={22} />
+            <span className="text-xs font-semibold text-[#f5f5f5] truncate">
+              Grido Studio · الإدارة
             </span>
-            <span className="text-[10px] text-[#9E9E9E] flex items-center gap-1 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-              النظام متصل
-            </span>
           </div>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="تسجيل الخروج"
+            title="تسجيل الخروج"
+            className="h-8 px-2.5 rounded-sm border border-[#454545] bg-[#171717] hover:bg-red-500/15 hover:border-red-500/35 text-[#a9afaf] hover:text-red-300 text-[11px] flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>خروج</span>
+          </button>
         </div>
-        <button
-          onClick={onLogout}
-          className="p-1.5 hover:bg-white/10 rounded-lg text-[#9E9E9E] hover:text-rose-400 transition-colors cursor-pointer"
-          title="تسجيل الخروج"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
-      </div>
 
-      <nav className="flex-1 p-3 space-y-1.5 text-right text-xs font-semibold">
-        <button
-          onClick={() => onTabChange('users')}
-          className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
-            activeTab === 'users'
-              ? 'bg-[#3b82f6]/15 text-[#93c5fd] font-bold ring-1 ring-inset ring-[#3b82f6]/30'
-              : 'text-[#9E9E9E] hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <Users className="w-4 h-4" />
-            إدارة المشتركين
-          </span>
-          <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-        </button>
+        {mobileOpen && (
+          <nav
+            id="admin-mobile-nav"
+            aria-label="التنقل الرئيسي للوحة الإدارة"
+            className="px-3 pb-3 pt-1 border-t border-[#333333]/65 space-y-1 bg-[#1a1a1a]"
+          >
+            {renderNavButtons(() => setMobileOpen(false))}
+          </nav>
+        )}
+      </header>
 
-        <button
-          onClick={() => onTabChange('keys')}
-          className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
-            activeTab === 'keys'
-              ? 'bg-[#3b82f6]/15 text-[#93c5fd] font-bold ring-1 ring-inset ring-[#3b82f6]/30'
-              : 'text-[#9E9E9E] hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <Key className="w-4 h-4" />
-            مفاتيح التراخيص
-          </span>
-          <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-        </button>
+      {/* Desktop Studio Sidebar */}
+      <aside
+        aria-label="الشريط الجانبي للوحة الإدارة"
+        className="hidden md:flex md:w-60 shrink-0 flex-col bg-[#1a1a1a] border-e border-[#333333]/75 sticky top-0 h-screen"
+      >
+        <div className="min-h-12 px-4 py-3 border-b border-[#333333]/75 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AdminBrandMark size={26} />
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-[#f5f5f5] tracking-tight truncate">
+                Grido Studio
+              </div>
+              <div className="text-[10px] text-[#a9afaf] truncate">لوحة الإدارة</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="تسجيل الخروج"
+            title="تسجيل الخروج"
+            className="w-8 h-8 rounded-sm border border-transparent hover:border-[#454545] hover:bg-red-500/12 text-[#a9afaf] hover:text-red-300 flex items-center justify-center shrink-0 cursor-pointer transition-colors"
+          >
+            <LogOut className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
 
-        <button
-          onClick={() => onTabChange('usage')}
-          className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
-            activeTab === 'usage'
-              ? 'bg-[#3b82f6]/15 text-[#93c5fd] font-bold ring-1 ring-inset ring-[#3b82f6]/30'
-              : 'text-[#9E9E9E] hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <Wand2 className="w-4 h-4" />
-            سجل الذكاء الاصطناعي
-          </span>
-          <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-        </button>
+        <nav aria-label="أقسام الإدارة" className="flex-1 p-2.5 space-y-1 overflow-y-auto">
+          {renderNavButtons()}
+        </nav>
 
-        <button
-          onClick={() => onTabChange('stats')}
-          className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
-            activeTab === 'stats'
-              ? 'bg-[#3b82f6]/15 text-[#93c5fd] font-bold ring-1 ring-inset ring-[#3b82f6]/30'
-              : 'text-[#9E9E9E] hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <BarChart3 className="w-4 h-4" />
-            المؤشرات والإحصائيات
-          </span>
-          <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-        </button>
-
-        <button
-          onClick={() => onTabChange('settings')}
-          className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl cursor-pointer transition-all ${
-            activeTab === 'settings'
-              ? 'bg-[#3b82f6]/15 text-[#93c5fd] font-bold ring-1 ring-inset ring-[#3b82f6]/30'
-              : 'text-[#9E9E9E] hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <span className="flex items-center gap-2.5">
-            <Sliders className="w-4 h-4" />
-            الإعدادات العامة
-          </span>
-          <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-        </button>
-      </nav>
-
-      <div className="p-4 border-t border-[#2C2C2C] text-[11px] text-[#9E9E9E] text-center font-medium select-none">
-        قاعدة البيانات متصلة
-      </div>
-    </aside>
+        <div className="px-4 py-3 border-t border-[#333333]/75 flex items-center gap-2 text-[11px] text-[#a9afaf] tabular-nums">
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              loading ? 'bg-[#3b82f6]' : lastSyncedAt ? 'bg-emerald-400' : 'bg-[#6b7280]'
+            }`}
+            aria-hidden="true"
+          />
+          <span className="truncate">{syncText}</span>
+        </div>
+      </aside>
+    </>
   );
 }

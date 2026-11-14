@@ -60,7 +60,7 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     expect(selectionToolsContent).not.toContain('AiToolsToolbarGroup');
   });
 
-  it('يجب أن يكون زرا الحفظ والتصدير أيقونيين (h-8 w-8) بينما يبرز زر الطباعة كإجراء إخراج أساسي بارتفاع h-8', () => {
+  it('يظهر الحفظ والتصدير بتسميات متجاوبة وتبقى الطباعة الإجراء الأساسي بارتفاع h-8', () => {
     const toolbarContent = readFileSync(join(toolbarDir, 'toolbar.tsx'), 'utf-8');
 
     const saveMatch = toolbarContent.match(/data-testid="toolbar-save"[\s\S]*?className="([^"]+)"/);
@@ -79,30 +79,32 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     const printClass = printMatch![1];
     const exportClass = exportMatch![1];
 
-    // الحفظ والتصدير أيقونيان متطابقان 32×32px
+    // ارتفاع مكتبي موحد؛ النص يظهر في العروض الواسعة دون تغيير اسم الإجراء.
     for (const [name, cls] of [
       ['حفظ', saveClass],
       ['تصدير', exportClass],
     ]) {
       expect(cls, `${name} يجب أن يكون بارتفاع h-8`).toContain('h-8');
-      expect(cls, `${name} يجب أن يكون بعرض w-8`).toContain('w-8');
-      expect(cls, `${name} يجب أن يكون بدون حشوة p-0`).toContain('p-0');
+      expect(cls, `${name} يدعم هدف اللمس الخشن`).toContain('coarse-touch-target');
+      expect(cls, `${name} يستخدم حجم نص التحكم`).toContain('text-control');
     }
+    expect(toolbarContent).toContain('<span className="hidden xl:inline">حفظ</span>');
+    expect(toolbarContent).toContain('<span className="hidden xl:inline">تصدير</span>');
 
-    // الطباعة إجراء أساسي بارز بارتفاع h-8 موحد وبنفس تنسيق زر الإدراج
+    // الطباعة وحدها الإجراء التعبوي الرئيسي؛ توكن اللون يحفظ تباين الثيمين.
     expect(printClass).toContain('h-8');
-    expect(printClass).toContain('bg-primary/10');
-    expect(printClass).toContain('text-primary');
-    expect(printClass).toContain('border-primary/35');
+    expect(printClass).toContain('bg-primary-action');
+    expect(printClass).toContain('text-primary-foreground');
+    expect(printClass).toContain('hover:bg-primary-action-hover');
     const printBlock = toolbarContent.match(
       /<Button[\s\S]*?data-testid="toolbar-print"[\s\S]*?<\/Button>/,
     );
     expect(printBlock).toBeTruthy();
-    expect(printBlock![0]).toContain('variant="outline"');
+    expect(printBlock![0]).toContain('variant="default"');
     expect(printBlock![0]).toContain('<span>طباعة</span>');
   });
 
-  it('يجب أن يكون زر الإدراج بارزاً بتمييز لوني وتسمية واضحة وارتفاع h-8 موحد مطابق لزر الطباعة', () => {
+  it('يحافظ الإدراج على تسمية واضحة وسطح محايد وارتفاع h-8 دون منافسة الطباعة', () => {
     const fileOpsContent = readFileSync(join(toolbarDir, 'toolbar-file-ops.tsx'), 'utf-8');
 
     const insertBlock = fileOpsContent.match(
@@ -110,9 +112,10 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     );
     expect(insertBlock).toBeTruthy();
     expect(insertBlock![0]).toContain('h-8');
-    expect(insertBlock![0]).toContain('bg-primary/10');
-    expect(insertBlock![0]).toContain('text-primary');
-    expect(insertBlock![0]).toContain('border-primary/35');
+    expect(insertBlock![0]).toMatch(/bg-(background|card)/);
+    expect(insertBlock![0]).toContain('text-foreground');
+    expect(insertBlock![0]).toContain('border-control-border');
+    expect(insertBlock![0]).toContain('coarse-touch-target');
     expect(insertBlock![0]).toContain('<span>إدراج</span>');
   });
 });

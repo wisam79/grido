@@ -128,12 +128,11 @@ export function computeAdminUserMetrics(
   const sampleTruncated = serverSampleTruncated || users.length < totalUsers;
 
   const activePro = users.filter(
-    (u) =>
-      u.plan === 'pro' &&
-      u.status !== 'banned' &&
-      (!u.expires_at || new Date(u.expires_at) > now),
+    (u) => u.plan === 'pro' && getUserAccountState(u, now) === 'active',
   ).length;
-  const activeEnt = users.filter((u) => u.plan === 'enterprise' && u.status !== 'banned').length;
+  const activeEnt = users.filter(
+    (u) => u.plan === 'enterprise' && getUserAccountState(u, now) === 'active',
+  ).length;
   const windowAiCost = aiLogs.reduce((acc, curr) => acc + resolveAiCostUsd(curr.cost_usd), 0);
   const estimatedMRR = activePro * 15 + activeEnt * 49;
 
@@ -220,4 +219,252 @@ export function downloadTextFile(filename: string, content: string, mime: string
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export type DerivedAccountState = 'active' | 'expired' | 'banned';
+export type UserSortBy = 'newest' | 'expiry-asc' | 'name' | 'plan';
+
+const PLAN_RANK: Record<string, number> = {
+  enterprise: 4,
+  pro: 3,
+  trial: 2,
+  free: 1,
+};
+
+/** يحدد ما إذا كان الحساب منتهي الصلاحية وفق الحالة الصريحة أو تاريخ الانتهاء. */
+export function isUserExpired(
+  user: { status?: string | null; expires_at?: string | null },
+  now: Date = new Date(),
+): boolean {
+  if (user.status === 'expired') return true;
+  if (!user.expires_at) return false;
+  const ts = new Date(user.expires_at).getTime();
+  return Number.isFinite(ts) && ts <= now.getTime();
+}
+
+/** يرجع الحالة الفعلية للحساب بأولوية الحظر ثم الانتهاء ثم النشط. */
+export function getUserAccountState(
+  user: { status?: string | null; expires_at?: string | null },
+  now: Date = new Date(),
+): DerivedAccountState {
+  if (user.status === 'banned') return 'banned';
+  if (isUserExpired(user, now)) return 'expired';
+  return 'active';
+}
+
+/** يحسب الأيام المتبقية لانتهاء الصلاحية (سالب أو 0 للمنتهي، وnull لغير المحدد). */
+export function getUserDaysRemaining(
+  expiresAt?: string | null,
+  now: Date = new Date(),
+): number | null {
+  if (!expiresAt) return null;
+  const ts = new Date(expiresAt).getTime();
+  if (!Number.isFinite(ts)) return null;
+  const diffMs = ts - now.getTime();
+  if (diffMs <= 0) return Math.floor(diffMs / 86_400_000);
+  return Math.ceil(diffMs / 86_400_000);
+}
+
+/** يفرز نسخة جديدة من قائمة المستخدمين حسب المعيار المختار. */
+export function sortUsers<
+  T extends {
+    name?: string | null;
+    email?: string | null;
+    plan?: string | null;
+    expires_at?: string | null;
+    created_at?: string | null;
+  },
+>(users: readonly T[], sortBy: UserSortBy): T[] {
+  const list = [...users];
+  switch (sortBy) {
+    case 'expiry-asc':
+      return list.sort((a, b) => {
+        const aTs = a.expires_at ? new Date(a.expires_at).getTime() : Number.POSITIVE_INFINITY;
+        const bTs = b.expires_at ? new Date(b.expires_at).getTime() : Number.POSITIVE_INFINITY;
+        return aTs - bTs;
+      });
+    case 'name':
+      return list.sort((a, b) =>
+        (a.name || a.email || '').localeCompare(b.name || b.email || '', 'ar'),
+      );
+    case 'plan':
+      return list.sort(
+        (a, b) => (PLAN_RANK[b.plan || 'free'] ?? 0) - (PLAN_RANK[a.plan || 'free'] ?? 0),
+      );
+    case 'newest':
+    default:
+      return list.sort(
+        (a, b) =>
+          (b.created_at ? new Date(b.created_at).getTime() : 0) -
+          (a.created_at ? new Date(a.created_at).getTime() : 0),
+      );
+  }
+}
+
+export interface UserFilterCounts {
+  all: number;
+  pro: number;
+  enterprise: number;
+  trial: number;
+  free: number;
+  expired: number;
+  banned: number;
+}
+
+/** يحسب عدادات التبويبات الفرعية للمستخدمين بنفس منطق فلترة useAdminUsers. */
+export function computeUserFilterCounts(
+  users: readonly { plan?: string | null; status?: string | null; expires_at?: string | null }[],
+  now: Date = new Date(),
+): UserFilterCounts {
+  let pro = 0;
+  let enterprise = 0;
+  let trial = 0;
+  let free = 0;
+  let expired = 0;
+  let banned = 0;
+
+  for (const u of users) {
+    if (u.plan === 'pro') pro += 1;
+    else if (u.plan === 'enterprise') enterprise += 1;
+    else if (u.plan === 'trial') trial += 1;
+    else free += 1;
+
+    const state = getUserAccountState(u, now);
+    if (state === 'banned') banned += 1;
+    else if (state === 'expired') expired += 1;
+  }
+
+  return { all: users.length, pro, enterprise, trial, free, expired, banned };
+}
+
+export interface TopAiUserSummary {
+  userId: string;
+  runs: number;
+  totalCostUsd: number;
+  totalBytes: number;
+}
+
+export interface ExtendedAdminBreakdown {
+  trialCount: number;
+  expiredCount: number;
+  bannedCount: number;
+  activeUsersCount: number;
+  totalAiBytes: number;
+  totalAiMb: number;
+  avgExecutionSeconds: number;
+  totalAiCostUsd: number;
+  topAiUsers: TopAiUserSummary[];
+}
+
+/** يستخرج تفصيلاً إضافياً لصحة الحسابات وتلخيص استخدام الذكاء الاصطناعي من البيانات المحمّلة. */
+export function computeExtendedAdminBreakdown(
+  users: readonly { plan?: string | null; status?: string | null; expires_at?: string | null }[],
+  aiLogs: readonly {
+    user_id?: string | null;
+    image_bytes?: number | null;
+    execution_seconds?: number | null;
+    cost_usd?: unknown;
+  }[],
+  now: Date = new Date(),
+): ExtendedAdminBreakdown {
+  let trialCount = 0;
+  let expiredCount = 0;
+  let bannedCount = 0;
+  let activeUsersCount = 0;
+
+  for (const u of users) {
+    if (u.plan === 'trial') trialCount += 1;
+    const state = getUserAccountState(u, now);
+    if (state === 'banned') bannedCount += 1;
+    else if (state === 'expired') expiredCount += 1;
+    else activeUsersCount += 1;
+  }
+
+  let totalAiBytes = 0;
+  let totalExecSeconds = 0;
+  let totalAiCostUsd = 0;
+  const perUser = new Map<string, TopAiUserSummary>();
+
+  for (const log of aiLogs) {
+    const bytes = Number.isFinite(log.image_bytes) && (log.image_bytes ?? 0) > 0 ? Number(log.image_bytes) : 0;
+    const execSec =
+      Number.isFinite(log.execution_seconds) && (log.execution_seconds ?? 0) > 0
+        ? Number(log.execution_seconds)
+        : 0;
+    const cost = resolveAiCostUsd(log.cost_usd);
+
+    totalAiBytes += bytes;
+    totalExecSeconds += execSec;
+    totalAiCostUsd += cost;
+
+    if (log.user_id) {
+      const prev = perUser.get(log.user_id);
+      if (prev) {
+        prev.runs += 1;
+        prev.totalCostUsd += cost;
+        prev.totalBytes += bytes;
+      } else {
+        perUser.set(log.user_id, {
+          userId: log.user_id,
+          runs: 1,
+          totalCostUsd: cost,
+          totalBytes: bytes,
+        });
+      }
+    }
+  }
+
+  const topAiUsers = Array.from(perUser.values())
+    .sort((a, b) => b.runs - a.runs || b.totalCostUsd - a.totalCostUsd)
+    .slice(0, 5);
+
+  return {
+    trialCount,
+    expiredCount,
+    bannedCount,
+    activeUsersCount,
+    totalAiBytes,
+    totalAiMb: totalAiBytes / (1024 * 1024),
+    avgExecutionSeconds: aiLogs.length > 0 ? totalExecSeconds / aiLogs.length : 0,
+    totalAiCostUsd,
+    topAiUsers,
+  };
+}
+
+/** يبني خريطة O(1) للوصول لبيانات المستخدم عبر المعرّف UUID في جداول المفاتيح والسجلات. */
+export function buildUserLookupMap<T extends { id: string }>(users: readonly T[]): Record<string, T> {
+  const map: Record<string, T> = {};
+  for (const user of users) {
+    map[user.id] = user;
+  }
+  return map;
+}
+
+/** يصفّي مفاتيح التراخيص حسب نص البحث (المفتاح، المعرف، الباقة، أو اسم/بريد المالك) وحالة المفتاح. */
+export function filterLicenseKeys<
+  TKey extends {
+    key?: string | null;
+    user_id?: string | null;
+    plan?: string | null;
+    status?: string | null;
+  },
+>(
+  keys: readonly TKey[],
+  searchQuery: string,
+  statusFilter: string,
+  usersLookup: Record<string, { name?: string | null; email?: string | null }> = {},
+): TKey[] {
+  const q = searchQuery.trim().toLowerCase();
+  return keys.filter((key) => {
+    if (statusFilter !== 'all' && key.status !== statusFilter) return false;
+    if (!q) return true;
+    const owner = key.user_id ? usersLookup[key.user_id] : undefined;
+    return (
+      (key.key || '').toLowerCase().includes(q) ||
+      (key.user_id || '').toLowerCase().includes(q) ||
+      (key.plan || '').toLowerCase().includes(q) ||
+      (owner?.name || '').toLowerCase().includes(q) ||
+      (owner?.email || '').toLowerCase().includes(q)
+    );
+  });
 }

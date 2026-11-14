@@ -74,8 +74,8 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
             aria-label="المرشحات"
             className={cn(
               compact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0',
-              'hover:bg-muted/60 rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-              hasActiveFilter ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+              'coarse-touch-target hover:bg-accent data-[state=open]:bg-accent data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              hasActiveFilter ? 'text-primary' : 'text-foreground/80 hover:text-foreground',
             )}
           >
             <PhotoFilter className="w-4 h-4" weight={hasActiveFilter ? 'fill' : 'regular'} />

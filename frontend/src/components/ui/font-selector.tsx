@@ -171,7 +171,7 @@ export const FontSelector = React.memo(function FontSelector({
           type="button"
           aria-label={`الخط: ${currentFont ? fontLabel(currentFont) : value}`}
           className={cn(
-            'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-border/60 bg-background px-2 text-xs text-foreground hover:bg-accent/45 transition-colors duration-150 motion-reduce:transition-none cursor-pointer',
+            'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-border/80 bg-card px-2.5 text-xs font-medium text-foreground shadow-2xs hover:bg-accent transition-colors duration-150 motion-reduce:transition-none cursor-pointer dark:border-white/10',
             focusClassName,
             className,
           )}
@@ -258,7 +258,7 @@ export const FontSelector = React.memo(function FontSelector({
                 aria-selected={isSelected}
                 className={cn(
                   'flex h-8 items-center rounded-md text-foreground',
-                  isSelected && 'bg-primary/10',
+                  isSelected && 'bg-accent/80',
                   activeIndex === index && 'bg-accent/60',
                 )}
               >

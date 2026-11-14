@@ -235,14 +235,14 @@ export function ToolbarFileOps() {
       {/* مجموعة الإدراج والمشاريع */}
       <div className="flex items-center gap-1.5">
         {/* زر الإدراج المنقسم البارز: نقطة البداية الأساسية بتمييز لوني متناسق مع الهوية */}
-        <div className="flex items-center">
+        <div className="inline-flex items-center rounded-md shadow-2xs">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
               variant="outline"
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-e-none border-primary/35 bg-primary/10 text-primary hover:bg-primary/18 hover:text-primary cursor-pointer focus-visible:relative shadow-none"
+              className="coarse-touch-target h-8 px-3 gap-1.5 text-control font-semibold rounded-e-none border-control-border bg-card text-foreground hover:bg-accent cursor-pointer focus-visible:relative shadow-none"
             >
               <AddPhotoIcon className="w-4 h-4 shrink-0" />
               <span>إدراج</span>
@@ -256,7 +256,7 @@ export function ToolbarFileOps() {
                   variant="outline"
                   size="icon"
                   aria-label="خيارات الإدراج"
-                  className="h-8 w-6 p-0 rounded-s-none border-s-0 border-primary/35 bg-primary/10 text-primary hover:bg-primary/18 hover:text-primary cursor-pointer focus-visible:relative data-[state=open]:bg-primary/20 shadow-none"
+                  className="coarse-touch-target h-8 w-7 p-0 rounded-s-none border-s-0 border-control-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus-visible:relative data-[state=open]:bg-accent data-[state=open]:text-foreground shadow-none"
                 >
                   <CaretDown className="w-3.5 h-3.5" />
                 </Button>
@@ -274,7 +274,7 @@ export function ToolbarFileOps() {
                   setBatchMounted(true);
                   setIsBatchInsertOpen(true);
                 }}
-                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
+                className="flex items-center gap-2.5 py-1.5 px-2.5 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <Stack className="w-4 h-4 shrink-0" />
                 <span className="font-bold text-foreground flex-1">دفعة صور</span>
@@ -286,7 +286,7 @@ export function ToolbarFileOps() {
                   setPhoneBridgeMounted(true);
                   setIsPhoneBridgeOpen(true);
                 }}
-                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
+                className="flex items-center gap-2.5 py-1.5 px-2.5 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <DeviceMobileCamera className="w-4 h-4 shrink-0" />
                 <span className="font-bold text-foreground flex-1">كاميرا الهاتف</span>
@@ -313,7 +313,7 @@ export function ToolbarFileOps() {
                 setPhoneBridgeMounted(true);
                 setIsPhoneBridgeOpen(true);
               }}
-              className="relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-md flex items-center justify-center select-none"
+              className="coarse-touch-target relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer rounded-md flex items-center justify-center select-none"
             >
               <DeviceMobileCamera className="w-4 h-4" />
               {/* نقطة حالة خضراء دقيقة على الزر */}
@@ -342,7 +342,7 @@ export function ToolbarFileOps() {
             }}
             data-testid="toolbar-projects"
             aria-label="مكتبة المشاريع"
-            className="text-foreground/80 cursor-pointer"
+            className="coarse-touch-target h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent cursor-pointer"
           >
             <Folders className="w-4 h-4" />
           </Button>

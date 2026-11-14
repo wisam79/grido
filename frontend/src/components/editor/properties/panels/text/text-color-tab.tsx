@@ -25,7 +25,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
           defaultOpen={true}
           action={
             element.fillType && element.fillType !== 'solid' ? (
-              <span className="text-mini font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 border border-border/50 select-none">
+              <span className="rounded-sm border border-border/60 bg-muted px-1.5 py-0.5 text-2xs font-semibold text-muted-foreground select-none">
                 {element.fillType === 'linear'
                   ? 'خطي'
                   : element.fillType === 'radial'
@@ -117,15 +117,13 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                 }}
                 aria-label={hasStroke ? 'مفعّل' : 'إضافة'}
                 className={cn(
-                  'h-7 px-2.5 rounded-full text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5 border select-none',
+                  'flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-mini font-semibold transition-colors cursor-pointer select-none',
                   hasStroke
-                    ? 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40'
-                    : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60',
+                    ? 'border-border/80 bg-card text-foreground shadow-2xs dark:border-white/15'
+                    : 'border-border/70 bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
                 )}
               >
-                {hasStroke && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-pulse" />
-                )}
+                {hasStroke && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                 <span>{hasStroke ? 'مفعّل' : 'إضافة'}</span>
               </button>
             </div>

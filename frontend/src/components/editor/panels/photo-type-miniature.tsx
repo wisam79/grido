@@ -25,7 +25,7 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
         <div
           className={cn(
             'rounded-sm border border-dashed transition-colors duration-200',
-            type === 'visa'
+            type === 'visa' || type === 'us-visa'
               ? 'w-4 h-4'
               : type === 'iq-general-id'
                 ? 'w-3.5 h-6'

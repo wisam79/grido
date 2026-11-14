@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo } from 'react';
 
-import { Plus } from '@/components/ui/icons';
+import { Plus, TextT } from '@/components/ui/icons';
 import { TEXT_LABEL_PREVIEW } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
 import { loadGoogleFont } from '@/lib/io/fonts';
@@ -48,7 +48,7 @@ function PresetRow({
   };
 
   return (
-    <div className="group/row flex h-11 items-center gap-1 rounded-md px-1 transition-colors duration-150 hover:bg-accent/50 focus-within:bg-accent/50">
+    <div className="group/row flex h-11 items-center gap-1 rounded-md border border-border/80 bg-card px-1.5 shadow-2xs transition-colors duration-150 hover:border-control-border hover:bg-accent focus-within:bg-accent dark:border-white/10">
       <button
         type="button"
         data-testid={`element-add-text-${preset.id}`}
@@ -56,7 +56,7 @@ function PresetRow({
         title={canApply ? `تطبيق ${preset.label} على المحدد` : `إدراج ${preset.label}`}
         aria-label={preset.label}
         className={cn(
-          'flex h-full min-w-0 flex-1 items-center rounded-md px-2 text-start cursor-pointer',
+          'flex h-full min-w-0 flex-1 items-center rounded-sm px-2 text-start cursor-pointer',
           focusRing,
         )}
       >
@@ -79,7 +79,9 @@ function PresetRow({
               'inline-block truncate text-foreground',
               preset.config.opacity !== undefined && 'text-muted-foreground',
               preset.config.textBgColor &&
-                (preset.id === 'badge' ? 'bg-primary-action text-primary-foreground' : 'bg-muted'),
+                (preset.id === 'badge'
+                  ? 'bg-primary-action text-primary-foreground shadow-2xs'
+                  : 'border border-border/70 bg-muted text-foreground'),
             )}
           >
             {preset.label}
@@ -95,7 +97,7 @@ function PresetRow({
           title="إدراج كعنصر جديد"
           aria-label={`إدراج ${preset.label} كعنصر جديد`}
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground cursor-pointer',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-transparent text-muted-foreground transition-colors duration-150 hover:border-border/80 hover:bg-muted hover:text-foreground cursor-pointer',
             focusRing,
           )}
         >
@@ -158,28 +160,29 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
         data-testid="element-add-text-plain"
         onClick={handleAddPlain}
         className={cn(
-          'flex h-8 w-full items-center justify-center rounded-md bg-primary-action px-3 text-control font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
+          'flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-white/10 bg-primary-action px-3 text-control font-semibold text-primary-foreground shadow-2xs transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
           focusRing,
         )}
       >
+        <TextT className="w-4 h-4 shrink-0" weight="bold" />
         <span>إضافة نص</span>
       </button>
 
       {INSERT_PRESET_GROUPS.map((group) => (
         <section
           key={group.id}
-          className="space-y-1.5"
+          className="space-y-2"
           aria-labelledby={`text-preset-group-${group.id}`}
         >
           <h3
             id={`text-preset-group-${group.id}`}
-            className="px-1 text-control font-semibold text-muted-foreground"
+            className="px-0.5 text-control font-semibold text-foreground"
           >
             {group.label}
           </h3>
 
           {group.id === 'typography' && selectedExcerpt && (
-            <div className="flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/5 px-2 py-1.5 text-mini leading-tight">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/8 px-2.5 py-1.5 text-mini leading-tight">
               <span className="min-w-0 truncate font-semibold text-foreground">
                 «{selectedExcerpt}»
               </span>
@@ -187,7 +190,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             </div>
           )}
 
-          <div className="divide-y divide-border/50">
+          <div className="space-y-1.5">
             {group.items.map((preset) => (
               <PresetRow
                 key={preset.id}
