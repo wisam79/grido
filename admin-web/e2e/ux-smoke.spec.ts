@@ -212,6 +212,13 @@ const test = base.extend<{ api: MockState }>({
         await reply({ Key: url.pathname.replace("/storage/v1/object/", "") });
         return;
       }
+      if (
+        url.pathname === "/realtime/v1/api/broadcast" &&
+        request.method() === "POST"
+      ) {
+        await reply({}, 202);
+        return;
+      }
       state.unexpected.push(`${request.method()} ${url.pathname}`);
       await reply({ message: "Unmapped API: offline fixture rejects it" }, 500);
     });
