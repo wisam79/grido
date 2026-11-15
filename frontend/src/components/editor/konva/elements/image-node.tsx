@@ -6,6 +6,7 @@ import { useAsyncImage } from '@/hooks/use-async-image';
 import { useDisplayImage } from '@/hooks/use-display-image';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
+import { useStickerDisplayRaster } from '@/hooks/use-sticker-display-raster';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
@@ -40,6 +41,17 @@ export const URLImage = React.memo(function URLImage({
   // 🚀 نسخة عرض مخفّضة (سقف 2048px) للرسم التفاعلي — المصدر الكامل يبقى
   // للتصدير والذكاء الاصطناعي. useMemo متزامن: توليد مرة واحدة لكل صورة.
   const displayImage = useDisplayImage(image);
+  const nodeW = element.width * canvasWidth;
+  const nodeH = element.height * canvasHeight;
+  // ترقية متجهة حيّة للملصقات المرفقة: عند التكبير نعيد تصيير الـ SVG بالمقاس الجديد
+  // حتى لا يتبكسل الراستر الابتدائي (50mm@300DPI ≈ 591px) على المسرح أو عند الزوم.
+  const stickerImage = useStickerDisplayRaster({
+    stickerSource: element.stickerSource,
+    nodeW,
+    nodeH,
+    baseImage: image,
+  });
+  const shown = stickerImage ?? displayImage ?? image;
   const hasAnimatedRef = React.useRef(false);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
@@ -98,7 +110,7 @@ export const URLImage = React.memo(function URLImage({
   const recacheFilters = useFilterCache({
     targetId: element.id,
     nodeRef: imageNodeRef,
-    image: displayImage as HTMLImageElement,
+    image: shown,
     hasFilters,
     canvasWidth,
     filterKey,
@@ -122,9 +134,6 @@ export const URLImage = React.memo(function URLImage({
   const flippedY = element.flipY === true;
   const nodeX = element.x * canvasWidth;
   const nodeY = element.y * canvasHeight;
-  const nodeW = element.width * canvasWidth;
-  const nodeH = element.height * canvasHeight;
-  const shown = displayImage ?? image;
 
   // ⚖️ مطابقة object-fit: cover مع مسار التصدير اليدوي (drawImageCover في export-primitives.ts):
   // يمنع مطّ وتشويه الوجوه عند تغيير أبعاد الصورة بمقابض الجوانب ويوحّد المعاينة والتصدير 100%.

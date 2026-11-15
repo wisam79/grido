@@ -30,7 +30,7 @@ export interface CacheableKonvaNode {
 interface UseFilterCacheOptions {
   targetId?: string;
   nodeRef: React.RefObject<CacheableKonvaNode | null>;
-  image: HTMLImageElement | null | undefined;
+  image: HTMLImageElement | HTMLCanvasElement | null | undefined;
   hasFilters: boolean;
   canvasWidth: number;
   filterKey?: string | number;

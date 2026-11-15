@@ -51,7 +51,7 @@ async function ensureFontsReady(fontFamilies?: string[]): Promise<void> {
 }
 
 /** يرسم SVG في Canvas بالحجم النهائي مع ميزانية بكسل وحماية Object URL. */
-async function rasterizeSvgToCanvas(
+export async function rasterizeSvgToCanvas(
   svgString: string,
   width: number,
   height: number,

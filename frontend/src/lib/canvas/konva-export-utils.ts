@@ -342,7 +342,13 @@ export async function swapNodeImagesForCapture(
     const image = loaded.get(src);
     if (!image) continue;
     try {
-      const node = stage.findOne(`#${nodeId}`) as unknown as KonvaImageNodeLike | null;
+      const found = stage.findOne(`#${nodeId}`) as unknown as
+        (KonvaImageNodeLike & { findOne?: (sel: string) => unknown }) | null;
+      const node = (found &&
+      typeof found.image !== 'function' &&
+      typeof found.findOne === 'function'
+        ? found.findOne('Image')
+        : found) as unknown as KonvaImageNodeLike | null;
       if (!node || typeof node.image !== 'function') continue;
       const current = node.image() as CanvasImageSource;
       const record: { node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect } = {

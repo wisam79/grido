@@ -1,5 +1,16 @@
 # تتبع الميزات الأساسية — Grido Studio
 
+## الحفاظ على دقة الملصقات عند التكبير على الكانفاس والتصدير — 2026-11-15
+
+**النطاق:** إصلاح تبكسل الملصقات المرفقة (`element.stickerSource`) عند تكبيرها على المسرح أو تصديرها عبر `exportCanvas` (بدلاً من البقاء على راستر الإدراج الابتدائي `50mm@300DPI ≈ 591px`)، مع إعادة استخدام مسار تصيير الـ SVG الموحّد ودون التأثير على أداء السحب أو الفلاتر.
+
+| المحور | ما نُفّذ | المرجع |
+|---|---|---|
+| **ترقية الكانفاس الحيّة والرتيبة** | تصدير `rasterizeSvgToCanvas` و`resolveStickerSvgSync` و`computeStickerCoverRasterSize` مع إضافة `useStickerDisplayRaster` (كاش LRU حتى 24 عنصراً / 128MiB بسقف `MAX_STICKER_DISPLAY_DIM = 3072`، تأخير ~60ms وانتظار انتهاء التحويل/السحب، وترقية رتيبة لا تعيد الرسم عند التصغير)، ودمجها في `URLImage` مع توسيع نوع `useFilterCache` لدعم `HTMLCanvasElement` لإعادة خبز الفلاتر تلقائياً على النسخة الحادة | `frontend/src/features/stickers/lib/svg-rasterizer.ts:54`، `frontend/src/features/stickers/lib/print-rerasterize.ts:198`، `frontend/src/hooks/use-sticker-display-raster.ts:108`، `frontend/src/hooks/use-filter-cache.ts:33`، `frontend/src/components/editor/konva/elements/image-node.tsx:48` |
+| **مواءمة التصدير (`exportCanvas` و`Konva`)** | إضافة `prepareStickerExportOverrides` ودمجها في `exportCanvas` (لكل من `captureStageBlob` و`renderFittedBranch` مع تحرير `URL.revokeObjectURL` في `finally`) وتوسيع `swapNodeImagesForCapture` لفك تغليف عقدة `Group` وإيجاد ابن `Image` | `frontend/src/features/stickers/lib/print-rerasterize.ts:268`، `frontend/src/lib/export/export-canvas.ts:47`، `frontend/src/lib/canvas/konva-export-utils.ts:312`، `frontend/test/use-sticker-display-raster.test.ts:1` |
+
+---
+
 ## إصلاحات دورة حياة Wails والإغلاق الآمن (`RV-LIFE-01…06`) — 2026-11-15
 
 **النطاق:** إغلاق ملاحظات [التقرير 26](reviews/26-wails-lifecycle-shutdown-audit-2026-11-14.md) في دورة حياة Wails والإغلاق النظيف في Go والواجهة مع الإبقاء على تغييرات الملصقات القائمة دون تدخل.

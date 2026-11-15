@@ -3,6 +3,7 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  * الفروع التفصيلية في export-canvas-collage.ts و export-canvas-fitted.ts.
  */
+import { prepareStickerExportOverrides } from '@/features/stickers/lib/print-rerasterize';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { paperCaptureRect } from '@/lib/canvas/fit';
 import { gradientPixelPoints } from '@/lib/canvas/gradient-geometry';
@@ -41,121 +42,152 @@ export async function exportCanvas(
   assertExportablePixels(canvasWidth, canvasHeight);
 
   // انتظار جاهزية خطوط عناصر النص قبل التقاط الـ Stage أو الرسم اليدوي
-  if (mode !== 'collage') {
-    await ensureElementsFontsLoaded(elements);
-  }
+  const stickerOverrides =
+    mode !== 'collage'
+      ? await prepareStickerExportOverrides({
+          elements,
+          canvasWidth,
+          canvasHeight,
+          stageRef,
+        })
+      : null;
 
-  // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
-  if (stageRef) {
-    let stageBlob: Blob | null = null;
-    // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
-    // (كان يُنتج خلفية سوداء للتصدير الشفاف)
-    const needsWhiteFlatten = format === 'jpg' && backgroundColor === 'transparent';
-    try {
-      // 🛡️ M15: الـ Stage أصبح مقاساً ثابتاً (zoom=1) فوقه CSS transform، فحساب
-      // النسبة من مقاسه صار يعني «دقة تصدير تتغير بزوم المستخدم» بدل دقة الورقة.
-      // نلتقط منطقة الورقة بإحداثياتها المنطقية: المخرج = canvasWidth بكسل
-      // بالضبط مهما كان التكبير على الشاشة. (وزرنا النتيجة نفسها منطقياً: كان
-      // `canvasWidth / stage.width()` يُنتج displayW × ratio = canvasWidth.)
-      const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
-      const targetPixelRatio = 1;
-      stageBlob = await captureStageBlob(
-        stageRef,
-        targetPixelRatio,
-        needsWhiteFlatten ? 'image/png' : format === 'png' ? 'image/png' : 'image/jpeg',
-        needsWhiteFlatten ? undefined : quality,
-        captureRect,
-        { useFullResolution: true },
-      );
-    } catch (e) {
-      logger.error('Failed to export via Konva Stage, falling back to manual canvas:', e);
-      stageBlob = null;
+  try {
+    if (mode !== 'collage') {
+      await ensureElementsFontsLoaded(elements);
     }
 
-    if (stageBlob) {
-      if (!needsWhiteFlatten) {
-        return stageBlob;
-      }
-
-      const captured = await createImageBitmap(stageBlob);
+    // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
+    if (stageRef) {
+      let stageBlob: Blob | null = null;
+      // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
+      // (كان يُنتج خلفية سوداء للتصدير الشفاف)
+      const needsWhiteFlatten = format === 'jpg' && backgroundColor === 'transparent';
       try {
-        const flattenCanvas = document.createElement('canvas');
-        flattenCanvas.width = canvasWidth;
-        flattenCanvas.height = canvasHeight;
-        const fctx = flattenCanvas.getContext('2d');
-        if (!fctx) {
-          throw new Error('Failed to acquire 2D context while flattening JPEG transparency');
+        // 🛡️ M15: الـ Stage أصبح مقاساً ثابتاً (zoom=1) فوقه CSS transform، فحساب
+        // النسبة من مقاسه صار يعني «دقة تصدير تتغير بزوم المستخدم» بدل دقة الورقة.
+        // نلتقط منطقة الورقة بإحداثياتها المنطقية: المخرج = canvasWidth بكسل
+        // بالضبط مهما كان التكبير على الشاشة. (وزرنا النتيجة نفسها منطقياً: كان
+        // `canvasWidth / stage.width()` يُنتج displayW × ratio = canvasWidth.)
+        const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
+        const targetPixelRatio = 1;
+        stageBlob = await captureStageBlob(
+          stageRef,
+          targetPixelRatio,
+          needsWhiteFlatten ? 'image/png' : format === 'png' ? 'image/png' : 'image/jpeg',
+          needsWhiteFlatten ? undefined : quality,
+          captureRect,
+          {
+            useFullResolution: true,
+            ...(stickerOverrides?.imageOverrides.length
+              ? { imageOverrides: stickerOverrides.imageOverrides }
+              : {}),
+          },
+        );
+      } catch (e) {
+        logger.error('Failed to export via Konva Stage, falling back to manual canvas:', e);
+        stageBlob = null;
+      }
+
+      if (stageBlob) {
+        if (!needsWhiteFlatten) {
+          return stageBlob;
         }
-        fctx.fillStyle = previewWhite();
-        fctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
-        // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
-        fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
-        const flattenedBlob = await new Promise<Blob | null>((resolve) => {
-          flattenCanvas.toBlob(resolve, 'image/jpeg', quality);
-        });
-        if (!flattenedBlob) {
-          throw new Error('Failed to encode flattened JPEG blob');
+
+        const captured = await createImageBitmap(stageBlob);
+        try {
+          const flattenCanvas = document.createElement('canvas');
+          flattenCanvas.width = canvasWidth;
+          flattenCanvas.height = canvasHeight;
+          const fctx = flattenCanvas.getContext('2d');
+          if (!fctx) {
+            throw new Error('Failed to acquire 2D context while flattening JPEG transparency');
+          }
+          fctx.fillStyle = previewWhite();
+          fctx.fillRect(0, 0, canvasWidth, canvasHeight);
+          // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
+          // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
+          fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
+          const flattenedBlob = await new Promise<Blob | null>((resolve) => {
+            flattenCanvas.toBlob(resolve, 'image/jpeg', quality);
+          });
+          if (!flattenedBlob) {
+            throw new Error('Failed to encode flattened JPEG blob');
+          }
+          return flattenedBlob;
+        } finally {
+          captured.close();
         }
-        return flattenedBlob;
-      } finally {
-        captured.close();
       }
     }
-  }
 
-  // Fallback البديل في حال عدم وجود المكون الرسومي نشطاً (للاختبارات مثلاً)
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
+    // Fallback البديل في حال عدم وجود المكون الرسومي نشطاً (للاختبارات مثلاً)
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
 
-  if (format === 'jpg' || backgroundColor !== 'transparent') {
-    // 🎨 تدرج الخلفية: نفس هندسة Konva (0° يسار→يمين مع عقارب الساعة، حول المركز)
-    const hasGradient =
-      Boolean(backgroundGradientColor2) &&
-      backgroundColor !== 'transparent' &&
-      backgroundGradientColor2 !== 'transparent';
-    if (hasGradient) {
-      // نفس دالة المرسم (gradient-geometry) → امتداد واتجاه متطابقان بين المعاينة والناتج
-      const { start, end } = gradientPixelPoints(
-        backgroundGradientAngle ?? 135,
+    if (format === 'jpg' || backgroundColor !== 'transparent') {
+      // 🎨 تدرج الخلفية: نفس هندسة Konva (0° يسار→يمين مع عقارب الساعة، حول المركز)
+      const hasGradient =
+        Boolean(backgroundGradientColor2) &&
+        backgroundColor !== 'transparent' &&
+        backgroundGradientColor2 !== 'transparent';
+      if (hasGradient) {
+        // نفس دالة المرسم (gradient-geometry) → امتداد واتجاه متطابقان بين المعاينة والناتج
+        const { start, end } = gradientPixelPoints(
+          backgroundGradientAngle ?? 135,
+          canvasWidth,
+          canvasHeight,
+        );
+        const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+        grad.addColorStop(0, backgroundColor);
+        grad.addColorStop(1, backgroundGradientColor2 as string);
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = backgroundColor === 'transparent' ? previewWhite() : backgroundColor;
+      }
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    }
+
+    if (mode === 'collage') {
+      const state = useEditorStore.getState();
+      await renderCollageBranch(ctx, {
         canvasWidth,
         canvasHeight,
-      );
-      const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-      grad.addColorStop(0, backgroundColor);
-      grad.addColorStop(1, backgroundGradientColor2 as string);
-      ctx.fillStyle = grad;
+        slots,
+        collageGap: state.collageGap,
+        collageMargin: state.collageMargin,
+        collageRadius: state.collageRadius,
+        collageShowCutLines: state.collageShowCutLines,
+        collageShowEndCutLine: state.collageShowEndCutLine,
+        // 🖨️ نمط خطوط القص الموحّد (RV-Print-25) — كان التصدير اليدوي يتجاهله.
+        collageCutLineStyle: state.printSettings?.cutLineStyle ?? 'dashed',
+        collageStrokeWidth: state.collageStrokeWidth,
+        collageStrokeColor: state.collageStrokeColor,
+        collageTemplate: state.collageTemplate,
+      });
     } else {
-      ctx.fillStyle = backgroundColor === 'transparent' ? previewWhite() : backgroundColor;
+      const exportElements =
+        stickerOverrides && stickerOverrides.srcOverrides.size > 0
+          ? elements.map((el) =>
+              el.type === 'image' && stickerOverrides.srcOverrides.has(el.id)
+                ? { ...el, imageSrc: stickerOverrides.srcOverrides.get(el.id)! }
+                : el,
+            )
+          : elements;
+      await renderFittedBranch(ctx, exportElements, canvasWidth, canvasHeight);
     }
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  }
 
-  if (mode === 'collage') {
-    const state = useEditorStore.getState();
-    await renderCollageBranch(ctx, {
-      canvasWidth,
-      canvasHeight,
-      slots,
-      collageGap: state.collageGap,
-      collageMargin: state.collageMargin,
-      collageRadius: state.collageRadius,
-      collageShowCutLines: state.collageShowCutLines,
-      collageShowEndCutLine: state.collageShowEndCutLine,
-      // 🖨️ نمط خطوط القص الموحّد (RV-Print-25) — كان التصدير اليدوي يتجاهله.
-      collageCutLineStyle: state.printSettings?.cutLineStyle ?? 'dashed',
-      collageStrokeWidth: state.collageStrokeWidth,
-      collageStrokeColor: state.collageStrokeColor,
-      collageTemplate: state.collageTemplate,
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        format === 'png' ? 'image/png' : 'image/jpeg',
+        quality,
+      );
     });
-  } else {
-    await renderFittedBranch(ctx, elements, canvasWidth, canvasHeight);
+  } finally {
+    stickerOverrides?.dispose();
   }
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), format === 'png' ? 'image/png' : 'image/jpeg', quality);
-  });
 }
