@@ -6,15 +6,22 @@
  * (Go) يطبّقان الخوارزمية الحقيقية — فترى المعاينة ضباباً وتطبع مكعبات.
  *
  * الحل: نفس خوارزميات المصدر الواحد (lib/filters/pixel-filters.ts — مطابقة حرفياً
- * لـ Go) تُطبَّق على كانفاس مصغّر بنسبة أبعاد الخانة وأبعاد طباعة مخفّضة (سقف 480px
- * وحجم كتلة pixelate متناسب مع نسبة التصغير فتظهر المكعبات بمقياس المطبوع)، ثم
- * تُستخدم النتيجة كصورة الخانة بدل تقريب CSS. تعديلات الألوان (سطوع/تباين/تشبع)
- * تُخبز مسبقاً بـ ctx.filter قبل مرشّح البكسل — نفس ترتيب Go (تعديلات ثم مرشّح).
+ * لـ Go) + نافذة القص الفعلية (`computeSlotCrop` مع zoom/drag/rotation/cropMode)
+ * تُطبَّق على كانفاس مصغّر بنسبة أبعاد الخانة المحلية وأبعاد طباعة مخفّضة (سقف
+ * 480px وحجم كتلة pixelate متناسب مع نسبة التصغير فتظهر المكعبات بمقياس المطبوع)،
+ * ثم تُستخدم النتيجة كصورة الخانة بلا إعادة تطبيق zoom/pan/object-position.
  *
  * الفشل دائماً هادئ: يعيد url فارغاً وتبقى الخانة على تقريب CSS القديم.
  */
 
 import { DEFAULT_DPI } from '@/lib/canvas/units';
+import {
+  clampSlotZoom,
+  computeSlotCrop,
+  getSlotLocalSize,
+  resolveSlotCropMode,
+  type SlotCropMode,
+} from '@/lib/export/export-primitives';
 import {
   applyLuminanceThreshold,
   applyNearestPixelate,
@@ -25,6 +32,14 @@ import { buildAdjustmentCSS, type FilterableObject } from '@/lib/utils';
 
 /** سقف الضلع الأطول لكانفاس المعاينة — يكفي حدة الشاشة ويحفظ الذاكرة. */
 const MAX_PREVIEW_PX = 480;
+
+export interface PixelPreviewSlotInput extends FilterableObject {
+  zoom?: number;
+  dragX?: number;
+  dragY?: number;
+  rotation?: number;
+  cropMode?: SlotCropMode;
+}
 
 export interface PixelPreviewResult {
   url: string;
@@ -57,6 +72,24 @@ export function getPixelPreviewNaturalSize(src: string): { w: number; h: number 
   return naturalDims.get(src);
 }
 
+/** يبني مفتاح كاش موحّداً يشمل كافة مدخلات القص والمرشّح والتعديلات. */
+export function buildPixelPreviewCacheKey(
+  src: string,
+  filter: string,
+  el: PixelPreviewSlotInput | undefined,
+  targetW: number,
+  targetH: number,
+  blockPx: number,
+): string {
+  const adjustments = buildAdjustmentCSS(el);
+  const zoom = clampSlotZoom(el?.zoom);
+  const dragX = el?.dragX || 0;
+  const dragY = el?.dragY || 0;
+  const rotation = (((el?.rotation || 0) % 360) + 360) % 360;
+  const cropMode = resolveSlotCropMode(el?.cropMode);
+  return `${src}|${filter}|${adjustments}|${targetW}x${targetH}|${blockPx}|z=${zoom}|dx=${dragX}|dy=${dragY}|r=${rotation}|cm=${cropMode}`;
+}
+
 /**
  * يعيد صورة معاينة لخانة بمرشّح بكسل حقيقي (data URL) مع أبعاد المصدر الأصلية.
  * يعيد url فارغاً عند أي فشل (رسم غير متاح في jsdom، فك ترميز، …) — المستهلك
@@ -65,24 +98,25 @@ export function getPixelPreviewNaturalSize(src: string): { w: number; h: number 
 export function renderPixelFilterPreview(
   src: string,
   filter: string,
-  el: FilterableObject | undefined,
+  el: PixelPreviewSlotInput | undefined,
   slotRectMM: { wMM: number; hMM: number },
 ): Promise<PixelPreviewResult> {
   if (!isPixelFilter(filter)) {
     return Promise.resolve({ url: '', naturalW: 0, naturalH: 0 });
   }
 
-  // أبعاد الطباعة الكاملة للخانة مخفّضة إلى سقف المعاينة — كتلة pixelate تُقاس
-  // بنسبة التصغير نفسها فتبقى المكعبات بمقياس المطبوع لا بمقياس المصدر.
-  const printW = Math.max(1, Math.round((slotRectMM.wMM / 25.4) * DEFAULT_DPI));
-  const printH = Math.max(1, Math.round((slotRectMM.hMM / 25.4) * DEFAULT_DPI));
+  // أبعاد الطباعة المحلية للخانة (تبدّل عند 90/270) مخفّضة إلى سقف المعاينة —
+  // كتلة pixelate تُقاس بنسبة التصغير نفسها فتبقى المكعبات بمقياس المطبوع.
+  const localSize = getSlotLocalSize(slotRectMM.wMM, slotRectMM.hMM, el?.rotation);
+  const printW = Math.max(1, Math.round((localSize.width / 25.4) * DEFAULT_DPI));
+  const printH = Math.max(1, Math.round((localSize.height / 25.4) * DEFAULT_DPI));
   const shrink = Math.min(1, MAX_PREVIEW_PX / Math.max(printW, printH));
   const targetW = Math.max(4, Math.round(printW * shrink));
   const targetH = Math.max(4, Math.round(printH * shrink));
   const blockPx = Math.max(1, Math.round(PIXELATE_BLOCK_PX * shrink));
 
   const adjustments = buildAdjustmentCSS(el);
-  const key = `${src}|${filter}|${adjustments}|${targetW}x${targetH}|${blockPx}`;
+  const key = buildPixelPreviewCacheKey(src, filter, el, targetW, targetH, blockPx);
 
   const cached = resultCache.get(key);
   if (cached) return Promise.resolve(cached);
@@ -92,7 +126,9 @@ export function renderPixelFilterPreview(
 
   const job = (async (): Promise<PixelPreviewResult> => {
     const img = await loadImage(src);
-    naturalDims.set(src, { w: img.naturalWidth, h: img.naturalHeight });
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    naturalDims.set(src, { w: nw, h: nh });
 
     if (typeof document === 'undefined') throw new Error('no document for pixel preview');
     const canvas = document.createElement('canvas');
@@ -103,13 +139,20 @@ export function renderPixelFilterPreview(
 
     // تعديلات الألوان أولاً (نفس ترتيب Go: applyColorAdjustments قبل applyFilter)
     ctx.filter = adjustments === 'none' ? 'none' : adjustments;
-    // اقتصاص تغطية (object-cover) — نفس هندسة الخانة في المحرر
-    const nw = img.naturalWidth;
-    const nh = img.naturalHeight;
-    const coverScale = Math.max(targetW / nw, targetH / nh);
-    const sw = targetW / coverScale;
-    const sh = targetH / coverScale;
-    ctx.drawImage(img, (nw - sw) / 2, (nh - sh) / 2, sw, sh, 0, 0, targetW, targetH);
+    // نافذة القصّ الفعلية للخانة (cover + zoom + dragX/dragY + rotation + cropMode)
+    const { sx, sy, sw, sh } = computeSlotCrop(
+      { width: nw, height: nh },
+      slotRectMM.wMM,
+      slotRectMM.hMM,
+      {
+        zoom: el?.zoom,
+        dragX: el?.dragX,
+        dragY: el?.dragY,
+        rotation: el?.rotation,
+        cropMode: el?.cropMode,
+      },
+    );
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
     ctx.filter = 'none';
 
     const imageData = ctx.getImageData(0, 0, targetW, targetH);

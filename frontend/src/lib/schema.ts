@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { clampSlotZoom } from '@/lib/export/export-primitives';
+
 import { sanitizeText } from './canvas/text-helpers';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
 import { sanitizeSvgMarkup } from './utils';
@@ -286,12 +288,13 @@ export const CanvasSlotSchema = z.object({
   brightness: z.number().optional(),
   contrast: z.number().optional(),
   saturation: z.number().optional(),
-  zoom: z.number().optional(),
+  zoom: z.preprocess((v) => (typeof v === 'number' ? clampSlotZoom(v) : v), z.number().optional()),
   dragX: z.number().optional(),
   dragY: z.number().optional(),
   flipX: z.boolean().optional(),
   flipY: z.boolean().optional(),
   rotation: z.number().optional(),
+  cropMode: z.enum(['legacy', 'centered']).optional(),
 });
 
 export const PrintSettingsSchema = z.object({

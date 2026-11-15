@@ -479,6 +479,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   flipX={slot.flipX}
                   flipY={slot.flipY}
                   rotation={slot.rotation}
+                  cropMode={slot.cropMode}
                   draggable={isPrimary}
                   cornerRadius={radius}
                   onUpdateOffsets={(x, y) => {

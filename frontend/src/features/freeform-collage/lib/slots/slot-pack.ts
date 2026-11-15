@@ -147,13 +147,15 @@ export function autoPackSlots(
     const pHRel = pH / paperHeightMM;
     const iWRel = iW / paperWidthMM;
     const iHRel = iH / paperHeightMM;
+    const marginXRel = marginMM / paperWidthMM;
+    const marginYRel = marginMM / paperHeightMM;
     const gapXRel = gapMM / paperWidthMM;
 
     for (let c = 0; c < pCols; c++) {
       slots.push({
         id: newSlotId('combo_p'),
-        x: Number((c * (pWRel + gapXRel)).toFixed(4)),
-        y: 0,
+        x: Number((marginXRel + c * (pWRel + gapXRel)).toFixed(4)),
+        y: Number(marginYRel.toFixed(4)),
         w: Number(pWRel.toFixed(4)),
         h: Number(pHRel.toFixed(4)),
         presetType: 'passport',
@@ -165,11 +167,11 @@ export function autoPackSlots(
     if (remainingHMM >= iH) {
       const iCols = Math.max(1, Math.floor((availWMM + gapMM) / (iW + gapMM)));
       const iRows = Math.floor((remainingHMM + gapMM) / (iH + gapMM));
-      const startYMM = pH + gapMM;
+      const startYMM = marginMM + pH + gapMM;
 
       for (let r = 0; r < iRows; r++) {
         for (let c = 0; c < iCols; c++) {
-          const x = c * (iWRel + gapXRel);
+          const x = (marginMM + c * (iW + gapMM)) / paperWidthMM;
           const y = (startYMM + r * (iH + gapMM)) / paperHeightMM;
           slots.push({
             id: newSlotId('combo_id'),
@@ -187,19 +189,22 @@ export function autoPackSlots(
   }
 
   if (strategy === 'combo-family') {
-    const bigW = paperWidthMM >= 180 ? 100 : 60;
-    const bigH = paperWidthMM >= 180 ? 150 : 90;
+    const isLargeSheet = paperWidthMM >= 180;
+    const bigW = isLargeSheet ? 100 : 60;
+    const bigH = isLargeSheet ? 150 : 90;
     const bigWRel = bigW / paperWidthMM;
     const bigHRel = bigH / paperHeightMM;
+    const marginXRel = marginMM / paperWidthMM;
+    const marginYRel = marginMM / paperHeightMM;
 
     slots.push({
       id: newSlotId('family_big'),
-      x: 0,
-      y: 0,
+      x: Number(marginXRel.toFixed(4)),
+      y: Number(marginYRel.toFixed(4)),
       w: Number(bigWRel.toFixed(4)),
       h: Number(bigHRel.toFixed(4)),
-      presetType: 'portrait-4x6',
-      label: 'صورة بورتريه رئيسية',
+      presetType: isLargeSheet ? 'photo-10x15' : 'custom',
+      label: isLargeSheet ? 'صورة عائلية 10×15' : 'صورة رئيسية 6×9',
     });
 
     const sideWMM = availWMM - bigW - gapMM;
@@ -208,8 +213,8 @@ export function autoPackSlots(
       const sideRows = Math.floor((bigH + gapMM) / (45 + gapMM));
       for (let r = 0; r < sideRows; r++) {
         for (let c = 0; c < sideCols; c++) {
-          const x = (bigW + gapMM + c * (35 + gapMM)) / paperWidthMM;
-          const y = (r * (45 + gapMM)) / paperHeightMM;
+          const x = (marginMM + bigW + gapMM + c * (35 + gapMM)) / paperWidthMM;
+          const y = (marginMM + r * (45 + gapMM)) / paperHeightMM;
           slots.push({
             id: newSlotId('family_side'),
             x: Number(x.toFixed(4)),
@@ -229,8 +234,8 @@ export function autoPackSlots(
       const bRows = Math.floor((bottomHMM + gapMM) / (45 + gapMM));
       for (let r = 0; r < bRows; r++) {
         for (let c = 0; c < bCols; c++) {
-          const x = (c * (35 + gapMM)) / paperWidthMM;
-          const y = (bigH + gapMM + r * (45 + gapMM)) / paperHeightMM;
+          const x = (marginMM + c * (35 + gapMM)) / paperWidthMM;
+          const y = (marginMM + bigH + gapMM + r * (45 + gapMM)) / paperHeightMM;
           slots.push({
             id: newSlotId('family_bottom'),
             x: Number(x.toFixed(4)),

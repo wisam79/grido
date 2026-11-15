@@ -370,22 +370,69 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
   );
 });
 
-describe('SheetPreview pan helper shares one convention between both rotation branches', () => {
+describe('SheetPreview pan helper shares exact objectPosition & transform math across zoom and rotation', () => {
   const naturalSize = { w: 1200, h: 800 };
 
-  it('applies drag offsets in the quarter-turn branch instead of centering', () => {
-    const slot = { zoom: 2, dragX: 200, dragY: 0 };
-    // نسبة المقاس المحلي بعد 90 (المتبدلة) مقابل نسبة الخانة النهائية.
-    const quarter = computeSlotPreviewPan(slot, naturalSize, 600 / 400);
-    const straight = computeSlotPreviewPan(slot, naturalSize, 400 / 600);
-    expect(quarter.panX).not.toBe(0);
-    expect(quarter.panX).toBeCloseTo((100 * 2 * 200) / 1200, 9);
-    expect(straight.panX).toBeCloseTo((100 * 2 * 200) / (800 * (400 / 600)), 9);
+  it('pans zoomed matching-aspect slots in CSS direction and maps rotation/flip vectors', () => {
+    // 1200×800 داخل نسبة مطابقة 1.5 (excess = 0): يتحوّل كامل dragX لـ translate بإشارة CSS صحيحة (-cropMove)
+    const matching = computeSlotPreviewPan(
+      { zoom: 2, dragX: 200, dragY: 0, cropMode: 'centered' },
+      naturalSize,
+      1.5,
+    );
+    expect(matching.objectPositionX).toBe(50);
+    expect(matching.objectPositionY).toBe(50);
+    expect(matching.panX).toBeCloseTo(-(100 * 2 * 200) / 1200, 9);
+    expect(matching.panY).toBe(0);
+
+    // تدوير 90° يحوّل سحب X على الصورة الأصلية إلى تحويم Y على الشاشة بمقياس boxAspect
+    const quarterRot = computeSlotPreviewPan(
+      { zoom: 2, dragX: 200, dragY: 0, rotation: 90, cropMode: 'centered' },
+      naturalSize,
+      1.5,
+    );
+    expect(quarterRot.panX).toBe(0);
+    expect(quarterRot.panY).toBeCloseTo(-50, 9);
+
+    // flipX يعكس اتجاه التحويم الأفقي
+    const flipped = computeSlotPreviewPan(
+      { zoom: 2, dragX: 200, dragY: 0, flipX: true, cropMode: 'centered' },
+      naturalSize,
+      1.5,
+    );
+    expect(flipped.panX).toBeCloseTo((100 * 2 * 200) / 1200, 9);
   });
 
-  it('stays centered when no drag is stored or zoom is 1', () => {
-    expect(computeSlotPreviewPan({ zoom: 2 }, naturalSize, 1.5)).toEqual({ panX: 0, panY: 0 });
+  it('applies user pan at zoom=1 via objectPosition without white-bar translate overflow', () => {
+    // نسبة الخانة 2/3 مع صورة 1200×800: coverW = 533.333، excessX = 666.667، maxDragX = 333.333 حتى مع zoom=1
+    const zoom1Pan = computeSlotPreviewPan({ zoom: 1, dragX: 200 }, naturalSize, 400 / 600);
+    expect(zoom1Pan.objectPositionX).toBeCloseTo(80, 9);
+    expect(zoom1Pan.objectPositionY).toBe(50);
+    expect(zoom1Pan.panX).toBe(0);
+    expect(zoom1Pan.panY).toBe(0);
+
+    // عند zoom=2 وdragX=400 يُستنفد فائض cover عبر objectPosition=100% ثم يضاف الباقي (66.667) عبر translate(-25%)
+    const overflowSplit = computeSlotPreviewPan({ zoom: 2, dragX: 400 }, naturalSize, 400 / 600);
+    expect(overflowSplit.objectPositionX).toBeCloseTo(100, 9);
+    expect(overflowSplit.panX).toBeCloseTo(-25, 9);
+  });
+
+  it('stays centered when no drag is stored or matching-aspect zoom=1 leaves no overflow', () => {
+    expect(computeSlotPreviewPan({ zoom: 2, cropMode: 'centered' }, naturalSize, 1.5)).toEqual({
+      objectPositionX: 50,
+      objectPositionY: 50,
+      panX: 0,
+      panY: 0,
+    });
+    expect(computeSlotPreviewPan({ zoom: 2 }, naturalSize, 1.5)).toEqual({
+      objectPositionX: 50,
+      objectPositionY: 50,
+      panX: 50,
+      panY: 0,
+    });
     expect(computeSlotPreviewPan({ zoom: 1, dragX: 200 }, naturalSize, 1.5)).toEqual({
+      objectPositionX: 50,
+      objectPositionY: 50,
       panX: 0,
       panY: 0,
     });

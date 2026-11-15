@@ -242,6 +242,7 @@ func TestComputeCropFromSlot_GoldenFixtures(t *testing.T) {
 				DragX    float64 `json:"dragX"`
 				DragY    float64 `json:"dragY"`
 				Rotation float64 `json:"rotation"`
+				CropMode string  `json:"cropMode"`
 			} `json:"input"`
 			Expected struct {
 				CropX float64 `json:"cropX"`
@@ -267,6 +268,7 @@ func TestComputeCropFromSlot_GoldenFixtures(t *testing.T) {
 				DragX:      tc.Input.DragX,
 				DragY:      tc.Input.DragY,
 				Rotation:   tc.Input.Rotation,
+				CropMode:   tc.Input.CropMode,
 			}
 
 			cx, cy, cw, ch := computeCropFromSlot(item, img)
@@ -281,6 +283,85 @@ func TestComputeCropFromSlot_GoldenFixtures(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestComputeCropFromSlot_CenteredZoom(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 800, 600))
+	item := domain.PrintItem{
+		SlotAspect: 400.0 / 300.0,
+		Zoom:       2.0,
+		CropMode:   "centered",
+	}
+	cx, cy, cw, ch := computeCropFromSlot(item, img)
+	if cx != 200 || cy != 150 || cw != 400 || ch != 300 {
+		t.Fatalf("centered zoom crop = (%v,%v %v×%v), want (200,150 400×300)", cx, cy, cw, ch)
+	}
+}
+
+func TestComputeCropFromSlot_LegacyVsCenteredAndZoomBounds(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 800, 600))
+
+	legacyItem := domain.PrintItem{SlotAspect: 2.0, Zoom: 2.0}
+	cx, cy, cw, ch := computeCropFromSlot(legacyItem, img)
+	if cx != 0 || cy != 200 || cw != 400 || ch != 200 {
+		t.Fatalf("legacy omitted cropMode = (%v,%v %v×%v), want (0,200 400×200)", cx, cy, cw, ch)
+	}
+
+	explicitLegacy := domain.PrintItem{SlotAspect: 2.0, Zoom: 2.0, CropMode: "legacy"}
+	cx, cy, cw, ch = computeCropFromSlot(explicitLegacy, img)
+	if cx != 0 || cy != 200 || cw != 400 || ch != 200 {
+		t.Fatalf("explicit legacy cropMode = (%v,%v %v×%v), want (0,200 400×200)", cx, cy, cw, ch)
+	}
+
+	centeredItem := domain.PrintItem{SlotAspect: 2.0, Zoom: 2.0, CropMode: "centered"}
+	cx, cy, cw, ch = computeCropFromSlot(centeredItem, img)
+	if cx != 200 || cy != 200 || cw != 400 || ch != 200 {
+		t.Fatalf("centered cropMode = (%v,%v %v×%v), want (200,200 400×200)", cx, cy, cw, ch)
+	}
+
+	zeroZoom := domain.PrintItem{SlotAspect: 2.0, Zoom: 0, CropMode: "centered"}
+	cx, cy, cw, ch = computeCropFromSlot(zeroZoom, img)
+	if cx != 0 || cy != 100 || cw != 800 || ch != 400 {
+		t.Fatalf("zero zoom centered = (%v,%v %v×%v), want (0,100 800×400)", cx, cy, cw, ch)
+	}
+}
+
+func TestValidatePrintItem_ZoomAndCropMode(t *testing.T) {
+	base := domain.PrintItem{
+		W:    100,
+		H:    100,
+		Zoom: 1,
+	}
+
+	for _, badZoom := range []float64{0.5, 3.5, -1} {
+		it := base
+		it.Zoom = badZoom
+		if err := validatePrintItem(it, 0, "sheet 1"); err == nil {
+			t.Fatalf("expected error for Zoom=%v, got nil", badZoom)
+		}
+	}
+
+	for _, goodZoom := range []float64{0, 1, 2.5, 3} {
+		it := base
+		it.Zoom = goodZoom
+		if err := validatePrintItem(it, 0, "sheet 1"); err != nil {
+			t.Fatalf("expected nil error for Zoom=%v, got %v", goodZoom, err)
+		}
+	}
+
+	badMode := base
+	badMode.CropMode = "invalid"
+	if err := validatePrintItem(badMode, 0, "sheet 1"); err == nil {
+		t.Fatalf("expected error for invalid CropMode, got nil")
+	}
+
+	for _, goodMode := range []string{"", "legacy", "centered"} {
+		it := base
+		it.CropMode = goodMode
+		if err := validatePrintItem(it, 0, "sheet 1"); err != nil {
+			t.Fatalf("expected nil error for CropMode=%q, got %v", goodMode, err)
+		}
 	}
 }
 

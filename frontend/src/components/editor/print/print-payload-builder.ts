@@ -15,7 +15,7 @@ import { paperCaptureRect } from '@/lib/canvas/fit';
 import { resolveImageDimensions } from '@/lib/canvas/image-dimensions';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
-import { computeSlotCrop } from '@/lib/export/export-primitives';
+import { clampSlotZoom, computeSlotCrop } from '@/lib/export/export-primitives';
 import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
@@ -161,6 +161,7 @@ export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<B
           flipX: slot.flipX,
           flipY: slot.flipY,
           rotation: slot.rotation,
+          cropMode: slot.cropMode,
         });
         cropWindow = { cropX: crop.sx, cropY: crop.sy, cropW: crop.sw, cropH: crop.sh };
       }
@@ -179,9 +180,10 @@ export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<B
         saturation: slot.saturation ?? 100,
         slotAspect,
         ...(cropWindow ?? {}),
-        zoom: slot.zoom || 1,
+        zoom: clampSlotZoom(slot.zoom),
         dragX: slot.dragX || 0,
         dragY: slot.dragY || 0,
+        cropMode: slot.cropMode || 'legacy',
         cornerRadiusMM: collageRadius * scaleXPxToMM,
         borderWidthMM: collageStrokeWidth * scaleXPxToMM,
         borderColor: collageStrokeColor,

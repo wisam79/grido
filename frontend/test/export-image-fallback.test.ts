@@ -363,14 +363,28 @@ describe('computeSlotCrop clamps the final window inside the image', () => {
   const img = { width: 1200, height: 800 };
 
   it('keeps a preserved pan valid when the slot is rotated a quarter turn', () => {
-    // خانة 400×600 مدورة 90: المقاس المحلي 600×400 بنسبة مطابقة للصورة —
-    // كان التقييم المتماثل حول نقطة البدء (الحافة) يسمح بمصدر سالب بعد
-    // إبقاء pan المستخدم عبر rotateSlot.
-    const crop = computeSlotCrop(img, 400, 600, { rotation: 90, zoom: 2, dragX: -200, dragY: 0 });
-    expect(crop.sx).toBe(0);
-    expect(crop.sy).toBe(200);
-    expect(crop.sw).toBe(600);
-    expect(crop.sh).toBe(400);
+    // خانة 400×600 مدورة 90: المقاس المحلي 600×400 بنسبة مطابقة للصورة (1200×800)؛
+    // المركز الافتراضي عند zoom=2 هو (300, 200)، وبالتحويم -200 يظل 100 ويُحسم السالب للصفر عند تجاوز المدى.
+    const within = computeSlotCrop(img, 400, 600, {
+      rotation: 90,
+      zoom: 2,
+      dragX: -200,
+      dragY: 0,
+      cropMode: 'centered',
+    });
+    expect(within.sx).toBe(100);
+    expect(within.sy).toBe(200);
+    expect(within.sw).toBe(600);
+    expect(within.sh).toBe(400);
+
+    const clamped = computeSlotCrop(img, 400, 600, {
+      rotation: 90,
+      zoom: 2,
+      dragX: -500,
+      dragY: 0,
+    });
+    expect(clamped.sx).toBe(0);
+    expect(clamped.sy).toBe(200);
   });
 
   it('clamps the window to the true far edge instead of a symmetric half-range', () => {
@@ -381,10 +395,15 @@ describe('computeSlotCrop clamps the final window inside the image', () => {
     expect(crop.sy + crop.sh).toBeLessThanOrEqual(800);
   });
 
-  it('preserves the centered-window behavior for unrotated slots', () => {
-    const crop = computeSlotCrop(img, 400, 600, { zoom: 2, dragX: 100, dragY: 50 });
+  it('centers zoom on both axes before applying user pan for unrotated slots', () => {
+    const crop = computeSlotCrop(img, 400, 600, {
+      zoom: 2,
+      dragX: 100,
+      dragY: 50,
+      cropMode: 'centered',
+    });
     expect(crop.sx).toBeCloseTo(466.6667 + 100, 3);
-    expect(crop.sy).toBe(50);
+    expect(crop.sy).toBe(250);
     expect(crop.sw).toBeCloseTo(266.6667, 3);
     expect(crop.sh).toBe(400);
   });

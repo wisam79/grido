@@ -364,7 +364,10 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
           label: 'بطاقة 3.5×4.5',
         }),
       ),
-      a4Cell(36.7, 99.8, 101.6, 152.4, { presetType: 'portrait-4x6', label: 'بورتريه 4×6' }),
+      a4Cell(36.7, 99.8, 101.6, 152.4, {
+        presetType: 'photo-10x15',
+        label: 'بورتريه 4×6 بوصة (10×15 سم)',
+      }),
       a4Cell(143.3, 99.8, 30, 40, { presetType: 'iq-transactions', label: 'معاملة 3×4' }),
       a4Cell(143.3, 142.8, 30, 40, { presetType: 'iq-transactions', label: 'معاملة 3×4' }),
     ],

@@ -252,6 +252,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           zoom: 1,
           dragX: 0,
           dragY: 0,
+          cropMode: 'centered',
         }));
       };
 

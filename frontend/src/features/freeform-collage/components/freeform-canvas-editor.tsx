@@ -87,9 +87,11 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
 
         if (st.mode === 'resize' && st.handle) {
           const targetSlot = st.origSlots.find((s) => s.id === st.slotId);
+          // إحداثيات slot-resize مطبّعة [0..1] — نمرّر النسبة المطبّعة w/h
+          // لتظل النسبة الفيزيائية (w * paperWidthMM) / (h * paperHeightMM) ثابتة.
           const aspect =
-            targetSlot?.lockAspect && targetSlot.w > 0
-              ? (targetSlot.w * paperWidthMM) / (targetSlot.h * paperHeightMM)
+            targetSlot?.lockAspect && targetSlot.w > 0 && targetSlot.h > 0
+              ? targetSlot.w / targetSlot.h
               : undefined;
 
           const res = resizeSlotWithSnap(
@@ -119,7 +121,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
         onSlotsChange(next);
         if (mountedRef.current) setActiveSnapLines(snapLines);
       },
-      [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM],
+      [onSlotsChange, enableSnapping],
     );
 
     useEffect(() => {

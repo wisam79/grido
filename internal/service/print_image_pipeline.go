@@ -996,17 +996,27 @@ func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, 
 		zoomVal := item.Zoom
 		if zoomVal <= 0 {
 			zoomVal = 1
+		} else if zoomVal < 1 {
+			zoomVal = 1
+		} else if zoomVal > 3 {
+			zoomVal = 3
 		}
 
 		sw = sw / zoomVal
 		sh = sh / zoomVal
 
-		defaultSx := 0.0
-		defaultSy := 0.0
-		if imgAspect > slotAspect {
+		// التوافق مع المشاريع القديمة: "centered" يوسّط المحورين، و"legacy" (أو الفراغ)
+		// يحفظ نقطة البدء السابقة عند الحافة للمحور غير الفائض.
+		var defaultSx, defaultSy float64
+		if item.CropMode == "centered" {
 			defaultSx = (imgW - sw) / 2
-		} else {
 			defaultSy = (imgH - sh) / 2
+		} else {
+			if imgAspect > slotAspect {
+				defaultSx = (imgW - sw) / 2
+			} else {
+				defaultSy = (imgH - sh) / 2
+			}
 		}
 
 		// نافذة القصّة النهائية تُقيَّد بحدود الصورة نفسها لا بإزاحة متماثلة

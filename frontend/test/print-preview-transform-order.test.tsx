@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
 import { SheetPreview } from '../src/components/editor/print/print-preview';
@@ -163,6 +163,46 @@ describe('Print preview slot transform order (flip before rotate)', () => {
     );
     expect(img.style.transform.indexOf('rotate')).toBeLessThan(
       img.style.transform.indexOf('scaleX'),
+    );
+  });
+
+  it('applies objectPosition at zoom=1 pan and rotated CSS pan at zoom>1', () => {
+    const img1 = renderPreview({ ...baseSlot, rotation: 0, flipX: false, zoom: 1, dragX: 200 });
+    Object.defineProperty(img1, 'naturalWidth', { value: 1200, configurable: true });
+    Object.defineProperty(img1, 'naturalHeight', { value: 800, configurable: true });
+    fireEvent.load(img1);
+    expect(img1.style.objectPosition).toBe('80% 50%');
+    expect(img1.style.transform).toBe(
+      'translate(0%, 0%) scale(1) rotate(0deg) scaleX(1) scaleY(1)',
+    );
+
+    const img90 = renderPreview({
+      ...baseSlot,
+      rotation: 90,
+      flipX: false,
+      zoom: 2,
+      dragX: 200,
+      cropMode: 'centered',
+    });
+    Object.defineProperty(img90, 'naturalWidth', { value: 1200, configurable: true });
+    Object.defineProperty(img90, 'naturalHeight', { value: 800, configurable: true });
+    fireEvent.load(img90);
+    expect(img90.style.transform).toBe(
+      'translate(0%, -50%) scale(2) rotate(90deg) scaleX(1) scaleY(1)',
+    );
+
+    const img90Legacy = renderPreview({
+      ...baseSlot,
+      rotation: 90,
+      flipX: false,
+      zoom: 2,
+      dragX: 200,
+    });
+    Object.defineProperty(img90Legacy, 'naturalWidth', { value: 1200, configurable: true });
+    Object.defineProperty(img90Legacy, 'naturalHeight', { value: 800, configurable: true });
+    fireEvent.load(img90Legacy);
+    expect(img90Legacy.style.transform).toBe(
+      'translate(0%, 25%) scale(2) rotate(90deg) scaleX(1) scaleY(1)',
     );
   });
 });

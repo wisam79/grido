@@ -121,7 +121,31 @@ describe('Decorative collage print payload', () => {
   it('6.2: نافذة القصّة النهائية تُرسل محسوبة مرة واحدة (عقد احسب-مرة-واحدة)', async () => {
     // اشتقاق ذهبي يدوي: أبعاد الصورة الموكلة 800×600، الخانة 45×48مم بروت 90
     // (المحلي 48×45) → نافذة cover 640×600 → زوم 1.25 → 512×480 →
-    // sx = (800−512)/2 + 0.1 = 144.1، sy = 0
+    // sx = (800−512)/2 + 0.1 = 144.1، sy = (600−480)/2 = 60
+    const built = await buildCollagePayload(
+      makeCollageContext({
+        slots: [
+          makeSlot({
+            imageSrc: '/local-image/photo.png',
+            zoom: 1.25,
+            dragX: 0.1,
+            rotation: 90,
+            cropMode: 'centered',
+          }),
+        ],
+      }),
+    );
+    expect(built.items[0]).toMatchObject({
+      imageSrc: '/local-image/photo.png',
+      cropX: 144.1,
+      cropY: 60,
+      cropW: 512,
+      cropH: 480,
+      cropMode: 'centered',
+    });
+  });
+
+  it('6.2b: يحافظ على وضع legacy للمشاريع القديمة بلا cropMode', async () => {
     const built = await buildCollagePayload(
       makeCollageContext({
         slots: [
@@ -135,6 +159,7 @@ describe('Decorative collage print payload', () => {
       cropY: 0,
       cropW: 512,
       cropH: 480,
+      cropMode: 'legacy',
     });
   });
 

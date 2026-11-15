@@ -215,6 +215,7 @@ export interface CanvasSlot {
   flipX?: boolean;
   flipY?: boolean;
   rotation?: number;
+  cropMode?: 'legacy' | 'centered';
   originalImageSrc?: string;
   bgColor?: string;
 }

@@ -256,6 +256,12 @@ func validatePrintItem(item domain.PrintItem, index int, scope string) error {
 			return fmt.Errorf("%s item %d %s has invalid NaN or Inf value (غير منتهية)", scope, index+1, field.name)
 		}
 	}
+	if item.Zoom < 0 || (item.Zoom > 0 && item.Zoom < 1) || item.Zoom > 3 {
+		return fmt.Errorf("%s item %d zoom %.4g must be 0 or between 1 and 3", scope, index+1, item.Zoom)
+	}
+	if item.CropMode != "" && item.CropMode != "legacy" && item.CropMode != "centered" {
+		return fmt.Errorf("%s item %d cropMode %q must be legacy or centered", scope, index+1, item.CropMode)
+	}
 	if err := ValidatePrintImageFilter(item.Filter); err != nil {
 		return fmt.Errorf("%s item %d: %w", scope, index+1, err)
 	}

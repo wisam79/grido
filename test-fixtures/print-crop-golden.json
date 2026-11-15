@@ -1,5 +1,5 @@
 {
-  "_comment": "حاضنة ذهبية مشتركة TS/Go لنوافذ قصّ الخانات — وُلدت من computeSlotCrop (المرجع الواجهي) ولا تُعاد توليدها أبداً. يقارنها Go بـ computeCropFromSlot: أي انحراف = انحراف طباعة حقيقي. تحديثها يتطلب مراجعة المالك.",
+  "_comment": "حاضنة ذهبية مشتركة TS/Go لنوافذ قصّ الخانات — حالات التوازي + حالات مستقلة لـ legacy مقابل centered وتدوير 90/270 والتقييد.",
   "tolerance": 1e-9,
   "cases": [
     {
@@ -12,7 +12,8 @@
         "zoom": 1,
         "dragX": 0,
         "dragY": 0,
-        "rotation": 0
+        "rotation": 0,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 118.75,
@@ -31,7 +32,8 @@
         "zoom": 1,
         "dragX": 0.3,
         "dragY": -0.2,
-        "rotation": 0
+        "rotation": 0,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 80.3,
@@ -50,11 +52,12 @@
         "zoom": 1.25,
         "dragX": 0.1,
         "dragY": 0,
-        "rotation": 90
+        "rotation": 90,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 144.1,
-        "cropY": 0,
+        "cropY": 60,
         "cropW": 512,
         "cropH": 480
       }
@@ -69,7 +72,8 @@
         "zoom": 1,
         "dragX": -0.5,
         "dragY": 0.4,
-        "rotation": 270
+        "rotation": 270,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 0,
@@ -88,7 +92,8 @@
         "zoom": 1,
         "dragX": 0,
         "dragY": 0,
-        "rotation": 0
+        "rotation": 0,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 0,
@@ -107,32 +112,34 @@
         "zoom": 2,
         "dragX": 0,
         "dragY": 1.5,
-        "rotation": 180
+        "rotation": 180,
+        "cropMode": "centered"
       },
       "expected": {
-        "cropX": 0,
+        "cropX": 125,
         "cropY": 2407.75,
         "cropW": 250,
         "cropH": 187.5
       }
     },
     {
-      "name": "zoom-below-one",
+      "name": "zoom-unspecified-defaults-one",
       "input": {
         "imgW": 300,
         "imgH": 200,
         "wMM": 200,
         "hMM": 100,
-        "zoom": 0.5,
+        "zoom": 0,
         "dragX": 0,
         "dragY": 0,
-        "rotation": 0
+        "rotation": 0,
+        "cropMode": "centered"
       },
       "expected": {
         "cropX": 0,
-        "cropY": 0,
-        "cropW": 600,
-        "cropH": 300
+        "cropY": 25,
+        "cropW": 300,
+        "cropH": 150
       }
     },
     {
@@ -145,13 +152,54 @@
         "zoom": 3,
         "dragX": 2,
         "dragY": -2,
-        "rotation": 90
+        "rotation": 90,
+        "cropMode": "centered"
       },
       "expected": {
-        "cropX": 2,
+        "cropX": 215.33333333333331,
         "cropY": 211.33333333333331,
         "cropW": 213.33333333333334,
         "cropH": 213.33333333333334
+      }
+    },
+    {
+      "name": "legacy-wide-slot-zoom2-90",
+      "input": {
+        "imgW": 800,
+        "imgH": 600,
+        "wMM": 45,
+        "hMM": 48,
+        "zoom": 2,
+        "dragX": 0,
+        "dragY": 0,
+        "rotation": 90,
+        "cropMode": "legacy"
+      },
+      "expected": {
+        "cropX": 240,
+        "cropY": 0,
+        "cropW": 320,
+        "cropH": 300
+      }
+    },
+    {
+      "name": "centered-wide-slot-zoom2-90",
+      "input": {
+        "imgW": 800,
+        "imgH": 600,
+        "wMM": 45,
+        "hMM": 48,
+        "zoom": 2,
+        "dragX": 0,
+        "dragY": 0,
+        "rotation": 90,
+        "cropMode": "centered"
+      },
+      "expected": {
+        "cropX": 240,
+        "cropY": 150,
+        "cropW": 320,
+        "cropH": 300
       }
     }
   ]

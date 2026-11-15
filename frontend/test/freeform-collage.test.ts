@@ -258,6 +258,37 @@ describe('Freeform Collage Feature Unit Tests (10x Suite)', () => {
     expect(ids.length).toBeGreaterThanOrEqual(4);
   });
 
+  it('respects marginMM offsets in combo-standard and combo-family on all edges', () => {
+    const marginMM = 10;
+    const wMM = 210;
+    const hMM = 297;
+    const minX = marginMM / wMM - 1e-4;
+    const maxRight = 1 - marginMM / wMM + 1e-4;
+    const minY = marginMM / hMM - 1e-4;
+    const maxBottom = 1 - marginMM / hMM + 1e-4;
+
+    for (const strategy of ['combo-standard', 'combo-family'] as const) {
+      const packed = autoPackSlots(strategy, wMM, hMM, 4, marginMM);
+      expect(packed.length).toBeGreaterThan(0);
+      for (const slot of packed) {
+        expect(slot.x).toBeGreaterThanOrEqual(minX);
+        expect(slot.y).toBeGreaterThanOrEqual(minY);
+        expect(slot.x + slot.w).toBeLessThanOrEqual(maxRight);
+        expect(slot.y + slot.h).toBeLessThanOrEqual(maxBottom);
+      }
+    }
+  });
+
+  it('tags combo-family main slot as photo-10x15 on large paper and custom on smaller paper instead of portrait-4x6', () => {
+    const a4Packed = autoPackSlots('combo-family', 210, 297, 2, 5);
+    const a4Main = a4Packed.find((s) => s.id.startsWith('family_big'))!;
+    expect(a4Main.presetType).toBe('photo-10x15');
+
+    const smallPacked = autoPackSlots('combo-family', 100, 150, 2, 5);
+    const smallMain = smallPacked.find((s) => s.id.startsWith('family_big'))!;
+    expect(smallMain.presetType).toBe('custom');
+  });
+
   it('keeps a slot inside the paper bounds after snapping to a far-edge slot', () => {
     const slots: FreeformSlot[] = [
       { id: 'slot1', x: 0.5, y: 0.5, w: 0.1, h: 0.1 },
@@ -654,6 +685,33 @@ describe('Multi-Select & Batch Editing', () => {
         expect(overlapX < 1e-3 || overlapY < 1e-3).toBe(true);
       }
     }
+  });
+
+  it('resolveOverlaps separates overlapping slots near the right edge by pushing the earlier slot backward', () => {
+    const overlapping: FreeformSlot[] = [
+      { id: 'a', x: 0.5, y: 0, w: 0.4, h: 0.9 },
+      { id: 'b', x: 0.55, y: 0, w: 0.4, h: 0.9 },
+    ];
+    const fixed = resolveOverlaps(overlapping);
+    const [a, b] = fixed;
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(b.x + b.w).toBeLessThanOrEqual(1 + 1e-9);
+    const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    expect(overlapX).toBeLessThanOrEqual(1e-3);
+  });
+
+  it('resolveOverlaps falls back to the orthogonal axis when slots cannot fit side-by-side on the primary axis', () => {
+    const overlapping: FreeformSlot[] = [
+      { id: 'a', x: 0.0, y: 0.05, w: 0.7, h: 0.45 },
+      { id: 'b', x: 0.4, y: 0.05, w: 0.6, h: 0.45 },
+    ];
+    const fixed = resolveOverlaps(overlapping);
+    const [a, b] = fixed;
+    const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    expect(overlapX < 1e-3 || overlapY < 1e-3).toBe(true);
+    expect(a.y).toBeGreaterThanOrEqual(0);
+    expect(b.y + b.h).toBeLessThanOrEqual(1 + 1e-9);
   });
 
   it("moveSlots moves the whole group by the leader's snapped delta", () => {

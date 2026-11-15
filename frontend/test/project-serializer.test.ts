@@ -737,5 +737,27 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(hydrated!.printSettings.paperWidthMM).toBe(210);
       expect(hydrated!.printSettings.paperHeightMM).toBe(297);
     });
+
+    it('normalizes out-of-range slot zoom (0.5 -> 1, 5 -> 3) and preserves cropMode round-trip', () => {
+      const project = {
+        version: 1,
+        mode: 'collage',
+        canvasWidth: 1000,
+        canvasHeight: 1000,
+        backgroundColor: '#FFFFFF',
+        elements: [],
+        slots: [
+          { id: 's-low', x: 0, y: 0, w: 0.5, h: 1, zoom: 0.5 },
+          { id: 's-high', x: 0.5, y: 0, w: 0.5, h: 1, zoom: 5, cropMode: 'centered' },
+        ],
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+      expect(hydrated).not.toBeNull();
+      expect(hydrated!.slots[0].zoom).toBe(1);
+      expect(hydrated!.slots[0].cropMode).toBeUndefined();
+      expect(hydrated!.slots[1].zoom).toBe(3);
+      expect(hydrated!.slots[1].cropMode).toBe('centered');
+    });
   });
 });

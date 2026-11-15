@@ -3,6 +3,23 @@
  * مستخرجة من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 
+/** وضع حساب نقطة الأساس عند zoom > 1: legacy للمشاريع القديمة بلا حقل، centered للخانات الجديدة */
+export type SlotCropMode = 'legacy' | 'centered';
+
+export const SLOT_MIN_ZOOM = 1;
+export const SLOT_MAX_ZOOM = 3;
+
+/** يطبّع قيمة التكبير إلى النطاق المدعوم [1..3] (القيم الفارغة أو ≤ 0 تعود إلى 1). */
+export function clampSlotZoom(zoom: number | undefined): number {
+  if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom <= 0) return SLOT_MIN_ZOOM;
+  return Math.max(SLOT_MIN_ZOOM, Math.min(SLOT_MAX_ZOOM, zoom));
+}
+
+/** يحسم وضع القصّ الفعلي: غياب الحقل في المشاريع القديمة يظل legacy. */
+export function resolveSlotCropMode(cropMode: SlotCropMode | undefined): SlotCropMode {
+  return cropMode === 'centered' ? 'centered' : 'legacy';
+}
+
 /** حقول التحويل التي يفهمها drawSlotImage — كلها اختيارية، تطابق عقدة KonvaCollageImage */
 export interface SlotTransform {
   zoom?: number;
@@ -11,6 +28,7 @@ export interface SlotTransform {
   flipX?: boolean;
   flipY?: boolean;
   rotation?: number;
+  cropMode?: SlotCropMode;
 }
 
 /** أبعاد الصورة قبل التدوير؛ يبقى مستطيل الخانة النهائي دون تبديل. */
@@ -84,11 +102,14 @@ export function computeSlotCrop(
   } else {
     sh = img.width / slotAspect;
   }
-  const zoom = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
+  const zoom = clampSlotZoom(slot.zoom);
   sw /= zoom;
   sh /= zoom;
-  const defaultSx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
-  const defaultSy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
+  // وضع centered: يتمركز التكبير في المحورين؛ وضع legacy (مشاريع قديمة بلا cropMode):
+  // يحافظ على نقطة البدء السابقة عند الحافة للمحور غير الفائض منعاً لكسر القصّ القديم.
+  const cropMode = resolveSlotCropMode(slot.cropMode);
+  const defaultSx = cropMode === 'centered' || imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
+  const defaultSy = cropMode === 'centered' || imgAspect <= slotAspect ? (img.height - sh) / 2 : 0;
   // نافذة القصّة النهائية تُقيَّد بحدود الصورة نفسها لا بإزاحة متماثلة حول
   // نقطة البدء: بعد تدوير 90/270 يتبدل موضع البدء (حافة بدل مركز) فكانت
   // القيود المتماثلة تسمح بمصدر سالب يرسم شريطاً فارغاً في التصدير اليدوي،

@@ -326,6 +326,47 @@ describe('Freeform Editor Unit & Component Tests', () => {
       expect(moved[0].y).toBeCloseTo(0.8);
     });
 
+    it('preserves physical aspect ratio when resizing a locked slot on non-square A4 paper', () => {
+      const onSlotsChange = vi.fn();
+      const paperW = 210;
+      const paperH = 297;
+      const slot: FreeformSlot = {
+        id: 'locked-id',
+        x: 0.1,
+        y: 0.1,
+        w: 35 / paperW,
+        h: 45 / paperH,
+        lockAspect: true,
+      };
+      renderWithProviders(
+        <FreeformCanvasEditor
+          paperWidthMM={paperW}
+          paperHeightMM={paperH}
+          slots={[slot]}
+          selectedSlotId={slot.id}
+          enableSnapping={false}
+          onSelectSlot={vi.fn()}
+          onSlotsChange={onSlotsChange}
+        />,
+      );
+
+      const card = slotCards()[0];
+      const handles = Array.from(card.querySelectorAll<HTMLElement>('[role="presentation"]'));
+      const eastHandle = handles.find(
+        (el) => el.style.cursor === 'ew-resize' && el.style.right === '0px',
+      )!;
+      expect(eastHandle).toBeDefined();
+
+      // في الورقة المحاكاة (400×400)، dx = +40 بكسل = +0.10 مطبّعاً
+      fireEvent.pointerDown(eastHandle, { clientX: 100, clientY: 100, pointerId: 1 });
+      fireEvent.pointerMove(eastHandle, { clientX: 140, clientY: 100, pointerId: 1 });
+      fireEvent.pointerUp(eastHandle, { clientX: 140, clientY: 100, pointerId: 1 });
+
+      const resized = (onSlotsChange.mock.lastCall![0] as FreeformSlot[])[0];
+      const physicalRatio = (resized.w * paperW) / (resized.h * paperH);
+      expect(physicalRatio).toBeCloseTo(35 / 45, 6);
+    });
+
     it.each([false, true])(
       'moves primary and secondary together with snapping=%s from either selected member',
       (enableSnapping) => {

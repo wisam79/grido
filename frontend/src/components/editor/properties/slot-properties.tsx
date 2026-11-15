@@ -49,6 +49,7 @@ import {
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
+import { SLOT_MAX_ZOOM, SLOT_MIN_ZOOM } from '@/lib/export/export-primitives';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { isAutoFillGridEnabled, setAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
@@ -750,7 +751,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                       size="icon"
                       className="h-8 w-full border-border/60 shadow-none cursor-pointer hover:bg-primary/5 hover:border-primary/40"
                       onClick={() => {
-                        onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                        onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1, cropMode: 'centered' });
                         useEditorStore.getState().pushHistory();
                       }}
                       aria-label="توسيط الصورة"
@@ -765,8 +766,8 @@ export const SlotProperties = React.memo(function SlotProperties({
                   <FluentSliderField
                     label="التكبير"
                     value={Math.round((slot.zoom ?? 1) * 100)}
-                    min={100}
-                    max={300}
+                    min={SLOT_MIN_ZOOM * 100}
+                    max={SLOT_MAX_ZOOM * 100}
                     step={5}
                     unit="%"
                     defaultValue={100}
@@ -1069,6 +1070,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                   dragX: 0,
                   dragY: 0,
                   zoom: 1,
+                  cropMode: 'centered',
                   originalImageSrc: slot.originalImageSrc || slot.imageSrc,
                 });
                 useEditorStore.getState().pushHistory();

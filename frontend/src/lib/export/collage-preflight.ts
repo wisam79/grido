@@ -82,6 +82,7 @@ export function runCollagePreflight(input: CollagePreflightInput): CollagePrefli
       flipX: slot.flipX,
       flipY: slot.flipY,
       rotation: slot.rotation,
+      cropMode: slot.cropMode,
     });
     const dpiX = crop.sw / (localSize.width / MM_PER_INCH);
     const dpiY = crop.sh / (localSize.height / MM_PER_INCH);

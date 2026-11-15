@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useState, type ReactElement } fr
 
 import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
+import { clampSlotZoom, resolveSlotCropMode } from '@/lib/export/export-primitives';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeSlotPreviewPan } from '@/lib/print/preview-pan';
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
@@ -108,9 +109,14 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   // تقريب CSS (fallback هادئ).
   const pixelFilter = activeSrc && isPrintPixelFilter(slot.filter) ? (slot.filter as string) : '';
   const pixelAdjustments = pixelFilter ? buildAdjustmentCSS(slot) : '';
+  const slotZoom = clampSlotZoom(slot.zoom);
+  const slotDragX = slot.dragX || 0;
+  const slotDragY = slot.dragY || 0;
+  const slotRot = (((slot.rotation || 0) % 360) + 360) % 360;
+  const slotCropMode = resolveSlotCropMode(slot.cropMode);
   const pixelPreviewKey =
     pixelFilter && activeSrc
-      ? `${activeSrc}|${pixelFilter}|${pixelAdjustments}|${rect.wMM.toFixed(3)}x${rect.hMM.toFixed(3)}`
+      ? `${activeSrc}|${pixelFilter}|${pixelAdjustments}|${rect.wMM.toFixed(3)}x${rect.hMM.toFixed(3)}|z=${slotZoom}|dx=${slotDragX}|dy=${slotDragY}|r=${slotRot}|cm=${slotCropMode}`
       : '';
   const [pixelPreview, setPixelPreview] = useState<{ key: string; url: string } | null>(null);
   useEffect(() => {
@@ -127,7 +133,20 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
     return () => {
       alive = false;
     };
-  }, [activeSrc, pixelFilter, pixelAdjustments, pixelPreviewKey, rect.wMM, rect.hMM, slot]);
+  }, [
+    activeSrc,
+    pixelFilter,
+    pixelAdjustments,
+    pixelPreviewKey,
+    rect.wMM,
+    rect.hMM,
+    slot,
+    slotZoom,
+    slotDragX,
+    slotDragY,
+    slotRot,
+    slotCropMode,
+  ]);
 
   const pixelPreviewSrc =
     pixelPreview && pixelPreview.key === pixelPreviewKey ? pixelPreview.url : '';
@@ -147,14 +166,26 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
     ? Math.max(1, collageStrokeWidth * pxPerCanvasPx * sf)
     : 0;
 
-  const zoomVal = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
-  const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
+  const isBakedPixelPreview = Boolean(pixelPreviewSrc);
+  const zoomVal = isBakedPixelPreview ? 1 : slotZoom;
+  const normRot = slotRot;
   const isQuarter = normRot === 90 || normRot === 270;
 
   let imgWidth: string | undefined;
   let imgHeight: string | undefined;
   let imgPos: { position: 'absolute'; left: string | number; top: string | number };
   let imgTransform: string;
+
+  const localAspect = isQuarter
+    ? rect.hMM / Math.max(0.01, rect.wMM)
+    : rect.wMM / Math.max(0.01, rect.hMM);
+  const { objectPositionX, objectPositionY, panX, panY } = isBakedPixelPreview
+    ? { objectPositionX: 50, objectPositionY: 50, panX: 0, panY: 0 }
+    : computeSlotPreviewPan(slot, naturalSize, localAspect);
+  const objectPosition =
+    !isBakedPixelPreview && (objectPositionX !== 50 || objectPositionY !== 50)
+      ? `${objectPositionX}% ${objectPositionY}%`
+      : undefined;
 
   // 🛡️ WYSIWYG مع Konva (T·R·S): في CSS تُطبَّق الدالة الأقصى يميناً أولاً —
   // rotate قبل scaleX/scaleY = قلب ثم تدوير. عكسه كان يخالف المحرر عند 90/270.
@@ -168,23 +199,9 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       left: `${(100 - boxWpct) / 2}%`,
       top: `${(100 - boxHpct) / 2}%`,
     };
-    // 🖨️ التحويم في الاتجاه الربعي يُحسب على نسبة المقاس المحلي (المتبدل
-    // بعد التدوير) — كان الفرع يتجاهل dragX/dragY كلياً فيعرض قصّة ممركزة
-    // بينما المحرر والطباعة يحترمان pan المستخدم. بلا تحويم يبقى نص التحويل
-    // بلا بادئة translate مطابقاً لعقد ترتيب التحويل المُختبر حرفياً.
-    const { panX, panY } = computeSlotPreviewPan(
-      slot,
-      naturalSize,
-      rect.hMM / Math.max(0.01, rect.wMM),
-    );
     const panPrefix = panX || panY ? `translate(${panX}%, ${panY}%) ` : '';
     imgTransform = `${panPrefix}scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   } else {
-    const { panX, panY } = computeSlotPreviewPan(
-      slot,
-      naturalSize,
-      rect.wMM / Math.max(0.01, rect.hMM),
-    );
     imgPos = { position: 'absolute' as const, left: 0, top: 0 };
     imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   }
@@ -213,6 +230,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
             ...imgPos,
             width: imgWidth,
             height: imgHeight,
+            objectPosition,
             transform: imgTransform,
             // 🖨️ RV-16-L7: معاينة البكسل الحقيقية جاهزة؟ التعديلات خُبزت في الـ
             // canvas فلا CSS filter؛ وإلا fallback تقريب CSS القديم أثناء التحميل

@@ -440,6 +440,35 @@ describe('CollageSlice Unit Tests', () => {
     expect(state.slots[0]).toMatchObject({ w: 0.6, h: 0.8 });
   });
 
+  it('does not re-displace a neighbor that domino recursion already moved clear of the resized slot', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 0,
+      collageMargin: 0,
+      slots: [
+        { ...base, id: 'r', cellIndex: 0, x: 0, y: 0, w: 0.2, h: 0.2 },
+        { ...base, id: 'a', cellIndex: 1, x: 0, y: 0.2, w: 0.4, h: 0.15 },
+        { ...base, id: 'b', cellIndex: 2, x: 0.36, y: 0.35, w: 0.25, h: 0.2 },
+        { ...base, id: 'd', cellIndex: 3, x: 0.65, y: 0, w: 0.15, h: 0.6 },
+      ],
+    });
+
+    const result = useEditorStore.getState().resizeCollageSlot('r', 0.38, 0.45);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    const slotA = state.slots.find((s) => s.id === 'a')!;
+    const slotB = state.slots.find((s) => s.id === 'b')!;
+    const slotD = state.slots.find((s) => s.id === 'd')!;
+    expect(slotA.y).toBeCloseTo(0.45);
+    // domino a -> b pushes b right from 0.36 to 0.4 (past r's 0.38 right edge);
+    // outer loop must inspect updated b in result and skip it instead of pushing stale b to 0.54.
+    expect(slotB.x).toBeCloseTo(0.4);
+    expect(slotB.y).toBeCloseTo(0.35);
+    expect(slotD.x).toBeCloseTo(0.65);
+  });
+
   it('rejects resize when displacement would push neighbor out of bounds', () => {
     const base = setupCollage();
     useEditorStore.setState({
@@ -1544,5 +1573,35 @@ describe('removeCollageSlot — حذف الخلية المضافة من الشب
     expect(s.collageTemplate?.isManual).toBe(true);
     expect(s.collageTemplate?.physicalLayout).toBeUndefined();
     expect(s.collageTemplate?.cells).toHaveLength(before.slots.length - 1);
+  });
+
+  it('يعيّن cropMode="centered" للخلايا الجديدة ويحافظ على cropMode للخلايا المنسوخة/المعاد ربطها', () => {
+    useEditorStore.setState({ slots: [], selectedId: null, selectedIds: [] });
+    const tmpl = COLLAGE_TEMPLATES[0];
+    useEditorStore.getState().setCollageTemplate(tmpl);
+    expect(useEditorStore.getState().slots.every((s) => s.cropMode === 'centered')).toBe(true);
+
+    // محاكاة خلية قديمة بصورة بلا cropMode وأخرى جديدة فارغة
+    useEditorStore.setState({
+      slots: [
+        { id: 'legacy-1', cellIndex: 0, x: 0, y: 0, w: 0.4, h: 0.4, imageSrc: 'a.jpg', zoom: 2 },
+        { id: 'empty-2', cellIndex: 1, x: 0.5, y: 0, w: 0.4, h: 0.4 },
+      ],
+      selectedId: 'empty-2',
+      selectedIds: ['empty-2'],
+    });
+
+    // إضافة خلية جديدة مجاورة من خلية فارغة تعطي cropMode="centered"
+    const res = useEditorStore.getState().addAdjacentCollageSlot('empty-2', 'bottom');
+    expect(res.ok).toBe(true);
+    const afterAdd = useEditorStore.getState().slots;
+    expect(afterAdd[0].cropMode).toBeUndefined();
+    expect(afterAdd[afterAdd.length - 1].cropMode).toBe('centered');
+
+    // إضافة خلية مجاورة من خلية قديمة بصورة تحافظ على غياب cropMode
+    const resLegacy = useEditorStore.getState().addAdjacentCollageSlot('legacy-1', 'bottom');
+    expect(resLegacy.ok).toBe(true);
+    const afterLegacyAdd = useEditorStore.getState().slots;
+    expect(afterLegacyAdd[afterLegacyAdd.length - 1].cropMode).toBeUndefined();
   });
 });

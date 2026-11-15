@@ -14,6 +14,7 @@ import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { mmToPx, pxToMm } from '../../canvas/units';
 import { clamp } from '../../clamp';
+import { clampSlotZoom } from '../../export/export-primitives';
 import { AUTOFILL_IMAGE_LIMIT } from '../../schema';
 import {
   COLLAGE_TEMPLATES,
@@ -203,9 +204,10 @@ export function remapSlotsToCells(
       brightness: matched?.brightness ?? 100,
       contrast: matched?.contrast ?? 100,
       saturation: matched?.saturation ?? 100,
-      zoom: matched?.zoom ?? 1,
+      zoom: clampSlotZoom(matched?.zoom),
       dragX: matched?.dragX ?? 0,
       dragY: matched?.dragY ?? 0,
+      cropMode: matched ? matched.cropMode : 'centered',
     };
   });
 }
@@ -235,6 +237,7 @@ export function generateInitialSlots(): CanvasSlot[] {
     zoom: 1,
     dragX: 0,
     dragY: 0,
+    cropMode: 'centered',
   }));
 }
 
@@ -402,7 +405,12 @@ function tryDisplaceOverlappingCells(
 
   let result = [...slots];
   for (const overlapSlot of overlapping) {
-    const overlapRect = getSlotRect(overlapSlot, geo);
+    // قراءة النسخة المحدّثة من result لا اللقطة الأولية — فقد تكون دورة سابقة
+    // دفعت الخانة عبر سلسلة الدومينو خارج المستطيل الجديد بالكامل.
+    const currentSlot = result.find((s) => s.id === overlapSlot.id);
+    if (!currentSlot) continue;
+    const overlapRect = getSlotRect(currentSlot, geo);
+    if (!rectsIntersect(resizedSlotNewRect, overlapRect)) continue;
 
     // حساب مقدار التداخل في كل اتجاه
     const overlapX = Math.min(
@@ -464,31 +472,31 @@ function tryDisplaceOverlappingCells(
       const trackH = Math.max(1, geo.availH + geo.gap);
       const dx = axis === 'x' ? (pushRight ? shiftPxX : -shiftPxX) / trackW : 0;
       const dy = axis === 'y' ? (pushDown ? shiftPxY : -shiftPxY) / trackH : 0;
-      const newX = overlapSlot.x + dx;
-      const newY = overlapSlot.y + dy;
+      const newX = currentSlot.x + dx;
+      const newY = currentSlot.y + dy;
 
       // التحقق من أن الإزاحة ضمن الحدود
       if (
         newX < -EPSILON_BOUNDS ||
-        newX + overlapSlot.w > 1 + EPSILON_BOUNDS ||
+        newX + currentSlot.w > 1 + EPSILON_BOUNDS ||
         newY < -EPSILON_BOUNDS ||
-        newY + overlapSlot.h > 1 + EPSILON_BOUNDS
+        newY + currentSlot.h > 1 + EPSILON_BOUNDS
       ) {
         continue;
       }
 
       const displacedSlot = {
-        ...overlapSlot,
-        x: clamp(newX, 0, Math.max(0, 1 - overlapSlot.w)),
-        y: clamp(newY, 0, Math.max(0, 1 - overlapSlot.h)),
+        ...currentSlot,
+        x: clamp(newX, 0, Math.max(0, 1 - currentSlot.w)),
+        y: clamp(newY, 0, Math.max(0, 1 - currentSlot.h)),
       };
-      const nextSlots = result.map((s) => (s.id === overlapSlot.id ? displacedSlot : s));
+      const nextSlots = result.map((s) => (s.id === currentSlot.id ? displacedSlot : s));
 
       // التحقق بشكل متكرر من أن الخلية المُزاحة لا تتداخل مع خلايا أخرى،
       // مع تمرير `overlapRect` كمستطيل أصلي للحفاظ على الفجوات الأصلية في سلسلة الدومينو.
       const displacedRect = getSlotRect(displacedSlot, geo);
       const recursiveResult = tryDisplaceOverlappingCells(
-        overlapSlot.id,
+        currentSlot.id,
         displacedRect,
         overlapRect,
         nextSlots,
@@ -533,6 +541,7 @@ function deriveSlotImageProps(
     flipX: source?.flipX ?? sl.flipX,
     flipY: source?.flipY ?? sl.flipY,
     rotation: source?.rotation ?? sl.rotation,
+    cropMode: source ? source.cropMode : sl.cropMode,
     bgColor: source?.bgColor ?? sl.bgColor,
   };
 }
@@ -1304,6 +1313,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       flipX: false,
       flipY: false,
       rotation: 0,
+      cropMode: 'centered',
     };
 
     const newSlot = source.imageSrc

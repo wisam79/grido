@@ -7,7 +7,12 @@ import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getCachedImageDimensions, resolveImageDimensions } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { getSlotLocalSize } from '@/lib/export/export-primitives';
+import {
+  clampSlotZoom,
+  getSlotLocalSize,
+  resolveSlotCropMode,
+  type SlotCropMode,
+} from '@/lib/export/export-primitives';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
 import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
@@ -32,6 +37,7 @@ export const KonvaCollageImage = React.memo(
     flipX = false,
     flipY = false,
     rotation = 0,
+    cropMode,
     draggable = false,
     cornerRadius = 0,
     onUpdateOffsets,
@@ -54,6 +60,7 @@ export const KonvaCollageImage = React.memo(
     flipX?: boolean;
     flipY?: boolean;
     rotation?: number;
+    cropMode?: SlotCropMode;
     draggable?: boolean;
     cornerRadius?: number;
     onUpdateOffsets?: (x: number, y: number) => void;
@@ -193,13 +200,17 @@ export const KonvaCollageImage = React.memo(
       sh = shownW / slotAspect;
     }
 
-    // Apply zoom factor
-    sw = sw / zoom;
-    sh = sh / zoom;
+    // Apply zoom factor (clamped to supported [1..3] range)
+    const effectiveZoom = clampSlotZoom(zoom);
+    sw = sw / effectiveZoom;
+    sh = sh / effectiveZoom;
 
-    // Default centering offset
-    const defaultSx = shownAspect > slotAspect ? (shownW - sw) / 2 : 0;
-    const defaultSy = shownAspect > slotAspect ? 0 : (shownH - sh) / 2;
+    // وضع centered للخانات الجديدة، ووضع legacy للمشاريع القديمة بلا cropMode
+    const effectiveCropMode = resolveSlotCropMode(cropMode);
+    const defaultSx =
+      effectiveCropMode === 'centered' || shownAspect > slotAspect ? (shownW - sw) / 2 : 0;
+    const defaultSy =
+      effectiveCropMode === 'centered' || shownAspect <= slotAspect ? (shownH - sh) / 2 : 0;
 
     // مدى الإزاحة الصحيح يعتمد على موضع البدء (مركز أو حافة): النافذة النهائية
     // يجب أن تبقى داخل حدود الصورة. التقييم المتماثل حول الصفر كان يسمح بمصدر

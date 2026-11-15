@@ -140,9 +140,51 @@ export function alignSlotsToEachOther(
   });
 }
 
+const OVERLAP_EPS = 1e-4;
+const SEPARATION_GAP = 0.002;
+
+function separateAlongAxis(
+  slotA: FreeformSlot,
+  slotB: FreeformSlot,
+  axis: 'x' | 'y',
+  gap: number,
+): boolean {
+  const sizeKey = axis === 'x' ? 'w' : 'h';
+  const [first, second] = slotA[axis] <= slotB[axis] ? [slotA, slotB] : [slotB, slotA];
+  const targetSeparation = first[axis] + first[sizeKey] - second[axis] + gap;
+  if (targetSeparation <= 0) return false;
+
+  const firstMax = Math.max(0, 1 - first[sizeKey]);
+  const secondMax = Math.max(0, 1 - second[sizeKey]);
+  const oldFirst = first[axis];
+  const oldSecond = second[axis];
+
+  // ندفع الثانية للأمام أولاً، وعند بلوغ حافة الورقة ندفع الأولى للخلف بالمسافة المتبقية.
+  const forwardShift = Math.min(targetSeparation, Math.max(0, secondMax - oldSecond));
+  second[axis] = clamp(oldSecond + forwardShift, 0, secondMax);
+
+  const remaining = targetSeparation - forwardShift;
+  if (remaining > 0) {
+    first[axis] = clamp(oldFirst - remaining, 0, firstMax);
+  }
+
+  return Math.abs(first[axis] - oldFirst) > 1e-9 || Math.abs(second[axis] - oldSecond) > 1e-9;
+}
+
+function pickResolutionAxis(
+  a: FreeformSlot,
+  b: FreeformSlot,
+  overlapX: number,
+  overlapY: number,
+): 'x' | 'y' {
+  const fitsX = a.w + b.w <= 1 + 1e-9;
+  const fitsY = a.h + b.h <= 1 + 1e-9;
+  if (fitsX !== fitsY) return fitsX ? 'x' : 'y';
+  return overlapX < overlapY ? 'x' : 'y';
+}
+
 /** إزالة كافة التداخلات بين الخلايا — دفع لطيف متتالٍ حتى الاستقرار */
 export function resolveOverlaps(slots: FreeformSlot[]): FreeformSlot[] {
-  const EPS = 1e-4;
   const current = slots.map((s) => ({ ...s }));
   let changed = true;
   let iterations = 0;
@@ -157,28 +199,11 @@ export function resolveOverlaps(slots: FreeformSlot[]): FreeformSlot[] {
         const b = current[j];
         const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
         const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-        if (overlapX > EPS && overlapY > EPS) {
-          // ندفع على المحور الأقل تداخلاً فقط
-          if (overlapX < overlapY) {
-            const push = overlapX + 0.002;
-            if (a.x <= b.x) {
-              b.x = clamp(b.x + push, 0, 1 - b.w);
-              a.x = clamp(a.x - 0, 0, 1 - a.w);
-            } else {
-              a.x = clamp(a.x + push, 0, 1 - a.w);
-              b.x = clamp(b.x - 0, 0, 1 - b.w);
-            }
-          } else {
-            const push = overlapY + 0.002;
-            if (a.y <= b.y) {
-              b.y = clamp(b.y + push, 0, 1 - b.h);
-              a.y = clamp(a.y - 0, 0, 1 - a.h);
-            } else {
-              a.y = clamp(a.y + push, 0, 1 - a.h);
-              b.y = clamp(b.y - 0, 0, 1 - b.h);
-            }
+        if (overlapX > OVERLAP_EPS && overlapY > OVERLAP_EPS) {
+          const axis = pickResolutionAxis(a, b, overlapX, overlapY);
+          if (separateAlongAxis(a, b, axis, SEPARATION_GAP)) {
+            changed = true;
           }
-          changed = true;
         }
       }
     }

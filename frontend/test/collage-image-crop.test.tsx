@@ -148,6 +148,7 @@ async function mountSlot(
     rotation: number;
     flipX: boolean;
     brightness: number;
+    cropMode?: 'legacy' | 'centered';
     onUpdateOffsets: (x: number, y: number) => void;
   }>,
 ): Promise<Konva.Image> {
@@ -163,6 +164,7 @@ async function mountSlot(
     rotation,
     flipX,
     brightness,
+    cropMode,
     onUpdateOffsets,
   } = props;
   const keyParts = [srcW, srcH];
@@ -193,6 +195,7 @@ async function mountSlot(
             rotation={rotation}
             flipX={flipX}
             brightness={brightness}
+            cropMode={cropMode}
             onUpdateOffsets={onUpdateOffsets}
           />
         </Layer>
@@ -263,9 +266,9 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
 
   it('dragX بالفضاء الأصلي يُعاد قياسه لفضاء نسخة العرض', async () => {
     // أصل 4096×4096 → نسخة عرض 2048×2048 (srcToShown = 0.5)
-    // خلية مربعة 300×300 مع zoom=2: sw=2048/2=1024 → maxDragX=512.
-    // dragX=200 (أصلي) → 100 معروض: sx = defaultSx(0) + 100 = 100 —
-    // كان الانحدار يكتب 200 خارج نطاق النسخة المخفّضة.
+    // خلية مربعة 300×300 مع zoom=2: sw=2048/2=1024، defaultSx=512.
+    // dragX=200 (أصلي) → 100 معروض: sx = defaultSx(512) + 100 = 612 —
+    // كان الانحدار يكتب 200 فيزيح بمقدار فضاء الأصل بدل فضاء العرض.
     const node = await mountSlot({
       srcW: 4096,
       srcH: 4096,
@@ -273,14 +276,59 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
       slotH: 300,
       zoom: 2,
       dragX: 200,
+      cropMode: 'centered',
     });
-    expect(node.cropX()).toBe(100);
+    expect(node.cropX()).toBe(612);
     expect(node.cropWidth()).toBe(1024);
+  });
+
+  it('يتمركز التكبير في كلا المحورين بدلاً من الارتكاز على الحافة عند 0', async () => {
+    const node = await mountSlot({
+      srcW: 800,
+      srcH: 600,
+      slotW: 400,
+      slotH: 300,
+      zoom: 2,
+      dragX: 0,
+      dragY: 0,
+      cropMode: 'centered',
+    });
+    expect(node.cropWidth()).toBe(400);
+    expect(node.cropHeight()).toBe(300);
+    expect(node.cropX()).toBe(200);
+    expect(node.cropY()).toBe(150);
+  });
+
+  it('KonvaCollageImage preserves legacy baseline when cropMode is omitted', async () => {
+    const legacyNode = await mountSlot({
+      srcW: 800,
+      srcH: 600,
+      slotW: 400,
+      slotH: 200,
+      zoom: 2,
+      dragX: 0,
+      dragY: 0,
+    });
+    expect(legacyNode.crop()).toEqual({ x: 0, y: 200, width: 400, height: 200 });
+  });
+
+  it('KonvaCollageImage centers both axes when cropMode="centered"', async () => {
+    const centeredNode = await mountSlot({
+      srcW: 800,
+      srcH: 600,
+      slotW: 400,
+      slotH: 200,
+      zoom: 2,
+      dragX: 0,
+      dragY: 0,
+      cropMode: 'centered',
+    });
+    expect(centeredNode.crop()).toEqual({ x: 200, y: 200, width: 400, height: 200 });
   });
 
   it('دورة السحب ذهاباً وإياباً لصورة مخفّضة: الإزاحة تعود لفضاء الأصل بلا قفزة', async () => {
     // أصل 4096×4096 → عرض 2048×2048 (النسبة 0.5)، خلية مربعة 300×300 مع
-    // zoom=2 وdragX=200 (أصلي): العرض الأولي sx=100. سحب بصفر حركة ثم
+    // zoom=2 وdragX=200 (أصلي): العرض الأولي sx=512+100=612. سحب بصفر حركة ثم
     // onDragEnd يجب أن يكتب للستور 200 نفسها (فضاء الأصل) لا 50 (قسمة مزدوجة)
     // ولا 400 (تراكم بفضاء خاطئ) — وإلا قفز الإطار عند أول سحب.
     const onUpdateOffsets = vi.fn();
@@ -292,9 +340,10 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
       zoom: 2,
       dragX: 200,
       draggable: true,
+      cropMode: 'centered',
       onUpdateOffsets,
     });
-    expect(node.cropX()).toBe(100);
+    expect(node.cropX()).toBe(612);
 
     await act(async () => {
       node.fire('dragstart', { target: node });
@@ -306,7 +355,7 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     expect(onUpdateOffsets).toHaveBeenCalledTimes(1);
     expect(onUpdateOffsets).toHaveBeenCalledWith(200, 0);
     // الإطار ثابت بعد دورة صفرية: لا قفزة من خلط الفضاءين
-    expect(node.cropX()).toBe(100);
+    expect(node.cropX()).toBe(612);
   });
 
   it.each([90, 270, -90, 450])(
@@ -590,9 +639,10 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
       slotH: 300,
       zoom: 2,
       dragX: 200,
+      cropMode: 'centered',
     });
     const stage = node.getStage()!;
-    expect(node.cropX()).toBe(100);
+    expect(node.cropX()).toBe(612);
     expect(node.cropWidth()).toBe(1024);
 
     let capturedCropX = 0;
@@ -609,10 +659,10 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     await captureStageBlob(stage, 2, 'image/png', 1, undefined, { useFullResolution: true });
 
     // أثناء الالتقاط بدقة الأصل (4096 = 2× نسخة العرض 2048): القص يُضرب بـ 2
-    expect(capturedCropX).toBe(200);
+    expect(capturedCropX).toBe(1224);
     expect(capturedCropW).toBe(2048);
     // بعد انتهاء الالتقاط: تعود إحداثيات القص لنسخة العرض المخفّضة
-    expect(node.cropX()).toBe(100);
+    expect(node.cropX()).toBe(612);
     expect(node.cropWidth()).toBe(1024);
   });
 });
@@ -669,6 +719,7 @@ describe('الحاضنة الذهبية المشتركة TS/Go — نافذة ا
           dragX: tc.input.dragX,
           dragY: tc.input.dragY,
           rotation: tc.input.rotation,
+          cropMode: tc.input.cropMode as 'legacy' | 'centered' | undefined,
         },
       );
       const tol = golden.tolerance;
@@ -722,9 +773,85 @@ describe('SlotProperties — حفظ قص خانة الكولاج', () => {
         dragX: 0,
         dragY: 0,
         zoom: 1,
+        cropMode: 'centered',
         originalImageSrc: 'original.jpg',
       }),
     );
     expect(pushHistory).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('cropMode backwards compatibility & independent manual-math cases', () => {
+  it('legacy slot without cropMode keeps edge-pinned baseline while centered uses two-axis center', async () => {
+    const { computeSlotCrop } = await import('../src/lib/export/export-primitives');
+    const img = { width: 800, height: 600 };
+
+    // Wide slot (2:1) on 4:3 image at zoom=2 -> sw=400, sh=200
+    // Legacy: imgAspect (1.333) <= slotAspect (2.0) -> defaultSx = 0, defaultSy = (600-200)/2 = 200
+    // Centered: defaultSx = (800-400)/2 = 200, defaultSy = (600-200)/2 = 200
+    expect(computeSlotCrop(img, 400, 200, { zoom: 2, dragX: 0, dragY: 0 })).toEqual({
+      sx: 0,
+      sy: 200,
+      sw: 400,
+      sh: 200,
+    });
+    expect(
+      computeSlotCrop(img, 400, 200, { zoom: 2, dragX: 0, dragY: 0, cropMode: 'legacy' }),
+    ).toEqual({
+      sx: 0,
+      sy: 200,
+      sw: 400,
+      sh: 200,
+    });
+    expect(
+      computeSlotCrop(img, 400, 200, { zoom: 2, dragX: 0, dragY: 0, cropMode: 'centered' }),
+    ).toEqual({
+      sx: 200,
+      sy: 200,
+      sw: 400,
+      sh: 200,
+    });
+  });
+
+  it('independent manual-math cases: quarter rotation, 2-axis pan, clamping, EXIF-oriented dims', async () => {
+    const { computeSlotCrop } = await import('../src/lib/export/export-primitives');
+
+    // 1) Quarter rotation (90°): slot 200x400 becomes local 400x200 (2:1)
+    // Image 1200x800 (1.5) -> baseW=1200, baseH=600 -> zoom=2 -> sw=600, sh=300
+    // Centered baseline: (300, 250); pan (dragX=100, dragY=-50) -> (400, 200)
+    expect(
+      computeSlotCrop({ width: 1200, height: 800 }, 200, 400, {
+        rotation: 90,
+        zoom: 2,
+        dragX: 100,
+        dragY: -50,
+        cropMode: 'centered',
+      }),
+    ).toEqual({ sx: 400, sy: 200, sw: 600, sh: 300 });
+
+    // 2) Pan clamping beyond image edges: 800x600 in 400x300 at zoom=2 -> sw=400, sh=300
+    // Max sx = 400, max sy = 300
+    expect(
+      computeSlotCrop({ width: 800, height: 600 }, 400, 300, {
+        zoom: 2,
+        dragX: 9999,
+        dragY: -9999,
+        cropMode: 'centered',
+      }),
+    ).toEqual({ sx: 400, sy: 0, sw: 400, sh: 300 });
+
+    // 3) Zoom clamping (<1 -> 1, >3 -> 3): 900x600 in 300x300 -> baseW=600, baseH=600
+    expect(
+      computeSlotCrop({ width: 900, height: 600 }, 300, 300, { zoom: 0.2, cropMode: 'centered' }),
+    ).toEqual({ sx: 150, sy: 0, sw: 600, sh: 600 });
+    expect(
+      computeSlotCrop({ width: 900, height: 600 }, 300, 300, { zoom: 5, cropMode: 'centered' }),
+    ).toEqual({ sx: 350, sy: 200, sw: 200, sh: 200 });
+
+    // 4) EXIF-oriented portrait dimensions (600x1200) in square slot (300x300) at zoom=1.5
+    // baseW=600, baseH=600 -> sw=400, sh=400; centered -> (100, 400)
+    expect(
+      computeSlotCrop({ width: 600, height: 1200 }, 300, 300, { zoom: 1.5, cropMode: 'centered' }),
+    ).toEqual({ sx: 100, sy: 400, sw: 400, sh: 400 });
   });
 });

@@ -1,3 +1,4 @@
+import type { SlotCropMode } from '@/lib/export/export-primitives';
 import type { CanvasSlot } from '@/lib/store/types';
 
 /** الخانة المزخرفة محتوى مقصود حتى دون صورة؛ الفراغ الحقيقي لا يُطبع كعنصر. */
@@ -32,6 +33,7 @@ export interface CollageSlotImageContent {
   flipX: boolean;
   flipY: boolean;
   rotation: number;
+  cropMode?: SlotCropMode;
 }
 
 export function readCollageSlotImageContent(slot: CanvasSlot): CollageSlotImageContent {
@@ -48,6 +50,7 @@ export function readCollageSlotImageContent(slot: CanvasSlot): CollageSlotImageC
     flipX: slot.flipX ?? false,
     flipY: slot.flipY ?? false,
     rotation: slot.rotation ?? 0,
+    cropMode: slot.cropMode,
   };
 }
 
@@ -68,6 +71,7 @@ export function applyCollageSlotImageContent(
     flipX: false,
     flipY: false,
     rotation: 0,
+    cropMode: 'centered',
   };
   return { ...slot, ...normalized };
 }

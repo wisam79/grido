@@ -1,3 +1,4 @@
+import { clampSlotZoom } from '../export/export-primitives';
 import { createLogger } from '../logger';
 import { DEFAULT_COLLAGE_STATE, generateInitialSlots } from '../store/slices/collage-slice';
 import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from '../store/slices/grid-slice';
@@ -210,12 +211,14 @@ export function hydrateProjectState(
   const rawSlots = ((project.slots && project.slots.length > 0 ? project.slots : fallbackSlots()) ||
     []) as CanvasSlot[];
   // التحقق من سلامة الخانات مثلما تُفلتر العناصر — يمنع خانات تالفة من الوصول للكانفس
-  const validSlots = rawSlots.filter((sl) => {
-    if (!sl || typeof sl !== 'object') return false;
-    if (!isFinite(sl.x) || !isFinite(sl.y) || !isFinite(sl.w) || !isFinite(sl.h)) return false;
-    if (sl.w <= 0 || sl.h <= 0) return false;
-    return true;
-  });
+  const validSlots = rawSlots
+    .filter((sl) => {
+      if (!sl || typeof sl !== 'object') return false;
+      if (!isFinite(sl.x) || !isFinite(sl.y) || !isFinite(sl.w) || !isFinite(sl.h)) return false;
+      if (sl.w <= 0 || sl.h <= 0) return false;
+      return true;
+    })
+    .map((sl) => (sl.zoom !== undefined ? { ...sl, zoom: clampSlotZoom(sl.zoom) } : sl));
 
   // نفس تفريد المعرّفات للخانات (H8) — الخانات مفهرسة بالمعرّف في كل مسارات
   // الملء والسحب، فتكررها يُطبّق عملية واحدة على خانتين.
@@ -272,11 +275,12 @@ export function hydrateProjectState(
         brightness: existingSlot?.brightness ?? 100,
         contrast: existingSlot?.contrast ?? 100,
         saturation: existingSlot?.saturation ?? 100,
-        zoom: existingSlot?.zoom || 1,
+        zoom: clampSlotZoom(existingSlot?.zoom),
         dragX: existingSlot?.dragX || 0,
         dragY: existingSlot?.dragY || 0,
         flipX: existingSlot?.flipX,
         flipY: existingSlot?.flipY,
+        cropMode: existingSlot ? existingSlot.cropMode : 'centered',
       };
     });
   }

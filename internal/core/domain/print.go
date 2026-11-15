@@ -25,6 +25,7 @@ type PrintItem struct {
 	Zoom           float64 `json:"zoom,omitempty"`
 	DragX          float64 `json:"dragX,omitempty"`
 	DragY          float64 `json:"dragY,omitempty"`
+	CropMode       string  `json:"cropMode,omitempty"`
 
 	// تكرار شبكي على جانب Go: عنصر واحد يمثل قالب خانة يُستنسخ Copies مرة
 	// بمسافة CopyStepX/CopyStepY بالمليمتر (عمودياً بعد CopyCols عموداً).
