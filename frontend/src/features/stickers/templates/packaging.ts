@@ -1,3 +1,4 @@
+import { cornerBracketsMarkup, starPoints } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -8,11 +9,13 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     name: 'جدول الإنتاج والانتهاء والتشغيلة',
     nameEn: 'Production & Expiry Matrix',
     category: 'packaging',
+    shape: 'rect',
     description: 'ملصق تنظيمي لبيانات الصلاحية، تاريخ التعبئة، والباتش للمنتجات والمصانع',
     defaultWidth: 600,
     defaultHeight: 340,
     aspectRatio: 600 / 340,
     defaultMm: { width: 120, height: 68 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 576, height: 316, rx: 14 },
     defaultColors: {
       primary: '#263441',
       secondary: '#315A6F',
@@ -41,30 +44,44 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340">
-  <rect x="12" y="12" width="576" height="316" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
-  <path d="M36 30H92" stroke="${secondaryColor}" stroke-width="4" data-color-role="secondary"/>
-  <text data-field-id="productName" data-max-width="528" x="300" y="70" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+  <defs>
+    <linearGradient id="pkg-exp-hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="${primaryColor}"/>
+      <stop offset="1" stop-color="${secondaryColor}"/>
+    </linearGradient>
+    <clipPath id="pkg-exp-clip">
+      <rect x="12" y="12" width="576" height="316" rx="14"/>
+    </clipPath>
+  </defs>
+  <rect x="12" y="12" width="576" height="316" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <g clip-path="url(#pkg-exp-clip)">
+    <rect x="12" y="12" width="576" height="78" fill="url(#pkg-exp-hdr)" data-color-role="primary"/>
+    <rect x="24" y="168" width="552" height="72" rx="8" fill="${secondaryColor}" fill-opacity="0.08" data-color-role="secondary"/>
+  </g>
+  <text data-field-id="productName" data-max-width="520" x="300" y="61" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="800" fill="${backgroundColor}" text-anchor="middle">
     ${name}
   </text>
-  <!-- Consistent label/value columns, with rules confined to the content measure. -->
-  <path d="M36 94H564" stroke="${primaryColor}" stroke-width="1.5"/>
-  <path d="M36 167H564M36 240H564M318 110V306" stroke="${primaryColor}" stroke-width="1" opacity="0.2"/>
-  <text data-max-width="222" x="444" y="140" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
-    تاريخ الإنتاج (MFG):
+  <path d="M318 102V312" stroke="${primaryColor}" stroke-width="1.2" stroke-opacity="0.22"/>
+  <path d="M24 166H576M24 242H576" stroke="${primaryColor}" stroke-width="1" stroke-opacity="0.18"/>
+  <rect x="342" y="114" width="212" height="36" rx="18" fill="${primaryColor}" fill-opacity="0.08"/>
+  <text data-max-width="196" x="448" y="138" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+    تاريخ الإنتاج (MFG)
   </text>
-  <text data-field-id="mfgDate" data-max-width="256" x="172" y="142" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <text data-field-id="mfgDate" data-max-width="260" x="172" y="140" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${mfg}
   </text>
-  <text data-max-width="222" x="444" y="213" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
-    تاريخ الانتهاء (EXP):
+  <rect x="342" y="186" width="212" height="36" rx="18" fill="${secondaryColor}" fill-opacity="0.16"/>
+  <text data-max-width="196" x="448" y="210" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
+    تاريخ الانتهاء (EXP)
   </text>
-  <text data-field-id="expDate" data-max-width="256" x="172" y="215" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="800" fill="#B91C1C" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <text data-field-id="expDate" data-max-width="260" x="172" y="213" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${exp}
   </text>
-  <text data-max-width="222" x="444" y="286" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
-    رقم التشغيلة (BATCH):
+  <rect x="342" y="260" width="212" height="36" rx="18" fill="${primaryColor}" fill-opacity="0.08"/>
+  <text data-max-width="196" x="448" y="284" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+    رقم التشغيلة (BATCH)
   </text>
-  <text data-field-id="batchNo" data-max-width="256" x="172" y="288" font-family="${fontFamily}, monospace" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <text data-field-id="batchNo" data-max-width="260" x="172" y="286" font-family="${fontFamily}, monospace" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${batch}
   </text>
 </svg>`;
@@ -75,11 +92,13 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     name: 'بطاقة شكر للطلب',
     nameEn: 'Thank You Sticker',
     category: 'packaging',
+    shape: 'rect',
     description: 'ملصق أنيق وعصري لإغلاق كراتين الشحن وطرود المتاجر الإلكترونية',
     defaultWidth: 500,
     defaultHeight: 380,
     aspectRatio: 500 / 380,
     defaultMm: { width: 100, height: 76 },
+    cutShape: { kind: 'roundedRect', x: 15, y: 15, width: 470, height: 350, rx: 18 },
     defaultColors: {
       primary: '#A74856',
       secondary: '#493B3B',
@@ -116,17 +135,27 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="500" height="380">
-  <rect x="15" y="15" width="470" height="350" rx="10" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
-  <!-- A small, open heart keeps the message, not the ornament, in the foreground. -->
-  <path d="M250 119L224 95C203 75 229 51 250 74C271 51 297 75 276 95Z" fill="none" stroke="${primaryColor}" stroke-width="3" stroke-linejoin="round" data-color-role="primary"/>
-  <text data-field-id="thankTitle" data-max-width="414" x="250" y="191" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
+  <defs>
+    <radialGradient id="pkg-ty-aura" cx="50%" cy="28%" r="48%">
+      <stop offset="0" stop-color="${primaryColor}" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="${primaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="15" y="15" width="470" height="350" rx="18" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <rect x="27" y="27" width="446" height="326" rx="12" fill="url(#pkg-ty-aura)" stroke="${primaryColor}" stroke-width="1" stroke-dasharray="4 6" stroke-opacity="0.45"/>
+  ${cornerBracketsMarkup(40, 40, 420, 300, 18, secondaryColor, 1.8, 'secondary')}
+  <circle cx="250" cy="88" r="36" fill="${primaryColor}" fill-opacity="0.12" data-color-role="primary"/>
+  <path d="M250 110L226 88C209 71 230 50 250 70C270 50 291 71 274 88Z" fill="${primaryColor}" data-color-role="primary"/>
+  <polygon points="${starPoints(184, 86, 4, 8, 3)}" fill="${secondaryColor}" opacity="0.65" data-color-role="secondary"/>
+  <polygon points="${starPoints(316, 86, 4, 8, 3)}" fill="${secondaryColor}" opacity="0.65" data-color-role="secondary"/>
+  <text data-field-id="thankTitle" data-max-width="404" x="250" y="182" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
     ${thank}
   </text>
-  <text data-field-id="sentiment" data-max-width="414" x="250" y="243" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+  <text data-field-id="sentiment" data-max-width="404" x="250" y="232" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${sentiment}
   </text>
-  <path d="M210 279H290" stroke="${primaryColor}" stroke-width="1"/>
-  <text data-field-id="socialHandle" data-max-width="374" x="250" y="319" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <rect x="128" y="274" width="244" height="44" rx="22" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="socialHandle" data-max-width="214" x="250" y="303" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${social}
   </text>
 </svg>`;
@@ -137,11 +166,13 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     name: 'افتح هنا (مقص وقص)',
     nameEn: 'Open Here Strip',
     category: 'packaging',
+    shape: 'rect',
     description: 'شريط ملصق طولي لتحديد موضع الفتح الآمن للعبوات والعلب',
     defaultWidth: 600,
     defaultHeight: 240,
     aspectRatio: 600 / 240,
     defaultMm: { width: 120, height: 48 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 576, height: 216, rx: 14 },
     defaultColors: {
       primary: '#28312D',
       secondary: '#896222',
@@ -166,20 +197,28 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
-  <rect x="12" y="12" width="576" height="216" rx="6" fill="${bg}" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="background"/>
-  <!-- Open blades converge on the perforation; handles remain clear of the cut line. -->
+  <defs>
+    <clipPath id="pkg-open-clip">
+      <rect x="12" y="12" width="576" height="216" rx="14"/>
+    </clipPath>
+  </defs>
+  <rect x="12" y="12" width="576" height="216" rx="14" fill="${bg}" stroke="${secondaryColor}" stroke-width="2" data-color-role="background"/>
+  <g clip-path="url(#pkg-open-clip)">
+    <rect x="12" y="12" width="144" height="216" fill="${secondaryColor}" fill-opacity="0.14" data-color-role="secondary"/>
+    <path d="M12 12H588V26H12ZM12 214H588V228H12Z" fill="${secondaryColor}" fill-opacity="0.24" data-color-role="secondary"/>
+  </g>
   <g fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" data-color-role="primary">
     <circle cx="64" cy="95" r="14"/>
     <circle cx="64" cy="145" r="14"/>
     <path d="M76 102L142 149M76 138L142 91"/>
-    <circle cx="103" cy="120" r="3" fill="${primaryColor}" stroke="none"/>
+    <circle cx="103" cy="120" r="3.5" fill="${primaryColor}" stroke="none"/>
   </g>
-  <path d="M160 120H554" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="10 8"/>
-  <path d="M12 112L20 120L12 128M588 112L580 120L588 128" fill="none" stroke="${secondaryColor}" stroke-width="2" data-color-role="secondary"/>
-  <text data-field-id="openText" data-max-width="386" x="357" y="83" font-family="${fontFamily}, sans-serif" font-size="${Math.round(29 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
+  <path d="M164 120H556" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-dasharray="10 8"/>
+  <path d="M542 111L558 120L542 129" fill="none" stroke="${secondaryColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" data-color-role="secondary"/>
+  <text data-field-id="openText" data-max-width="380" x="364" y="84" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${open}
   </text>
-  <text data-field-id="enText" data-max-width="386" x="357" y="177" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3">
+  <text data-field-id="enText" data-max-width="380" x="364" y="176" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3">
     ${en}
   </text>
 </svg>`;
@@ -190,11 +229,13 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     name: 'صديق للبيئة وقابل للتدوير',
     nameEn: 'Eco-Friendly Recyclable',
     category: 'packaging',
+    shape: 'circle',
     description: 'شعار الاستدامة البيئية وإعادة التدوير للمنتجات الصديقة للأرض',
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
     defaultMm: { width: 92, height: 92 },
+    cutShape: { kind: 'circle', cx: 230, cy: 230, r: 210 },
     defaultColors: {
       primary: '#286947',
       secondary: '#254735',
@@ -226,21 +267,27 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
-  <circle cx="230" cy="230" r="205" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
-  <!-- Three equal bent arrows form a clockwise recycling loop with an open centre. -->
-  <g transform="translate(230 145)" fill="none" stroke="${primaryColor}" stroke-width="10" stroke-linecap="square" stroke-linejoin="round" data-color-role="primary">
+  <defs>
+    <radialGradient id="eco-aura" cx="50%" cy="35%" r="55%">
+      <stop offset="0" stop-color="${primaryColor}" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="${primaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="230" cy="230" r="210" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
+  <circle cx="230" cy="230" r="196" fill="url(#eco-aura)" stroke="${primaryColor}" stroke-width="1.5" stroke-dasharray="5 6" stroke-opacity="0.6"/>
+  <g transform="translate(230 144)" fill="none" stroke="${primaryColor}" stroke-width="10" stroke-linecap="square" stroke-linejoin="round" data-color-role="primary">
     <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47"/>
     <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47" transform="rotate(120)"/>
     <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47" transform="rotate(240)"/>
   </g>
-  <text data-field-id="ecoTitle" data-max-width="366" x="230" y="273" font-family="${fontFamily}, sans-serif" font-size="${Math.round(29 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+  <text data-field-id="ecoTitle" data-max-width="354" x="230" y="272" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${title}
   </text>
-  <text data-field-id="ecoSub" data-max-width="334" x="230" y="319" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="ecoSub" data-max-width="326" x="230" y="316" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${sub}
   </text>
-  <path d="M194 347H266" stroke="${primaryColor}" stroke-width="1"/>
-  <text data-field-id="pledge" data-max-width="260" x="230" y="380" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
+  <rect x="116" y="344" width="228" height="36" rx="18" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="pledge" data-max-width="200" x="230" y="369" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle">
     ${pledge}
   </text>
 </svg>`;

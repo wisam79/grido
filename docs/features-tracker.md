@@ -1,5 +1,42 @@
 # تتبع الميزات الأساسية — Grido Studio
 
+## إصلاحات دورة حياة Wails والإغلاق الآمن (`RV-LIFE-01…06`) — 2026-11-15
+
+**النطاق:** إغلاق ملاحظات [التقرير 26](reviews/26-wails-lifecycle-shutdown-audit-2026-11-14.md) في دورة حياة Wails والإغلاق النظيف في Go والواجهة مع الإبقاء على تغييرات الملصقات القائمة دون تدخل.
+
+| المعرّف | ما نُفّذ | المرجع |
+|---|---|---|
+| **`RV-LIFE-03`** | استبدال `cleanupStopChan` ببنية `mediaCleanupWorker` (`stopCh`/`doneCh`)، وفك `cleanupMu` قبل انتظار `<-w.doneCh` في `StopCleanupUnusedMedia`، مع اختبار barrier و`-race` | `internal/repository/media_cleanup.go:21`، `internal/repository/db_test.go:837` |
+| **`RV-LIFE-01/02/04/06`** | إنشاء `QuitCoordinator` في Go (`idle/requested/saving/awaiting-decision/shutting-down`) يوحّد `WindowClosing` وصينية النظام و`App.RequestGracefulQuit` مع حفظ هندسة النافذة وتمديد مهلة الحفظ (30s) وإيقاف المؤقت عند الفشل ومنع سباق المؤقت مع التأكيد؛ وتنفيذ `useQuitProtocol` (مع تسلسل نداءات `RespondGracefulQuit` لمنع عكس ترتيب `saving/failed`) + `QuitSaveFailedDialog` + `commitActiveTextInput` + `flushAutoSaveForQuit` بالتحقق من تطابق اللقطة في الواجهة وتحديث ربطات Wails و`wails-v3-bridge.ts` | `internal/service/quit_coordinator.go:1`، `app.go:134`، `system_tray.go:18`، `main.go:523`، `frontend/src/hooks/use-quit-protocol.ts:51`، `frontend/src/hooks/use-autosave.ts:112`، `frontend/src/hooks/use-window-controls.ts:127`، `frontend/src/components/editor/system/quit-save-failed-dialog.tsx:1`، `frontend/src/App.tsx:118`، `frontend/e2e/helpers/wails-v3-bridge.ts:91` |
+| **`RV-LIFE-05`** | إيقاف حلقة `main.window-state-autosave` قبل تفكيك النافذة، ونقل `repository.CloseDB()` إلى `PostShutdown` بعد `StopCleanupUnusedMedia()` و`ServiceShutdown`، وإضافة انتظار بميزانية `2s` في `MemoryService.Stop()`، وتسجيل أزمنة وأخطاء `App.ServiceShutdown()` عبر `errors.Join` | `main.go:266`، `main.go:502`، `internal/service/memory_service.go:200`، `app.go:79` |
+| **`WAILS-V3-REC`** | تطبيق توصيات Wails v3 الرسمية (`Logger: service.GlobalLogger` + `WarningHandler/ErrorHandler`، `Assets.DisableLogging` في الإنتاج، `Windows.WebviewUserDataPath` على `GetWebviewCacheDir()`، `Name: "main"` + `DevToolsEnabled: isDevMode()` + `DisableMenu: true` + `WindowDidMoveDebounceMS: 100`، تمرير `SystemDidWake` إلى `app:resume`، تحرير `desktopSvc.ServiceShutdown()`، إضافة `data-file-drop-target="true"` مع `stopPropagation()` و`dropEffect="copy"` في `useImageDrop` و`VdpImportDialog`، وتوجيه رابط الموقع الخارجي عبر `BrowserOpenURL`) | `main.go:208`، `main.go:264`، `main.go:303`، `main.go:359`، `app.go:117`، `frontend/src/App.tsx:240`، `frontend/src/components/editor/canvas/use-image-drop.ts:38`، `frontend/src/features/stickers/components/vdp-import-dialog.tsx:255`، `frontend/src/components/editor/dialogs/account/license-tab-content.tsx:198` |
+
+**التحقق المستهدف في الجلسة:** اختبارات Go مع `-race` لكامل الحزم `internal/service` و`internal/repository`، فحص `gofmt -l main.go app.go` و`go vet ./...`، فحوصات الواجهة (`typecheck`, `lint`, `format:check`)، واختبارات Vitest مستهدفة (`sticker-templates` 16/16، `sticker-studio` 16/16، `quit-protocol` 4/4، `use-image-drop` 5/5، `account-license-modal` 67/67، `App` 26/26، `ui-compliance` 54/54، `ui-compliance-guard` 8/8)، وفحص بصري وهندسي لـ 138 قالباً عبر Chromium (`structuralIssues: []`, `bboxIssues: []`) مع `node scripts/docs-gate.mjs --strict-refs`. لم يُشغَّل اختبار نافذة Wails أصلية حيّة أو حزمة E2E محلياً أو `commit/push`.
+
+---
+
+## مراجعة دورة حياة Wails والإغلاق الآمن — 2026-11-14
+
+**المنفذ توثيقيًا فقط:** حفظ [التقرير 26](reviews/26-wails-lifecycle-shutdown-audit-2026-11-14.md) بعد قراءة عقد Wails المثبت `v3.0.0` ومسارات الإغلاق والحفظ وإيقاف العمال. لا تعديل Go/React/IPC أو ترقية اعتماد، ولا تشغيل تطبيق/اختبارات/بناء أو commit/push. تغييرات الملصقات القائمة محفوظة دون تدخل.
+
+**الفجوات المفتوحة:** `RV-LIFE-01` تجاهل نتيجة فشل الحفظ قبل الخروج، `RV-LIFE-02` مهلة انتظار الواجهة غير مرتبطة باكتمال الكاتب، `RV-LIFE-03` سباق قناة إلغاء تنظيف الوسائط وغياب join قبل DB، `RV-LIFE-04` اختلاف زر الإغلاق المخصص عن المسار الأصلي/الصينية، `RV-LIFE-05` ترتيب تحرير الموارد والانتظار وأخطاء التنظيف، و`RV-LIFE-06` تعديل المستند أثناء الحفظ النهائي. تفاصيل الأدلة والأولويات وسجل الحالة ومعايير الإغلاق في التقرير؛ الملاحظات لم تُصلح، وفقد البيانات أو deadlock غير مُعاد إنتاجهما في هذه الجولة.
+
+**ثوابت محفوظة:** الكاتب المتسلسل وحارس جلسة المستند والكتابة الذرية واعتراض النافذة قبل تفكيك Wails. المتابعة بندًا واحدًا أو بروتوكولًا مترابطًا بعد اعتماد نهج التنفيذ، دون خلط هذا المحور مع WebView2/المثبت/الترقية. نتائج بوابة حفظ التقرير تُوثق في ملحقه بعد تشغيلها؛ نجاح التوثيق ليس نجاح اختبار الإغلاق.
+
+---
+
+## ترقية وتوسيع مكتبة قوالب الملصقات والبطاقات إلى 200 قالب — 2026-11-14
+
+**النطاق:** تطوير القوالب الرسومية لنظام الملصقات والبطاقات في `frontend/src/features/stickers/templates/` ورفع جودتها البصرية ودقة خطوط القص الصريحة (`cutShape`) مع تحسين الفهرسة والبحث والتخزين المؤقت للمعرض دون تعديل أنابيب الطباعة أو عقود الـ SVG/VDP القائمة.
+
+| المحور | ما نُفّذ | المرجع |
+|---|---|---|
+| **ترقية القوالب الأساسية المسطحة** | إعادة بناء بصري متكامل للقوالب الـ17 المسطحة في `retail` (5) و`packaging` (4) و`shipping` (5) و`social` (3) مع إضافة دوال الزخرفة الهندسية (`ticketStubPath`، `cornerBracketsMarkup`، `starRowMarkup`) وإزالة قيم `#FFFFFF`/`#B91C1C` الثابتة واستبدالها بأدوار الألوان والمحافظة على منطقة الهدوء البيضاء للباركود وجميع `fields[].id` ومقاسات `defaultMm` | `frontend/src/features/stickers/templates/svg-elements.ts:122`، `frontend/src/features/stickers/templates/retail.ts:1`، `frontend/src/features/stickers/templates/packaging.ts:1`، `frontend/src/features/stickers/templates/shipping.ts:1`، `frontend/src/features/stickers/templates/social.ts:1` |
+| **توسيع الملصقات وإضافة 100 بطاقة مصمّمة (200 قالب إجمالاً)** | إضافة **17 قالباً** في الفئات الأقل تمثيلاً (`social` +3، `cafe` +3، `beauty` +3، `greeting` +3، `kids` +3، `seasonal` +2)، ثم إضافة **100 بطاقة احترافية** موزعة على 5 ملفات (`business_cards.ts` 20، `social_cards.ts` 20، `retail_cards.ts` 20، `events_cards.ts` 20، `craft_cards.ts` 20) مع شريحة فلتر `بطاقات وتصاميم` (`cards`) بعد `الكل` مباشرة وفهرس بحث مسبق التطبيع (`SEARCH_INDEX`) وسقف LRU `160` لمعاينات `PREVIEW_CACHE` وضبط محاذاة النصوص RTL/LTR والتوسيط العمودي (`dominant-baseline="central"`) والترقية البصرية في كل البطاقات | `frontend/src/features/stickers/types.ts:18`، `frontend/src/features/stickers/constants.tsx:35`، `frontend/src/features/stickers/templates/index.ts:146`، `frontend/src/features/stickers/components/sticker-catalog.tsx:37`، `frontend/src/features/stickers/templates/business_cards.ts:84`، `frontend/src/features/stickers/templates/social_cards.ts:7`، `frontend/src/features/stickers/templates/retail_cards.ts:14`، `frontend/src/features/stickers/templates/events_cards.ts:29`، `frontend/src/features/stickers/templates/craft_cards.ts:14` |
+| **خطوط القص الهندسية (`cutShape`) والتدقيق** | تعميم خاصية `cutShape` (`circle` / `roundedRect` / `path`) على القوالب والبطاقات و`addons.ts`، وتحديث تقرير `docs/plans/sticker-template-audit.md` (**200 قالب / 200 defaultMm / 0 بلا مقاس / 707 data-field-id / 1176 data-color-role**) واختبارات العدد الفريد (`200`) و`cards` (`100`) وحدود `cutShape` وفحص محاذاة RTL/LTR للبطاقات في `sticker-templates.test.ts` | `frontend/src/features/stickers/templates/addons.ts:1`، `frontend/test/sticker-templates.test.ts:356`، `docs/plans/sticker-template-audit.md:1` |
+
+---
+
 ## صقل الواجهة العامة لسطح المكتب (Fluent 2 & Figma-like Finish) — 2026-11-14
 
 **النطاق:** صقل بصري وتفاعلي شامل لواجهة المحرر في `frontend/src/` دون تغيير مسارات Wails/Go أو قواعد البيانات ودون إعادة كتابة المكونات؛ محافظاً على عقود `toolbar-height-uniformity` و`ui-compliance` و`ux-accessibility-styles`.

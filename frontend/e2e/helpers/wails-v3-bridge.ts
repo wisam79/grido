@@ -88,6 +88,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   3894305329: async () => undefined, // OpenFolderInExplorer
   3132122792: async () => [MOCK_PNG_BASE64], // OpenMultipleFiles
   1049178424: async () => undefined, // OpenPath
+  3192268814: async () => 1, // RequestGracefulQuit
+  4162449642: async () => true, // RespondGracefulQuit
   2892812386: async () => undefined, // SaveAiUsageLogs
   2863230114: async () => undefined, // SaveAutoSave
   1013443833: async () => 'success', // SaveCustomTemplate
@@ -347,6 +349,8 @@ export async function setupWailsV3Bridge(
           OpenFolderInExplorer: async () => {},
           OpenMultipleFiles: async () => [mockImage],
           OpenPath: async () => {},
+          RequestGracefulQuit: async () => 1,
+          RespondGracefulQuit: async () => true,
           SaveAiUsageLogs: async () => {},
           SaveAutoSave: async () => {},
           SaveCustomTemplate: async () => 'success',

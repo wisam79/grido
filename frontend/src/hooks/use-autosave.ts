@@ -109,6 +109,42 @@ export function clearAutoSave(
   });
 }
 
+export interface AutoSaveFlushResult {
+  ok: boolean;
+  converged: boolean;
+  error?: unknown;
+}
+
+/**
+ * تفريغ مسودة الحفظ النهائي مع التحقق من ثبات الحالة بعد الكتابة (RV-LIFE-06):
+ * إذا تعدّل المستند أو تغيّرت الجلسة أثناء انتظار IPC للكتابة، يُعاد التفريغ
+ * حتى تتطابق اللقطة المكتوبة مع الحالة الحيّة أو ينفد حد المحاولات.
+ */
+export async function flushAutoSaveForQuit(maxPasses = 5): Promise<AutoSaveFlushResult> {
+  const passes = Math.max(1, maxPasses);
+  for (let pass = 0; pass < passes; pass++) {
+    try {
+      await queuePersistence(() => writeCurrentDraft(getDocumentSession()));
+    } catch (err) {
+      logger.error('Failed to flush autosave draft before quit', err);
+      return { ok: false, converged: false, error: err };
+    }
+
+    const liveSession = getDocumentSession();
+    const liveDoc = buildProjectDocument(useEditorStore.getState());
+    if (isEmptyWorkspace(liveDoc)) {
+      return { ok: true, converged: true };
+    }
+    const liveFingerprint = JSON.stringify(liveDoc);
+    if (lastAccepted?.session === liveSession && lastAccepted.fingerprint === liveFingerprint) {
+      return { ok: true, converged: true };
+    }
+  }
+
+  logger.warn('Document kept changing during final autosave flush — awaiting user decision');
+  return { ok: false, converged: false };
+}
+
 /** Flush current live content in the same ordered writer; never reject. */
 export async function flushAutoSave(): Promise<boolean> {
   try {

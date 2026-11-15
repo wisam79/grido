@@ -5,6 +5,14 @@ import { useTheme } from '../src/hooks/use-theme';
 import { useWindowControls } from '../src/hooks/use-window-controls';
 import { WindowToggleMaximise, WindowIsMaximised, EventsOn } from '../wailsjs/runtime/runtime';
 
+vi.mock('@bindings/grido/app', () => ({
+  RequestGracefulQuit: vi.fn(() => Promise.resolve(1)),
+  RespondGracefulQuit: vi.fn(() => Promise.resolve(true)),
+  LoadAutoSave: vi.fn(() => Promise.resolve('')),
+  SaveAutoSave: vi.fn(() => Promise.resolve()),
+  ClearAutoSave: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('../wailsjs/runtime/runtime', () => ({
   WindowMinimise: vi.fn(),
   WindowToggleMaximise: vi.fn(),

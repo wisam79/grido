@@ -88,10 +88,16 @@ func main() {
 	// تشغيل تنظيف الصور غير المستخدمة في الخلفية لتفادي تراكمها
 	utils.SafeGo("repository.CleanupUnusedMedia", repository.CleanupUnusedMedia)
 
-	// 🧹 تنظيف كاش الويب في بيئة التطوير لتفادي الكاش القديم للمتصفح
-	if isDevMode() {
-		cacheDir := desktop.GetWebviewCacheDir()
-		_ = os.RemoveAll(cacheDir)
+	// 🧹 تهيئة (وتنظيف في التطوير) مجلد كاش WebView2 الموحد داخل AppData
+	webviewCacheDir := desktop.GetWebviewCacheDir()
+	if isDevMode() && webviewCacheDir != "" {
+		_ = os.RemoveAll(webviewCacheDir)
+	}
+	if webviewCacheDir != "" {
+		if mkErr := os.MkdirAll(webviewCacheDir, 0o755); mkErr != nil {
+			slog.Warn("Failed to ensure WebView2 cache directory — falling back to Wails default", "dir", webviewCacheDir, "error", mkErr)
+			webviewCacheDir = ""
+		}
 	}
 
 	// تهيئة طبقات المعمارية النظيفة
@@ -190,10 +196,25 @@ func main() {
 	})
 	appInstance.desktopSvc.SetNotificationService(notifSvc)
 
+	wailsLogLevel := slog.LevelInfo
+	if isDevMode() {
+		wailsLogLevel = slog.LevelDebug
+	}
+
 	// تهيئة تطبيق Wails v3
 	wailsApp := application.New(application.Options{
 		Name:        "Grido Studio",
 		Description: "Professional Photo & Collage Studio",
+		Logger:      service.GlobalLogger,
+		LogLevel:    wailsLogLevel,
+		WarningHandler: func(msg string) {
+			slog.Warn("Wails runtime warning", "source", "wails", "message", msg)
+		},
+		ErrorHandler: func(err error) {
+			if err != nil {
+				slog.Error("Wails runtime error", "source", "wails", "error", err)
+			}
+		},
 		PanicHandler: func(panicDetails *application.PanicDetails) {
 			slog.Error("Fatal panic intercepted by Wails PanicHandler",
 				"error", panicDetails.Error,
@@ -222,8 +243,9 @@ func main() {
 			application.NewService(notifSvc),
 		},
 		Assets: application.AssetOptions{
-			Handler:    createAssetHandler(appInstance),
-			Middleware: createCSPMiddleware(),
+			Handler:        createAssetHandler(appInstance),
+			Middleware:     createCSPMiddleware(),
+			DisableLogging: !isDevMode(),
 		},
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "grido-studio-single-instance-lock-v1",
@@ -238,11 +260,22 @@ func main() {
 				}
 			},
 		},
-		Windows: application.WindowsOptions{},
+		Windows: application.WindowsOptions{
+			WebviewUserDataPath: webviewCacheDir,
+		},
+		PostShutdown: func() {
+			// إغلاق قاعدة البيانات بعد اكتمال OnShutdown وServiceShutdown لكافة الخدمات.
+			if err := repository.CloseDB(); err != nil {
+				slog.Error("Failed to close database during shutdown", "error", err)
+			}
+		},
 	})
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
+	// ملاحظة: DefaultContextMenuDisabled يُترك false عمداً لأن الواجهة
+	// (frontend/src/main.tsx) تمنع قائمة السياق في الإنتاج مع السماح بها داخل حقول النص للنسخ واللصق.
 	winOptions := application.WebviewWindowOptions{
+		Name:      "main",
 		Title:     "Grido Studio",
 		Width:     initialWidth,
 		Height:    initialHeight,
@@ -257,6 +290,7 @@ func main() {
 		// (WindowStateMaximised أو WindowStateNormal) — يطبّقها Wails على خيط
 		// الواجهة أثناء التهيئة فلا يرى المستخدم وميض حجم أو قفزة تكبير.
 		Hidden:             false,
+		DevToolsEnabled:    isDevMode(),
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
 		BackgroundType:     application.BackgroundTypeTranslucent,
@@ -264,7 +298,9 @@ func main() {
 		Windows: application.WindowsWindow{
 			BackdropType:                      application.Mica,
 			DisableFramelessWindowDecorations: false,
+			DisableMenu:                       true,
 			NonClientRegionSupport:            true,
+			WindowDidMoveDebounceMS:           100,
 		},
 		URL: "/",
 	}
@@ -318,17 +354,25 @@ func main() {
 		}
 	})
 
-	// 🗂️ أيقونة صينية النظام: نقطة استعادة دائمة للنافذة (إظهار/تركيز) ومسار
-	// خروج سريع، فتبقى واجهة التطبيق قابلة للوصول أثناء عمليات الخلفية.
-	// الاستدعاء قبل Run صحيح ومقصود: Wails يؤجّل إنشاء الصينية حتى الإقلاع.
-	SetupSystemTray(wailsApp, mainWindow)
+	// 🔋 تمرير حدث استيقاظ نظام التشغيل الرسمي (SystemDidWake) للواجهة
+	// لتحديث حالة الترخيص عند العودة من وضع السكون (use-app-bootstrap.ts).
+	wailsApp.Event.OnApplicationEvent(events.Common.SystemDidWake, func(_ *application.ApplicationEvent) {
+		wailsApp.Event.Emit("app:resume")
+	})
 
 	// 📥 تصريف حمولات المثيل الثاني بعد وجود النافذة — يُغلق الفتحة بين
 	// application.New (بداية الاستماع لإشارات المثيل الثاني) وإنشاء النافذة:
 	// أي حمولة وصلت قبله تُعالج الآن بالترتيب، فلا يُفقد إظهار/تركيز النافذة
-	// ولا حدث file-opened الذي يستمعه الواجهة. الخيط يعيش طول التطبيق.
+	// ولا حدث file-opened الذي يستمعه الواجهة. ينتهي تلقائياً عند إلغاء سياق التطبيق.
 	utils.SafeGo("main.second-instance-drain", func() {
-		for secondInstanceData := range secondInstanceQueue {
+		appCtx := wailsApp.Context()
+		for {
+			var secondInstanceData application.SecondInstanceData
+			select {
+			case secondInstanceData = <-secondInstanceQueue:
+			case <-appCtx.Done():
+				return
+			}
 			if mainWindow == nil {
 				continue
 			}
@@ -452,13 +496,45 @@ func main() {
 
 	// ⏱️ حفظ دوري كل 30 ثانية — يحمي من فقدان الحالة عند الإغلاق القسري
 	// (kill, crash, انقطاع كهربائي). الحفظ ذري (AtomicWriteFile) فلا فساد.
+	stopWindowStateCh := make(chan struct{})
+	windowStateDoneCh := make(chan struct{})
+	var stopWindowStateOnce sync.Once
+	stopWindowStateAutosave := func() {
+		stopWindowStateOnce.Do(func() {
+			close(stopWindowStateCh)
+		})
+		<-windowStateDoneCh
+	}
 	utils.SafeGo("main.window-state-autosave", func() {
+		defer close(windowStateDoneCh)
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
-		for range ticker.C {
-			saveWindowStateNow()
+		for {
+			select {
+			case <-ticker.C:
+				saveWindowStateNow()
+			case <-stopWindowStateCh:
+				return
+			}
 		}
 	})
+
+	// ── منسق الإغلاق النظيف الموحد لكل نقاط الدخول ──
+	quitCoordinator := service.NewQuitCoordinator(service.QuitCoordinatorHooks{
+		SaveWindowState: saveWindowStateNow,
+		EmitQuitRequested: func(requestID uint64) {
+			wailsApp.Event.Emit(appQuitEvent, map[string]any{"requestId": requestID})
+		},
+		PerformQuit: func() {
+			wailsApp.Quit()
+		},
+	})
+	appInstance.setQuitCoordinator(quitCoordinator)
+
+	// 🗂️ أيقونة صينية النظام: نقطة استعادة دائمة للنافذة (إظهار/تركيز) ومسار
+	// خروج سريع، فتبقى واجهة التطبيق قابلة للوصول أثناء عمليات الخلفية.
+	// الاستدعاء قبل Run صحيح ومقصود: Wails يؤجّل إنشاء الصينية حتى الإقلاع.
+	SetupSystemTray(wailsApp, mainWindow, quitCoordinator)
 
 	// ── إغلاق النافذة: حفظ الحالة ثم خروج نظيف (عقد app:quit-requested) ──
 	//
@@ -470,24 +546,26 @@ func main() {
 	// الإغلاق فيبقى الإغلاق تحت سيطرتنا (نُمرّر الحالة للواجهة لتفريغ الحفظ
 	// التلقائي أولاً، ومهلة الأمان تضمن الخروج لو تعذّر ذلك).
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		saveWindowStateNow()
 		if event != nil {
 			event.Cancel()
 		}
-		requestGracefulQuit(wailsApp)
+		quitCoordinator.RequestQuit()
 	})
 
 	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
 	wailsApp.OnShutdown(func() {
-		// 🛑 الخروج المؤكَّد: نُلغي مؤقت أمان الخروج المعلّق كي لا يُطلق
-		// Quit على تطبيق في طريق الإغلاق (OnShutdown يعمل فقط عبر App.Quit).
-		cancelQuitSafetyTimeout()
+		// 🛑 الخروج المؤكَّد: نُلغي مؤقت أمان الخروج المعلّق، ثم نوقف الحلقات
+		// الخلفية قبل ServiceShutdown ثم إغلاق DB في PostShutdown.
+		quitCoordinator.CancelOnShutdown()
+		stopWindowStateAutosave()
 		repository.StopCleanupUnusedMedia()
-		_ = repository.CloseDB()
 	})
 
 	err = wailsApp.Run()
 	if err != nil {
+		stopWindowStateAutosave()
+		repository.StopCleanupUnusedMedia()
+		_ = repository.CloseDB()
 		slog.Error("Wails run encountered an error", "error", err.Error())
 		os.Exit(1)
 	}

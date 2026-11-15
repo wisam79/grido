@@ -4,6 +4,8 @@ import (
 	"grido/internal/core/domain"
 	"os"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -831,6 +833,104 @@ func TestInitDB_ConnectionPragmasSurviveReplacement(t *testing.T) {
 func TestStopCleanupUnusedMedia(t *testing.T) {
 	// Should not panic even if no cleanup is running
 	StopCleanupUnusedMedia()
+}
+
+func TestStopCleanupUnusedMedia_WaitsForInFlightCycleAndIsIdempotent(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	workerDone := make(chan struct{})
+	var cycleFinished atomic.Bool
+
+	go func() {
+		defer close(workerDone)
+		startCleanupUnusedMedia(0, time.Hour, func() {
+			close(entered)
+			<-release
+			cycleFinished.Store(true)
+		})
+	}()
+
+	<-entered
+
+	var wg sync.WaitGroup
+	stopReturned := make(chan struct{})
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		StopCleanupUnusedMedia()
+		close(stopReturned)
+	}()
+	go func() {
+		defer wg.Done()
+		StopCleanupUnusedMedia()
+	}()
+
+	// StopCleanupUnusedMedia must block until the in-flight cleanup cycle completes.
+	select {
+	case <-stopReturned:
+		t.Fatal("StopCleanupUnusedMedia returned before in-flight cycle finished")
+	case <-time.After(40 * time.Millisecond):
+	}
+
+	close(release)
+	wg.Wait()
+
+	if !cycleFinished.Load() {
+		t.Fatal("expected in-flight cleanup cycle to finish before StopCleanupUnusedMedia returned")
+	}
+
+	select {
+	case <-workerDone:
+	case <-time.After(time.Second):
+		t.Fatal("cleanup worker goroutine did not exit after StopCleanupUnusedMedia")
+	}
+
+	// Subsequent stop is a safe no-op, and a new generation can start cleanly.
+	StopCleanupUnusedMedia()
+}
+
+func TestStopCleanupUnusedMedia_CancelsDuringInitialDelay(t *testing.T) {
+	var ran atomic.Bool
+	workerDone := make(chan struct{})
+
+	go func() {
+		defer close(workerDone)
+		startCleanupUnusedMedia(10*time.Second, time.Hour, func() {
+			ran.Store(true)
+		})
+	}()
+
+	// Wait deterministically until activeCleanup is registered.
+	deadline := time.Now().Add(time.Second)
+	for {
+		cleanupMu.Lock()
+		registered := activeCleanup != nil
+		cleanupMu.Unlock()
+		if registered {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("worker did not register within deadline")
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	stopDone := make(chan struct{})
+	go func() {
+		StopCleanupUnusedMedia()
+		close(stopDone)
+	}()
+
+	select {
+	case <-stopDone:
+	case <-time.After(time.Second):
+		t.Fatal("StopCleanupUnusedMedia blocked on initial delay instead of cancelling immediately")
+	}
+
+	<-workerDone
+	if ran.Load() {
+		t.Fatal("cleanup function should not run when stopped during initial delay")
+	}
 }
 
 func TestEmptyMediaTrash(t *testing.T) {

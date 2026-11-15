@@ -3,16 +3,21 @@ import { ADDON_TEMPLATES } from './addons';
 import { BADGE_TEMPLATES } from './badges';
 import { BARCODE_TEMPLATES } from './barcodes';
 import { BEAUTY_TEMPLATES } from './beauty';
+import { BUSINESS_CARDS } from './business_cards';
 import { CAFE_TEMPLATES } from './cafe';
+import { CRAFT_CARDS } from './craft_cards';
+import { EVENTS_CARDS } from './events_cards';
 import { FRAME_TEMPLATES } from './frames';
 import { GREETING_TEMPLATES } from './greeting';
 import { KIDS_TEMPLATES } from './kids';
 import { PACKAGING_TEMPLATES } from './packaging';
 import { RETAIL_TEMPLATES } from './retail';
+import { RETAIL_CARDS } from './retail_cards';
 import { SAFETY_TEMPLATES } from './safety';
 import { SEASONAL_TEMPLATES } from './seasonal';
 import { SHIPPING_TEMPLATES } from './shipping';
 import { SOCIAL_TEMPLATES } from './social';
+import { SOCIAL_CARDS } from './social_cards';
 import { normalizeArabicQuery } from '../lib/sticker-text';
 
 import type {
@@ -23,6 +28,11 @@ import type {
   StickerTemplate,
 } from '../types';
 
+export * from './business_cards';
+export * from './social_cards';
+export * from './retail_cards';
+export * from './events_cards';
+export * from './craft_cards';
 export * from './badges';
 export * from './shipping';
 export * from './packaging';
@@ -134,6 +144,11 @@ export const STICKER_CATEGORIES: StickerCategoryInfo[] = [
 ];
 
 export const ALL_STICKER_TEMPLATES: StickerTemplate[] = [
+  ...BUSINESS_CARDS,
+  ...SOCIAL_CARDS,
+  ...RETAIL_CARDS,
+  ...EVENTS_CARDS,
+  ...CRAFT_CARDS,
   ...FRAME_TEMPLATES,
   ...ADDON_TEMPLATES,
   ...BADGE_TEMPLATES,
@@ -149,6 +164,23 @@ export const ALL_STICKER_TEMPLATES: StickerTemplate[] = [
   ...KIDS_TEMPLATES,
   ...SEASONAL_TEMPLATES,
 ];
+
+interface TemplateSearchEntry {
+  nameNorm: string;
+  nameEnLower: string;
+  descNorm: string;
+}
+
+const SEARCH_INDEX = new Map<StickerTemplate, TemplateSearchEntry>(
+  ALL_STICKER_TEMPLATES.map((template) => [
+    template,
+    {
+      nameNorm: normalizeArabicQuery(template.name),
+      nameEnLower: template.nameEn.toLowerCase(),
+      descNorm: normalizeArabicQuery(template.description),
+    },
+  ]),
+);
 
 export function getTemplateShape(template: StickerTemplate): StickerShape {
   if (template.shape) return template.shape;
@@ -171,9 +203,10 @@ export function searchStickerTemplates(
   shape?: StickerShape | 'all',
 ): StickerTemplate[] {
   const q = query.trim().toLowerCase();
+  const isCardsCategory = category === 'cards';
 
   let targetCategories: StickerCategory[] | null = null;
-  if (category && category !== 'all') {
+  if (category && category !== 'all' && !isCardsCategory) {
     const group = CATEGORY_ITEMS.find((c) => c.id === category);
     if (group?.categories) {
       targetCategories = group.categories;
@@ -185,13 +218,14 @@ export function searchStickerTemplates(
   // تطبيع عربي للاستعلام والقوالب معاً: «أحمد» ≡ «احمد»، «قهوة» ≡ «قهوه»، بلا تشكيل
   const nq = normalizeArabicQuery(q);
   return ALL_STICKER_TEMPLATES.filter((template) => {
+    if (isCardsCategory && !template.id.startsWith('card_')) return false;
     if (targetCategories && !targetCategories.includes(template.category)) return false;
     if (shape && shape !== 'all' && getTemplateShape(template) !== shape) return false;
     if (!nq) return true;
+    const entry = SEARCH_INDEX.get(template);
+    if (!entry) return false;
     return (
-      normalizeArabicQuery(template.name).includes(nq) ||
-      template.nameEn.toLowerCase().includes(q) ||
-      normalizeArabicQuery(template.description).includes(nq)
+      entry.nameNorm.includes(nq) || entry.nameEnLower.includes(q) || entry.descNorm.includes(nq)
     );
   });
 }

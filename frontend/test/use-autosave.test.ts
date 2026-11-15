@@ -2,7 +2,12 @@ import { renderHook, waitFor, act, cleanup } from '@testing-library/react';
 import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { clearAutoSave, flushAutoSave, useAutoSave } from '../src/hooks/use-autosave';
+import {
+  clearAutoSave,
+  flushAutoSave,
+  flushAutoSaveForQuit,
+  useAutoSave,
+} from '../src/hooks/use-autosave';
 import { useEditorStore } from '../src/lib/editor-store';
 import { ClearAutoSave, LoadAutoSave, SaveAutoSave } from '../wailsjs/go/main/App';
 
@@ -517,5 +522,35 @@ describe('useAutoSave - Auto Save Hook Tests', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('flushAutoSaveForQuit re-flushes if the document changes while an IPC write is in flight', async () => {
+    const storage = memoryStorage();
+    storage.holdWrites();
+    const id = useEditorStore.getState().addTextElement('قبل الإغلاق');
+
+    const flushPromise = flushAutoSaveForQuit(5);
+    await waitFor(() => expect(storage.writes).toHaveLength(1));
+
+    // تعديل يحدث أثناء كتابة النسخة الأولى عبر IPC
+    useEditorStore.getState().updateElement(id, { text: 'تعديل متأخر أثناء الحفظ' });
+    await act(async () => storage.writes[0].finish());
+
+    await waitFor(() => expect(storage.writes).toHaveLength(2));
+    await act(async () => storage.writes[1].finish());
+
+    const result = await flushPromise;
+    expect(result).toEqual({ ok: true, converged: true });
+    expect(savedText(storage.disk)).toBe('تعديل متأخر أثناء الحفظ');
+  });
+
+  it('flushAutoSaveForQuit reports failure with error when SaveAutoSave rejects', async () => {
+    vi.mocked(SaveAutoSave).mockRejectedValueOnce(new Error('disk full'));
+    useEditorStore.getState().addTextElement('تعديل غير محفوظ');
+
+    const result = await flushAutoSaveForQuit();
+    expect(result.ok).toBe(false);
+    expect(result.converged).toBe(false);
+    expect(result.error).toBeInstanceOf(Error);
   });
 });

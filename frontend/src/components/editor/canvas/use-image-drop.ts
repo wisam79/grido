@@ -32,12 +32,23 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
 
   const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
+    if (e.dataTransfer?.types?.includes('Files')) {
+      // منع فقاعة الحدث إلى مستمع Wails على documentElement حتى لا يعترض
+      // Drop Target العام أو يعيد dropEffect إلى 'none' خارج نطاقه.
+      e.stopPropagation?.();
+      e.dataTransfer.dropEffect = 'copy';
+    }
   }, []);
 
   const handleDrop = useCallback(
     async (e: DragEvent) => {
       e.preventDefault();
-      const files = Array.from(e.dataTransfer.files || []).filter((f): f is File =>
+      if (e.dataTransfer?.files?.length) {
+        // يعالج الكانفس السقوط بدقة خانة Konva وبث مباشر بدون Base64؛
+        // نوقف انتشار الحدث حتى لا يُشغّل مستمع Wails native-file-drop نفس الصورة مرتين.
+        e.stopPropagation?.();
+      }
+      const files = Array.from(e.dataTransfer?.files || []).filter((f): f is File =>
         f.type.startsWith('image/'),
       );
       if (files.length === 0) return;

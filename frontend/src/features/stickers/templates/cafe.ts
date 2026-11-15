@@ -14,6 +14,7 @@ export const CAFE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
     defaultColors: {
       primary: '#3E2B24',
       secondary: '#B68150',
@@ -80,6 +81,7 @@ export const CAFE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 340,
     aspectRatio: 520 / 340,
     defaultMm: { width: 65, height: 42 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 316, rx: 14 },
     defaultColors: {
       primary: '#81452D',
       secondary: '#C39957',
@@ -136,6 +138,7 @@ export const CAFE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
     defaultColors: {
       primary: '#215A56',
       secondary: '#8DAF62',
@@ -183,6 +186,214 @@ export const CAFE_TEMPLATES: StickerTemplate[] = [
     ${size}
   </text>
   <path d="M 167,408 Q 192,398 217,408 T 267,408 T 317,408" fill="none" stroke="${secondaryColor}" stroke-width="3" stroke-linecap="round" data-color-role="secondary"/>
+</svg>`;
+    },
+  },
+  {
+    id: 'cafe_iced_latte_cup',
+    name: 'سبانش آيس لاتيه',
+    nameEn: 'Iced Latte Cup Seal',
+    category: 'cafe',
+    shape: 'circle',
+    description: 'ختم دائري للقهوة الباردة والسبانش لاتيه بأسلوب الكافيهات المختصة',
+    defaultWidth: 480,
+    defaultHeight: 480,
+    aspectRatio: 1,
+    defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
+    defaultColors: {
+      primary: '#3B2314',
+      secondary: '#C68B59',
+      background: '#FDF7F0',
+    },
+    fields: [
+      { id: 'cafeTitle', label: 'اسم الكافيه', type: 'text', defaultValue: 'مقهى الفنجان المختص' },
+      { id: 'drinkType', label: 'نوع المشروب', type: 'text', defaultValue: 'سبانش آيس لاتيه' },
+      {
+        id: 'roastNote',
+        label: 'ملاحظة المذاق',
+        type: 'text',
+        defaultValue: 'إسبريسو مزدوج • حليب مكثف',
+      },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const cafeTitle = escapeXml(fields.cafeTitle || 'مقهى الفنجان المختص');
+      const drinkType = escapeXml(fields.drinkType || 'سبانش آيس لاتيه');
+      const roastNote = escapeXml(fields.roastNote || 'إسبريسو مزدوج • حليب مكثف');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <radialGradient id="cil-glow" cx="50%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cil-coffee" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${secondaryColor}"/>
+      <stop offset="100%" stop-color="${primaryColor}"/>
+    </linearGradient>
+  </defs>
+  <circle cx="240" cy="240" r="226" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" data-color-role="background"/>
+  <circle cx="240" cy="240" r="212" fill="none" stroke="${secondaryColor}" stroke-width="1.5" stroke-dasharray="6 5" data-color-role="secondary"/>
+  <circle cx="240" cy="240" r="212" fill="url(#cil-glow)"/>
+  <text data-field-id="cafeTitle" data-max-width="290" x="240" y="68" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+    ${cafeTitle}
+  </text>
+  <!-- Dome lid + straw + layered iced cup -->
+  <path d="M 248,148 L 265,104 L 286,98" fill="none" stroke="${primaryColor}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" data-color-role="primary"/>
+  <path d="M 196,148 A 44,32 0 0,1 284,148 Z" fill="${secondaryColor}" fill-opacity="0.16" stroke="${primaryColor}" stroke-width="2.5" data-color-role="primary"/>
+  <path d="M 193,148 H 287 L 274,248 Q 240,260 206,248 Z" fill="url(#cil-coffee)" stroke="${primaryColor}" stroke-width="3" stroke-linejoin="round" data-color-role="secondary"/>
+  <path d="M 200,180 Q 220,170 240,180 T 280,180" fill="none" stroke="${backgroundColor}" stroke-width="3" stroke-linecap="round"/>
+  <rect x="214" y="156" width="18" height="18" rx="4" transform="rotate(-12 223 165)" fill="${backgroundColor}" fill-opacity="0.7"/>
+  <rect x="248" y="158" width="16" height="16" rx="4" transform="rotate(14 256 166)" fill="${backgroundColor}" fill-opacity="0.7"/>
+  <text data-field-id="drinkType" data-max-width="366" x="240" y="310" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${drinkType}
+  </text>
+  <rect x="88" y="334" width="304" height="44" rx="22" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="roastNote" data-max-width="274" x="240" y="362" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle">
+    ${roastNote}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'cafe_dessert_patisserie',
+    name: 'حلويات ومعجنات فاخرة',
+    nameEn: 'Boutique Patisserie Label',
+    category: 'cafe',
+    shape: 'rect',
+    description: 'بطاقة تغليف أنيقة لعلب الكيك والحلويات والمعجنات المنزلية',
+    defaultWidth: 520,
+    defaultHeight: 340,
+    aspectRatio: 520 / 340,
+    defaultMm: { width: 70, height: 46 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 316, rx: 18 },
+    defaultColors: {
+      primary: '#6B2D38',
+      secondary: '#C89B6E',
+      background: '#FFF9F5',
+    },
+    fields: [
+      { id: 'brand', label: 'اسم المخبز / الحلواني', type: 'text', defaultValue: 'حلويات ليلاس' },
+      { id: 'item', label: 'التخصص', type: 'text', defaultValue: 'تارت وكيك فرنسي طازج' },
+      {
+        id: 'note',
+        label: 'تفصيل التغليف',
+        type: 'text',
+        defaultValue: 'صُنع بالزبدة الطبيعية 100%',
+      },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const brand = escapeXml(fields.brand || 'حلويات ليلاس');
+      const item = escapeXml(fields.item || 'تارت وكيك فرنسي طازج');
+      const note = escapeXml(fields.note || 'صُنع بالزبدة الطبيعية 100%');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 340" width="520" height="340">
+  <defs>
+    <radialGradient id="cdp-aura" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="12" y="12" width="496" height="316" rx="18" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <rect x="12" y="12" width="496" height="316" rx="18" fill="url(#cdp-aura)"/>
+  <rect x="24" y="24" width="472" height="292" rx="12" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <!-- Cloche cake dome emblem -->
+  <circle cx="260" cy="48" r="7" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 198,108 A 62,54 0 0,1 322,108 Z" fill="${secondaryColor}" fill-opacity="0.24" stroke="${primaryColor}" stroke-width="2.5" data-color-role="primary"/>
+  <path d="M 182,110 H 338 M 242,110 L 236,126 H 284 L 278,110" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text data-field-id="brand" data-max-width="420" x="260" y="178" font-family="${fontFamily}, sans-serif" font-size="${Math.round(36 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${brand}
+  </text>
+  <text data-field-id="item" data-max-width="400" x="260" y="236" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+    ${item}
+  </text>
+  <rect x="108" y="256" width="304" height="40" rx="20" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="note" data-max-width="274" x="260" y="282" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="${backgroundColor}" text-anchor="middle">
+    ${note}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'cafe_tea_botanical',
+    name: 'شاي وأعشاب طبيعية',
+    nameEn: 'Artisan Botanical Tea',
+    category: 'cafe',
+    shape: 'circle',
+    description: 'ختم علب الشاي العراقي والأعشاب الطبيعية بتصميم أوراق وإبريق كلاسيكي',
+    defaultWidth: 480,
+    defaultHeight: 480,
+    aspectRatio: 1,
+    defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
+    defaultColors: {
+      primary: '#234232',
+      secondary: '#B4884E',
+      background: '#F7F4EA',
+    },
+    fields: [
+      { id: 'teaTitle', label: 'اسم الصنف', type: 'text', defaultValue: 'شاي الهيل الفاخر' },
+      {
+        id: 'origin',
+        label: 'المصدر / المزيج',
+        type: 'text',
+        defaultValue: 'ورق سيلاني فاخر مع هيل طبيعي',
+      },
+      { id: 'weight', label: 'الوزن الصافي', type: 'text', defaultValue: '250 غرام صافي' },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const teaTitle = escapeXml(fields.teaTitle || 'شاي الهيل الفاخر');
+      const origin = escapeXml(fields.origin || 'ورق سيلاني فاخر مع هيل طبيعي');
+      const weight = escapeXml(fields.weight || '250 غرام صافي');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <circle cx="240" cy="240" r="226" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" data-color-role="background"/>
+  <circle cx="240" cy="240" r="210" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <!-- Teapot & botanical leaves -->
+  <path d="M 192,166 C 192,130 288,130 288,166 C 288,202 266,220 240,220 C 214,220 192,202 192,166 Z" fill="${secondaryColor}" fill-opacity="0.22" stroke="${primaryColor}" stroke-width="2.8" data-color-role="primary"/>
+  <path d="M 222,136 C 222,122 258,122 258,136 M 240,124 V 115" fill="none" stroke="${primaryColor}" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M 192,172 Q 162,164 156,136 M 288,154 C 316,148 318,194 286,194" fill="none" stroke="${primaryColor}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 230,180 C 220,164 236,154 240,154 C 244,154 260,164 250,180 C 245,188 235,188 230,180 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="teaTitle" data-max-width="350" x="240" y="286" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${teaTitle}
+  </text>
+  <text data-field-id="origin" data-max-width="336" x="240" y="330" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+    ${origin}
+  </text>
+  <path d="M 140,354 H 340" stroke="${secondaryColor}" stroke-width="1.5" stroke-opacity="0.6"/>
+  <text data-field-id="weight" data-max-width="240" x="240" y="390" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+    ${weight}
+  </text>
 </svg>`;
     },
   },

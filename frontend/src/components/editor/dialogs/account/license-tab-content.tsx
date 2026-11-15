@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { ExportSupportLogs } from '../../../../../wailsjs/go/main/App';
+import { BrowserOpenURL } from '../../../../../wailsjs/runtime/runtime';
 
 import type { UserProfile } from '@/lib/store/slices/license-slice';
 
@@ -191,6 +192,15 @@ export function LicenseTabContent({
           href="https://grido.cloud-ip.cc"
           target="_blank"
           rel="noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            const url = 'https://grido.cloud-ip.cc';
+            if (typeof BrowserOpenURL === 'function') {
+              BrowserOpenURL(url);
+            } else {
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }
+          }}
           className="flex items-center gap-1 text-xs text-primary hover:underline font-bold"
         >
           <span>شراء ترخيص</span>

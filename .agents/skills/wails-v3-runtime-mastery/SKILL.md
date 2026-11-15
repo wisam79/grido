@@ -296,11 +296,15 @@ wails3 task package
 
 ## 🎯 6. قائمة فحص الجودة لمحرك Wails v3
 
-- [x] الخدمات مسجّلة عبر `application.NewService(...)` في `Options.Services`
-- [x] كاش WebView2 مخصص داخل AppData عبر `WebviewUserDataPath`
-- [x] النافذة Frameless مع Mica أو Acrylic على Windows 11 و `NonClientRegionSupport: true`
-- [x] شريط العنوان يستخدم `--wails-draggable: drag` مع `--wails-draggable: no-drag` لعناصر التحكم
-- [x] قفل المثيل الفردي يوجه وسائط CLI للنافذة الأولى
+- [x] الخدمات مسجّلة عبر `application.NewService(...)` في `Options.Services` مع إغلاق الموارد الأصلية (`DesktopService.ServiceShutdown`)
+- [x] تمرير `Logger: service.GlobalLogger` و`WarningHandler` / `ErrorHandler` في `application.Options` (كي لا تُرمى أخطاء Wails/WebView2 إلى `io.Discard` في الإنتاج)، مع `Assets.DisableLogging: !isDevMode()` لمنع تضخم السجلّ بطلبات الأصول الثابتة
+- [x] كاش WebView2 مخصص داخل AppData عبر `WindowsOptions.WebviewUserDataPath` (مع ضمان إنشاء المجلد بـ `os.MkdirAll` قبل `Run`)
+- [x] النافذة `Name: "main"` Frameless مع Mica أو Acrylic على Windows 11 و `NonClientRegionSupport: true` و `Windows.DisableMenu: true` و `Windows.WindowDidMoveDebounceMS: 100`
+- [x] شريط العنوان يستخدم `--wails-draggable: drag` و`-webkit-app-region: drag` مع `no-drag` لعناصر التحكم
+- [x] منع قائمة السياق في الإنتاج من الواجهة (`main.tsx`) مع إبقائها داخل حقول النص (`INPUT`/`TEXTAREA`/`isContentEditable`) وعدم تعطيل `DefaultContextMenuDisabled` كلياً من Go
+- [x] السحب والإفلات يحمل السمة الرسمية `data-file-drop-target` على مساحة العمل مع `stopPropagation` في الكانفس ومودال VDP لمنع تكرار الإدراج مع `native-file-drop`
+- [x] قفل المثيل الفردي يوجه وسائط CLI للنافذة الأولى (`main.second-instance-drain` ينتهي تلقائياً عبر `wailsApp.Context().Done()`) وتمرير `events.Common.SystemDidWake` → `app:resume`
+- [x] الروابط الخارجية من الواجهة تستخدم `BrowserOpenURL` عبر الجسر الموحد بدل الاعتماد على `target="_blank"` وحده
 - [x] فحص مسارات الصور ضد Symlink Path Traversal وتجنب Base64 للميديا الضخمة
 - [x] جسور الأحداث في الواجهة تستورد حصراً من `frontend/wailsjs/runtime/runtime`
 - [x] `CGO_ENABLED=1` في جميع مهام البناء (لدعم SQLite و CGO)

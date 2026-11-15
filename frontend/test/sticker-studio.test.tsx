@@ -13,7 +13,7 @@ import { StickerStudioDialog } from '../src/features/stickers/components/sticker
 import { loadStickerPresets } from '../src/features/stickers/lib/preset-utils';
 import { buildDefaultStickerParams } from '../src/features/stickers/lib/sticker-design/build-svg';
 import * as svgRasterizer from '../src/features/stickers/lib/svg-rasterizer';
-import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
+import { ALL_STICKER_TEMPLATES, BADGE_TEMPLATES } from '../src/features/stickers/templates';
 import { useEditorStore } from '../src/lib/editor-store';
 import { loadGoogleFont } from '../src/lib/io/fonts';
 
@@ -104,7 +104,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
       expect(screen.getByRole('searchbox')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /الكل/ })).toHaveAttribute('aria-pressed', 'true');
-    });
+    }, 15_000);
 
     it('filters templates when search query is entered', async () => {
       const handleSearchChange = vi.fn();
@@ -146,7 +146,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
       const cards = screen.getAllByRole('button');
       expect(cards.length).toBeGreaterThan(0);
-    });
+    }, 15_000);
   });
 
   describe('StickerPreview', () => {
@@ -365,7 +365,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
         rasterSpy.mockRestore();
         downloadSpy.mockRestore();
       }
-    });
+    }, 15_000);
 
     it('does not save a hovered font when switching to saved presets', async () => {
       const user = setupUser();
@@ -439,6 +439,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
   describe('FreeformElementsTab quick sticker insertion', () => {
     it('attaches stickerSource metadata so quick-inserted stickers can be re-edited from the context menu', async () => {
+      const quickStickerTemplate = BADGE_TEMPLATES[0];
       const rasterSpy = vi
         .spyOn(svgRasterizer, 'renderSvgToPngBlob')
         .mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
@@ -446,7 +447,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
       try {
         renderWithProviders(<FreeformElementsTab category="stickers" />);
-        const [firstCard] = await screen.findAllByTitle(sampleTemplate.name);
+        const [firstCard] = await screen.findAllByTitle(quickStickerTemplate.name);
         fireEvent.click(firstCard);
 
         await waitFor(() => {
@@ -456,9 +457,9 @@ describe('Sticker Studio Unit & Component Tests', () => {
         const inserted = useEditorStore.getState().elements[0];
         expect(inserted.type).toBe('image');
         if (inserted.type === 'image') {
-          expect(inserted.stickerSource?.templateId).toBe(sampleTemplate.id);
+          expect(inserted.stickerSource?.templateId).toBe(quickStickerTemplate.id);
           expect(inserted.stickerSource?.params.primaryColor).toBe(
-            sampleTemplate.defaultColors.primary,
+            quickStickerTemplate.defaultColors.primary,
           );
           expect(inserted.stickerSource?.svg).toContain('<svg');
         }

@@ -2,6 +2,18 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## إصلاحات دورة حياة Wails والإغلاق الآمن (`RV-LIFE-01…06`) — 2026-11-15
+
+اختبارات مستهدفة بعامل واحد ودون تغطية، واختبارات Go مع `-race` للتحقق من إغلاق الملاحظات `RV-LIFE-01…06` (لا تمثل تشغيل نافذة Wails أصلية حيّة أو حزمة E2E محلياً):
+
+- `go test -race -v -run TestStopCleanupUnusedMedia ./internal/repository` → **3/3 PASS** (`db_test.go`: إيقاف دون تشغيل، barrier انتظار دورة تنظيف نشطة قبل العودة مع idempotency، وإلغاء أثناء مهلة البدء).
+- `go test -race -v -run TestQuitCoordinator ./internal/service` → **3/3 PASS** (`quit_coordinator_test.go`: حفظ يتجاوز 5s عبر ack `"saving"`، فشل يوقف المؤقت ويدعم الإلغاء/إعادة المحاولة/الخروج الصريح، وسباق المؤقت مع التأكيد، وغياب رد الواجهة).
+- `go test -race -v -run TestMemoryService ./internal/service` → **5/5 PASS** (`memory_service_test.go`: يتضمن انتظار `Stop()` لدورة التقليم النشطة واحترام ميزانية `StopTimeout`).
+- اختبارات Vitest المستهدفة (عبر `node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --coverage.enabled=false`):
+  `src/lib/wails/ipc-contract-drift.test.ts` (**5/5**)، `test/quit-protocol.test.tsx` (**4/4**)، `test/use-autosave.test.ts` (**21/21**)، `test/hooks.test.ts` (**5/5**)، `test/App.test.tsx` (**26/26**)، و`test/ui-compliance.test.ts` (**54/54**).
+
+---
+
 ## متابعة صقل الواجهة وتطوير التبويبات وشريطي الأدوات — 2026-11-14
 
 فحوص مستهدفة وخفيفة بعد صقل `frontend/src/` وتوحيد الطبقات الثلاث وتطوير شريط التبويبات وشريط الأدوات العلوي وكبسولة العرض والزوم في الشريط السفلي وتبويبَي تعبئة وفرز الخانات وتبويب النصوص ورأس لوحة الخصائص (لا تمثّل تشغيل الحزمة الكاملة أو E2E أو بناء سطح المكتب المحلي):

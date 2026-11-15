@@ -15,6 +15,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#347985',
       secondary: '#203F55',
@@ -84,6 +85,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 223 },
     defaultColors: {
       primary: '#BD6E72',
       secondary: '#844B55',
@@ -149,6 +151,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 225 },
     defaultColors: {
       primary: '#6D8954',
       secondary: '#304B3C',
@@ -286,6 +289,10 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 300,
     aspectRatio: 500 / 300,
     defaultMm: { width: 100, height: 60 },
+    cutShape: {
+      kind: 'path',
+      d: 'M 32,16 H 468 Q 484,16 484,32 V 133 A 17,17 0 0,0 484,167 V 268 Q 484,284 468,284 H 32 Q 16,284 16,268 V 167 A 17,17 0 0,0 16,133 V 32 Q 16,16 32,16 Z',
+    },
     defaultColors: {
       primary: '#B83432',
       secondary: '#F1CF8C',
@@ -348,6 +355,10 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 320,
     aspectRatio: 500 / 320,
     defaultMm: { width: 100, height: 64 },
+    cutShape: {
+      kind: 'path',
+      d: 'M 75,18 H 469 Q 483,18 483,32 V 288 Q 483,302 469,302 H 31 Q 17,302 17,288 V 76 Z',
+    },
     defaultColors: {
       primary: '#C3472D',
       secondary: '#27383B',
@@ -404,6 +415,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 350,
     aspectRatio: 500 / 350,
     defaultMm: { width: 100, height: 70 },
+    cutShape: { kind: 'roundedRect', x: 14, y: 14, width: 472, height: 322, rx: 10 },
     defaultColors: {
       primary: '#B83F38',
       secondary: '#303C44',
@@ -473,6 +485,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#2F405F',
       secondary: '#92703A',
@@ -555,6 +568,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 650,
     aspectRatio: 500 / 650,
     defaultMm: { width: 100, height: 130 },
+    cutShape: { kind: 'roundedRect', x: 18, y: 18, width: 464, height: 614, rx: 5 },
     defaultColors: {
       primary: '#4B342A',
       secondary: '#9A603B',
@@ -664,6 +678,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#47877B',
       secondary: '#2D514B',
@@ -740,6 +755,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#BE4934',
       secondary: '#683F2D',
@@ -825,6 +841,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultMm: { width: 120, height: 80 },
+    cutShape: { kind: 'roundedRect', x: 16, y: 16, width: 568, height: 368, rx: 22 },
     defaultColors: {
       primary: '#BC512E',
       secondary: '#513B2C',
@@ -908,6 +925,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#A87832',
       secondary: '#5D472D',
@@ -991,6 +1009,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 450,
     aspectRatio: 600 / 450,
     defaultMm: { width: 120, height: 90 },
+    cutShape: { kind: 'roundedRect', x: 18, y: 18, width: 564, height: 414, rx: 28 },
     defaultColors: {
       primary: '#BC841F',
       secondary: '#624524',
@@ -1072,6 +1091,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#285D50',
       secondary: '#876535',
@@ -1145,6 +1165,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#895E6E',
       secondary: '#7D694C',
@@ -1224,6 +1245,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 241 },
     defaultColors: {
       primary: '#5B8393',
       secondary: '#3F626E',
@@ -1309,6 +1331,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'roundedRect', x: 20, y: 20, width: 460, height: 460, rx: 12 },
     defaultColors: {
       primary: '#515872',
       secondary: '#8C6B45',
@@ -1373,6 +1396,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultMm: { width: 120, height: 80 },
+    cutShape: { kind: 'roundedRect', x: 16, y: 16, width: 568, height: 368, rx: 16 },
     defaultColors: {
       primary: '#3E7595',
       secondary: '#294B63',
@@ -1542,6 +1566,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultMm: { width: 120, height: 80 },
+    cutShape: { kind: 'roundedRect', x: 16, y: 16, width: 568, height: 368, rx: 12 },
     defaultColors: {
       primary: '#28786D',
       secondary: '#244E49',
@@ -1630,6 +1655,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultMm: { width: 120, height: 80 },
+    cutShape: { kind: 'roundedRect', x: 16, y: 16, width: 568, height: 368, rx: 14 },
     defaultColors: {
       primary: '#357C9C',
       secondary: '#264F66',

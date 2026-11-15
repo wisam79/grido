@@ -12,6 +12,7 @@ import {
   Heart,
   Coffee,
   FrameCorners,
+  IdentificationCard,
 } from '@/components/ui/icons';
 import { ARABIC_FONTS } from '@/lib/io/fonts';
 
@@ -30,6 +31,11 @@ export const CATEGORY_ITEMS: StickerCategoryItem[] = [
     id: 'all',
     title: 'الكل',
     icon: <SquaresFour className="w-4 h-4" />,
+  },
+  {
+    id: 'cards',
+    title: 'بطاقات وتصاميم',
+    icon: <IdentificationCard className="w-4 h-4" weight="duotone" />,
   },
   {
     id: 'frames',

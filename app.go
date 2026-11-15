@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"grido/internal/core/domain"
 	"grido/internal/repository"
@@ -15,20 +18,21 @@ import (
 )
 
 type App struct {
-	ctx            context.Context
-	mediaSvc       *service.MediaService
-	phoneBridgeSvc *service.PhoneBridgeService
-	aiSvc          *service.AIService
-	imageProc      *service.ImageProcessorService
-	autosaveSvc    *service.AutosaveService
-	aiLogsSvc      *service.AiLogsService
-	licenseSvc     *service.LicenseService
-	desktopSvc     *service.DesktopService
-	crashGuardSvc  *service.CrashGuardService
-	memorySvc      *service.MemoryService
-	bgRemovalSvc   *service.BgRemovalService
-	scannerSvc     *service.ScannerDetectorService
-	startupFile    string
+	ctx             context.Context
+	mediaSvc        *service.MediaService
+	phoneBridgeSvc  *service.PhoneBridgeService
+	aiSvc           *service.AIService
+	imageProc       *service.ImageProcessorService
+	autosaveSvc     *service.AutosaveService
+	aiLogsSvc       *service.AiLogsService
+	licenseSvc      *service.LicenseService
+	desktopSvc      *service.DesktopService
+	crashGuardSvc   *service.CrashGuardService
+	memorySvc       *service.MemoryService
+	bgRemovalSvc    *service.BgRemovalService
+	scannerSvc      *service.ScannerDetectorService
+	quitCoordinator *service.QuitCoordinator
+	startupFile     string
 }
 
 func NewApp(templates domain.CustomTemplateRepository) *App {
@@ -73,19 +77,78 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 
 // ServiceShutdown يتم استدعاؤها تلقائياً بواسطة Wails v3 عند إغلاق التطبيق
 func (a *App) ServiceShutdown() error {
+	shutdownStart := time.Now()
+	var errs []error
+
 	if a.phoneBridgeSvc != nil {
-		_ = a.phoneBridgeSvc.Stop()
+		t0 := time.Now()
+		if err := a.phoneBridgeSvc.Stop(); err != nil {
+			slog.Warn("Shutdown stage failed", "stage", "phoneBridgeSvc.Stop", "duration", time.Since(t0).String(), "error", err)
+			errs = append(errs, fmt.Errorf("phoneBridgeSvc.Stop: %w", err))
+		} else {
+			slog.Info("Shutdown stage completed", "stage", "phoneBridgeSvc.Stop", "duration", time.Since(t0).String())
+		}
 	}
 	if a.memorySvc != nil {
+		t0 := time.Now()
 		a.memorySvc.Stop()
+		slog.Info("Shutdown stage completed", "stage", "memorySvc.Stop", "duration", time.Since(t0).String())
 	}
 	if a.bgRemovalSvc != nil {
-		_ = a.bgRemovalSvc.Close()
+		t0 := time.Now()
+		if err := a.bgRemovalSvc.Close(); err != nil {
+			slog.Warn("Shutdown stage failed", "stage", "bgRemovalSvc.Close", "duration", time.Since(t0).String(), "error", err)
+			errs = append(errs, fmt.Errorf("bgRemovalSvc.Close: %w", err))
+		} else {
+			slog.Info("Shutdown stage completed", "stage", "bgRemovalSvc.Close", "duration", time.Since(t0).String())
+		}
 	}
 	if a.scannerSvc != nil {
-		_ = a.scannerSvc.Close()
+		t0 := time.Now()
+		if err := a.scannerSvc.Close(); err != nil {
+			slog.Warn("Shutdown stage failed", "stage", "scannerSvc.Close", "duration", time.Since(t0).String(), "error", err)
+			errs = append(errs, fmt.Errorf("scannerSvc.Close: %w", err))
+		} else {
+			slog.Info("Shutdown stage completed", "stage", "scannerSvc.Close", "duration", time.Since(t0).String())
+		}
 	}
-	return nil
+	if a.desktopSvc != nil {
+		t0 := time.Now()
+		if err := a.desktopSvc.ServiceShutdown(); err != nil {
+			slog.Warn("Shutdown stage failed", "stage", "desktopSvc.ServiceShutdown", "duration", time.Since(t0).String(), "error", err)
+			errs = append(errs, fmt.Errorf("desktopSvc.ServiceShutdown: %w", err))
+		} else {
+			slog.Info("Shutdown stage completed", "stage", "desktopSvc.ServiceShutdown", "duration", time.Since(t0).String())
+		}
+	}
+
+	slog.Info("App ServiceShutdown completed", "total_duration", time.Since(shutdownStart).String(), "error_count", len(errs))
+	return errors.Join(errs...)
+}
+
+func (a *App) setQuitCoordinator(qc *service.QuitCoordinator) {
+	a.quitCoordinator = qc
+}
+
+// RequestGracefulQuit يوجّه طلب الإغلاق من زر النافذة المخصّص عبر منسق الإغلاق الموحّد.
+func (a *App) RequestGracefulQuit() uint64 {
+	if a.quitCoordinator != nil {
+		return a.quitCoordinator.RequestQuit()
+	}
+	service.NewWailsRuntimeBridge().Quit()
+	return 0
+}
+
+// RespondGracefulQuit يحدّث مرحلة طلب الإغلاق من الواجهة ("saving" | "failed" | "cancel" | "confirm").
+func (a *App) RespondGracefulQuit(requestID uint64, action string) bool {
+	if a.quitCoordinator != nil {
+		return a.quitCoordinator.Respond(requestID, action)
+	}
+	if action == "confirm" {
+		service.NewWailsRuntimeBridge().Quit()
+		return true
+	}
+	return false
 }
 
 func (a *App) LogFrontendError(level, message, stackTrace string) {

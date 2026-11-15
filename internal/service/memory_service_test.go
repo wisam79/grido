@@ -119,6 +119,79 @@ func TestMemoryService_HeavyWorkBlocksAutoTrimButNotExplicit(t *testing.T) {
 	}
 }
 
+func TestMemoryService_StopWaitsForInFlightCycleAndRespectsBudget(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var finished atomic.Bool
+
+	memSvc := service.NewMemoryService()
+	memSvc.ConfigureForTest(service.TestConfig{
+		StartupDelay: 5 * time.Millisecond,
+		StopTimeout:  500 * time.Millisecond,
+		TrimExec: func() {
+			close(entered)
+			<-release
+			finished.Store(true)
+		},
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	memSvc.StartAutoTrim(ctx)
+	<-entered
+
+	stopDone := make(chan struct{})
+	go func() {
+		memSvc.Stop()
+		close(stopDone)
+	}()
+
+	select {
+	case <-stopDone:
+		t.Fatal("Stop returned before active trim cycle finished")
+	case <-time.After(30 * time.Millisecond):
+	}
+
+	close(release)
+	select {
+	case <-stopDone:
+	case <-time.After(time.Second):
+		t.Fatal("Stop did not return after active trim cycle finished")
+	}
+	if !finished.Load() {
+		t.Fatal("expected active trim cycle to complete before Stop returned")
+	}
+
+	// Verify bounded wait if a trim cycle hangs past StopTimeout.
+	hungEntered := make(chan struct{})
+	hungRelease := make(chan struct{})
+	defer close(hungRelease)
+
+	boundedSvc := service.NewMemoryService()
+	boundedSvc.ConfigureForTest(service.TestConfig{
+		StartupDelay: 5 * time.Millisecond,
+		StopTimeout:  40 * time.Millisecond,
+		TrimExec: func() {
+			close(hungEntered)
+			<-hungRelease
+		},
+	})
+	boundedSvc.StartAutoTrim(ctx)
+	<-hungEntered
+
+	boundedDone := make(chan struct{})
+	go func() {
+		boundedSvc.Stop()
+		close(boundedDone)
+	}()
+
+	select {
+	case <-boundedDone:
+	case <-time.After(time.Second):
+		t.Fatal("Stop did not respect StopTimeout budget on hung cycle")
+	}
+}
+
 // TestWindowState_SaveSkipsIdenticalAndWritesChanged يتحقق من memoization
 // حالة النافذة: حفظ الحالة المطابقة تماماً لآخر قيمة محفوظة يتخطى الكتابة
 // الذرية كلياً (يُثبت بعبث خارجي بملف الهدف — يبقى محتواه المعبث)، وحفظ

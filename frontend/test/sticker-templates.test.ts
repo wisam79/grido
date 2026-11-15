@@ -8,6 +8,7 @@ import {
   getTemplateShape,
   findHiddenFieldIds,
 } from '@/features/stickers';
+import { CATEGORY_ITEMS } from '@/features/stickers/constants';
 import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
 import {
   saveStickerPreset,
@@ -16,6 +17,7 @@ import {
   getPresetsForTemplate,
   STICKER_PRESETS_STORAGE_KEY,
 } from '@/features/stickers/lib/preset-utils';
+import { postProcessStickerSvg } from '@/features/stickers/lib/sticker-text';
 
 describe('Modular Stickers Architecture (features/stickers)', () => {
   it('should have all categories configured with metadata', () => {
@@ -349,5 +351,86 @@ describe('Modular Stickers Architecture (features/stickers)', () => {
   it('should handle copySvgCodeToClipboard gracefully', async () => {
     const ok = await copySvgCodeToClipboard('<svg></svg>');
     expect(typeof ok).toBe('boolean');
+  });
+
+  it('should provide 200 templates (including 100 designed cards), unique IDs, and valid in-bounds cutShape metadata', () => {
+    expect(ALL_STICKER_TEMPLATES).toHaveLength(200);
+
+    const uniqueIds = new Set(ALL_STICKER_TEMPLATES.map((t) => t.id));
+    expect(uniqueIds.size).toBe(200);
+
+    const cardsItem = CATEGORY_ITEMS.find((c) => c.id === 'cards');
+    expect(cardsItem).toBeDefined();
+    expect(cardsItem?.title).not.toMatch(/كانفا|canva/i);
+
+    const cardTemplates = searchStickerTemplates('', 'cards');
+    expect(cardTemplates).toHaveLength(100);
+    cardTemplates.forEach((t) => {
+      expect(t.id.startsWith('card_')).toBe(true);
+      expect(t.name).not.toMatch(/كانفا|canva/i);
+      expect(t.nameEn).not.toMatch(/canva/i);
+      expect(t.description).not.toMatch(/كانفا|canva/i);
+      expect(t.cutShape).toBeDefined();
+    });
+
+    const cutTemplates = ALL_STICKER_TEMPLATES.filter((t) => Boolean(t.cutShape));
+    expect(cutTemplates.length).toBeGreaterThanOrEqual(160);
+
+    for (const template of cutTemplates) {
+      const cut = template.cutShape!;
+      if (cut.kind === 'circle') {
+        expect(cut.r).toBeGreaterThan(0);
+        expect(cut.cx - cut.r).toBeGreaterThanOrEqual(0);
+        expect(cut.cy - cut.r).toBeGreaterThanOrEqual(0);
+        expect(cut.cx + cut.r).toBeLessThanOrEqual(template.defaultWidth);
+        expect(cut.cy + cut.r).toBeLessThanOrEqual(template.defaultHeight);
+      } else if (cut.kind === 'roundedRect') {
+        expect(cut.width).toBeGreaterThan(0);
+        expect(cut.height).toBeGreaterThan(0);
+        expect(cut.rx).toBeGreaterThanOrEqual(0);
+        expect(cut.x).toBeGreaterThanOrEqual(0);
+        expect(cut.y).toBeGreaterThanOrEqual(0);
+        expect(cut.x + cut.width).toBeLessThanOrEqual(template.defaultWidth);
+        expect(cut.y + cut.height).toBeLessThanOrEqual(template.defaultHeight);
+      } else {
+        expect(cut.d.trim().length).toBeGreaterThan(10);
+      }
+    }
+  });
+
+  it('should keep non-centered RTL/LTR text elements anchored inside viewBox bounds across all cards', () => {
+    const cardTemplates = searchStickerTemplates('', 'cards');
+    for (const template of cardTemplates) {
+      const svg = postProcessStickerSvg(
+        template.generateSvg({
+          fields: Object.fromEntries(template.fields.map((f) => [f.id, f.defaultValue])),
+          primaryColor: template.defaultColors.primary,
+          secondaryColor: template.defaultColors.secondary,
+          backgroundColor: template.defaultColors.background,
+          isTransparent: false,
+          fontFamily: 'Cairo',
+          fontScale: 1,
+        }),
+        { namespace: template.id },
+      );
+      const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+      const width = vb ? Number(vb[1]) : template.defaultWidth;
+      const texts = [...svg.matchAll(/<text([^>]*)>([\s\S]*?)<\/text>/g)];
+      for (const [, attrs, inner] of texts) {
+        if (inner.includes('<textPath')) continue;
+        const anchor = attrs.match(/text-anchor="([^"]+)"/)?.[1] ?? 'start';
+        if (anchor === 'middle') continue;
+        const dir = attrs.match(/direction="([^"]+)"/)?.[1] ?? 'ltr';
+        const x = Number(attrs.match(/\bx="(-?[\d.]+)"/)?.[1] ?? 0);
+        // Right-anchored LTR (end/ltr) or right-anchored RTL (start/rtl) must not sit near x=0;
+        // Left-anchored LTR (start/ltr) or left-anchored RTL (end/rtl) must not sit near x=width.
+        if (dir === 'rtl' && anchor === 'end') {
+          expect(x, `${template.id} RTL end anchor at x=${x}`).toBeLessThan(width * 0.45);
+        }
+        if (dir === 'rtl' && anchor === 'start') {
+          expect(x, `${template.id} RTL start anchor at x=${x}`).toBeGreaterThan(width * 0.25);
+        }
+      }
+    }
   });
 });

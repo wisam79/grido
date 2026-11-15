@@ -14,6 +14,7 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 320,
     aspectRatio: 520 / 320,
     defaultMm: { width: 65, height: 40 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 296, rx: 16 },
     defaultColors: {
       primary: '#344F43',
       secondary: '#8DA58C',
@@ -72,6 +73,7 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
     defaultColors: {
       primary: '#794B53',
       secondary: '#CE9E92',
@@ -131,6 +133,7 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
     defaultColors: {
       primary: '#854A56',
       secondary: '#CCA39A',
@@ -186,6 +189,214 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
   <path d="M 213,353 H 267" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
   <text data-field-id="maker" data-max-width="286" x="240" y="390" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${maker}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'beauty_luxury_perfume',
+    name: 'ملصق عطر فاخر',
+    nameEn: 'Luxury Perfume Bottle Label',
+    category: 'beauty',
+    shape: 'rect',
+    description: 'ملصق عمودي فخم لزجاجات العطور والعود والتركيبات الخاصة',
+    defaultWidth: 440,
+    defaultHeight: 520,
+    aspectRatio: 440 / 520,
+    defaultMm: { width: 55, height: 65 },
+    cutShape: { kind: 'roundedRect', x: 14, y: 14, width: 412, height: 492, rx: 16 },
+    defaultColors: {
+      primary: '#1C1917',
+      secondary: '#B48844',
+      background: '#FAF6EE',
+    },
+    fields: [
+      { id: 'brand', label: 'دار العطور', type: 'text', defaultValue: 'دار العنبر الملكي' },
+      { id: 'scentName', label: 'اسم العطر', type: 'text', defaultValue: 'عود بغداد المعتّق' },
+      {
+        id: 'concentration',
+        label: 'التركيز والحجم',
+        type: 'text',
+        defaultValue: 'EXTRAIT DE PARFUM • 100 ML',
+      },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const brand = escapeXml(fields.brand || 'دار العنبر الملكي');
+      const scentName = escapeXml(fields.scentName || 'عود بغداد المعتّق');
+      const conc = escapeXml(fields.concentration || 'EXTRAIT DE PARFUM • 100 ML');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 520" width="440" height="520">
+  <defs>
+    <linearGradient id="blp-gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="${secondaryColor}"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0.25"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="412" height="492" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <rect x="28" y="28" width="384" height="464" rx="10" fill="none" stroke="${secondaryColor}" stroke-width="1.8" data-color-role="secondary"/>
+  <rect x="38" y="38" width="364" height="444" rx="6" fill="none" stroke="${primaryColor}" stroke-opacity="0.22" stroke-width="1"/>
+  <!-- Minimal flacon crest -->
+  <rect x="206" y="76" width="28" height="18" rx="3" fill="${secondaryColor}" data-color-role="secondary"/>
+  <rect x="190" y="98" width="60" height="72" rx="10" fill="${secondaryColor}" fill-opacity="0.16" stroke="${primaryColor}" stroke-width="2.2" data-color-role="primary"/>
+  <polygon points="220,116 232,134 220,152 208,134" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="brand" data-max-width="320" x="220" y="226" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+    ${brand}
+  </text>
+  <rect x="86" y="250" width="268" height="2.5" fill="url(#blp-gold)"/>
+  <text data-field-id="scentName" data-max-width="332" x="220" y="326" font-family="${fontFamily}, sans-serif" font-size="${Math.round(38 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${scentName}
+  </text>
+  <rect x="86" y="356" width="268" height="2.5" fill="url(#blp-gold)"/>
+  <text data-field-id="concentration" data-max-width="332" x="220" y="424" font-family="${fontFamily}, sans-serif" font-size="${Math.round(14 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="1.8" direction="ltr" unicode-bidi="embed">
+    ${conc}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'beauty_skincare_jar',
+    name: 'ختم عبوة العناية بالبشرة',
+    nameEn: 'Skincare Jar Lid Seal',
+    category: 'beauty',
+    shape: 'circle',
+    description: 'ختم غطاء دائري لعلب الكريمات والمرطبات الطبيعية والماسكات',
+    defaultWidth: 480,
+    defaultHeight: 480,
+    aspectRatio: 1,
+    defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
+    defaultColors: {
+      primary: '#2F483E',
+      secondary: '#94B09A',
+      background: '#F4F7F4',
+    },
+    fields: [
+      { id: 'formula', label: 'اسم الكريم', type: 'text', defaultValue: 'كريم الشيا والبابونج' },
+      {
+        id: 'benefit',
+        label: 'الفائدة الأساسية',
+        type: 'text',
+        defaultValue: 'تغذية ليلية وملمس مخملي',
+      },
+      {
+        id: 'netWeight',
+        label: 'الوزن الصافي',
+        type: 'text',
+        defaultValue: '50 غرام • خالٍ من البارابين',
+      },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const formula = escapeXml(fields.formula || 'كريم الشيا والبابونج');
+      const benefit = escapeXml(fields.benefit || 'تغذية ليلية وملمس مخملي');
+      const netWeight = escapeXml(fields.netWeight || '50 غرام • خالٍ من البارابين');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <circle cx="240" cy="240" r="226" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <circle cx="240" cy="240" r="208" fill="none" stroke="${secondaryColor}" stroke-width="1.8" data-color-role="secondary"/>
+  <!-- Jar + botanical sprigs -->
+  <rect x="192" y="138" width="96" height="58" rx="14" fill="${secondaryColor}" fill-opacity="0.24" stroke="${primaryColor}" stroke-width="2.5" data-color-role="primary"/>
+  <rect x="198" y="118" width="84" height="22" rx="6" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 176,174 C 154,162 150,142 162,130 C 176,138 182,158 176,174 Z M 304,174 C 326,162 330,142 318,130 C 304,138 298,158 304,174 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="formula" data-max-width="350" x="240" y="264" font-family="${fontFamily}, sans-serif" font-size="${Math.round(33 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${formula}
+  </text>
+  <text data-field-id="benefit" data-max-width="326" x="240" y="310" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
+    ${benefit}
+  </text>
+  <rect x="96" y="344" width="288" height="42" rx="21" fill="${secondaryColor}" fill-opacity="0.22" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="netWeight" data-max-width="258" x="240" y="371" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+    ${netWeight}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'beauty_salon_glam',
+    name: 'صالون واستوديو تجميل',
+    nameEn: 'Glam Beauty Studio Seal',
+    category: 'beauty',
+    shape: 'circle',
+    description: 'ختم أنيق لصالونات التجميل وهدايا العرائس وصناديق الميكب',
+    defaultWidth: 480,
+    defaultHeight: 480,
+    aspectRatio: 1,
+    defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 226 },
+    defaultColors: {
+      primary: '#6D2E46',
+      secondary: '#D4A373',
+      background: '#FFF8F4',
+    },
+    fields: [
+      {
+        id: 'studioName',
+        label: 'اسم الصالون / البراند',
+        type: 'text',
+        defaultValue: 'استوديو روز للجمال',
+      },
+      { id: 'specialty', label: 'الاختصاص', type: 'text', defaultValue: 'عناية • مكياج • عرائس' },
+      { id: 'handle', label: 'الحساب / الموقع', type: 'text', defaultValue: '@RoseGlam.iq' },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const studioName = escapeXml(fields.studioName || 'استوديو روز للجمال');
+      const specialty = escapeXml(fields.specialty || 'عناية • مكياج • عرائس');
+      const handle = escapeXml(fields.handle || '@RoseGlam.iq');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <radialGradient id="bsg-aura" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="240" cy="240" r="226" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" data-color-role="background"/>
+  <circle cx="240" cy="240" r="210" fill="none" stroke="${secondaryColor}" stroke-width="1.5" stroke-dasharray="5 5" data-color-role="secondary"/>
+  <circle cx="240" cy="240" r="210" fill="url(#bsg-aura)"/>
+  <!-- Radiant four-point glam stars + crown arch -->
+  <path d="M 240,86 Q 246,112 272,118 Q 246,124 240,150 Q 234,124 208,118 Q 234,112 240,86 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 186,124 Q 190,136 202,140 Q 190,144 186,156 Q 182,144 170,140 Q 182,136 186,124 Z" fill="${primaryColor}" opacity="0.65" data-color-role="primary"/>
+  <path d="M 294,124 Q 298,136 310,140 Q 298,144 294,156 Q 290,144 278,140 Q 290,136 294,124 Z" fill="${primaryColor}" opacity="0.65"/>
+  <text data-field-id="studioName" data-max-width="350" x="240" y="230" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${studioName}
+  </text>
+  <path d="M 136,256 H 344" stroke="${secondaryColor}" stroke-width="1.8" data-color-role="secondary"/>
+  <text data-field-id="specialty" data-max-width="324" x="240" y="298" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
+    ${specialty}
+  </text>
+  <rect x="122" y="336" width="236" height="44" rx="22" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="handle" data-max-width="208" x="240" y="364" font-family="${fontFamily}, monospace" font-size="${Math.round(18 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+    ${handle}
   </text>
 </svg>`;
     },

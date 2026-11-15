@@ -19,8 +19,10 @@ const (
 
 // MemoryService manages native memory compaction and OS working set trimming.
 type MemoryService struct {
-	mu     sync.Mutex
-	stopCh chan struct{}
+	mu          sync.Mutex
+	stopCh      chan struct{}
+	doneCh      chan struct{}
+	stopTimeout time.Duration
 
 	// ── جدولة الفحص الدوري (قابلة للضبط عبر ConfigureForTest فقط) ──
 	startupTrimDelay time.Duration
@@ -52,6 +54,7 @@ type MemoryService struct {
 func NewMemoryService() *MemoryService {
 	return &MemoryService{
 		stopCh:           make(chan struct{}),
+		stopTimeout:      2 * time.Second,
 		startupTrimDelay: defaultStartupTrimDelay,
 		autoTrimInterval: defaultAutoTrimInterval,
 		trimExec:         trimPlatformMemory,
@@ -90,19 +93,48 @@ const (
 // StartAutoTrim starts periodic background memory pressure checks, trimming only
 // when the live heap is large or a long idle interval has elapsed.
 func (s *MemoryService) StartAutoTrim(ctx context.Context) {
+	s.mu.Lock()
+	if s.doneCh != nil {
+		s.mu.Unlock()
+		return
+	}
+	select {
+	case <-s.stopCh:
+		s.mu.Unlock()
+		return
+	default:
+	}
+	doneCh := make(chan struct{})
+	s.doneCh = doneCh
+	startupDelay := s.startupTrimDelay
+	autoInterval := s.autoTrimInterval
+	s.mu.Unlock()
+
 	go func() {
+		defer func() {
+			s.mu.Lock()
+			if s.doneCh == doneCh {
+				s.doneCh = nil
+			}
+			s.mu.Unlock()
+			close(doneCh)
+		}()
+
 		// First cleanup cycle shortly after startup — مصدر تقليم الإقلاع الوحيد
 		// (يمر عبر trimIfNeeded فيتخطى العمل الثقيل إن وُجد عند الإقلاع).
+		delayTimer := time.NewTimer(startupDelay)
 		select {
-		case <-time.After(s.startupTrimDelay):
+		case <-delayTimer.C:
 			s.trimIfNeeded()
 		case <-ctx.Done():
+			delayTimer.Stop()
 			return
 		case <-s.stopCh:
+			delayTimer.Stop()
 			return
 		}
 
-		ticker := time.NewTicker(s.autoTrimInterval)
+		ticker := time.NewTicker(autoInterval)
 		defer ticker.Stop()
 
 		for {
@@ -164,14 +196,31 @@ func (s *MemoryService) trimIfNeeded() {
 		"heap_mb", ms.HeapAlloc>>20, "since_last_trim", sinceLast.String())
 }
 
-// Stop halts the background auto-trim routine.
+// Stop halts the background auto-trim routine and waits up to the configured shutdown budget.
 func (s *MemoryService) Stop() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	select {
 	case <-s.stopCh:
 	default:
 		close(s.stopCh)
+	}
+	doneCh := s.doneCh
+	timeout := s.stopTimeout
+	if timeout <= 0 {
+		timeout = 2 * time.Second
+	}
+	s.mu.Unlock()
+
+	if doneCh == nil {
+		return
+	}
+
+	waitTimer := time.NewTimer(timeout)
+	defer waitTimer.Stop()
+	select {
+	case <-doneCh:
+	case <-waitTimer.C:
+		slog.Warn("MemoryService auto-trim did not exit within shutdown budget", "timeout", timeout.String())
 	}
 }
 
@@ -251,22 +300,30 @@ type TestConfig struct {
 	CheckInterval time.Duration
 	// CoalesceWindow يضبط نافذة دمج الطلبات المتقاربة.
 	CoalesceWindow time.Duration
+	// StopTimeout يضبط المهلة القصوى لانتظار توقف عامل التقليم عند الإغلاق.
+	StopTimeout time.Duration
 }
 
 // ConfigureForTest يضبط عوامل التوقيت والمنفّذ في الاختبارات فقط — يحظر
 // استخدامه في الإنتاج؛ القيم الإنتاجية تُضبط في NewMemoryService ولا تُعدَّل
 // بعد الإنشاء.
 func (s *MemoryService) ConfigureForTest(cfg TestConfig) {
-	s.trimMu.Lock()
-	defer s.trimMu.Unlock()
-	if cfg.TrimExec != nil {
-		s.trimExec = cfg.TrimExec
-	}
+	s.mu.Lock()
 	if cfg.StartupDelay > 0 {
 		s.startupTrimDelay = cfg.StartupDelay
 	}
 	if cfg.CheckInterval > 0 {
 		s.autoTrimInterval = cfg.CheckInterval
+	}
+	if cfg.StopTimeout > 0 {
+		s.stopTimeout = cfg.StopTimeout
+	}
+	s.mu.Unlock()
+
+	s.trimMu.Lock()
+	defer s.trimMu.Unlock()
+	if cfg.TrimExec != nil {
+		s.trimExec = cfg.TrimExec
 	}
 	if cfg.CoalesceWindow > 0 {
 		s.coalesceWindow = cfg.CoalesceWindow

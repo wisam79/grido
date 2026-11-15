@@ -252,11 +252,13 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
             <label
               onDragOver={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsDragging(true);
               }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsDragging(false);
                 const f = e.dataTransfer.files?.[0];
                 if (f) handleFile(f);

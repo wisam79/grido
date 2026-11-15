@@ -146,4 +146,41 @@ describe('useImageDrop Hook Tests', () => {
     expect(elements[0].type).toBe('image');
     expect((elements[0] as any).imageSrc).toBeTruthy();
   });
+
+  it('sets dropEffect=copy and stops propagation for OS file drags/drops on canvas', async () => {
+    useEditorStore.getState().setMode('single');
+    const innerRef = { current: null };
+    const { result } = renderHook(() => useImageDrop(innerRef));
+
+    const dragStopPropagation = vi.fn();
+    const dragPreventDefault = vi.fn();
+    const dragDataTransfer = { types: ['Files'], dropEffect: 'none' };
+    act(() => {
+      result.current.handleDragOver({
+        preventDefault: dragPreventDefault,
+        stopPropagation: dragStopPropagation,
+        dataTransfer: dragDataTransfer,
+      } as unknown as React.DragEvent);
+    });
+    expect(dragPreventDefault).toHaveBeenCalledTimes(1);
+    expect(dragStopPropagation).toHaveBeenCalledTimes(1);
+    expect(dragDataTransfer.dropEffect).toBe('copy');
+
+    const file = createMockFile('single.png');
+    const dropStopPropagation = vi.fn();
+    const dropEvent = {
+      preventDefault: vi.fn(),
+      stopPropagation: dropStopPropagation,
+      clientX: 100,
+      clientY: 100,
+      dataTransfer: { files: [file] },
+    } as unknown as React.DragEvent;
+
+    await act(async () => {
+      await result.current.handleDrop(dropEvent);
+    });
+
+    expect(dropStopPropagation).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().elements.length).toBe(1);
+  });
 });

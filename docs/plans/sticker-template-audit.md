@@ -4,12 +4,12 @@
 
 ## الإجمالي
 
-- القوالب: **83**
-- لديها `defaultMm` صريح: **83**
+- القوالب: **200**
+- لديها `defaultMm` صريح: **200**
 - بلا مقاس فيزيائي صريح: **0**
-- مراسي `data-field-id`: **236**
-- مراسي `data-color-role`: **319**
-- نداءات `generateSvg`: **83**
+- مراسي `data-field-id`: **707**
+- مراسي `data-color-role`: **1176**
+- نداءات `generateSvg`: **200**
 
 ## التوزيع حسب الملف
 
@@ -18,17 +18,22 @@
 | `addons.ts` | 22 | 22 | 0 | 70 | 44 |
 | `badges.ts` | 7 | 7 | 0 | 21 | 17 |
 | `barcodes.ts` | 4 | 4 | 0 | 11 | 12 |
-| `beauty.ts` | 3 | 3 | 0 | 8 | 27 |
-| `cafe.ts` | 3 | 3 | 0 | 9 | 32 |
+| `beauty.ts` | 6 | 6 | 0 | 17 | 48 |
+| `business_cards.ts` | 20 | 20 | 0 | 103 | 88 |
+| `cafe.ts` | 6 | 6 | 0 | 18 | 53 |
+| `craft_cards.ts` | 20 | 20 | 0 | 78 | 168 |
+| `events_cards.ts` | 20 | 20 | 0 | 83 | 255 |
 | `frames.ts` | 14 | 14 | 0 | 28 | 48 |
-| `greeting.ts` | 3 | 3 | 0 | 8 | 20 |
-| `kids.ts` | 3 | 3 | 0 | 9 | 30 |
-| `packaging.ts` | 4 | 4 | 0 | 12 | 12 |
-| `retail.ts` | 5 | 5 | 0 | 16 | 17 |
+| `greeting.ts` | 6 | 6 | 0 | 17 | 38 |
+| `kids.ts` | 6 | 6 | 0 | 17 | 50 |
+| `packaging.ts` | 4 | 4 | 0 | 12 | 19 |
+| `retail.ts` | 5 | 5 | 0 | 16 | 27 |
+| `retail_cards.ts` | 20 | 20 | 0 | 88 | 123 |
 | `safety.ts` | 4 | 4 | 0 | 12 | 12 |
-| `seasonal.ts` | 3 | 3 | 0 | 9 | 23 |
-| `shipping.ts` | 5 | 5 | 0 | 14 | 16 |
-| `social.ts` | 3 | 3 | 0 | 9 | 9 |
+| `seasonal.ts` | 5 | 5 | 0 | 15 | 36 |
+| `shipping.ts` | 5 | 5 | 0 | 14 | 20 |
+| `social.ts` | 6 | 6 | 0 | 18 | 28 |
+| `social_cards.ts` | 20 | 20 | 0 | 69 | 90 |
 
 ## قوالب بلا مقاس فيزيائي صريح
 

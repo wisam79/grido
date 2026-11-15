@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { flushAutoSave } from './use-autosave';
+import { requestAppClose } from './use-quit-protocol';
 import {
   WindowMinimise,
   WindowToggleMaximise,
-  Quit as WindowClose,
   WindowIsMaximised,
   EventsOn,
 } from '../../wailsjs/runtime/runtime';
@@ -125,19 +124,9 @@ export function useWindowControls() {
   }, []);
 
   const handleClose = useCallback(() => {
-    // 🛡️ H5 من تدقيق 2026-10-08: كان الإغلاق يستدعي Quit() مباشرة بينما المسودة
-    // الأخيرة تُكتب في وعد عائم داخل تنظيف React — أي تعديل في آخر ثانيتين
-    // قبل الإغلاق يُفقد. الآن ننتظر التفريغ النهائي ثم نُغلق، ولا يُمنع الإغلاق
-    // إن فشل الحفظ (الوعد لا يرمي).
-    void (async () => {
-      try {
-        await flushAutoSave();
-      } catch {
-        // فشل الحفظ لا يحبس المستخدم داخل نافذة لا يستطيع إغلاقها
-      } finally {
-        WindowClose();
-      }
-    })();
+    // بروتوكول إغلاق موحّد (RV-LIFE-04): زر الإغلاق المخصّص يمر عبر Go QuitCoordinator
+    // نفسه المستخدم في Alt+F4 وصينية النظام (حفظ هندسة النافذة، حالة الطلب، وقرار الفشل).
+    void requestAppClose();
   }, []);
 
   return {

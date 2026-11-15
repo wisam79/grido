@@ -14,7 +14,15 @@ export type StickerCategory =
   | 'frames';
 
 export type StickerCategoryGroupId =
-  'all' | 'commercial' | 'packaging' | 'codes' | 'stores' | 'occasions' | 'safety' | 'frames';
+  | 'all'
+  | 'cards'
+  | 'commercial'
+  | 'packaging'
+  | 'codes'
+  | 'stores'
+  | 'occasions'
+  | 'safety'
+  | 'frames';
 
 export type StickerShape = 'circle' | 'rect' | 'square';
 

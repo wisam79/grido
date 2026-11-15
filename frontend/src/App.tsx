@@ -12,6 +12,7 @@ import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
 import { TemplatePanel } from '@/components/editor/panels/template-panel';
 import { DesktopMenuBar } from '@/components/editor/system/desktop-menu-bar';
 import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
+import { QuitSaveFailedDialog } from '@/components/editor/system/quit-save-failed-dialog';
 import { StartupSplash } from '@/components/editor/system/startup-splash';
 import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
@@ -26,8 +27,9 @@ import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import { SquaresFour, Image, SidebarSimple } from '@/components/ui/icons';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
-import { flushAutoSave, useAutoSave } from '@/hooks/use-autosave';
+import { useAutoSave } from '@/hooks/use-autosave';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useQuitProtocol } from '@/hooks/use-quit-protocol';
 import { useTheme } from '@/hooks/use-theme';
 import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useWindowControls } from '@/hooks/use-window-controls';
@@ -40,8 +42,6 @@ import { useEditorStore } from '@/lib/editor-store';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
-
-import { EventsOn, Quit } from '../wailsjs/runtime/runtime';
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -114,36 +114,7 @@ export default function App() {
   useKeyboardShortcuts();
   useAutoSave();
   usePhoneBridgeListener();
-
-  // ── الإغلاق النظيف عبر عقد الخلفية (P1 من تدقيق 2026-10-19) ─────────────
-  // Go لم يعد يخرج مباشرةً بعد الآن: يُطلق حدث `app:quit-requested` (خروج
-  // صينية النظام، و WindowClosing عندما يكون قابلاً للإلغاء) بدل إنهاء
-  // العملية. هنا ننتظر تفريغ مسودة الحفظ التلقائي النهائي ثم نستدعي
-  // `Quit()` — بلا هذا المستمع كان أي تعديل في آخر ثانيتين قبل الخروج يُفقد
-  // لأن الكتابة العائمة داخل تنظيف React تُسبق إغلاق العملية.
-  // التسجيل بالإرجاع المُنظَّم لـ EventsOn (دالة إلغاء اشتراك خاصة بهذا
-  // المستمع) — لا بـ EventsOff العام الذي يقتلع مستمعين لا نملكهم.
-  useEffect(() => {
-    let quitHandled = false;
-    const unsubQuit = EventsOn('app:quit-requested', () => {
-      // حصر الخروج بمسار واحد: طلبات خروج متعددة لا تستدعي Quit مرتين
-      if (quitHandled) return;
-      quitHandled = true;
-      void (async () => {
-        try {
-          await flushAutoSave();
-        } catch {
-          // فشل الحفظ لا يحبس المستخدم خارج التطبيق — يُغلق على أي حال
-        } finally {
-          Quit();
-        }
-      })();
-    });
-
-    return () => {
-      if (typeof unsubQuit === 'function') unsubQuit();
-    };
-  }, []);
+  const { quitState, retryQuitSave, cancelQuit, quitWithoutSaving } = useQuitProtocol();
 
   const selectedId = useEditorStore((state) => state.selectedId);
   const prevSelectedIdRef = useRef<string | null>(null);
@@ -247,6 +218,12 @@ export default function App() {
           />
           <AccountLicenseModal />
           <UpdateNotifier />
+          <QuitSaveFailedDialog
+            quitState={quitState}
+            onRetry={retryQuitSave}
+            onCancel={cancelQuit}
+            onQuitWithoutSaving={quitWithoutSaving}
+          />
         </TooltipProvider>
       </FluentIconProvider>
     );
@@ -260,6 +237,7 @@ export default function App() {
             'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background',
           )}
           dir="rtl"
+          data-file-drop-target="true"
         >
           {!isMaximized && <WindowResizeHandles />}
           {/* الرأس الموحد للنافذة بتصميم Fluent 2 صلب وخفيف */}
@@ -466,6 +444,12 @@ export default function App() {
             crashReport={crashReport}
             onRecoverCrash={handleRecoverCrash}
             onDismissCrash={handleDismissCrash}
+          />
+          <QuitSaveFailedDialog
+            quitState={quitState}
+            onRetry={retryQuitSave}
+            onCancel={cancelQuit}
+            onQuitWithoutSaving={quitWithoutSaving}
           />
         </div>
       </TooltipProvider>

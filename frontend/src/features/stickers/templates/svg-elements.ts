@@ -118,6 +118,79 @@ export function runningStitchCircle(
   return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
 }
 
+/** بطاقة بتثقيب جانبي (Ticket / Coupon Card) — تعطي مظهر بطاقة ترويجية مطبوعة */
+export function ticketStubPath(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  notchR = 14,
+  notchYRatio = 0.5,
+): string {
+  const ny = y + h * notchYRatio;
+  const x2 = x + w;
+  const y2 = y + h;
+  return [
+    `M ${x + r},${y}`,
+    `H ${x2 - r}`,
+    `Q ${x2},${y} ${x2},${y + r}`,
+    `V ${ny - notchR}`,
+    `A ${notchR},${notchR} 0 0,0 ${x2},${ny + notchR}`,
+    `V ${y2 - r}`,
+    `Q ${x2},${y2} ${x2 - r},${y2}`,
+    `H ${x + r}`,
+    `Q ${x},${y2} ${x},${y2 - r}`,
+    `V ${ny + notchR}`,
+    `A ${notchR},${notchR} 0 0,0 ${x},${ny - notchR}`,
+    `V ${y + r}`,
+    `Q ${x},${y} ${x + r},${y}`,
+    'Z',
+  ].join(' ');
+}
+
+/** زوايا تأطير دقيقة للبطاقات التجارية واللوجستية */
+export function cornerBracketsMarkup(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  arm: number,
+  stroke: string,
+  strokeWidth = 2.5,
+  colorRole?: string,
+): string {
+  const x2 = x + w;
+  const y2 = y + h;
+  const role = colorRole ? ` data-color-role="${colorRole}"` : '';
+  const d = [
+    `M ${x},${y + arm} V ${y} H ${x + arm}`,
+    `M ${x2 - arm},${y} H ${x2} V ${y + arm}`,
+    `M ${x},${y2 - arm} V ${y2} H ${x + arm}`,
+    `M ${x2 - arm},${y2} H ${x2} V ${y2 - arm}`,
+  ].join(' ');
+  return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"${role}/>`;
+}
+
+/** صف نجوم متجهة نظيفة (أضمن في التصدير من محارف اليونيكود) */
+export function starRowMarkup(
+  cx: number,
+  cy: number,
+  count: number,
+  gap: number,
+  outerR: number,
+  fill: string,
+  colorRole?: string,
+): string {
+  const startX = cx - ((count - 1) * gap) / 2;
+  const role = colorRole ? ` data-color-role="${colorRole}"` : '';
+  const stars = Array.from({ length: count }, (_, i) => {
+    const x = startX + i * gap;
+    return `<polygon points="${starPoints(x, cy, 5, outerR, outerR * 0.45)}"/>`;
+  }).join('');
+  return `<g fill="${fill}"${role}>${stars}</g>`;
+}
+
 type IconRenderer = (fill: string) => string;
 
 const ICONS: Record<string, IconRenderer> = {

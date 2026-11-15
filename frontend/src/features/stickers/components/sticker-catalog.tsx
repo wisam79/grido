@@ -10,6 +10,7 @@ import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
 
 import { CATEGORY_ITEMS, SHAPE_ITEMS } from '../constants';
+import { ensureBarcodeLibsReady, isBarcodeLibsReady } from '../lib/barcode-svg';
 import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
 import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from '../templates';
 
@@ -39,9 +40,11 @@ const CATEGORY_COUNTS: Record<string, number> = {
   ...Object.fromEntries(
     CATEGORY_ITEMS.filter((c) => c.id !== 'all').map((cat) => [
       cat.id,
-      cat.categories
-        ? ALL_STICKER_TEMPLATES.filter((t) => cat.categories!.includes(t.category)).length
-        : ALL_STICKER_TEMPLATES.filter((t) => t.category === cat.id).length,
+      cat.id === 'cards'
+        ? ALL_STICKER_TEMPLATES.filter((t) => t.id.startsWith('card_')).length
+        : cat.categories
+          ? ALL_STICKER_TEMPLATES.filter((t) => cat.categories!.includes(t.category)).length
+          : ALL_STICKER_TEMPLATES.filter((t) => t.category === cat.id).length,
     ]),
   ),
 };
@@ -65,25 +68,53 @@ interface TemplateCardProps {
   onSelect: (template: StickerTemplate) => void;
   isFavorite: boolean;
   onToggleFavorite: (template: StickerTemplate) => void;
+  barcodeRevision: number;
   isFocused?: boolean;
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
 }
 
-/* Cache previews across gallery mounts; never duplicate the template catalog. */
+/* Cache previews across gallery mounts with an LRU cap; never duplicate the template catalog. */
+const PREVIEW_CACHE_MAX = 160;
 const PREVIEW_CACHE = new Map<string, string>();
+/** IDs generated before barcode/QR lazy chunks finished loading so they auto-refresh once ready. */
+const UNREADY_PREVIEW_IDS = new Set<string>();
 
-function getTemplatePreview(template: StickerTemplate): string {
+function setPreviewCache(id: string, svg: string): void {
+  if (PREVIEW_CACHE.has(id)) {
+    PREVIEW_CACHE.delete(id);
+  } else if (PREVIEW_CACHE.size >= PREVIEW_CACHE_MAX) {
+    const oldestKey = PREVIEW_CACHE.keys().next().value;
+    if (oldestKey !== undefined) {
+      PREVIEW_CACHE.delete(oldestKey);
+      UNREADY_PREVIEW_IDS.delete(oldestKey);
+    }
+  }
+  PREVIEW_CACHE.set(id, svg);
+}
+
+function getTemplatePreview(template: StickerTemplate, revision = 0): string {
+  if (revision < 0) return '';
   const cached = PREVIEW_CACHE.get(template.id);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    PREVIEW_CACHE.delete(template.id);
+    PREVIEW_CACHE.set(template.id, cached);
+    return cached;
+  }
+  const libsReady = isBarcodeLibsReady();
   try {
     const svg = buildStickerSvg(template, buildDefaultStickerParams(template), {
       namespace: `tpl-${template.id}`,
     });
-    PREVIEW_CACHE.set(template.id, svg);
+    if (!libsReady) {
+      UNREADY_PREVIEW_IDS.add(template.id);
+    } else {
+      UNREADY_PREVIEW_IDS.delete(template.id);
+    }
+    setPreviewCache(template.id, svg);
     return svg;
   } catch {
-    PREVIEW_CACHE.set(template.id, '');
+    setPreviewCache(template.id, '');
     return '';
   }
 }
@@ -94,6 +125,7 @@ const GalleryCard = React.memo(function GalleryCard({
   onSelect,
   isFavorite,
   onToggleFavorite,
+  barcodeRevision,
   isFocused = false,
   onFocus,
   onKeyDown,
@@ -132,8 +164,8 @@ const GalleryCard = React.memo(function GalleryCard({
 
   const miniSvg = useMemo(() => {
     if (!inView) return '';
-    return getTemplatePreview(template);
-  }, [inView, template]);
+    return getTemplatePreview(template, barcodeRevision);
+  }, [inView, template, barcodeRevision]);
 
   const mm = template.defaultMm || {
     width: 50,
@@ -244,6 +276,22 @@ export const StickerCatalog = React.memo(function StickerCatalog({
   const [localFavoritesOnly, setLocalFavoritesOnly] = useState(false);
   const favoritesOnly = discoveryState?.favoritesOnly ?? localFavoritesOnly;
   const [announcement, setAnnouncement] = useState('');
+  const [barcodeRevision, setBarcodeRevision] = useState(0);
+  useEffect(() => {
+    if (isBarcodeLibsReady()) return;
+    let active = true;
+    void ensureBarcodeLibsReady().then((ok) => {
+      if (!active || !ok) return;
+      for (const id of UNREADY_PREVIEW_IDS) {
+        PREVIEW_CACHE.delete(id);
+      }
+      UNREADY_PREVIEW_IDS.clear();
+      setBarcodeRevision((prev) => prev + 1);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const { favorites, toggleFavorite } = useAssetFavorites();
   const favoriteIds = useMemo(() => new Set(favorites), [favorites]);
   const hasFavorites = useMemo(
@@ -261,11 +309,15 @@ export const StickerCatalog = React.memo(function StickerCatalog({
 
   const filteredTemplates = useMemo(() => {
     const matches = searchStickerTemplates(searchQuery, selectedCategory, selectedShape);
+    const categoryMatches =
+      selectedCategory === 'cards'
+        ? matches.filter((template) => template.id.startsWith('card_'))
+        : matches;
     return favoritesOnly
-      ? matches.filter((template) =>
+      ? categoryMatches.filter((template) =>
           favoriteIds.has(assetFavoriteId('sticker:builtin', template.id)!),
         )
-      : matches;
+      : categoryMatches;
   }, [searchQuery, selectedCategory, selectedShape, favoritesOnly, favoriteIds]);
 
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
@@ -596,6 +648,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                 onSelect={onSelectTemplate}
                 isFavorite={favoriteIds.has(assetFavoriteId('sticker:builtin', template.id)!)}
                 onToggleFavorite={handleToggleFavorite}
+                barcodeRevision={barcodeRevision}
                 isFocused={Math.min(focusedIndex, filteredTemplates.length - 1) === idx}
                 onFocus={() => setFocusedIndex(idx)}
                 onKeyDown={(e) => handleCardKeyDown(e, idx)}

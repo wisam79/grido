@@ -1,4 +1,4 @@
-import { starPoints } from './svg-elements';
+import { cornerBracketsMarkup, starPoints } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -15,6 +15,7 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 226 },
     defaultColors: {
       primary: '#243E48',
       secondary: '#B88D4B',
@@ -77,6 +78,7 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 340,
     aspectRatio: 520 / 340,
     defaultMm: { width: 60, height: 39 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 316, rx: 14 },
     defaultColors: {
       primary: '#F6EDDF',
       secondary: '#CBA76C',
@@ -137,6 +139,7 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 320,
     aspectRatio: 520 / 320,
     defaultMm: { width: 65, height: 40 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 296, rx: 20 },
     defaultColors: {
       primary: '#AE5037',
       secondary: '#277F8A',
@@ -183,6 +186,148 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     ${discount}
   </text>
   <text data-field-id="period" data-max-width="310" x="208" y="228" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
+    ${period}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'seasonal_eid_lantern',
+    name: 'تهنئة عيد مبارك',
+    nameEn: 'Eid Mubarak Festive Seal',
+    category: 'seasonal',
+    shape: 'circle',
+    description: 'ختم تهنئة بالعيد بتصميم قمر ذهبي ونجوم متلألئة لهدايا وحلويات العيد',
+    defaultWidth: 500,
+    defaultHeight: 500,
+    aspectRatio: 1,
+    defaultMm: { width: 55, height: 55 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 228 },
+    defaultColors: {
+      primary: '#1E3A5F',
+      secondary: '#D4A037',
+      background: '#FFFDF5',
+    },
+    fields: [
+      { id: 'greeting', label: 'عبارة التهنئة', type: 'text', defaultValue: 'عيدكم مبارك' },
+      {
+        id: 'subline',
+        label: 'رسالة المعايدة',
+        type: 'text',
+        defaultValue: 'عساكم من عواده بالخير والفرح',
+      },
+      { id: 'brand', label: 'اسم المتجر / العائلة', type: 'text', defaultValue: 'مع تحيات متجركم' },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const greeting = escapeXml(fields.greeting || 'عيدكم مبارك');
+      const subline = escapeXml(fields.subline || 'عساكم من عواده بالخير والفرح');
+      const brand = escapeXml(fields.brand || 'مع تحيات متجركم');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+      const starA = starPoints(172, 134, 8, 15, 6);
+      const starB = starPoints(328, 134, 8, 15, 6);
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <radialGradient id="sel-glow" cx="50%" cy="32%" r="55%">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="250" cy="250" r="228" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" data-color-role="background"/>
+  <circle cx="250" cy="250" r="212" fill="none" stroke="${secondaryColor}" stroke-width="2" data-color-role="secondary"/>
+  <circle cx="250" cy="250" r="212" fill="url(#sel-glow)"/>
+  <polygon points="${starA}" fill="${secondaryColor}" data-color-role="secondary"/>
+  <polygon points="${starB}" fill="${secondaryColor}"/>
+  <!-- Hanging lantern + crescent crest -->
+  <path d="M 250,58 V 96" stroke="${primaryColor}" stroke-width="2.2" data-color-role="primary"/>
+  <path d="M 224,114 Q 250,92 276,114 Z" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 222,118 H 278 L 270,174 L 250,192 L 230,174 Z" fill="${secondaryColor}" fill-opacity="0.26" stroke="${primaryColor}" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M 250,132 C 238,148 240,162 250,166 C 260,162 262,148 250,132 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="greeting" data-max-width="368" x="250" y="262" font-family="${fontFamily}, sans-serif" font-size="${Math.round(48 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${greeting}
+  </text>
+  <text data-field-id="subline" data-max-width="342" x="250" y="326" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">
+    ${subline}
+  </text>
+  <rect x="134" y="352" width="232" height="44" rx="22" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="brand" data-max-width="202" x="250" y="380" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle">
+    ${brand}
+  </text>
+</svg>`;
+    },
+  },
+  {
+    id: 'seasonal_winter_cozy',
+    name: 'موسم الشتاء الدافئ',
+    nameEn: 'Winter Cozy Collection',
+    category: 'seasonal',
+    shape: 'rect',
+    description: 'ملصق شتوي أنيق بندفة ثلج هندسية لعروض الشتاء والمشروبات الساخنة والملابس',
+    defaultWidth: 520,
+    defaultHeight: 320,
+    aspectRatio: 520 / 320,
+    defaultMm: { width: 70, height: 43 },
+    cutShape: { kind: 'roundedRect', x: 12, y: 12, width: 496, height: 296, rx: 18 },
+    defaultColors: {
+      primary: '#1E3A5F',
+      secondary: '#0284C7',
+      background: '#F0F9FF',
+    },
+    fields: [
+      { id: 'headline', label: 'عنوان الموسم', type: 'text', defaultValue: 'تشكيلة الشتاء الدافئ' },
+      { id: 'offer', label: 'العرض أو الوصف', type: 'text', defaultValue: 'دفء وأناقة • خصم 25%' },
+      { id: 'period', label: 'الفترة / الملاحظة', type: 'text', defaultValue: 'إصدار موسمي محدود' },
+    ],
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const headline = escapeXml(fields.headline || 'تشكيلة الشتاء الدافئ');
+      const offer = escapeXml(fields.offer || 'دفء وأناقة • خصم 25%');
+      const period = escapeXml(fields.period || 'إصدار موسمي محدود');
+      const bg = isTransparent ? 'none' : backgroundColor;
+      const fs = fontScale || 1;
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320">
+  <defs>
+    <radialGradient id="swc-frost" cx="20%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="${secondaryColor}" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="12" y="12" width="496" height="296" rx="18" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <rect x="12" y="12" width="496" height="296" rx="18" fill="url(#swc-frost)"/>
+  ${cornerBracketsMarkup(26, 26, 468, 268, 16, secondaryColor, 2, 'secondary')}
+  <!-- Crisp geometric snowflake crystal -->
+  <g transform="translate(96 160)" stroke="${secondaryColor}" stroke-width="4" stroke-linecap="round" fill="none" data-color-role="secondary">
+    <path d="M 0,-46 V 46 M -40,-23 L 40,23 M -40,23 L 40,-23"/>
+    <path d="M -10,-32 L 0,-22 L 10,-32 M -10,32 L 0,22 L 10,32"/>
+    <path d="M -32,-12 L -20,-12 L -24,-24 M 32,12 L 20,12 L 24,24"/>
+    <path d="M 32,-12 L 20,-12 L 24,-24 M -32,12 L -20,12 L -24,24"/>
+    <circle cx="0" cy="0" r="8" fill="${backgroundColor}" stroke="${primaryColor}" stroke-width="3"/>
+  </g>
+  <text data-field-id="headline" data-max-width="308" x="322" y="114" font-family="${fontFamily}, sans-serif" font-size="${Math.round(31 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
+    ${headline}
+  </text>
+  <text data-field-id="offer" data-max-width="304" x="322" y="172" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
+    ${offer}
+  </text>
+  <rect x="206" y="206" width="232" height="42" rx="21" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="period" data-max-width="202" x="322" y="233" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${backgroundColor}" text-anchor="middle">
     ${period}
   </text>
 </svg>`;

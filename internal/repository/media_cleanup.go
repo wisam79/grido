@@ -18,58 +18,95 @@ import (
 	"gorm.io/gorm"
 )
 
+type mediaCleanupWorker struct {
+	stopCh chan struct{}
+	doneCh chan struct{}
+}
+
 var (
-	cleanupStopChan chan struct{}
-	cleanupMu       sync.Mutex
+	cleanupMu     sync.Mutex
+	activeCleanup *mediaCleanupWorker
 )
 
 // CleanupUnusedMedia يقوم بمسح جميع الصور غير المستخدمة في أي مشروع لتوفير مساحة القرص بشكل دوري
 func CleanupUnusedMedia() {
+	startCleanupUnusedMedia(15*time.Second, 1*time.Hour, runCleanupMedia)
+}
+
+func startCleanupUnusedMedia(initialDelay, interval time.Duration, runFn func()) {
+	cleanupMu.Lock()
+	if activeCleanup != nil {
+		cleanupMu.Unlock()
+		return
+	}
+	w := &mediaCleanupWorker{
+		stopCh: make(chan struct{}),
+		doneCh: make(chan struct{}),
+	}
+	activeCleanup = w
+	cleanupMu.Unlock()
+
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("Recovered from panic in CleanupUnusedMedia background task", "error", r)
 		}
+		cleanupMu.Lock()
+		if activeCleanup == w {
+			activeCleanup = nil
+		}
+		cleanupMu.Unlock()
+		close(w.doneCh)
 	}()
 
-	cleanupMu.Lock()
-	if cleanupStopChan != nil {
-		cleanupMu.Unlock()
-		return
-	}
-	cleanupStopChan = make(chan struct{})
-	cleanupMu.Unlock()
-
 	// تأخير بدء التنظيف لتفادي تعارض الملفات أو مسح ملفات مرفوعة حديثاً قبل حفظ مسودتها
+	if initialDelay > 0 {
+		delayTimer := time.NewTimer(initialDelay)
+		select {
+		case <-delayTimer.C:
+		case <-w.stopCh:
+			delayTimer.Stop()
+			return
+		}
+	}
+
 	select {
-	case <-time.After(15 * time.Second):
-	case <-cleanupStopChan:
+	case <-w.stopCh:
 		return
+	default:
 	}
 
 	// التنظيف الأول عند بدء التشغيل
-	runCleanupMedia()
+	runFn()
 
 	// إطلاق مؤقت دوري كل 1 ساعة لتنظيف الخلفية بدون تجميد
-	ticker := time.NewTicker(1 * time.Hour)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			runCleanupMedia()
-		case <-cleanupStopChan:
+			runFn()
+		case <-w.stopCh:
 			return
 		}
 	}
 }
 
-// StopCleanupUnusedMedia يقوم بإيقاف الخلفية بشكل آمن عند إغلاق التطبيق
+// StopCleanupUnusedMedia يقوم بإيقاف الخلفية بشكل آمن وينتظر انتهاء الدورة الجارية قبل إغلاق قاعدة البيانات
 func StopCleanupUnusedMedia() {
 	cleanupMu.Lock()
-	defer cleanupMu.Unlock()
-	if cleanupStopChan != nil {
-		close(cleanupStopChan)
-		cleanupStopChan = nil
+	w := activeCleanup
+	if w == nil {
+		cleanupMu.Unlock()
+		return
 	}
+	select {
+	case <-w.stopCh:
+	default:
+		close(w.stopCh)
+	}
+	cleanupMu.Unlock()
+
+	<-w.doneCh
 }
 
 type elementJSONStruct struct {

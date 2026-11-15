@@ -44,6 +44,8 @@ vi.mock('@bindings/grido/app', () => ({
   ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   SetTaskbarProgress: vi.fn(() => Promise.resolve()),
   SaveCustomTemplateWithMetadata: vi.fn(() => Promise.resolve()),
+  RequestGracefulQuit: vi.fn(() => Promise.resolve(1)),
+  RespondGracefulQuit: vi.fn(() => Promise.resolve(true)),
 }));
 
 // Mock Wails backend functions (شيم wailsjs/go/main/App — تستورده license-slice وبقية الوحدات غير المُرحَّلة)
@@ -81,6 +83,8 @@ vi.mock('../wailsjs/go/main/App', () => ({
   GetPhoneBridgeStatus: vi.fn(() =>
     Promise.resolve({ isRunning: false, url: '', port: 0, ip: '', receivedCount: 0 }),
   ),
+  RequestGracefulQuit: vi.fn(() => Promise.resolve(1)),
+  RespondGracefulQuit: vi.fn(() => Promise.resolve(true)),
 }));
 
 // Mock Wails runtime functions
