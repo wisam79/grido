@@ -1,5 +1,15 @@
 # تتبع الميزات الأساسية — Grido Studio
 
+## المرحلة الثانية لتطوير منظومة النصوص والخطوط (`T1–T6`) — 2026-11-16
+
+**النطاق:** إغلاق 5 ثغرات هندسية في مسارات تبديل الخطوط والأنماط وتصدير الشارات والتحقق المستهدف (`docs/plans/2026-11-07-text-and-fonts-review-plan.md`):
+
+- **`T1` ملاءمة الصندوق وحارس السباق في `TextFontSelector` (`frontend/src/components/editor/properties/panels/text/text-font-selector.tsx:42`):** استدعاء `fitTextGeometry` عند توفّر قياس فعلي مع حفظ أبعاد اللقطة كاحتياطي، وإضافة حارس جيل وجلسة المستند (`getDocumentSession`) لإعادة الملاءمة فور اكتمال تحميل الخط البارد دون إنشاء خطوة تراجع مزدوجة.
+- **`T2` تصفير خصائص `applyTextPreset` وإدراج `strokeWidth` (`text-elements.ts:138` + `crud.ts:14`):** تصفير `letterSpacing: 0` و`fontStyle: 'normal'` و`textDecoration: 'none'` و`textTransform: 'none'` وحقول التعبئة الدائرية/الصورية غير النشطة في `applyTextPreset`، وإدراج `'strokeWidth'` ضمن `TEXT_MEASURE_KEYS`.
+- **`T3` إطار شارة النص الشفافة في التصدير الاحتياطي (`frontend/src/lib/export/export-canvas-fitted.ts:192`):** فصل رسم إطار الشارة (`bgBorderW > 0`) عن تعبئة الخلفية (`hasBg`) لمطابقة Konva ومحرر النص.
+- **`T4–T5` معاينة عمود المفضلة ودقة `isFontLoaded` (`font-selector.tsx:141` + `fonts.ts:559`):** تهيئة المفضلة كسولياً وتفعيل `preview()` عند التنقل بالأسهم فوق عمود المفضلة مع بقاء القائمة مسطّحة، وإضافة معاملي `fontWeight` و`fontStyle` الاختياريين في `isFontLoaded`.
+- **`T6` التحقق المستهدف:** نجاح الـ 19 ملف اختبار مستهدف منفرداً في Vitest (`fonts` 25/25، `font-selector` 16/16، `element-slice-text` 14/14، `export-image-fallback` 13/13، `element-properties-tabs` 41/41، `text-preset-catalog` 6/6، `freeform-text-tab` 6/6، `element-slice` 13/13، `curved-text-utils` 23/23، `text-render-state` 16/16، `text-fit` 16/16، `curved-text` 11/11، `text-editing-overlay` 16/16، `fill-utils` 13/13، `text-node` 5/5، `text-helpers` 12/12، `text-effects-catalog` 9/9، `sticker-studio` 16/16، `sticker-phase2` 11/11 — المجموع `280` حالة) مع `typecheck` و`lint` و`format:check` و`docs-gate`.
+
 ## مراجعة وإصلاح حسابات الكولاج: قفل النسبة والتداخلات والدومينو وتمركز التكبير ومقاسات 4×6 — 2026-11-15
 
 **النطاق:** إغلاق الأعطال الهندسية والرياضية في الكولاج الحر والشبكي ومسارات التصدير ومعاينة الطباعة والباكند بعد اعتماد قرار المالك في البنود المفتوحة:

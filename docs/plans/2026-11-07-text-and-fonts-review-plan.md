@@ -87,3 +87,16 @@ node frontend/node_modules/vitest/vitest.mjs run test/fonts.test.ts --root front
 - لا ادعاء تحقق WebView2 الأصلي أو كل الحالات الطباعية واللغوية.
 - إبقاء محرر المحتوى قابلاً للاستخدام عند تعذر الخط يظل بسلوك fallback السابق؛ مهلة ظهوره ليست إثبات جاهزية خط حقيقي، ولا يتضمن هذا النطاق إعادة تصميم واجهة فشل الخط في المحرر.
 - تضمين SVG عند فشل CORS أو الشبكة أو تجاوز وجه الخط سقف 400KB يرجع إلى السلوك الاحتياطي؛ لا ادعاء ملف مستقل عن الخطوط في تلك الحالة.
+
+---
+
+## المرحلة الثانية (`T1–T6` — 16 نوفمبر 2026)
+
+| البند | النطاق والتنفيذ |
+| --- | --- |
+| `T1` | إعادة ملاءمة هندسة الصندوق (`fitTextGeometry`) فورياً وعند اكتمال تحميل الخط البارد في `TextFontSelector` مع حارس جيل وجلسة المستند (`getDocumentSession`) دون توليد خطوة تراجع إضافية |
+| `T2` | تصفير `fontStyle` و`textDecoration` و`textTransform` و`letterSpacing` وحقول التعبئة الدائرية/الصورية في `applyTextPreset`، وإدراج `'strokeWidth'` ضمن `TEXT_MEASURE_KEYS` لتصفير `textResizeAnchor` |
+| `T3` | فصل رسم إطار شارة النص (`textBgBorderWidth > 0`) عن تعبئة الخلفية في `export-canvas-fitted.ts` حتى يظهر الإطار عندما تكون الخلفية `transparent` كما في Konva والمحرر |
+| `T4` | تفعيل المعاينة الحيّة (`preview`) عند التنقل بأسهم الكيبورد على عمود المفضلة وتهيئة المفضلة كسولياً في `FontSelector` مع بقاء القائمة مسطحة |
+| `T5` | دعم `fontWeight` و`fontStyle` اختياريين في `isFontLoaded` لمطابقة عقد `loadGoogleFont` |
+| `T6` | إضافة اختبارات الانحدار وتشغيل الملفات المستهدفة الـ 19 منفردة (`280` حالة ناجحة) مع `typecheck` و`lint` و`format:check` و`docs-gate` |

@@ -188,19 +188,23 @@ export async function renderFittedBranch(
       const bgBorderW = el.textBgBorderWidth ?? 0;
       const bgBorderCol = el.textBgBorderColor ?? TEXT_COLOR_DEFAULT;
 
-      // خلفية وشارة النص الاختيارية
-      if (hasBg) {
+      // خلفية وشارة النص الاختيارية (تعمل الشارة بالحدود وحدها حتى لو كانت الخلفية شفافة)
+      const hasBgBorder =
+        bgBorderW > 0 && !!el.textBgBorderColor && el.textBgBorderColor !== 'transparent';
+      if (hasBg || hasBgBorder) {
         ctx.save();
         ctx.globalCompositeOperation = 'source-over';
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
-        ctx.fillStyle = el.textBgColor!;
+        ctx.beginPath();
         drawRoundRect(ctx, -bgPadX, -bgPadY, w + bgPadX * 2, layoutH + bgPadY * 2, bgRadius);
-        ctx.fill();
-
-        if (bgBorderW > 0) {
+        if (hasBg) {
+          ctx.fillStyle = el.textBgColor!;
+          ctx.fill();
+        }
+        if (hasBgBorder) {
           ctx.strokeStyle = bgBorderCol;
           ctx.lineWidth = bgBorderW;
           ctx.stroke();

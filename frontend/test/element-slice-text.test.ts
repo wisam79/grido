@@ -137,6 +137,37 @@ describe('Element Slice Text & Typography Tests', () => {
       expect(el.fontWeight).toBe(700);
     }
   });
+
+  it('resets residual typography formatting and radial/image fill properties when applying a preset', () => {
+    const id = useEditorStore.getState().addTextElement('نص مزخرف');
+    useEditorStore.getState().updateElement(id, {
+      fontStyle: 'italic',
+      textDecoration: 'underline',
+      textTransform: 'uppercase',
+      letterSpacing: 12,
+      fillType: 'image',
+      fillImageSrc: 'pattern.png',
+      fillImageFit: 'tile',
+      fillRadialGradientStartPoint: { x: 0.5, y: 0.5 },
+      fillRadialGradientEndRadius: 0.7,
+      fillRadialGradientColorStops: [0, '#fff', 1, '#000'],
+    });
+
+    useEditorStore.getState().applyTextPreset(id, 'heading');
+    const updated = useEditorStore.getState().elements.find((x) => x.id === id);
+    expect(updated?.type).toBe('text');
+    if (updated?.type === 'text') {
+      expect(updated.fontStyle).toBe('normal');
+      expect(updated.textDecoration).toBe('none');
+      expect(updated.textTransform).toBe('none');
+      expect(updated.letterSpacing).toBe(0);
+      expect(updated.fillType).toBe('solid');
+      expect(updated.fillImageSrc).toBeUndefined();
+      expect(updated.fillImageFit).toBeUndefined();
+      expect(updated.fillRadialGradientStartPoint).toBeUndefined();
+      expect(updated.fillRadialGradientColorStops).toBeUndefined();
+    }
+  });
 });
 
 describe('Element Slice — text resize anchor', () => {
@@ -190,6 +221,10 @@ describe('Element Slice — text resize anchor', () => {
 
     setAnchor();
     store.updateElements([{ id, patch: { fontWeight: 400 } }]);
+    expect(anchorOf(id)).toBeUndefined();
+
+    setAnchor();
+    store.updateElement(id, { strokeWidth: 4 });
     expect(anchorOf(id)).toBeUndefined();
   });
 

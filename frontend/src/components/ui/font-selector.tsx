@@ -40,7 +40,9 @@ export const FontSelector = React.memo(function FontSelector({
   const [committedValue, setCommittedValue] = useState(value);
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(() =>
+    readStoredList(FAVORITES_KEY, ['cairo', 'tajawal', 'amiri']),
+  );
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -155,7 +157,8 @@ export const FontSelector = React.memo(function FontSelector({
     else return;
     event.preventDefault();
     event.stopPropagation();
-    setActiveId(fonts[nextIndex].id);
+    if (nextIndex !== index && favorite) preview(fonts[nextIndex]);
+    else setActiveId(fonts[nextIndex].id);
     const button = rowRefs.current.get(fonts[nextIndex].id);
     const target = favorite
       ? button?.closest('[role="row"]')?.querySelector<HTMLButtonElement>('[data-font-favorite]')

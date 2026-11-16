@@ -235,4 +235,26 @@ describe('Font Engine Tests', () => {
     expect(load).not.toHaveBeenCalled();
     expect(googleLink()).toBeNull();
   });
+
+  it('checks requested weight and style in isFontLoaded when document.fonts faces are present', () => {
+    const faceList = [
+      { family: '"Cairo"', weight: '400', style: 'normal', status: 'loaded' },
+      { family: '"IBM Plex Sans Arabic"', weight: '600', style: 'italic', status: 'loaded' },
+    ];
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: {
+        load: vi.fn(),
+        ready: Promise.resolve(),
+        [Symbol.iterator]: () => faceList.values(),
+      },
+    });
+
+    expect(fonts.isFontLoaded('Cairo')).toBe(true);
+    expect(fonts.isFontLoaded('Cairo', 400)).toBe(true);
+    expect(fonts.isFontLoaded('Cairo', 700)).toBe(false);
+    expect(fonts.isFontLoaded('Cairo', 400, 'italic')).toBe(false);
+    expect(fonts.isFontLoaded('IBM Plex Sans Arabic', 600, 'italic')).toBe(true);
+    expect(fonts.isFontLoaded('IBM Plex Sans Arabic', 600, 'normal')).toBe(false);
+  });
 });

@@ -6,8 +6,9 @@ import { TextFontSelector } from '../src/components/editor/properties/panels/tex
 import { FontSelector } from '../src/components/ui/font-selector';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { StickerFontSelector } from '../src/features/stickers/components/sticker-font-selector';
+import * as textMeasure from '../src/lib/canvas/text-measure';
 import { useEditorStore } from '../src/lib/editor-store';
-import { ARABIC_FONTS } from '../src/lib/io/fonts';
+import { ARABIC_FONTS, loadGoogleFont } from '../src/lib/io/fonts';
 
 import type { TextElement } from '../src/lib/editor-store';
 import type { ReactElement } from 'react';
@@ -66,6 +67,7 @@ const baseText: TextElement = {
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  vi.mocked(loadGoogleFont).mockResolvedValue(true);
   Element.prototype.scrollIntoView = scrollIntoView;
   useEditorStore.setState({
     elements: [],
@@ -325,5 +327,109 @@ describe('FontSelector', () => {
     } finally {
       write.mockRestore();
     }
+  });
+
+  it('re-fits text geometry synchronously when measured and after cold font loads while ignoring stale generations', async () => {
+    const user = setupUser();
+    const widthSpy = vi
+      .spyOn(textMeasure, 'measureTextWidthPx')
+      .mockImplementation((spec) =>
+        String(spec.fontFamily || '').includes('Tajawal') ? 500 : 300,
+      );
+    const heightSpy = vi
+      .spyOn(textMeasure, 'measureTextHeightPx')
+      .mockImplementation((spec) => (String(spec.fontFamily || '').includes('Tajawal') ? 120 : 80));
+
+    let resolveLoad!: (ok: boolean) => void;
+    vi.mocked(loadGoogleFont).mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+
+    const textEl: TextElement = {
+      ...baseText,
+      id: 'fit-test',
+      x: 0.2,
+      y: 0.3,
+      width: 0.4,
+      height: 0.1,
+      rotation: 0,
+      textSizing: 'auto',
+      textResizeAnchor: 'top-left',
+    };
+    useEditorStore.setState({
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+      elements: [textEl],
+      selectedId: textEl.id,
+      selectedIds: [textEl.id],
+    });
+
+    try {
+      renderPicker(<TextFontSelector element={textEl} />);
+      await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+
+      // معاينة تاجوال: يتحدث المقاس فوراً بناءً على القياس الحالي، ثم يتكيف عند اكتمال التحميل البارد
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Tajawal, sans-serif',
+        width: 0.502,
+        height: 0.12,
+        textResizeAnchor: undefined,
+      });
+
+      // تغيير القياس كما لو اكتمل تحميل الوجه السحابي بعد وصول loadGoogleFont
+      widthSpy.mockReturnValue(600);
+      heightSpy.mockReturnValue(140);
+      await act(async () => {
+        resolveLoad(true);
+        await Promise.resolve();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Tajawal, sans-serif',
+        width: 0.602,
+        height: 0.14,
+      });
+      expect(useEditorStore.getState().historyIndex).toBe(-1);
+
+      // إلغاء المعاينة بـ Escape يعيد الأبعاد والخط الأصليين، وأي وعد متأخر بعد الإلغاء يُتجاهل
+      let resolveStale!: (ok: boolean) => void;
+      vi.mocked(loadGoogleFont).mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveStale = resolve;
+          }),
+      );
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'أميري (Amiri)' }));
+      await user.keyboard('{Escape}');
+      expect(useEditorStore.getState().elements[0]).toEqual(textEl);
+
+      widthSpy.mockReturnValue(900);
+      await act(async () => {
+        resolveStale(true);
+        await Promise.resolve();
+      });
+      expect(useEditorStore.getState().elements[0]).toEqual(textEl);
+    } finally {
+      widthSpy.mockRestore();
+      heightSpy.mockRestore();
+    }
+  });
+
+  it('previews newly focused font when navigating rows with arrows from the favorite star column', async () => {
+    const user = setupUser();
+    const onPreview = vi.fn();
+    renderPicker(<FontSelector value="Cairo" onChange={vi.fn()} onPreview={onPreview} />);
+    await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+    await user.tab();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('button', { name: 'إزالة من المفضلة: كايرو' })).toHaveFocus();
+    onPreview.mockClear();
+
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('button', { name: 'إزالة من المفضلة: تاجوال' })).toHaveFocus();
+    expect(onPreview).toHaveBeenCalledExactlyOnceWith(ARABIC_FONTS[1]);
   });
 });

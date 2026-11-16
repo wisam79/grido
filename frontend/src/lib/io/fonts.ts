@@ -556,14 +556,41 @@ export function loadGoogleFont(
 }
 
 /** Checks if a matching face is actually loaded (not just "nothing pending"). */
-export function isFontLoaded(fontFamily: string): boolean {
+export function isFontLoaded(
+  fontFamily: string,
+  fontWeight?: number,
+  fontStyle?: 'normal' | 'italic',
+): boolean {
   if (typeof document === 'undefined' || !document.fonts) return true;
-  const cleanName = cleanFamilyName(fontFamily).toLowerCase();
-  if (GENERIC_FAMILIES.has(cleanName) || SYSTEM_FAMILIES.has(cleanName)) return true;
+  const fontObj = findFontOption(fontFamily);
+  const cleanName = (fontObj?.englishName ?? cleanFamilyName(fontFamily)).toLowerCase();
+  if (!cleanName || GENERIC_FAMILIES.has(cleanName) || SYSTEM_FAMILIES.has(cleanName)) return true;
+  const targetWeight =
+    fontWeight !== undefined ? String(resolveSupportedFontWeight(fontFamily, fontWeight)) : null;
+  const targetStyle = fontStyle || null;
   for (const face of Array.from(document.fonts)) {
-    if (face.family.replace(/['"]/g, '').toLowerCase() === cleanName && face.status === 'loaded') {
-      return true;
+    if (face.family.replace(/['"]/g, '').toLowerCase() !== cleanName || face.status !== 'loaded') {
+      continue;
     }
+    if (
+      targetWeight !== null &&
+      face.weight &&
+      face.weight !== 'normal' &&
+      face.weight !== targetWeight
+    ) {
+      if (
+        !(targetWeight === '400' && face.weight === 'normal') &&
+        !(targetWeight === '700' && face.weight === 'bold')
+      ) {
+        continue;
+      }
+    } else if (targetWeight !== null && face.weight === 'normal' && targetWeight !== '400') {
+      continue;
+    }
+    if (targetStyle !== null && face.style && face.style !== targetStyle) {
+      continue;
+    }
+    return true;
   }
   return false;
 }

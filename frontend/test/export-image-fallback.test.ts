@@ -61,6 +61,7 @@ function makeRecordingContext() {
     'lineTo',
     'stroke',
     'fill',
+    'fillText',
     'setLineDash',
   ];
   for (const op of ops) {
@@ -68,6 +69,11 @@ function makeRecordingContext() {
       calls.push({ op, args });
     };
   }
+  ctx.measureText = (t: string) => ({
+    width: String(t || '').length * 10,
+    fontBoundingBoxAscent: 12,
+    fontBoundingBoxDescent: 4,
+  });
   ctx.getImageData = (_x: number, _y: number, w: number, h: number) =>
     new ImageData(
       new Uint8ClampedArray(Math.max(1, w) * Math.max(1, h) * 4),
@@ -355,6 +361,44 @@ describe('export-image manual fallback — golden tests', () => {
     );
     expect(calls.some((c) => c.op === 'roundRect' && c.args[4] === 12)).toBe(true);
     expect(calls.filter((c) => c.op === 'drawImage')).toHaveLength(0);
+    expect(calls.some((c) => c.op === 'stroke')).toBe(true);
+  });
+
+  it('draws text badge border even when textBgColor is transparent', async () => {
+    useEditorStore.setState({
+      mode: 'single',
+      canvasWidth: CANVAS_W,
+      canvasHeight: CANVAS_H,
+      backgroundColor: '#ffffff',
+      elements: [
+        {
+          id: 'txt-border-only',
+          type: 'text',
+          x: 0.1,
+          y: 0.1,
+          width: 0.3,
+          height: 0.1,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          text: 'شارة بإطار فقط',
+          fontSize: 32,
+          fontFamily: 'Cairo, sans-serif',
+          fontWeight: 700,
+          color: '#111111',
+          textBgColor: 'transparent',
+          textBgRadius: 8,
+          textBgPaddingX: 12,
+          textBgPaddingY: 6,
+          textBgBorderWidth: 3,
+          textBgBorderColor: '#ff0000',
+        },
+      ],
+    } as never);
+    recordContext();
+    expect(await exportCanvas('png', 0.95, null)).not.toBeNull();
+    expect(calls.some((c) => c.op === 'roundRect' && c.args[4] === 8)).toBe(true);
+    expect(calls.some((c) => c.op === 'setStrokeStyle' && c.args[0] === '#ff0000')).toBe(true);
     expect(calls.some((c) => c.op === 'stroke')).toBe(true);
   });
 });

@@ -24,6 +24,7 @@ const TEXT_MEASURE_KEYS: ReadonlyArray<keyof TextElement> = [
   'wrap',
   'curve',
   'textSizing',
+  'strokeWidth',
 ];
 
 /**
