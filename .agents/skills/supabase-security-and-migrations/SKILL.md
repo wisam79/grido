@@ -48,7 +48,7 @@ RETURN (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
 
 - **`SET search_path = public` دائماً** (و`public, extensions` عند الحاجة إلى `gen_random_uuid`).
 - **اشتق الهوية من `auth.uid()` فقط**، ولا تثق أبداً بوسائط العميل: `check_and_record_ai_usage` يشتق الحصة من `profiles.plan` الخادمية ويهمل `p_daily_limit`، ويرفض `p_user_id ≠ auth.uid()` لغير المسؤول.
-- **منح `anon` مقصود** لدوال الأدمن (قاعدة `AGENTS.md`)، فالفحص الداخلي هو خط الدفاع الوحيد ⇒ يجب أن يكون متيناً (`IS NOT TRUE`).
+- **اسحب `EXECUTE` من `PUBLIC, anon` صراحةً** على دوال `SECURITY DEFINER` وحافظ على `authenticated, service_role` فقط (`pg_default_acl` في `public` يمنح `anon` افتراضياً عند الإنشاء)؛ ومع ذلك يبقى الفحص الداخلي (`IS NOT TRUE` / `auth.uid()`) إلزامياً كخط دفاعٍ ثانٍ متين.
 - **مشغّل بهلواني:** إذا كانت دالة مشغّل `SECURITY DEFINER`، فإن `current_user` يساوي مالك الدالة (postgres) فيتجاوز أي فحص `current_user NOT IN ('authenticated','anon')`. استخدم `SECURITY INVOKER` عندما تريد أن يعكس `current_user` دور الطلب الحقيقي.
 
 ---

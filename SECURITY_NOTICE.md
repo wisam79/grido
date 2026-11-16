@@ -1,5 +1,19 @@
 # 🔒 تنبيه أمني مهم
 
+> 🛡️ **إدخال جديد (2026-11-15 — تحييد Edge Functions اليتيمة وتقوية صلاحيات Supabase ومواءمة الهجرات):**
+>
+> **1) تحييد الدالتين الطرفيتين اليتيمتين (`license` و`ai-enhance` — v7 `ACTIVE`, `verify_jwt: true`).**
+> تبيّن بالفحص الحيّ على مشروع `mvovehnyvoiawvwaurav` وجود نسختين قديمتين (v6) لكلٍّ من `license` و`ai-enhance` خارج مراجع الكود النشط كانتا تحملان `SUPABASE_SERVICE_ROLE_KEY` وتمرّران الطلبات دون مسار العميل المعتمد. جرى نشر نسخة **v7** لكلتا الدالتين مع تفعيل `verify_jwt: true` واستجابة `410 Gone` (`ENDPOINT_GONE`) بلا أي مفاتيح أو استدعاءات `fetch` أو قراءة/كتابة قاعدة البيانات؛ يبقى **الحذف النهائي (Delete Function)** إجراءً يدوياً في لوحة Supabase.
+>
+> **2) مواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق هجرة التقوية `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` (`43 = 43`):**
+> ثُبّت حياً عبر `storage.buckets` (`phone-bridge`) تضمين `'application/json'` في `allowed_mime_types` ووجود النسخة `20261113171327` فتمت مواءمة اسمها المحلي. ثم طُبّقت هجرة التقوية عبر `supabase db push --yes` ونفّذت:
+> - سحب `EXECUTE` من `PUBLIC, anon` على الدوال الثماني ذات `SECURITY DEFINER` مع إبقاء `authenticated, service_role` (`0` تنبيهات `0028_anon_security_definer_function_executable`).
+> - تقليص منح الجداول الخمسة وسحب `TRUNCATE/REFERENCES/TRIGGER` ومنع أي وصول مباشر لدور `authenticated` على `user_sessions`، مع تشديد `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public`.
+> - دمج سياسَتَي `UPDATE` على `public.profiles` في سياسة واحدة (`profiles_update_own_or_admin` لدور `authenticated` فقط — `0` تنبيهات `multiple_permissive_policies`).
+> - تحصين `admin_extend_license` للتحقق من `p_additional_months > 0 AND <= 1200` وتمديد الانتهاء من `GREATEST(COALESCE(expires_at, now()), now())`.
+>
+> **3) بنود لوحة Supabase اليدوية المتبقية:** الحذف النهائي لدالتَي `license` و`ai-enhance` من Edge Functions، وحذف 11 كائناً ميتاً من `phone-bridge` عبر Storage UI (محمية بـ`storage.protect_delete()`), وتفعيل Auth Leaked Password Protection (ميزة Pro).
+
 > 🔐 **إدخال جديد (2026-11-01 — الدفعة الأمنية بعد التدقيق الشامل):**
 >
 > **1) إغلاق سقوط مفتاح anon المخبوز في صفحة كاميرا الهاتف (`admin-web/src/pages/PhoneCameraPage.tsx`).**

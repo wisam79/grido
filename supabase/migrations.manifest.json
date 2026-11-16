@@ -40,5 +40,6 @@
   "20261019213652_reclaim_orphan_email_revoke_anon.sql": "886b545a5245d44f4bc348eca53b32892ffebaecef63771d9c1ce718f44d92f8",
   "20261029220000_cancel_ai_quota_reservation.sql": "80b02c152854fb529efc7492e42a46426b8917b61fd9e9d08795fa7dca67fbb0",
   "20261101120000_activate_license_preserve_remaining_time.sql": "168f76f5df2edc47b8f8181fd02583715b52d615ab0bc8fe0e7bfff10e365bab",
-  "20261113155602_phone_bridge_handshake_json_mime.sql": "488f941aef1ac792cfa17682a71d4afa17007a98ddb040bba0a119751ce353b0"
+  "20261113171327_phone_bridge_handshake_json_mime.sql": "bd31b411d428fd37a06c15f768fabaef3ce6d8cbff4fa2796b0bfbc91d1a9de5",
+  "20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql": "a443075e8881dfb1f34c91b059a15c44763175e80c64615a102f86ce368c2936"
 }

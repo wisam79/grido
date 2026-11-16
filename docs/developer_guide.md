@@ -2,6 +2,8 @@
 
 Welcome to the **Grido Studio** developer guide. This document provides an in-depth explanation of the application's architecture, key systems, canvas engine, state management, background processes, testing workflows, and build guides.
 
+> **تحديث سحابة Supabase (2026-11-15):** أُزيل أثر الدالتين اليتيمتين `license` و`ai-enhance` حياً بإطلاق نسخة **v7** (`verify_jwt: true`, `410 Gone`) منزوعة `SUPABASE_SERVICE_ROLE_KEY`؛ كما تمت مواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق هجرة التقوية `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` عبر `supabase db push` (`43 = 43` متطابقة حياً، `0` تنبيهات `anon_security_definer_function_executable` و`0` `multiple_permissive_policies`). التفاصيل في [SECURITY_NOTICE.md](../SECURITY_NOTICE.md).
+
 ## عقود تطوير UX الجزئية وCI — 2026-11-13
 
 **الحالة الحالية:** فحوص `frontend` و`admin-web` الخفيفة و`gofmt` وبوابة `docsstrict` (**174/32/67/6** و`inventory 20 / assertions 53`) **PASS** بعد إغلاق إصلاحات التشخيص ومواءمة عقد ترويسة اللوح (`panel-shell.tsx` `min-h-12` مع `ui-compliance.test.ts` و`fluent2-design-system/SKILL.md`)؛ لا `final global E2E/CI/build` محلي بعد. التنفيذ سلوكي وبصري محدود، لا اكتمال خطة أو AA/fullwave.

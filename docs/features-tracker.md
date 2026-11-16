@@ -1,5 +1,13 @@
 # تتبع الميزات الأساسية — Grido Studio
 
+## تدقيق وتأمين Supabase وتحييد Edge Functions اليتيمة — 2026-11-15
+
+**الحالة المعتمدة:** أُتمّ تحييد الدالتين اليتيمتين ومواءمة سجل الهجرات وتطبيق هجرة التقوية حيّاً عبر `supabase db push` (`43 = 43`):
+
+- **تحييد `license` و`ai-enhance` حياً (`v7`, `verify_jwt: true`):** استُبدلت الدالتان اليتيمتان على مشروع `mvovehnyvoiawvwaurav` بنسخة `410 Gone` (`ENDPOINT_GONE`) منزوعة `SUPABASE_SERVICE_ROLE_KEY` وأي استدعاءات `fetch`/DB (مع بقاء حذفهما النهائي يدوياً من لوحة Supabase؛ صفر مراجع لهما في `frontend/src` و`internal` و`admin-web` و`modal_ai`).
+- **مواءمة سجل الهجرات وتطبيق `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` (`43 = 43`):** أُعيدت تسمية هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` لتطابق النسخة الحية، ثم طُبّقت هجرة التقوية حيّاً (`supabase db push --yes`) فأسقطت جميع تنبيهات `0028_anon_security_definer_function_executable` (`8 -> 0`) و`multiple_permissive_policies` على `public.profiles` (`6 -> 0`)، وسحبت `TRUNCATE/REFERENCES/TRIGGER` ومنح `anon` عن الجداول الخمسة، وشدّدت `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public`، وحصّنت `admin_extend_license` (`p_additional_months > 0 AND <= 1200` + `GREATEST(COALESCE(expires_at, now()), now())`).
+- **بنود لوحة Supabase اليدوية فقط:** الحذف النهائي لدالتَي `license` و`ai-enhance`، وحذف 11 ملفاً قديماً في `phone-bridge` عبر Storage UI، وتفعيل `auth_leaked_password_protection` (Pro). المرجع: [SECURITY_NOTICE.md](../SECURITY_NOTICE.md).
+
 ## المرحلة الثانية لتطوير منظومة النصوص والخطوط (`T1–T6`) — 2026-11-16
 
 **النطاق:** إغلاق 5 ثغرات هندسية في مسارات تبديل الخطوط والأنماط وتصدير الشارات والتحقق المستهدف (`docs/plans/2026-11-07-text-and-fonts-review-plan.md`):
