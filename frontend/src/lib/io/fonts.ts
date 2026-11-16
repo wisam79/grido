@@ -555,6 +555,31 @@ export function loadGoogleFont(
   return promise;
 }
 
+function normalizeFaceWeight(weight: string | undefined): string {
+  const w = (weight || 'normal').trim().toLowerCase();
+  if (w === 'normal') return '400';
+  if (w === 'bold') return '700';
+  return w;
+}
+
+function faceMatches(
+  face: FontFace,
+  cleanName: string,
+  targetWeight: string | null,
+  targetStyle: 'normal' | 'italic' | null,
+): boolean {
+  if (face.family.replace(/['"]/g, '').toLowerCase() !== cleanName || face.status !== 'loaded') {
+    return false;
+  }
+  if (targetWeight !== null && normalizeFaceWeight(face.weight) !== targetWeight) {
+    return false;
+  }
+  if (targetStyle !== null && (face.style || 'normal').toLowerCase() !== targetStyle) {
+    return false;
+  }
+  return true;
+}
+
 /** Checks if a matching face is actually loaded (not just "nothing pending"). */
 export function isFontLoaded(
   fontFamily: string,
@@ -568,31 +593,9 @@ export function isFontLoaded(
   const targetWeight =
     fontWeight !== undefined ? String(resolveSupportedFontWeight(fontFamily, fontWeight)) : null;
   const targetStyle = fontStyle || null;
-  for (const face of Array.from(document.fonts)) {
-    if (face.family.replace(/['"]/g, '').toLowerCase() !== cleanName || face.status !== 'loaded') {
-      continue;
-    }
-    if (
-      targetWeight !== null &&
-      face.weight &&
-      face.weight !== 'normal' &&
-      face.weight !== targetWeight
-    ) {
-      if (
-        !(targetWeight === '400' && face.weight === 'normal') &&
-        !(targetWeight === '700' && face.weight === 'bold')
-      ) {
-        continue;
-      }
-    } else if (targetWeight !== null && face.weight === 'normal' && targetWeight !== '400') {
-      continue;
-    }
-    if (targetStyle !== null && face.style && face.style !== targetStyle) {
-      continue;
-    }
-    return true;
-  }
-  return false;
+  return Array.from(document.fonts).some((face) =>
+    faceMatches(face, cleanName, targetWeight, targetStyle),
+  );
 }
 
 /**

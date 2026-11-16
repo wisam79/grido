@@ -16,7 +16,7 @@ import {
   toEditorDisplayText,
   fromEditorDisplayText,
 } from '@/lib/canvas/text-helpers';
-import { loadGoogleFont } from '@/lib/io/fonts';
+import { isFontLoaded, loadGoogleFont } from '@/lib/io/fonts';
 
 import type { CanvasElement, TextElement } from '@/lib/editor-store';
 import type { CSSProperties } from 'react';
@@ -174,8 +174,12 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
       setFontReady(true);
       return;
     }
-    // بيئات بلا FontFaceSet (jsdom) لا يمكنها الانتظار — أظهر المحرر فوراً
-    if (typeof document === 'undefined' || !document.fonts) {
+    // بيئات بلا FontFaceSet (jsdom) أو خط جاهز بنفس الوزن/النمط — أظهر المحرر فوراً
+    if (
+      typeof document === 'undefined' ||
+      !document.fonts ||
+      isFontLoaded(fontFamily, fontWeight, fontStyle)
+    ) {
       setFontReady(true);
       return;
     }

@@ -432,4 +432,135 @@ describe('FontSelector', () => {
     expect(screen.getByRole('button', { name: 'إزالة من المفضلة: تاجوال' })).toHaveFocus();
     expect(onPreview).toHaveBeenCalledExactlyOnceWith(ARABIC_FONTS[1]);
   });
+
+  it('syncs the committed history entry on cold font settle so undo/redo preserves updated bounds, and ignores late fits after undo or manual edits', async () => {
+    const user = setupUser();
+    const widthSpy = vi
+      .spyOn(textMeasure, 'measureTextWidthPx')
+      .mockImplementation((spec) =>
+        String(spec.fontFamily || '').includes('Tajawal') ? 500 : 300,
+      );
+    const heightSpy = vi
+      .spyOn(textMeasure, 'measureTextHeightPx')
+      .mockImplementation((spec) => (String(spec.fontFamily || '').includes('Tajawal') ? 120 : 80));
+
+    const textEl: TextElement = {
+      ...baseText,
+      id: 'undo-redo-fit',
+      x: 0.2,
+      y: 0.3,
+      width: 0.4,
+      height: 0.1,
+      rotation: 0,
+      textSizing: 'auto',
+    };
+    useEditorStore.setState({
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+      elements: [textEl],
+      selectedId: textEl.id,
+      selectedIds: [textEl.id],
+      history: [{ elements: [textEl], slots: [] } as never],
+      historyIndex: 0,
+    });
+
+    const LiveSelector = () => {
+      const el = useEditorStore((s) => s.elements.find((item) => item.id === textEl.id)) as
+        TextElement | undefined;
+      return el ? <TextFontSelector element={el} /> : null;
+    };
+
+    try {
+      // 1) تثبيت خط قبل اكتمال التحميل، ثم اكتمال القياس -> Undo -> Redo يحفظ الأبعاد المحدّثة
+      let resolveCommitLoad!: (ok: boolean) => void;
+      vi.mocked(loadGoogleFont).mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveCommitLoad = resolve;
+          }),
+      );
+
+      renderPicker(<LiveSelector />);
+      await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+      await user.click(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+
+      expect(useEditorStore.getState().historyIndex).toBe(1);
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Tajawal, sans-serif',
+        width: 0.502,
+      });
+
+      widthSpy.mockReturnValue(600);
+      heightSpy.mockReturnValue(140);
+      await act(async () => {
+        resolveCommitLoad(true);
+        await Promise.resolve();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({ width: 0.602, height: 0.14 });
+
+      act(() => {
+        useEditorStore.getState().undo();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Cairo, sans-serif',
+        width: 0.4,
+      });
+      act(() => {
+        useEditorStore.getState().redo();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Tajawal, sans-serif',
+        width: 0.602,
+        height: 0.14,
+      });
+
+      // 2) التراجع أثناء تحميل خط بارد يمنع الكتابة المتأخرة فوق حالة ما قبل الالتزام
+      let resolveInterruptedUndo!: (ok: boolean) => void;
+      vi.mocked(loadGoogleFont).mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveInterruptedUndo = resolve;
+          }),
+      );
+      widthSpy.mockReturnValue(450);
+      await user.click(screen.getByRole('button', { name: 'الخط: تاجوال' }));
+      await user.click(screen.getByRole('button', { name: 'أميري (Amiri)' }));
+      act(() => {
+        useEditorStore.getState().undo();
+      });
+      widthSpy.mockReturnValue(900);
+      await act(async () => {
+        resolveInterruptedUndo(true);
+        await Promise.resolve();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        fontFamily: 'Tajawal, sans-serif',
+        width: 0.602,
+      });
+
+      // 3) تعديل موضع العنصر يدوياً أثناء التحميل يمنع الكتابة المتأخرة فوق السحب اليدوي
+      let resolveManualDrag!: (ok: boolean) => void;
+      vi.mocked(loadGoogleFont).mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveManualDrag = resolve;
+          }),
+      );
+      useEditorStore.setState({ selectedId: textEl.id, selectedIds: [textEl.id] });
+      await user.click(screen.getByRole('button', { name: 'الخط: تاجوال' }));
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'المراعي (Almarai)' }));
+      act(() => {
+        useEditorStore.getState().updateElement(textEl.id, { x: 0.77 });
+      });
+      widthSpy.mockReturnValue(880);
+      await act(async () => {
+        resolveManualDrag(true);
+        await Promise.resolve();
+      });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({ x: 0.77 });
+    } finally {
+      widthSpy.mockRestore();
+      heightSpy.mockRestore();
+    }
+  });
 });

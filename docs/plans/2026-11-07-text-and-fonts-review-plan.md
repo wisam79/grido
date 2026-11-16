@@ -100,3 +100,4 @@ node frontend/node_modules/vitest/vitest.mjs run test/fonts.test.ts --root front
 | `T4` | تفعيل المعاينة الحيّة (`preview`) عند التنقل بأسهم الكيبورد على عمود المفضلة وتهيئة المفضلة كسولياً في `FontSelector` مع بقاء القائمة مسطحة |
 | `T5` | دعم `fontWeight` و`fontStyle` اختياريين في `isFontLoaded` لمطابقة عقد `loadGoogleFont` |
 | `T6` | إضافة اختبارات الانحدار وتشغيل الملفات المستهدفة الـ 19 منفردة (`280` حالة ناجحة) مع `typecheck` و`lint` و`format:check` و`docs-gate` |
+| `P1–P3` | إغلاق سباق `Undo/Redo`/التعديل اليدوي أثناء تحميل الخط البارد (`elementMatchesExpected` + `replaceCurrentHistoryEntry` في `history-slice.ts`)، واستخراج `faceMatches` مع استهلاك `isFontLoaded` في `TextEditingOverlay` وتوحيد `DEFAULT_FAVORITE_FONTS` وفصل `loadRequests`؛ `font-selector.test.tsx` (`17/17`) و`fonts.test.ts` (`25/25`) و`text-editing-overlay.test.tsx` (`16/16`) و`params-history.test.ts` (`10/10`) |

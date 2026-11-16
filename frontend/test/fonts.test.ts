@@ -238,7 +238,8 @@ describe('Font Engine Tests', () => {
 
   it('checks requested weight and style in isFontLoaded when document.fonts faces are present', () => {
     const faceList = [
-      { family: '"Cairo"', weight: '400', style: 'normal', status: 'loaded' },
+      { family: '"Cairo"', weight: 'normal', style: 'normal', status: 'loaded' },
+      { family: '"Amiri"', weight: 'bold', style: 'normal', status: 'loaded' },
       { family: '"IBM Plex Sans Arabic"', weight: '600', style: 'italic', status: 'loaded' },
     ];
     Object.defineProperty(document, 'fonts', {
@@ -254,6 +255,8 @@ describe('Font Engine Tests', () => {
     expect(fonts.isFontLoaded('Cairo', 400)).toBe(true);
     expect(fonts.isFontLoaded('Cairo', 700)).toBe(false);
     expect(fonts.isFontLoaded('Cairo', 400, 'italic')).toBe(false);
+    expect(fonts.isFontLoaded('Amiri', 700)).toBe(true);
+    expect(fonts.isFontLoaded('Amiri', 400)).toBe(false);
     expect(fonts.isFontLoaded('IBM Plex Sans Arabic', 600, 'italic')).toBe(true);
     expect(fonts.isFontLoaded('IBM Plex Sans Arabic', 600, 'normal')).toBe(false);
   });

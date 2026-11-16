@@ -19,6 +19,7 @@ interface FontSelectorProps {
 }
 
 const FAVORITES_KEY = 'grido_favorite_fonts';
+const DEFAULT_FAVORITE_FONTS: string[] = ['cairo', 'tajawal', 'amiri'];
 const focusClassName =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 const iconClassName =
@@ -41,7 +42,7 @@ export const FontSelector = React.memo(function FontSelector({
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() =>
-    readStoredList(FAVORITES_KEY, ['cairo', 'tajawal', 'amiri']),
+    readStoredList(FAVORITES_KEY, DEFAULT_FAVORITE_FONTS),
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -86,7 +87,7 @@ export const FontSelector = React.memo(function FontSelector({
       setCommittedValue(value);
       setQuery('');
       setActiveId(null);
-      setFavorites(readStoredList(FAVORITES_KEY, ['cairo', 'tajawal', 'amiri']));
+      setFavorites(readStoredList(FAVORITES_KEY, DEFAULT_FAVORITE_FONTS));
       onOpen?.();
     } else {
       onCancel?.();

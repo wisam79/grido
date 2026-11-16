@@ -26,6 +26,7 @@ export interface HistorySlice {
   lastSavedEntry: HistoryEntry | null;
   markHistorySaved: () => void;
   pushHistory: () => void;
+  replaceCurrentHistoryEntry: () => void;
   undo: () => void;
   redo: () => void;
 }
@@ -262,6 +263,18 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       history: newHistory,
       historyIndex: newHistory.length - 1,
       isDirty: !isSameSnapshot(snapshot, dirtyAnchor(state.lastSavedEntry)),
+    });
+  },
+
+  replaceCurrentHistoryEntry: () => {
+    const state = get();
+    const { history, historyIndex, lastSavedEntry } = state;
+    if (historyIndex < 0 || historyIndex >= history.length) return;
+    const snapshot = captureHistoryEntry(state);
+    const nextHistory = history.map((entry, idx) => (idx === historyIndex ? snapshot : entry));
+    set({
+      history: nextHistory,
+      isDirty: !isSameSnapshot(snapshot, dirtyAnchor(lastSavedEntry)),
     });
   },
 
