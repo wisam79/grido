@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.34.1] - 2026-11-16
+
+### Fixed
+- إصلاح قفل النسبة المطبّع في الكولاج الحر، وفصل التداخلات عند الحواف (`resolveOverlaps`)، ومنع إعادة إزاحة الجيران في الدومينو (`tryDisplaceOverlappingCells`)، وتوحيد تمركز التكبير في المحورين (`KonvaCollageImage` + `computeSlotCrop` + `computeCropFromSlot` + `test-fixtures/print-crop-golden.json`) مع حفظ توافق المشاريع القديمة عبر `cropMode` (`legacy` مقابل `centered`)، وتقييد وتطبيع `zoom` ضمن `[1..3]` في المخطط والهيدريشن و`validatePrintItem`، وخبز القص الفعلي (`zoom`/`dragX`/`dragY`/`rotation`/`cropMode`) في `renderPixelFilterPreview` ومطابقة سحب معاينة الطباعة (`computeSlotPreviewPan` عبر `objectPosition` وتدوير/قلب متجه الإزاحة حتى عند `zoom = 1`)، وتطبيق `marginMM` وتوحيد وسم/مقاس `4×6` سم مقابل `10×15` سم في `slot-pack.ts` و`mixed-presets.ts` و`collage-templates.ts`.
+- إغلاق سباق إعادة الملاءمة مع `Undo/Redo` عند تحميل الخط البارد (`P1`) وتنظيفات `P2/P3`: فحص بصمة العنصر المتوقعة ولقطة التاريخ الملتزمة قبل تطبيق إعادة القياس المتأخرة، وإضافة `replaceCurrentHistoryEntry` في `history-slice.ts` لتحديث لقطة الالتزام مكانياً دون خطوة تراجع مزدوجة، واستخراج `faceMatches` في `isFontLoaded` مع استهلاكها في `TextEditingOverlay` لإلغاء وميض إخفاء المحرر عند جاهزية الخط، وتوحيد `DEFAULT_FAVORITE_FONTS` وفصل `loadRequests` عن `flatMap`.
+- إغلاق المرحلة الثانية من تحسينات النصوص والخطوط (`T1–T6`): إعادة ملاءمة هندسة الصندوق (`fitTextGeometry`) فورياً وعند اكتمال تحميل الخط البارد مع حارس جيل وجلسة المستند في `TextFontSelector`، وتصفير الخصائص المتبقية (`letterSpacing` و`fontStyle` و`textDecoration` و`textTransform` وتعبئة التدرج الدائري والصورة) في `applyTextPreset` مع إدراج `strokeWidth` ضمن `TEXT_MEASURE_KEYS`، وفصل رسم إطار شارة النص عن تعبئة الخلفية في `export-canvas-fitted.ts`، وتفعيل المعاينة الحيّة عند التنقل بأسهم الكيبورد على عمود المفضلة وتهيئة المفضلة كسولياً في `FontSelector`، ودعم فحص الوزن والنمط في `isFontLoaded`.
+
+### Security
+- تحييد دالتَي Edge Functions اليتيمتين (`license` و`ai-enhance` ← `410 Gone` مع `verify_jwt: true` ونزع `SUPABASE_SERVICE_ROLE_KEY`)، ومواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` (`43 = 43`) لسحب `anon`/`PUBLIC` عن دوال `SECURITY DEFINER` وتقليص منح الجداول الخمسة ودمج سياسات `profiles` وتحصين `admin_extend_license`.
 ## [v1.34.0] - 2026-11-15
 
 ### Added
@@ -62,7 +71,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - إصلاحات تدقيق وضع التعديل الحر: استعادة الطبقات تصاعدياً لمنع فساد التكديس، مطابقة أقنعة القص بالمسار السريع، تثبيت المركز المرئي عند تحجيم العناصر المدوّرة ومنع اختفائها خارج الكانفاس، ذرية تراجع النقل للكولاج، تحييد القفل والإخفاء عند اللصق والتكرار، وتصفير محرر النصوص عند تبديل الوضع مع صقل مؤشرات الواجهة.
 - استعادة غلاف تلميح الأيقونة الشبحية في حالة فراغ لوحة الطبقات لضمان مسمى الوصولية والامتثال لاختبارات واجهة المستخدم.
 - إزالة السطر النصي الإرشادي تماماً من حالة فراغ لوحة الطبقات والإبقاء على الأيقونة الشبحية النظيفة لمنع الحشو البصري.
-## [v1.31.5] - 2026-11-07
-
-### Fixed
-- توحيد مقياس الطباعة المصغر واستبدال فئة الحجم العشوائي text-[9px] بفئة text-2xs الدلالية الموحدة في زاوية المساطر وشارة عداد صور جسر الهاتف للتوافق الصارم مع حارس UI Compliance.
