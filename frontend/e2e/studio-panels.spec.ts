@@ -24,10 +24,9 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
     }
     await expect(page.getByTestId('rail-studio-content')).toHaveCount(0);
 
-    // 2. كل زر يفتح لوحه مباشرة — لا شريط تبويبات داخلي فوق اللوح
+    // 2. كل زر لوح جانبي يفتح لوحه مباشرة — لا شريط تبويبات داخلي فوق اللوح
     for (const [tool, panelId] of [
       ['layers', 'studio-layers-panel'],
-      ['stickers', 'studio-elements-stickers'],
       ['shapes', 'studio-elements-shapes'],
       ['text', 'studio-elements-text'],
     ] as const) {
@@ -43,6 +42,14 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       await expect(panel).toBeVisible();
       await expect(railBtn).toHaveAttribute('aria-pressed', 'true');
     }
+
+    // زر استوديو الملصقات يفتح حوار الاستوديو الكامل مباشرة دون لوح جانبي مخفّف
+    const stickersBtn = page.getByTestId('rail-studio-stickers');
+    await stickersBtn.click();
+    const stickerDialog = page.getByRole('dialog').first();
+    await expect(stickerDialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(stickerDialog).not.toBeVisible();
 
     // 3. شريط التبويبات الداخلي القديم لم يبق له أثر
     for (const segmentedId of [

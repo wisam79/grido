@@ -300,10 +300,10 @@ describe('Component Testing: UI Rendering', () => {
       'grido_workspace_layout_v1',
       JSON.stringify({ lastActivePanel: 'templates' }),
     );
-    // اللوح الافتراضي في الاستوديو هو «الملصقات» (الطبقات تبقى أول الشريط)
+    // اللوح الافتراضي في الاستوديو هو «الطبقات» (زر الملصقات يفتح استوديو الملصقات مباشرة)
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
-    expect(await screen.findByTestId('studio-elements-stickers')).toBeInTheDocument();
+    expect(await screen.findByTestId('studio-layers-panel')).toBeInTheDocument();
   }, 15000);
 
   it('renders initial collage templates correctly', async () => {

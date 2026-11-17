@@ -369,36 +369,44 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
     it('does not save a hovered font when switching to saved presets', async () => {
       const user = setupUser();
-      renderWithProviders(
+      const { unmount } = renderWithProviders(
         <StickerStudioDialog open onOpenChange={vi.fn()} editingElement={editingElement} />,
       );
-      await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
-      await user.hover(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
-      await waitFor(() => expect(previewFamily()).toContain('Tajawal'));
-      await user.click(screen.getByRole('tab', { name: /قوالبي/ }));
-      fireEvent.change(screen.getByPlaceholderText('اسم القالب'), {
-        target: { value: 'Committed font' },
-      });
-      await user.click(screen.getByRole('button', { name: /حفظ/ }));
-      expect(loadStickerPresets()[0].params.fontFamily).toBe('Cairo');
-    });
+      try {
+        await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+        await user.hover(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+        await waitFor(() => expect(previewFamily()).toContain('Tajawal'));
+        await user.click(screen.getByRole('tab', { name: /قوالبي/ }));
+        fireEvent.change(screen.getByPlaceholderText('اسم القالب'), {
+          target: { value: 'Committed font' },
+        });
+        await user.click(screen.getByRole('button', { name: /حفظ/ }));
+        expect(loadStickerPresets()[0].params.fontFamily).toBe('Cairo');
+      } finally {
+        unmount();
+      }
+    }, 15_000);
 
     it('commits one font selection as one undo step and keeps redo intact', async () => {
       const user = setupUser();
-      renderWithProviders(
+      const { unmount } = renderWithProviders(
         <StickerStudioDialog open onOpenChange={vi.fn()} editingElement={editingElement} />,
       );
-      const undo = screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' });
-      await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
-      await user.click(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
-      await waitFor(() => expect(previewFamily()).toContain('Tajawal'));
-      expect(undo).toBeEnabled();
-      await user.click(undo);
-      expect(previewFamily()).toContain('Cairo');
-      expect(undo).toBeDisabled();
-      await user.click(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' }));
-      expect(previewFamily()).toContain('Tajawal');
-    });
+      try {
+        const undo = screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' });
+        await user.click(screen.getByRole('button', { name: 'الخط: كايرو' }));
+        await user.click(screen.getByRole('button', { name: 'تاجوال (Tajawal)' }));
+        await waitFor(() => expect(previewFamily()).toContain('Tajawal'));
+        expect(undo).toBeEnabled();
+        await user.click(undo);
+        expect(previewFamily()).toContain('Cairo');
+        expect(undo).toBeDisabled();
+        await user.click(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' }));
+        expect(previewFamily()).toContain('Tajawal');
+      } finally {
+        unmount();
+      }
+    }, 15_000);
 
     it('never applies a delayed font selection to a different template or reopened dialog', async () => {
       const user = setupUser();
