@@ -35,16 +35,16 @@ import type { EditorMode } from '@/lib/store/types';
 
 export type CollageTab = 'custom' | 'presets' | 'freeform' | 'paper' | 'autofill' | 'arrange';
 
-export type FreeformTab = 'stickers' | 'shapes' | 'text' | 'layers';
+export type FreeformTab = 'layers' | 'shapes' | 'text';
 
 /** وجهات الشريط الجانبي — كل وجهة سطح واحد يضم تبويبات مترابطة، لا زر لكل تبويب */
 export type CollageSection = 'grid' | 'freeform' | 'slots' | 'paper';
-/** أدوات الإدراج الأربع أزرار مستقلة في الشريط كما طلب المالك */
+/** أدوات الإدراج والطبقات أزرار مستقلة في الشريط كما طلب المالك */
 export type StudioSection = 'stickers' | 'shapes' | 'text' | 'layers';
 
-/** ترحيل تبويبات النسخ السابقة: الوجهة الموحّدة والمقاسات المحذوفة → الملصقات */
+/** ترحيل تبويبات النسخ السابقة: التبويبات الموحّدة أو تبويب الملصقات المخفّف المحذوف → الطبقات */
 export function migrateLegacyStudioTab(value: unknown): FreeformTab | null {
-  if (value === 'elements' || value === 'presets') return 'stickers';
+  if (value === 'elements' || value === 'presets' || value === 'stickers') return 'layers';
   return null;
 }
 
@@ -82,6 +82,8 @@ export interface WorkspaceSection<S extends string, T extends string> {
   badge?: ToolBadge;
   /** نقطة «مطبَّق على الكانفاس» على وجهة الكولاج */
   inUse?: 'collage-template';
+  /** عندما تفتح الوجهة حواراً مستقلاً مباشرة (مثل استوديو الملصقات) لا تبويباً جانبياً */
+  actionEvent?: string;
 }
 
 export type WorkspaceModeSection =
@@ -143,12 +145,13 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
 
 export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
   {
-    id: 'stickers',
-    label: 'الملصقات',
-    title: 'الملصقات والأختام',
-    subtitle: 'أختام وإطارات وعروض وتهاني',
-    icon: Stamp,
-    testId: 'tab-studio-stickers',
+    id: 'layers',
+    label: 'الطبقات',
+    title: 'الطبقات',
+    subtitle: 'ترتيب عناصر الكانفاس',
+    icon: Layer,
+    testId: 'tab-studio-layers',
+    badge: 'elements',
   },
   {
     id: 'shapes',
@@ -165,14 +168,6 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     subtitle: 'عناوين وأسطر وأنماط جاهزة',
     icon: TextT,
     testId: 'tab-studio-text',
-  },
-  {
-    id: 'layers',
-    label: 'الطبقات',
-    title: 'الطبقات',
-    subtitle: 'ترتيب عناصر الكانفاس',
-    icon: Layer,
-    testId: 'tab-studio-layers',
   },
 ];
 
@@ -250,13 +245,14 @@ export const STUDIO_SECTIONS: WorkspaceSection<StudioSection, FreeformTab>[] = [
   },
   {
     id: 'stickers',
-    label: 'الملصقات',
-    title: 'الملصقات',
-    subtitle: 'أختام وإطارات وعروض وتهاني',
+    label: 'استوديو الملصقات',
+    title: 'استوديو الملصقات',
+    subtitle: 'تصميم وتخصيص الأختام والشارات والباركود',
     icon: Stamp,
     testId: 'rail-studio-stickers',
-    defaultTab: 'stickers',
-    tabs: pickTools(STUDIO_TOOLS, ['stickers']),
+    defaultTab: 'layers',
+    tabs: [],
+    actionEvent: 'grido:open-stickers-dialog',
   },
   {
     id: 'shapes',
@@ -302,9 +298,9 @@ export function getSectionsForWorkflow(
   return mode === 'collage' ? COLLAGE_SECTIONS : getStudioSectionsForWorkflow(workflow);
 }
 
-/** التبويب الافتراضي للاستوديو — «الطبقات» لمسار الإنتاج السريع، و«الملصقات» لمسار الاستوديو */
-export function getDefaultStudioTab(workflow: WorkflowMode = 'studio'): FreeformTab {
-  return workflow === 'quick' ? 'layers' : 'stickers';
+/** التبويب الافتراضي للاستوديو — «الطبقات» دائماً (وجهة الملصقات تفتح الاستوديو مباشرة) */
+export function getDefaultStudioTab(_workflow: WorkflowMode = 'studio'): FreeformTab {
+  return 'layers';
 }
 
 /** وجهة التبويب النشط — تُبقي زر الشريط مضاءً أياً كان التبويب الداخلي */
@@ -747,10 +743,13 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     // بلا اختصار: لا يوجد مفتاح مسجّل لإدراج النص في use-keyboard-shortcuts.ts،
     // وإعلان اختصار غير مسجّل يجعل اللوحة توعد بما لا يحدث.
     getSnapshot: () => {
-      const { addTextElement } = useEditorStore.getState();
+      const { addTextElement, setEditingTextId } = useEditorStore.getState();
       return {
         subtitle: 'نص جديد قابل للتحرير',
-        run: () => addTextElement(),
+        run: () => {
+          const id = addTextElement();
+          if (id) setEditingTextId(id);
+        },
       };
     },
   },

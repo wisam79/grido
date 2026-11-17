@@ -9,6 +9,53 @@ import type { ElementCross, ElementSlice } from './types';
 import type { CanvasElement, TextElement } from '../../types';
 import type { StateCreator } from 'zustand';
 
+const TEXT_INSERT_MARGIN = 0.04;
+const TEXT_CASCADE_STEP_X = 0.02;
+const TEXT_CASCADE_STEP_Y = 0.035;
+const TEXT_CASCADE_SLOTS = 8;
+
+function clampUnit(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function resolveInsertedTextPosition(
+  existingElements: readonly CanvasElement[],
+  width: number,
+  height: number,
+): { x: number; y: number } {
+  const maxX = Math.max(TEXT_INSERT_MARGIN, 1 - width - TEXT_INSERT_MARGIN);
+  const maxY = Math.max(TEXT_INSERT_MARGIN, 1 - height - TEXT_INSERT_MARGIN);
+  const baseX = clampUnit(0.5 - width / 2, TEXT_INSERT_MARGIN, maxX);
+  const baseY = clampUnit(0.5 - height / 2, TEXT_INSERT_MARGIN, maxY);
+
+  for (let step = 0; step < TEXT_CASCADE_SLOTS; step += 1) {
+    const x = clampUnit(baseX + step * TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX);
+    const y = clampUnit(baseY + step * TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY);
+    const collides = existingElements.some(
+      (el) => Math.abs(el.x - x) < 0.015 && Math.abs(el.y - y) < 0.018,
+    );
+    if (!collides) return { x, y };
+  }
+
+  return {
+    x: clampUnit(baseX + TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX),
+    y: clampUnit(baseY + TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY),
+  };
+}
+
+function placeInsertedTextElement(
+  el: TextElement,
+  existingElements: readonly CanvasElement[],
+  canvasW: number,
+  canvasH: number,
+): TextElement {
+  const fit = fitTextGeometry(el, canvasW, canvasH);
+  const width = fit?.measured ? fit.width : el.width;
+  const height = fit?.measured ? fit.height : el.height;
+  const { x, y } = resolveInsertedTextPosition(existingElements, width, height);
+  return { ...el, width, height, x, y };
+}
+
 export const createTextElementsSlice: StateCreator<
   ElementCross,
   [],
@@ -22,12 +69,12 @@ export const createTextElementsSlice: StateCreator<
     const canvasW = state.canvasWidth || 2480;
     const canvasH = state.canvasHeight || 2480;
 
-    // تقدير أولي يُستخدم فقط إن تعذّر القياس الحقيقي (بيئة بلا Canvas)
-    const fontSize = 32;
+    // مقياس خط متجاوب مع أبعاد الكانفس بحيث يظهر النص واضحاً على الصفحات عالية الدقة (مثل A4 300 DPI)
+    const fontSize = Math.max(32, Math.min(96, Math.round(Math.min(canvasW, canvasH) * 0.036)));
     const charWidth = fontSize * 0.9;
     const estimatedPx = Math.max(160, Math.min(canvasW * 0.6, sanitized.length * charWidth + 60));
 
-    const newEl: TextElement = {
+    const draft: TextElement = {
       id,
       type: 'text',
       x: 0,
@@ -36,9 +83,9 @@ export const createTextElementsSlice: StateCreator<
       height: 0.05,
       rotation: 0,
       opacity: 1,
-      zIndex: nextZIndex(get().elements),
+      zIndex: nextZIndex(state.elements),
       text: sanitized,
-      fontSize: 32,
+      fontSize,
       fontWeight: 700,
       color: '#1a1a2e',
       fontFamily: '"IBM Plex Sans Arabic", Cairo, Tajawal, sans-serif',
@@ -49,12 +96,7 @@ export const createTextElementsSlice: StateCreator<
       letterSpacing: 0,
     };
 
-    const fit = fitTextGeometry(newEl, canvasW, canvasH);
-    if (fit?.measured) {
-      newEl.width = fit.width;
-      newEl.height = fit.height;
-    }
-    newEl.x = 0.5 - newEl.width / 2;
+    const newEl = placeInsertedTextElement(draft, state.elements, canvasW, canvasH);
 
     set((s) => ({
       elements: [...s.elements, newEl],
@@ -80,7 +122,7 @@ export const createTextElementsSlice: StateCreator<
     const charWidth = fontSize * 0.9;
     const estimatedPx = Math.max(160, Math.min(canvasW * 0.7, text.length * charWidth + 60));
 
-    const newEl: TextElement = {
+    const draft: TextElement = {
       id,
       type: 'text',
       x: 0,
@@ -89,7 +131,7 @@ export const createTextElementsSlice: StateCreator<
       height: config.height,
       rotation: config.rotation ?? 0,
       opacity: config.opacity ?? 1,
-      zIndex: nextZIndex(get().elements),
+      zIndex: nextZIndex(state.elements),
       text,
       fontSize,
       fontWeight: config.fontWeight,
@@ -121,12 +163,7 @@ export const createTextElementsSlice: StateCreator<
       fillLinearGradientColorStops: config.fillLinearGradientColorStops,
     };
 
-    const fit = fitTextGeometry(newEl, canvasW, canvasH);
-    if (fit?.measured) {
-      newEl.width = fit.width;
-      newEl.height = fit.height;
-    }
-    newEl.x = 0.5 - newEl.width / 2;
+    const newEl = placeInsertedTextElement(draft, state.elements, canvasW, canvasH);
 
     set((s) => ({
       elements: [...s.elements, newEl],

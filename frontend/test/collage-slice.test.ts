@@ -1605,3 +1605,95 @@ describe('removeCollageSlot — حذف الخلية المضافة من الشب
     expect(afterLegacyAdd[afterLegacyAdd.length - 1].cropMode).toBeUndefined();
   });
 });
+
+describe('حفظ مقاس ونسبة الخلايا اليدوية والمخبوزة عند قلب اتجاه الكانفاس (أفقي ↔ عمودي)', () => {
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+  });
+
+  it('يحافظ على أبعاد خلايا أحوال 32×40مم بعد إضافة خلايا مجاورة (+) ثم قلب الورقة من أفقي إلى عمودي وبالعكس', () => {
+    // محاكاة سيناريو اللقطة: A4 أفقي (3508×2480)، قالب أحوال 1×1 ثم إضافة 5 خلايا يميناً وخليتين أسفل
+    useEditorStore.getState().setCanvasSize(3508, 2480);
+    const firstId = useEditorStore.getState().slots[0].id;
+    let prevId = firstId;
+    for (let i = 0; i < 5; i++) {
+      const res = useEditorStore.getState().addAdjacentCollageSlot(prevId, 'right');
+      expect(res.ok).toBe(true);
+      prevId = res.newSlotId!;
+    }
+    const row2a = useEditorStore.getState().addAdjacentCollageSlot(firstId, 'bottom');
+    expect(row2a.ok).toBe(true);
+    const row2b = useEditorStore.getState().addAdjacentCollageSlot(row2a.newSlotId!, 'right');
+    expect(row2b.ok).toBe(true);
+
+    const landscapeSlots = useEditorStore.getState().slots;
+    expect(landscapeSlots).toHaveLength(8);
+    expect(useEditorStore.getState().collageTemplate?.isManual).toBe(true);
+    expect(useEditorStore.getState().collageTemplate?.physicalLayout).toBeUndefined();
+
+    const landscapePixelSizes = landscapeSlots.map((sl) => ({
+      wPx: sl.w * 3508,
+      hPx: sl.h * 2480,
+    }));
+
+    // قلب من أفقي إلى عمودي (2480×3508)
+    useEditorStore.getState().setCanvasSize(2480, 3508);
+    const portraitState = useEditorStore.getState();
+    expect(portraitState.slots).toHaveLength(8);
+    portraitState.slots.forEach((sl, idx) => {
+      expect(sl.w * 2480).toBeCloseTo(landscapePixelSizes[idx].wPx, 3);
+      expect(sl.h * 3508).toBeCloseTo(landscapePixelSizes[idx].hPx, 3);
+      // نسبة الخلية 32:40 (0.8) لا تتغير ولا تنقلب إلى 22.6×56.6مم
+      expect((sl.w * 2480) / (sl.h * 3508)).toBeCloseTo(32 / 40, 2);
+    });
+
+    // قلب مرة ثانية من عمودي إلى أفقي (3508×2480)
+    useEditorStore.getState().setCanvasSize(3508, 2480);
+    const roundTripState = useEditorStore.getState();
+    roundTripState.slots.forEach((sl, idx) => {
+      expect(sl.w * 3508).toBeCloseTo(landscapePixelSizes[idx].wPx, 3);
+      expect(sl.h * 2480).toBeCloseTo(landscapePixelSizes[idx].hPx, 3);
+    });
+  });
+
+  it('يصغّر التخطيط اليدوي تناسبياً دون تشويه أو خروج عن الحدود عندما لا يتسع للورقة الأضيق', () => {
+    // 8 خلايا بصف واحد في أفقي A4 (~270مم عرضاً) لن تتسع في عرض عمودي A4 (210مم)
+    useEditorStore.getState().setCanvasSize(3508, 2480);
+    let prevId = useEditorStore.getState().slots[0].id;
+    for (let i = 0; i < 7; i++) {
+      const res = useEditorStore.getState().addAdjacentCollageSlot(prevId, 'right');
+      expect(res.ok).toBe(true);
+      prevId = res.newSlotId!;
+    }
+
+    useEditorStore.getState().setCanvasSize(2480, 3508);
+    const portraitSlots = useEditorStore.getState().slots;
+    expect(portraitSlots).toHaveLength(8);
+    for (const sl of portraitSlots) {
+      expect(sl.x).toBeGreaterThanOrEqual(-1e-9);
+      expect(sl.y).toBeGreaterThanOrEqual(-1e-9);
+      expect(sl.x + sl.w).toBeLessThanOrEqual(1 + 1e-9);
+      expect(sl.y + sl.h).toBeLessThanOrEqual(1 + 1e-9);
+      // التحجيم الموحد يحفظ نسبة 32:40 (0.8) لكل خلية
+      expect((sl.w * 2480) / (sl.h * 3508)).toBeCloseTo(32 / 40, 2);
+    }
+  });
+
+  it('يحفظ مقاس خلايا القوالب المخبوزة (مثل flush-cut-8) عند تطبيقها على ورقة أفقية', () => {
+    useEditorStore.getState().setCanvasSize(3508, 2480);
+    const flushCut = COLLAGE_TEMPLATES.find((t) => t.id === 'collage-flush-cut-8');
+    expect(flushCut).toBeDefined();
+    useEditorStore.getState().setCollageTemplate(flushCut!);
+
+    const slots = useEditorStore.getState().slots;
+    expect(slots).toHaveLength(8);
+    for (const sl of slots) {
+      const wPx = sl.w * 3508;
+      const hPx = sl.h * 2480;
+      // كل خلية 35×45 مم (نسبة 7:9 = 0.7778) لا تنقلب إلى 49.5×31.8 مم
+      expect(wPx / hPx).toBeCloseTo(35 / 45, 2);
+      expect((wPx * 25.4) / 300).toBeCloseTo(35, 0);
+      expect((hPx * 25.4) / 300).toBeCloseTo(45, 0);
+    }
+  });
+});

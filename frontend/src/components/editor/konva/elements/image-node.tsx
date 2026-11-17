@@ -1,6 +1,6 @@
 import Konva from 'konva';
 import React, { useEffect } from 'react';
-import { Image as KonvaImage, Group, Rect } from 'react-konva';
+import { Image as KonvaImage, Group, Rect, Shape as KonvaShape } from 'react-konva';
 
 import { useAsyncImage } from '@/hooks/use-async-image';
 import { useDisplayImage } from '@/hooks/use-display-image';
@@ -224,6 +224,36 @@ export const URLImage = React.memo(function URLImage({
     };
   }, [element.maskShape, nodeW, nodeH]);
 
+  const hasShadow =
+    (element.shadowOpacity ?? 0) > 0 &&
+    Boolean(
+      element.shadowColor || element.shadowBlur || element.shadowOffsetX || element.shadowOffsetY,
+    );
+  const shadowProps = hasShadow
+    ? {
+        shadowColor: element.shadowColor || '#000000',
+        shadowBlur: element.shadowBlur || 0,
+        shadowOffsetX: element.shadowOffsetX || 0,
+        shadowOffsetY: element.shadowOffsetY || 0,
+        shadowOpacity: element.shadowOpacity ?? 0,
+      }
+    : {
+        shadowColor: undefined,
+        shadowBlur: 0,
+        shadowOffsetX: 0,
+        shadowOffsetY: 0,
+        shadowOpacity: 0,
+      };
+  const hasBgColor = Boolean(element.bgColor && element.bgColor !== 'transparent');
+  // في Konva لا تدعم عقدة Group خصائص الظل مطلقاً (تُطبَّق على Shape فقط)، وعند
+  // تفعيل الفلاتر (node.cache) أو قناع القصّ (clipFunc) يُحجب ظل KonvaImage.
+  // لذا نرسم الظل مباشرة على KonvaImage في الحالة العادية، أو على Rect/Shape غير
+  // مخزّن خلف حاوية القصّ عند وجود فلاتر أو قناع أو خلفية.
+  const useDirectImageShadow = hasShadow && !hasFilters && !clipFunc && !hasBgColor;
+  const useRectShadow = hasShadow && hasBgColor && !clipFunc;
+  const useShapeShadowCaster =
+    hasShadow && !useDirectImageShadow && !useRectShadow && Boolean(shown);
+
   return (
     <Group
       ref={elementRef as unknown as React.Ref<Konva.Group>}
@@ -237,16 +267,6 @@ export const URLImage = React.memo(function URLImage({
       opacity={element.opacity}
       visible={element.visible !== false}
       id={element.id}
-      // 🛡️ الظل على المجموعة خارج الكاش: `KonvaImage` مُخزَّن بـ `node.cache()`
-      // فكان Konva يرسم البيت ماب المجمَّد ويتجاهل أي تغيير في shadow* — تعديل
-      // ظل الصورة من لوحة الخصائص لا يظهر على الشاشة ولا في التصدير. الظل على
-      // المجموعة يُرسم من الأبناء في كل إطار: يتحدّث فوراً مع تحرير المستخدم
-      // ويتبع ظل الرفع أثناء السحب بلا تفريغ الكاش (H1 من تدقيق 2026-10-08).
-      shadowColor={element.shadowColor}
-      shadowBlur={element.shadowBlur || 0}
-      shadowOffsetX={element.shadowOffsetX || 0}
-      shadowOffsetY={element.shadowOffsetY || 0}
-      shadowOpacity={element.shadowOpacity ?? 0}
       draggable={!element.locked && isSelected}
       onDragStart={handleShadowlessStart}
       dragBoundFunc={dragBoundFunc}
@@ -266,53 +286,113 @@ export const URLImage = React.memo(function URLImage({
         scaleY={flippedY ? -1 : 1}
         width={nodeW}
         height={nodeH}
-        clipFunc={clipFunc}
       >
-        {element.bgColor && element.bgColor !== 'transparent' && (
-          <Rect
+        {useShapeShadowCaster && (
+          <KonvaShape
             x={0}
             y={0}
             width={nodeW}
             height={nodeH}
-            fill={element.bgColor}
-            cornerRadius={element.cornerRadius || 0}
             listening={false}
+            perfectDrawEnabled={false}
+            {...shadowProps}
+            sceneFunc={(ctx) => {
+              const nativeCtx = ctx._context;
+              ctx.save();
+              if (clipFunc) {
+                clipFunc(ctx);
+                ctx.clip();
+              } else if (element.cornerRadius && element.cornerRadius > 0) {
+                const r = Math.min(element.cornerRadius, nodeW / 2, nodeH / 2);
+                ctx.beginPath();
+                ctx.moveTo(r, 0);
+                ctx.arcTo(nodeW, 0, nodeW, nodeH, r);
+                ctx.arcTo(nodeW, nodeH, 0, nodeH, r);
+                ctx.arcTo(0, nodeH, 0, 0, r);
+                ctx.arcTo(0, 0, nodeW, 0, r);
+                ctx.closePath();
+                ctx.clip();
+              }
+              if (hasBgColor && element.bgColor) {
+                nativeCtx.fillStyle = element.bgColor;
+                nativeCtx.fillRect(0, 0, nodeW, nodeH);
+              }
+              if (shown) {
+                if (coverCrop) {
+                  nativeCtx.drawImage(
+                    shown as CanvasImageSource,
+                    coverCrop.cropX,
+                    coverCrop.cropY,
+                    coverCrop.cropWidth,
+                    coverCrop.cropHeight,
+                    0,
+                    0,
+                    nodeW,
+                    nodeH,
+                  );
+                } else {
+                  nativeCtx.drawImage(shown as CanvasImageSource, 0, 0, nodeW, nodeH);
+                }
+              }
+              ctx.restore();
+            }}
           />
         )}
-        <KonvaImage
-          ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
-          image={shown as unknown as HTMLImageElement}
-          cropX={coverCrop?.cropX}
-          cropY={coverCrop?.cropY}
-          cropWidth={coverCrop?.cropWidth}
-          cropHeight={coverCrop?.cropHeight}
-          x={0}
-          y={0}
-          width={nodeW}
-          height={nodeH}
-          perfectDrawEnabled={false}
-          // 🛡️ لا ظل هنا — انتقل للمجموعة الأب (خارج الكاش) كي لا يُجمَّد
-          // داخل البيت ماپ. أثناء السحب ظل الرفع مخفّض (blur 8 بدل 16).
-          cornerRadius={element.cornerRadius || 0}
-          filters={filters}
-          brightness={filterProps.brightness}
-          contrast={filterProps.contrast}
-          blurRadius={element.blur || 0}
-          saturation={filterProps.saturation}
-          sepiaRatio={filterProps.sepiaRatio}
-          pixelSize={filterProps.pixelSize}
-          threshold={filterProps.threshold}
-        />
-        {isEnhancing && (
-          <MagicAiScanner
+        <Group width={nodeW} height={nodeH} clipFunc={clipFunc}>
+          {hasBgColor && (
+            <Rect
+              x={0}
+              y={0}
+              width={nodeW}
+              height={nodeH}
+              fill={element.bgColor}
+              cornerRadius={element.cornerRadius || 0}
+              listening={false}
+              {...(useRectShadow ? shadowProps : {})}
+            />
+          )}
+          <KonvaImage
+            ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
+            image={shown as unknown as HTMLImageElement}
+            cropX={coverCrop?.cropX}
+            cropY={coverCrop?.cropY}
+            cropWidth={coverCrop?.cropWidth}
+            cropHeight={coverCrop?.cropHeight}
             x={0}
             y={0}
             width={nodeW}
             height={nodeH}
-            rotation={0}
+            perfectDrawEnabled={false}
             cornerRadius={element.cornerRadius || 0}
+            {...(useDirectImageShadow
+              ? shadowProps
+              : {
+                  shadowColor: undefined,
+                  shadowBlur: 0,
+                  shadowOffsetX: 0,
+                  shadowOffsetY: 0,
+                  shadowOpacity: 0,
+                })}
+            filters={filters}
+            brightness={filterProps.brightness}
+            contrast={filterProps.contrast}
+            blurRadius={element.blur || 0}
+            saturation={filterProps.saturation}
+            sepiaRatio={filterProps.sepiaRatio}
+            pixelSize={filterProps.pixelSize}
+            threshold={filterProps.threshold}
           />
-        )}
+          {isEnhancing && (
+            <MagicAiScanner
+              x={0}
+              y={0}
+              width={nodeW}
+              height={nodeH}
+              rotation={0}
+              cornerRadius={element.cornerRadius || 0}
+            />
+          )}
+        </Group>
       </Group>
     </Group>
   );

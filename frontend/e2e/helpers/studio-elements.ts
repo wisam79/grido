@@ -2,10 +2,10 @@ import { expect } from '@playwright/test';
 
 import type { Page } from '@playwright/test';
 
-export type StudioElementsCategory = 'stickers' | 'shapes' | 'text';
+export type StudioElementsCategory = 'shapes' | 'text';
 
 /**
- * يفتح أداة الإدراج من زرها المستقل في شريط الأيقونات (الملصقات/الأشكال/النصوص).
+ * يفتح أداة الإدراج من زرها المستقل في شريط الأيقونات (الأشكال/النصوص).
  * النقر على وجهة نشطة يطوي لوحها، فالنقرة الثانية تضمن الفتح.
  */
 export async function openStudioElementsCategory(

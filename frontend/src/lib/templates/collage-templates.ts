@@ -355,6 +355,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طقم التقديم والجامعات (بطاقة + معاملات + بورتريه)',
     slots: 7,
     isBaked: true,
+    metadata: { version: 1, kind: 'grid', paperWidthMM: A4_WIDTH_MM, paperHeightMM: A4_HEIGHT_MM },
     // 4 هويات 35×45 في صف علوي + بورتريه 4×6″ (101.6×152.4) +
     // معاملا 30×40 مرتّبتان عمودياً بجانبه. القياسات على A4 ثم مطبّعة.
     cells: [
@@ -378,6 +379,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طقم الاستوديو العائلي (صورة رئيسية + شخصية)',
     slots: 7,
     isBaked: true,
+    metadata: { version: 1, kind: 'grid', paperWidthMM: A4_WIDTH_MM, paperHeightMM: A4_HEIGHT_MM },
     // بورتريه 10×15 سم (100×150) + 6 هويات 35×45 في شبكة 2×3 بجانبه.
     cells: [
       a4Cell(16, 73.5, 100, 150, { presetType: 'photo-10x15', label: 'صورة عائلية' }),
@@ -397,6 +399,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طبعة بطاقات المحفظة (بطاقتان + 4 شخصية)',
     slots: 6,
     isBaked: true,
+    metadata: { version: 1, kind: 'grid', paperWidthMM: A4_WIDTH_MM, paperHeightMM: A4_HEIGHT_MM },
     // بطاقتا محفظة 54×86 في الأعلى + 4 هويات 35×45 في صف أسفلهما.
     cells: [
       a4Cell(49.5, 80.5, 54, 86, { presetType: 'wallet', label: 'بطاقة محفظة 1' }),
@@ -430,6 +433,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'شبكة متلاصقة للقص الفوري (8 صور - صفر هدر)',
     slots: 8,
     isBaked: true,
+    metadata: { version: 1, kind: 'grid', paperWidthMM: A4_WIDTH_MM, paperHeightMM: A4_HEIGHT_MM },
     // 8 خلايا 35×45 مم متلاصقة (4×2) على A4، بلا أي فجوة بينها.
     // كانت سابقاً كسور 0.25×0.5 فتُنتج 52.5×148.5 مم — لا 35×45.
     cells: Array.from({ length: 8 }, (_, i) =>

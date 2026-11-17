@@ -2,6 +2,7 @@ import { act, render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { ShadowGlowSection } from '../src/components/editor/properties/element/shared/shadow-glow-section';
 import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
 import { TooltipProvider } from '../src/components/ui/tooltip';
@@ -726,5 +727,83 @@ describe('Freeform inspector — physical locked numeric bounds', () => {
     fireEvent.change(input, { target: { value: '999' } });
     expect(useEditorStore.getState().elements).toBe(elements);
     expect(useEditorStore.getState().history).toBe(history);
+  });
+});
+
+describe('ShadowGlowSection default shadow activation', () => {
+  it('initializes shadowColor and default shadowOpacity when adjusting blur on an element without shadow', () => {
+    const onUpdate = vi.fn();
+    const img: ImageElement = {
+      id: 'img-shadow-1',
+      type: 'image',
+      imageSrc: 'photo.png',
+      x: 0.1,
+      y: 0.1,
+      width: 0.3,
+      height: 0.3,
+      opacity: 1,
+      rotation: 0,
+      zIndex: 1,
+    };
+
+    render(
+      <TooltipProvider>
+        <ShadowGlowSection element={img} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
+
+    const blurInput = screen.getByRole('textbox', { name: 'قيمة التمويه' });
+    fireEvent.keyDown(blurInput, { key: 'ArrowUp' });
+    expect(onUpdate).toHaveBeenCalledWith(
+      'img-shadow-1',
+      expect.objectContaining({
+        shadowColor: '#000000',
+        shadowOpacity: 0.5,
+        shadowBlur: 1,
+      }),
+    );
+
+    onUpdate.mockClear();
+    const opacityInput = screen.getByRole('textbox', { name: 'قيمة شدة الظل' });
+    fireEvent.keyDown(opacityInput, { key: 'ArrowUp' });
+    expect(onUpdate).toHaveBeenCalledWith(
+      'img-shadow-1',
+      expect.objectContaining({
+        shadowColor: '#000000',
+        shadowOpacity: 0.01,
+        shadowBlur: 10,
+      }),
+    );
+  });
+
+  it('respects explicit shadowOpacity=0 when adjusting blur', () => {
+    const onUpdate = vi.fn();
+    const img: ImageElement = {
+      id: 'img-shadow-2',
+      type: 'image',
+      imageSrc: 'photo.png',
+      x: 0.1,
+      y: 0.1,
+      width: 0.3,
+      height: 0.3,
+      opacity: 1,
+      rotation: 0,
+      zIndex: 1,
+      shadowColor: '#112233',
+      shadowOpacity: 0,
+    };
+
+    render(
+      <TooltipProvider>
+        <ShadowGlowSection element={img} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
+
+    const blurInput = screen.getByRole('textbox', { name: 'قيمة التمويه' });
+    fireEvent.keyDown(blurInput, { key: 'ArrowUp' });
+    expect(onUpdate).toHaveBeenCalledWith('img-shadow-2', {
+      shadowColor: '#112233',
+      shadowBlur: 1,
+    });
   });
 });

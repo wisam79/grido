@@ -353,11 +353,11 @@ describe('Modular Stickers Architecture (features/stickers)', () => {
     expect(typeof ok).toBe('boolean');
   });
 
-  it('should provide 200 templates (including 100 designed cards), unique IDs, and valid in-bounds cutShape metadata', () => {
-    expect(ALL_STICKER_TEMPLATES).toHaveLength(200);
+  it('should provide 208 templates (including 100 designed cards + 8 v2 composite stamps), unique IDs, and valid in-bounds cutShape metadata', () => {
+    expect(ALL_STICKER_TEMPLATES).toHaveLength(208);
 
     const uniqueIds = new Set(ALL_STICKER_TEMPLATES.map((t) => t.id));
-    expect(uniqueIds.size).toBe(200);
+    expect(uniqueIds.size).toBe(208);
 
     const cardsItem = CATEGORY_ITEMS.find((c) => c.id === 'cards');
     expect(cardsItem).toBeDefined();

@@ -10,6 +10,8 @@ import {
   FlipHorizontal,
   ArrowCounterClockwise,
   Eye,
+  TextT,
+  ArrowsInLineHorizontal,
 } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -61,6 +63,63 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
 
   return (
     <>
+      {/* أدوات سريعة للنص: تحرير مباشر وملاءمة الصندوق للمحتوى */}
+      {element.type === 'text' && (
+        <>
+          <QuickBarGroup>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => useEditorStore.getState().setEditingTextId(element.id)}
+                  aria-label="تحرير النص"
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                >
+                  <TextT className="w-3.5 h-3.5" weight="bold" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">تحرير النص (نقر مزدوج)</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (element.textSizing === 'auto') {
+                      updateElement(element.id, { textSizing: 'fixed' });
+                      useEditorStore.getState().pushHistory();
+                    } else {
+                      useEditorStore.getState().fitTextToContent(element.id);
+                    }
+                  }}
+                  aria-label={
+                    element.textSizing === 'auto' ? 'تثبيت عرض النص' : 'ملاءمة الصندوق للنص'
+                  }
+                  className={cn(
+                    'h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground',
+                    element.textSizing === 'auto' && 'bg-primary/10 text-primary',
+                  )}
+                >
+                  <ArrowsInLineHorizontal
+                    className="w-3.5 h-3.5"
+                    weight={element.textSizing === 'auto' ? 'fill' : 'bold'}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {element.textSizing === 'auto'
+                  ? 'حجم تلقائي — اضغط لتثبيت العرض'
+                  : 'ملاءمة الصندوق للنص'}
+              </TooltipContent>
+            </Tooltip>
+          </QuickBarGroup>
+          <Separator orientation="vertical" className="h-3 bg-border/40" />
+        </>
+      )}
+
       {/* مجموعة ترتيب الطبقة (أمام/خلف) */}
       <QuickBarGroup>
         <Tooltip>

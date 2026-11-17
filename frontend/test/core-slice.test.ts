@@ -157,4 +157,59 @@ describe('CoreSlice Unit Tests', () => {
     useEditorStore.getState().setMode('single');
     expect(useEditorStore.getState().elements.length).toBeGreaterThan(0);
   });
+
+  it('swaps single-mode template widthMM/heightMM atomically without resetting backgroundColor', () => {
+    useEditorStore.getState().setTemplate({
+      id: 'passport-standard',
+      name: 'Passport 35x45',
+      category: 'passport',
+      width: 413,
+      height: 531,
+      widthMM: 35,
+      heightMM: 45,
+      dpi: 300,
+      background: '#FFFFFF',
+      backgroundHint: 'White',
+    });
+    useEditorStore.getState().setBackgroundColor('#2563eb');
+    useEditorStore.getState().pushHistory();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    useEditorStore.getState().setCanvasSize(531, 413);
+    const after = useEditorStore.getState();
+
+    expect(after.mode).toBe('single');
+    expect(after.canvasWidth).toBe(531);
+    expect(after.canvasHeight).toBe(413);
+    expect(after.template?.width).toBe(531);
+    expect(after.template?.height).toBe(413);
+    expect(after.template?.widthMM).toBe(45);
+    expect(after.template?.heightMM).toBe(35);
+    expect(after.backgroundColor).toBe('#2563eb');
+    expect(after.historyIndex).toBe(historyBefore + 1);
+  });
+
+  it('does not mutate single-mode template or hijack mode when resizing in collage mode', () => {
+    useEditorStore.getState().setTemplate({
+      id: 'passport-standard',
+      name: 'Passport 35x45',
+      category: 'passport',
+      width: 413,
+      height: 531,
+      widthMM: 35,
+      heightMM: 45,
+      dpi: 300,
+      background: '#FFFFFF',
+      backgroundHint: 'White',
+    });
+    useEditorStore.getState().setMode('collage');
+    useEditorStore.getState().setCanvasSize(3508, 2480);
+
+    const after = useEditorStore.getState();
+    expect(after.mode).toBe('collage');
+    expect(after.canvasWidth).toBe(3508);
+    expect(after.canvasHeight).toBe(2480);
+    expect(after.template?.widthMM).toBe(35);
+    expect(after.template?.heightMM).toBe(45);
+  });
 });

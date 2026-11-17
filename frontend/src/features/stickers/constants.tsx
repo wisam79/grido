@@ -173,6 +173,20 @@ export const CURATED_PALETTES: StickerCuratedPalette[] = [
     secondary: '#f59e0b',
     background: '#fff1f2',
   },
+  {
+    id: 'navy_gold',
+    name: 'كحلي وذهبي',
+    primary: '#1e3f63',
+    secondary: '#f7d774',
+    background: '#081628',
+  },
+  {
+    id: 'ocean',
+    name: 'محيطي عميق',
+    primary: '#0e7490',
+    secondary: '#7ee7f7',
+    background: '#052733',
+  },
 ];
 
 /**

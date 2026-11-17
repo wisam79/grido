@@ -286,3 +286,100 @@ export function getAvailableAdjacentSlotDirections(
       computeAdjacentSlotCandidate(source, dir, slots, geo, collageGap, hasPhysicalLayout) !== null,
   );
 }
+
+/**
+ * يحافظ على الأبعاد والـ aspect ratio الفيزيائية للخانات/الخلايا المخبوزة أو
+ * المعدّلة يدوياً (`isManual` / `isBaked` / `freeform`) عند تغيّر أبعاد الكانفس
+ * أو قلبه بين أفقي وعمودي:
+ * - إذا اتسعت المجموعة للورقة الجديدة، تبقى كل خلية بمقاسها البكسلي/الملمتري الدقيق.
+ * - إذا تجاوزت المجموعة أحد البعدين، تُزاح للداخل أولاً ثم تُصغَّر بمقياس موحّد
+ *   يحفظ نسبة الأبعاد والتباعدات النسبية بلا تشويه أو تدوير قسري.
+ */
+export function fitBakedNormalizedRects<T extends { x: number; y: number; w: number; h: number }>(
+  items: T[],
+  oldW: number,
+  oldH: number,
+  newW: number,
+  newH: number,
+): T[] {
+  if (items.length === 0) return items;
+  if (oldW === newW && oldH === newH) return items;
+  if (!(oldW > 0 && oldH > 0 && newW > 0 && newH > 0)) return items;
+
+  let minLeft = Number.POSITIVE_INFINITY;
+  let minTop = Number.POSITIVE_INFINITY;
+  let maxRight = Number.NEGATIVE_INFINITY;
+  let maxBottom = Number.NEGATIVE_INFINITY;
+
+  for (const item of items) {
+    if (
+      !Number.isFinite(item.x) ||
+      !Number.isFinite(item.y) ||
+      !Number.isFinite(item.w) ||
+      !Number.isFinite(item.h) ||
+      item.w <= 0 ||
+      item.h <= 0
+    ) {
+      continue;
+    }
+    const left = item.x * oldW;
+    const top = item.y * oldH;
+    const right = left + item.w * oldW;
+    const bottom = top + item.h * oldH;
+    if (left < minLeft) minLeft = left;
+    if (top < minTop) minTop = top;
+    if (right > maxRight) maxRight = right;
+    if (bottom > maxBottom) maxBottom = bottom;
+  }
+
+  if (!Number.isFinite(minLeft) || !Number.isFinite(minTop)) return items;
+
+  const groupW = maxRight - minLeft;
+  const groupH = maxBottom - minTop;
+  if (!(groupW > 0 && groupH > 0)) return items;
+
+  const scale = Math.min(1, newW / groupW, newH / groupH);
+  const scaledGroupW = groupW * scale;
+  const scaledGroupH = groupH * scale;
+
+  const resolveOrigin = (
+    minEdge: number,
+    maxEdge: number,
+    scaledGroupDim: number,
+    newDim: number,
+  ) => {
+    if (scale === 1 && minEdge >= 0 && maxEdge <= newDim) {
+      return minEdge;
+    }
+    if (minEdge >= 0 && minEdge * scale + scaledGroupDim <= newDim) {
+      return minEdge * scale;
+    }
+    if (scaledGroupDim < newDim) {
+      return (newDim - scaledGroupDim) / 2;
+    }
+    return 0;
+  };
+
+  const originX = resolveOrigin(minLeft, maxRight, scaledGroupW, newW);
+  const originY = resolveOrigin(minTop, maxBottom, scaledGroupH, newH);
+
+  return items.map((item) => {
+    if (
+      !Number.isFinite(item.x) ||
+      !Number.isFinite(item.y) ||
+      !Number.isFinite(item.w) ||
+      !Number.isFinite(item.h) ||
+      item.w <= 0 ||
+      item.h <= 0
+    ) {
+      return item;
+    }
+    return {
+      ...item,
+      x: (originX + (item.x * oldW - minLeft) * scale) / newW,
+      y: (originY + (item.y * oldH - minTop) * scale) / newH,
+      w: (item.w * oldW * scale) / newW,
+      h: (item.h * oldH * scale) / newH,
+    };
+  });
+}

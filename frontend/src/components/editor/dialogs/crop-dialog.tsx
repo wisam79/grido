@@ -53,13 +53,16 @@ export function CropDialog({
   originalImageSrc,
   onCropSave,
 }: CropDialogProps) {
-  const { template } = useEditorStore(useShallow((state) => ({ template: state.template })));
+  const { mode, template } = useEditorStore(
+    useShallow((state) => ({ mode: state.mode, template: state.template })),
+  );
   const cropperRef = useRef<ReactCropperElement>(null);
 
-  // تحديد نسبة العرض إلى الارتفاع الافتراضية
+  // تحديد نسبة العرض إلى الارتفاع الافتراضية (في الوضع الحر فقط)
+  const activeTemplate = mode === 'single' ? template : null;
   const templateAspect =
-    template && template.width > 0 && template.height > 0
-      ? template.width / template.height
+    activeTemplate && activeTemplate.width > 0 && activeTemplate.height > 0
+      ? activeTemplate.width / activeTemplate.height
       : undefined;
 
   const [aspect, setAspect] = useState<number | undefined>(templateAspect);

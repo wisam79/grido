@@ -2,11 +2,12 @@ import { generateInitialSlots, remapSlotsToCells, DEFAULT_COLLAGE_STATE } from '
 import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
 import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
 import { DEFAULT_PRINT_SETTINGS } from './print-slice';
+import { fitBakedNormalizedRects, isBakedCollageLayout } from '../../canvas/collage-geometry';
 import { clearDisplayCache } from '../../canvas/display-image';
 import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
 import { invalidateImageCache } from '../../canvas/image-cache';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
-import { canvasMm, findPaperByMm } from '../../canvas/units';
+import { canvasMm, findPaperByMm, pxToMm } from '../../canvas/units';
 import { advanceDocumentSession } from '../../io/document-session';
 import { hydrateProjectState } from '../../io/project-hydrator';
 import {
@@ -58,7 +59,11 @@ export interface CoreSlice {
   lastEditedImageAspect: number | null;
 
   setMode: (mode: EditorMode, options?: { recordHistory?: boolean }) => void;
-  setCanvasSize: (w: number, h: number) => void;
+  setCanvasSize: (
+    w: number,
+    h: number,
+    options?: { templateAction?: 'preserve' | 'clear' },
+  ) => void;
   setBackgroundColor: (c: string) => void;
   /** تعيين لون نهاية تدرج الخلفية — null يزيل التدرج ويعيد التعبئة المصمتة */
   setBackgroundGradientColor2: (c: string | null) => void;
@@ -308,7 +313,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     if (options?.recordHistory !== false) get().pushHistory();
   },
 
-  setCanvasSize: (w, h) => {
+  setCanvasSize: (w, h, options) => {
     const oldW = get().canvasWidth;
     const oldH = get().canvasHeight;
     if (oldW === w && oldH === h) return;
@@ -323,12 +328,14 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       : get().elements;
 
     const collageTemplate = get().collageTemplate;
+    let nextCollageTemplate = collageTemplate;
     let adjustedSlots = get().slots || [];
+    const currentDpi = get().printSettings?.dpi || 300;
+    const { wMM, hMM } = canvasMm(w, h, currentDpi);
 
     if (mode === 'collage' && collageTemplate) {
       if (collageTemplate.physicalLayout) {
-        const storedDpi = get().printSettings?.dpi || 300;
-        const dpi = getEffectiveDpi(w, h, storedDpi);
+        const dpi = getEffectiveDpi(w, h, currentDpi);
         const dynamicCells = computeDynamicCollageCells(
           collageTemplate,
           w,
@@ -340,11 +347,64 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         if (dynamicCells) {
           adjustedSlots = remapSlotsToCells(get().slots || [], dynamicCells);
         }
+      } else if (isBakedCollageLayout(collageTemplate)) {
+        // الخانات المخبوزة أو المعدّلة يدوياً (`isManual` / `isBaked` / `freeform`) تحمل
+        // إحداثيات مطبّعة على أبعاد الكانفس السابقة — بقاؤها دون تحويل يشوّه ويدوّر
+        // مقاس كل خلية عند قلب الاتجاه من أفقي لعمودي أو تغيّر الورقة.
+        adjustedSlots = fitBakedNormalizedRects(get().slots || [], oldW, oldH, w, h);
+        const updatedCells = adjustedSlots.map(
+          ({ x, y, w: cw, h: ch, presetType, label, rotation }) => ({
+            x,
+            y,
+            w: cw,
+            h: ch,
+            presetType,
+            label,
+            rotation,
+          }),
+        );
+        nextCollageTemplate = {
+          ...collageTemplate,
+          cells: updatedCells,
+          ...(collageTemplate.metadata
+            ? {
+                metadata: {
+                  ...collageTemplate.metadata,
+                  paperWidthMM: Number(wMM.toFixed(2)),
+                  paperHeightMM: Number(hMM.toFixed(2)),
+                },
+              }
+            : {}),
+        };
       }
     }
 
-    const currentDpi = get().printSettings?.dpi || 300;
-    const { wMM, hMM } = canvasMm(w, h, currentDpi);
+    const currentTemplate = get().template;
+    let nextTemplate = currentTemplate;
+    if (isSingle && currentTemplate) {
+      const isSwap = w === oldH && h === oldW;
+      if (options?.templateAction === 'clear') {
+        nextTemplate = null;
+      } else if (isSwap) {
+        nextTemplate = {
+          ...currentTemplate,
+          width: w,
+          height: h,
+          widthMM: currentTemplate.heightMM,
+          heightMM: currentTemplate.widthMM,
+        };
+      } else if (options?.templateAction === 'preserve') {
+        nextTemplate = {
+          ...currentTemplate,
+          width: w,
+          height: h,
+          widthMM: Number(pxToMm(w, currentDpi).toFixed(2)),
+          heightMM: Number(pxToMm(h, currentDpi).toFixed(2)),
+          dpi: currentDpi,
+        };
+      }
+    }
+
     const matchedPaper = findPaperByMm(wMM, hMM, PAPER_SIZES);
     const isLandscape = w > h;
 
@@ -352,8 +412,12 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasWidth: w,
       canvasHeight: h,
       ...(isSingle
-        ? { freeformCanvasWidth: w, freeformCanvasHeight: h }
-        : { collageCanvasWidth: w, collageCanvasHeight: h }),
+        ? { freeformCanvasWidth: w, freeformCanvasHeight: h, template: nextTemplate }
+        : {
+            collageCanvasWidth: w,
+            collageCanvasHeight: h,
+            collageTemplate: nextCollageTemplate,
+          }),
       elements: adjustedElements,
       slots: adjustedSlots,
       printSettings: matchedPaper

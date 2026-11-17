@@ -171,13 +171,16 @@ export function hydrateProjectState(
   const catalogCollageTemplate = savedCollageTemplate
     ? COLLAGE_TEMPLATES.find((template) => template.id === savedCollageTemplate.id)
     : undefined;
-  // تعديل خلية في قالب فيزيائي يحوله إلى هندسة يدوية ويحذف physicalLayout.
-  // نحتفظ بهذه النسخة المحفوظة حتى لا يعيد الاسم المطابق في الكتالوج القالب
-  // الفيزيائي الأصلي عند فتح المشروع، وهو ما كان يجعل تغيير المقاس أو DPI
-  // التالي يمحو مواضع المستخدم المخصصة.
+  // تعديل خلية في قالب فيزيائي يحوله إلى هندسة يدوية ويحذف physicalLayout، وتغيير
+  // اتجاه الورقة في القوالب المخبوزة (`isBaked`) يحدّث خلايا القالب. نحتفظ
+  // بالنسخة المحفوظة مع استعادة أيقونة الكتالوج عند تطابق المعرّف.
   const restoredCollageTemplate = savedCollageTemplate
-    ? !savedCollageTemplate.physicalLayout && catalogCollageTemplate?.physicalLayout
-      ? savedCollageTemplate
+    ? (!savedCollageTemplate.physicalLayout && catalogCollageTemplate?.physicalLayout) ||
+      savedCollageTemplate.isManual ||
+      savedCollageTemplate.isBaked
+      ? catalogCollageTemplate
+        ? { ...savedCollageTemplate, icon: catalogCollageTemplate.icon }
+        : savedCollageTemplate
       : catalogCollageTemplate || savedCollageTemplate
     : null;
 

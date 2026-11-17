@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { GridFour } from '@/components/ui/icons';
 import { setFreeformDialogOpen } from '@/features/freeform-collage/lib/freeform-dialog-state';
 import { getTemplateGrid } from '@/lib/canvas/collage-grid';
+import { pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { downloadJsonFile } from '@/lib/io/download';
 import { getCollageSectionForTab, type CollageTab } from '@/lib/workspace-tools';
@@ -22,12 +23,16 @@ import { CollagePaperToolsTab } from './collage/collage-paper-tools-tab';
 import { CollagePresetsTab } from './collage/collage-presets-tab';
 import type { PhotoGridType, GridAlignment, NormalizedCell } from './collage/collage-grid-math';
 import type { CollagePresetCategory } from './collage/collage-preset-data';
-import type { CollageTemplate } from '@/lib/templates';
+import type { CollageTemplate, CollageTemplateMetadata } from '@/lib/templates';
 
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
-  onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
+  onSaveTemplate: (
+    name: string,
+    cells: NormalizedCell[],
+    metadata?: CollageTemplateMetadata,
+  ) => void;
   savedTemplates?: CollageTemplate[];
   savedTemplatesStatus?: 'loading' | 'loaded' | 'error';
   onRetryLoad?: () => void;
@@ -220,7 +225,25 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               collageGap,
               collageMargin,
             );
-      onSaveTemplate(name, cells);
+      const metadata: CollageTemplateMetadata | undefined =
+        photoType !== 'stretch'
+          ? {
+              version: 1,
+              kind: 'grid',
+              paperWidthMM: Number(pxToMm(canvasWidth, storedDpi).toFixed(2)),
+              paperHeightMM: Number(pxToMm(canvasHeight, storedDpi).toFixed(2)),
+              dpi: storedDpi,
+              gapMM: Number(pxToMm(collageGap, storedDpi).toFixed(2)),
+              marginMM: Number(pxToMm(collageMargin, storedDpi).toFixed(2)),
+              physicalLayout: {
+                type: photoType as NonNullable<CollageTemplate['physicalLayout']>['type'],
+                rows,
+                cols,
+                align: gridAlign,
+              },
+            }
+          : undefined;
+      onSaveTemplate(name, cells, metadata);
     },
     [
       photoType,
@@ -272,27 +295,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       changed = true;
     }
     if (changed) {
+      // نقيّد مسودة العدادات في الواجهة فقط دون فرض إعادة تطبيق على الكانفس:
+      // فرض applyCustomCollage هنا كان يدمر التخطيطات اليدوية (isManual) ويسقط
+      // أعمدة/صفوف عند قلب الورقة أفقي↔عمودي ويخلق حلقة تراجع (Ctrl+Z).
       setRows(adjustedRows);
       setCols(adjustedCols);
-      // يُمنع استدعاء applyCustomCollage إلا إذا كان المستخدم فعلياً في تبويب الشبكة والقالب النشط مخصص
-      if (effectiveTab === 'custom' && isCustomActive) {
-        applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
-      }
     }
-  }, [
-    photoType,
-    canvasWidth,
-    canvasHeight,
-    rows,
-    cols,
-    applyCustomCollage,
-    gridAlign,
-    storedDpi,
-    collageGap,
-    collageMargin,
-    effectiveTab,
-    isCustomActive,
-  ]);
+  }, [photoType, canvasWidth, canvasHeight, rows, cols, storedDpi, collageGap, collageMargin]);
 
   // 🧭 تبويبات الوجهة النشطة — تظهر دائماً (سطح مكتب وcompact) لأن الوجهة
   // سطح واحد وتبويباتها تفاصيلها. تُبنى من وجهة التبويب نفسها فلا تُعرض

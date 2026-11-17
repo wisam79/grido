@@ -24,15 +24,17 @@ describe('أوامر لوحة الأدوات — كتابة حقيقية في ا
     useEditorStore.setState(pristineState, true);
   });
 
-  it('إدراج النص يضيف عنصراً نصياً ويحدّده', () => {
+  it('إدراج النص يضيف عنصراً نصياً ويحدّده ويفتح التحرير المباشر', () => {
     const before = useEditorStore.getState().elements.length;
 
     command('insert-text').getSnapshot().run();
 
     const elements = useEditorStore.getState().elements;
+    const inserted = elements[elements.length - 1];
     expect(elements.length).toBe(before + 1);
-    expect(elements[elements.length - 1].type).toBe('text');
-    expect(useEditorStore.getState().selectedId).toBe(elements[elements.length - 1].id);
+    expect(inserted.type).toBe('text');
+    expect(useEditorStore.getState().selectedId).toBe(inserted.id);
+    expect(useEditorStore.getState().editingTextId).toBe(inserted.id);
   });
 
   it('إدراج المستطيل والدائرة يضيف شكلين بالنوع المطلوب', () => {

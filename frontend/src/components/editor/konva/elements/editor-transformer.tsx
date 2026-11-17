@@ -55,6 +55,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   const badgeRef = React.useRef<Konva.Group | null>(null);
   const badgeBgRef = React.useRef<Konva.Rect | null>(null);
   const textRef = React.useRef<Konva.Text | null>(null);
+  const sortedElementsRef = React.useRef(sortedElements);
+  sortedElementsRef.current = sortedElements;
 
   const safeBadgeScale = Number.isFinite(stageScale) && stageScale > 0.0001 ? 1 / stageScale : 1;
 
@@ -95,8 +97,17 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         const wMM = Math.round(pxToMm(nodeW, dpi));
         const hMM = Math.round(pxToMm(nodeH, dpi));
 
+        const targetEl = sortedElementsRef.current.find((item) => item.id === node.id());
         const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : '';
-        textContent = `${wMM} × ${hMM} mm${rotStr}`;
+        if (targetEl?.type === 'text') {
+          const liveFontPx = Math.max(
+            1,
+            Math.round((targetEl.fontSize || 24) * Math.abs(node.scaleY())),
+          );
+          textContent = `${liveFontPx}px • ${wMM} × ${hMM} mm${rotStr}`;
+        } else {
+          textContent = `${wMM} × ${hMM} mm${rotStr}`;
+        }
       } else {
         // تحديد متعدد: حساب الصندوق الإجمالي للمجموعة المحددة بالكامل
         const rect = transformer.getClientRect();
@@ -270,7 +281,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         borderStroke={primaryColor}
         borderStrokeWidth={1.5}
         borderDash={isLocked ? [6, 4] : undefined}
-        padding={3}
+        padding={isText ? 5 : 3}
         // الأركان تُحجّم تناسبياً — وللنص تُترجم النسبة إلى fontSize في نهاية
         // التحويل. Konva يطبّق keepRatio على الزوايا وحدها؛ منتصفات الحواف
         // تبقى محوراً واحداً (العرض للنص) فلا تتأثر بهذا الخيار.
@@ -306,32 +317,35 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.hasName('bottom-left') ||
             anchor.hasName('bottom-right')
           ) {
-            // مقابض الزوايا الفاخرة: Squircle أنيق بمقاس 10px واستدارة 3.5px
+            // مقابض الزوايا: دوائر للتحجيم التناسبي للنص، أو Squircle لبقية العناصر
             anchor.width(10);
             anchor.height(10);
             anchor.offsetX(5);
             anchor.offsetY(5);
-            anchor.cornerRadius(3.5);
+            anchor.cornerRadius(isText ? 5 : 3.5);
+            anchor.opacity(1);
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
           } else if (anchor.hasName('middle-left') || anchor.hasName('middle-right')) {
-            // مقابض الحواف العمودية: كبسولات نحيفة وأنيقة
+            // مقابض الحواف العمودية: كبسولات نحيفة لضبط عرض التفاف النص
             anchor.cornerRadius(2.5);
             anchor.width(5);
-            anchor.height(16);
+            anchor.height(isText ? 18 : 16);
             anchor.offsetX(2.5);
-            anchor.offsetY(8);
+            anchor.offsetY(isText ? 9 : 8);
+            anchor.opacity(1);
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
           } else if (anchor.hasName('top-center') || anchor.hasName('bottom-center')) {
-            // مقابض الحواف الأفقية: كبسولات نحيفة وأنيقة
+            // مقابض الحواف الأفقية: خافتة نسبياً للنص لأن الارتفاع مشتق من المحتوى
             anchor.cornerRadius(2.5);
-            anchor.width(16);
-            anchor.height(5);
-            anchor.offsetX(8);
-            anchor.offsetY(2.5);
+            anchor.width(isText ? 12 : 16);
+            anchor.height(isText ? 4 : 5);
+            anchor.offsetX(isText ? 6 : 8);
+            anchor.offsetY(isText ? 2 : 2.5);
+            anchor.opacity(isText ? 0.55 : 1);
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
@@ -345,6 +359,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.offsetX(7);
             anchor.offsetY(7);
             anchor.cornerRadius(7);
+            anchor.opacity(1);
             anchor.fill(primaryColor);
             anchor.stroke(transformerAnchorFill());
             anchor.strokeWidth(2);

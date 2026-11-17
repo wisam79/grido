@@ -25,12 +25,13 @@ import { PanelShell } from './panel-shell';
 import {
   GetCustomTemplates,
   SaveCustomTemplate,
+  SaveCustomTemplateWithMetadata,
   DeleteCustomTemplate,
 } from '../../../../wailsjs/go/main/App';
 
 import type { NormalizedCell } from './collage/collage-grid-math';
 import type { CollageTab } from '@/hooks/use-workspace-panels';
-import type { CollageTemplate } from '@/lib/templates';
+import type { CollageTemplate, CollageTemplateMetadata } from '@/lib/templates';
 import type { FreeformTab } from '@/lib/workspace-tools';
 
 const logger = createLogger('template-panel');
@@ -104,7 +105,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   onCollapse,
   collapseSide = 'right',
   hideHeader = false,
-  activeStudioTab = 'stickers',
+  activeStudioTab = 'layers',
   activeCollageTab = 'custom',
   onActiveCollageTabChange,
 }: TemplatePanelProps) {
@@ -213,9 +214,22 @@ export const TemplatePanel = React.memo(function TemplatePanel({
     };
   }, [loadTemplates, templatesRevision]);
 
-  const handleSaveTemplate = async (name: string, cells: NormalizedCell[]) => {
+  const handleSaveTemplate = async (
+    name: string,
+    cells: NormalizedCell[],
+    metadata?: CollageTemplateMetadata,
+  ) => {
     try {
-      await SaveCustomTemplate(name, cells.length, JSON.stringify(cells));
+      if (metadata && typeof SaveCustomTemplateWithMetadata === 'function') {
+        await SaveCustomTemplateWithMetadata(
+          name,
+          cells.length,
+          JSON.stringify(cells),
+          JSON.stringify(metadata),
+        );
+      } else {
+        await SaveCustomTemplate(name, cells.length, JSON.stringify(cells));
+      }
       toast.success('تم حفظ القالب');
       loadTemplates();
     } catch (e) {

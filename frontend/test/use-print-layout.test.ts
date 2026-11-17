@@ -323,4 +323,31 @@ describe('usePrintLayout', () => {
     expect(Number.isFinite(result.current.autoCount)).toBe(true);
     expect(result.current.cols).toBeGreaterThanOrEqual(1);
   });
+
+  it('ignores single-mode photo template dimensions when rendering collage print layout', () => {
+    const printSettings = createMockPrintSettings({
+      paperId: 'a4',
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      orientation: 'portrait',
+      dpi: 300,
+      marginMM: 0,
+      fitToPage: false,
+    });
+
+    const { result } = renderHook(() =>
+      usePrintLayout({
+        template: passportTemplate,
+        printSettings,
+        canvasWidth: 2480,
+        canvasHeight: 3508,
+        mode: 'collage',
+      }),
+    );
+
+    expect(result.current.originalImageWidthMM).toBeCloseTo(210, 0);
+    expect(result.current.originalImageHeightMM).toBeCloseTo(297, 0);
+    expect(result.current.imageWidthMM).toBeCloseTo(210, 0);
+    expect(result.current.imageHeightMM).toBeCloseTo(297, 0);
+  });
 });

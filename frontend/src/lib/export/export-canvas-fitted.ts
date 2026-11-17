@@ -81,9 +81,12 @@ export async function renderFittedBranch(
     // نمط الدمج والظل — مطابقة خصائص Konva المشتركة (shadowOpacity تُدمج في ألفا اللون)
     ctx.globalCompositeOperation = (el.globalCompositeOperation ||
       'source-over') as GlobalCompositeOperation;
-    if (el.shadowColor && (el.shadowOpacity ?? 0) > 0) {
+    if (
+      (el.shadowOpacity ?? 0) > 0 &&
+      (el.shadowColor || el.shadowBlur || el.shadowOffsetX || el.shadowOffsetY)
+    ) {
       const glow = el.type === 'text' && el.shadowGlow === true;
-      ctx.shadowColor = colorWithAlpha(el.shadowColor, el.shadowOpacity ?? 1);
+      ctx.shadowColor = colorWithAlpha(el.shadowColor || '#000000', el.shadowOpacity ?? 1);
       ctx.shadowBlur = el.shadowBlur || 0;
       ctx.shadowOffsetX = glow ? 0 : el.shadowOffsetX || 0;
       ctx.shadowOffsetY = glow ? 0 : el.shadowOffsetY || 0;

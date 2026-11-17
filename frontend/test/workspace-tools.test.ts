@@ -54,8 +54,8 @@ describe('سجل تبويبات الشريط الجانبي', () => {
     expect(toolShortcut(8)).toBe('Alt+9');
   });
 
-  it('يعرض «الملصقات» أولاً في الاستوديو و«الشبكة» أولاً في الكولاج', () => {
-    expect(STUDIO_TOOLS[0].id).toBe('stickers');
+  it('يعرض «الطبقات» أولاً في تبويبات الاستوديو و«الشبكة» أولاً في الكولاج', () => {
+    expect(STUDIO_TOOLS[0].id).toBe('layers');
     expect(COLLAGE_TOOLS[0].id).toBe('custom');
   });
 
@@ -64,7 +64,7 @@ describe('سجل تبويبات الشريط الجانبي', () => {
     expect(getStudioTool('layers').id).toBe('layers');
     // @ts-expect-error معرّف غير موجود فعلاً — يتأكد السلوك الاحتياطي
     expect(getCollageTool('nope').id).toBe(COLLAGE_TOOLS[0].id);
-    // @ts-expect-error «القوالب» حُذفت من الاستوديو — تسقط على «الملصقات»
+    // @ts-expect-error «القوالب» حُذفت من الاستوديو — تسقط على التبويب الأول («الطبقات»)
     expect(getStudioTool('presets').id).toBe(STUDIO_TOOLS[0].id);
   });
 });
@@ -82,10 +82,14 @@ describe('سجل وجهات الشريط الجانبي', () => {
     }
   });
 
-  it('يحتوي كل وجهة على تبويبات غير فارغة وتبويب افتراضي منها', () => {
+  it('يحتوي كل وجهة لوحية على تبويبات غير فارغة، بينما تحمل وجهة الحوار actionEvent', () => {
     for (const section of [...COLLAGE_SECTIONS, ...STUDIO_SECTIONS]) {
-      expect(section.tabs.length).toBeGreaterThan(0);
-      expect(section.tabs.some((tab) => tab.id === section.defaultTab)).toBe(true);
+      if (section.actionEvent) {
+        expect(section.tabs).toHaveLength(0);
+      } else {
+        expect(section.tabs.length).toBeGreaterThan(0);
+        expect(section.tabs.some((tab) => tab.id === section.defaultTab)).toBe(true);
+      }
     }
   });
 
@@ -100,7 +104,7 @@ describe('سجل وجهات الشريط الجانبي', () => {
     }
   });
 
-  it('يمنح كل أداة إدراج وجهة مستقلة في شريط الأيقونات', () => {
+  it('يمنح كل أداة إدراج وجهة مستقلة في شريط الأيقونات مع فتح استوديو الملصقات مباشرة', () => {
     expect(STUDIO_SECTIONS.map((section) => section.id)).toEqual([
       'layers',
       'stickers',
@@ -116,8 +120,13 @@ describe('سجل وجهات الشريط الجانبي', () => {
       'rail-studio-text',
     ]);
     for (const section of STUDIO_SECTIONS) {
-      expect(section.tabs.map((tab) => tab.id)).toEqual([section.id]);
-      expect(section.defaultTab).toBe(section.id);
+      if (section.id === 'stickers') {
+        expect(section.actionEvent).toBe('grido:open-stickers-dialog');
+        expect(section.tabs).toHaveLength(0);
+      } else {
+        expect(section.tabs.map((tab) => tab.id)).toEqual([section.id]);
+        expect(section.defaultTab).toBe(section.id);
+      }
     }
   });
 
@@ -136,7 +145,6 @@ describe('سجل وجهات الشريط الجانبي', () => {
 
   it('يُبقي زر الوجهة مضاءً حسب التبويب النشط', () => {
     expect(getStudioSectionForTab('layers').id).toBe('layers');
-    expect(getStudioSectionForTab('stickers').id).toBe('stickers');
     expect(getStudioSectionForTab('shapes').id).toBe('shapes');
     expect(getStudioSectionForTab('text').id).toBe('text');
     expect(getCollageSectionForTab('freeform').id).toBe('freeform');
@@ -144,7 +152,7 @@ describe('سجل وجهات الشريط الجانبي', () => {
     expect(getCollageSectionForTab('paper').id).toBe('paper');
   });
 
-  it('يبدأ مسار الإنتاج السريع من «الطبقات» مع إبقاء أدوات الإدراج متاحة', () => {
+  it('يبدأ الاستوديو من «الطبقات» مع إبقاء وجهات الإدراج الأربع متاحة', () => {
     const quickSections = getStudioSectionsForWorkflow('quick');
     expect(quickSections).toBe(STUDIO_SECTIONS);
     expect(quickSections.map((section) => section.id)).toEqual([
@@ -154,7 +162,7 @@ describe('سجل وجهات الشريط الجانبي', () => {
       'text',
     ]);
     expect(getDefaultStudioTab('quick')).toBe('layers');
-    expect(getDefaultStudioTab('studio')).toBe('stickers');
+    expect(getDefaultStudioTab('studio')).toBe('layers');
     for (const tool of ['stickers', 'shapes', 'text']) {
       expect(quickSections.some((section) => section.id === tool)).toBe(true);
     }
@@ -362,7 +370,7 @@ describe('قائمة الوجهات الموحّدة حسب وضع الكانف�
   it('يرفض تبويباً محذوفاً أو قيمة محفوظة قديمة', () => {
     expect(isCollageTab('paper')).toBe(true);
     expect(isStudioTab('layers')).toBe(true);
-    expect(isStudioTab('stickers')).toBe(true);
+    expect(isStudioTab('stickers')).toBe(false);
     expect(isStudioTab('shapes')).toBe(true);
     expect(isStudioTab('text')).toBe(true);
     expect(isCollageTab('elements')).toBe(false);
@@ -374,10 +382,10 @@ describe('قائمة الوجهات الموحّدة حسب وضع الكانف�
     expect(isStudioTab(7)).toBe(false);
   });
 
-  it('يرحّل التبويبات الموحّدة والمحذوفة إلى «الملصقات» ويُبقي الصالحة', () => {
-    expect(migrateLegacyStudioTab('elements')).toBe('stickers');
-    expect(migrateLegacyStudioTab('presets')).toBe('stickers');
-    expect(migrateLegacyStudioTab('stickers')).toBeNull();
+  it('يرحّل التبويبات الموحّدة والمحذوفة إلى «الطبقات» ويُبقي الصالحة', () => {
+    expect(migrateLegacyStudioTab('elements')).toBe('layers');
+    expect(migrateLegacyStudioTab('presets')).toBe('layers');
+    expect(migrateLegacyStudioTab('stickers')).toBe('layers');
     expect(migrateLegacyStudioTab('shapes')).toBeNull();
     expect(migrateLegacyStudioTab('text')).toBeNull();
     expect(migrateLegacyStudioTab('layers')).toBeNull();

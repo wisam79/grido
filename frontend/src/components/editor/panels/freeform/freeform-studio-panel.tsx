@@ -8,9 +8,8 @@ import type { FreeformTab } from '@/lib/workspace-tools';
 
 /* ═══════════════════════════════════════════════════════════════
    لوحات وضع التعديل الحر — التبويب النشط يحدّد اللوحة المعروضة.
-   كل أداة وجهة مستقلة في شريط الأيقونات (ملصقات/أشكال/نصوص/طبقات)،
-   فلا شريط تبويبات داخلي فوق اللوح. إضافة أداة جديدة تحتاج مدخلاً في
-   السجل + سطراً هنا فقط.
+   الطبقات والأشكال والنصوص تُفتح في اللوح الجانبي، بينما تفتح أيقونة
+   الملصقات في الشريط الجانبي «استوديو الملصقات» الكامل مباشرة.
    ═══════════════════════════════════════════════════════════════ */
 
 export interface FreeformStudioPanelProps {
@@ -18,11 +17,10 @@ export interface FreeformStudioPanelProps {
 }
 
 export const FreeformStudioPanel = React.memo(function FreeformStudioPanel({
-  activeTab = 'stickers',
+  activeTab = 'layers',
 }: FreeformStudioPanelProps = {}) {
   return (
     <div className="flex-1 min-w-0 font-cairo" dir="rtl">
-      {activeTab === 'stickers' && <FreeformElementsTab category="stickers" />}
       {activeTab === 'shapes' && <FreeformElementsTab category="shapes" />}
       {activeTab === 'text' && <FreeformTextTab />}
       {activeTab === 'layers' && <FreeformLayersTab />}

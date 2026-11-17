@@ -319,6 +319,10 @@ export function useKeyboardShortcuts() {
     const { mode, workflow } = useEditorStore.getState();
     const section = getSectionsForWorkflow(mode, workflow)[index];
     if (!section) return;
+    if (section.actionEvent) {
+      window.dispatchEvent(new CustomEvent(section.actionEvent));
+      return;
+    }
     const isCollage = mode === 'collage';
     window.dispatchEvent(
       new CustomEvent(isCollage ? 'grido:select-collage-tab' : 'grido:select-studio-tab', {

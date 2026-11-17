@@ -11,6 +11,31 @@ export interface ShadowGlowSectionProps {
 }
 
 export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps) {
+  const applyShadowPatch = (patch: Partial<CanvasElement>) => {
+    const next: Partial<CanvasElement> = {
+      shadowColor: element.shadowColor || '#000000',
+      ...patch,
+    };
+    const isActivatingShadow =
+      (patch.shadowBlur !== undefined && patch.shadowBlur > 0) ||
+      (patch.shadowOffsetX !== undefined && patch.shadowOffsetX !== 0) ||
+      (patch.shadowOffsetY !== undefined && patch.shadowOffsetY !== 0) ||
+      patch.shadowColor !== undefined;
+    if (element.shadowOpacity === undefined && isActivatingShadow) {
+      next.shadowOpacity = 0.5;
+    }
+    if (
+      patch.shadowOpacity !== undefined &&
+      patch.shadowOpacity > 0 &&
+      element.shadowBlur === undefined &&
+      element.shadowOffsetX === undefined &&
+      element.shadowOffsetY === undefined
+    ) {
+      next.shadowBlur = 10;
+    }
+    onUpdate(element.id, next);
+  };
+
   return (
     <ColorPanel wheelPosition="bottom">
       <FluentSection title="الظل والوهج" collapsible defaultOpen={true}>
@@ -20,7 +45,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
           control={
             <ColorField
               color={element.shadowColor || '#000000'}
-              onChange={(val) => onUpdate(element.id, { shadowColor: val })}
+              onChange={(val) => applyShadowPatch({ shadowColor: val })}
               onCommit={() => useEditorStore.getState().pushHistory()}
               ariaLabel="لون الظل"
               className="w-full"
@@ -35,7 +60,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
           max={100}
           step={1}
           unit="%"
-          onChange={(v) => onUpdate(element.id, { shadowOpacity: v / 100 })}
+          onChange={(v) => applyShadowPatch({ shadowOpacity: v / 100 })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
 
@@ -46,7 +71,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
           max={50}
           step={1}
           unit="px"
-          onChange={(v) => onUpdate(element.id, { shadowBlur: v })}
+          onChange={(v) => applyShadowPatch({ shadowBlur: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
 
@@ -57,7 +82,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
           max={50}
           step={1}
           unit="px"
-          onChange={(v) => onUpdate(element.id, { shadowOffsetX: v })}
+          onChange={(v) => applyShadowPatch({ shadowOffsetX: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
 
@@ -68,7 +93,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
           max={50}
           step={1}
           unit="px"
-          onChange={(v) => onUpdate(element.id, { shadowOffsetY: v })}
+          onChange={(v) => applyShadowPatch({ shadowOffsetY: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
       </FluentSection>

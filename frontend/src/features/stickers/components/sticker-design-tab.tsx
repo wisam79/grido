@@ -7,6 +7,13 @@ import {
 import { ArrowCounterClockwise } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -121,13 +128,55 @@ export function StickerDesignTab({
                       </Tooltip>
                     )}
                   </div>
-                  <Input
-                    id={`sticker-field-${field.id}`}
-                    value={val}
-                    onChange={(e) => onFieldChange(field.id, e.target.value)}
-                    placeholder={field.placeholder || field.label}
-                    className="h-8 text-xs rounded-md bg-background border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none text-foreground"
-                  />
+                  {field.type === 'select' && field.options?.length ? (
+                    field.options.length <= 8 ? (
+                      <div className="grid grid-cols-4 gap-1" role="group" aria-label={field.label}>
+                        {field.options.map((opt) => {
+                          const selected = val === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => onFieldChange(field.id, opt.value)}
+                              className={cn(
+                                'h-7 px-1.5 rounded-md border text-micro font-semibold truncate transition-colors cursor-pointer',
+                                selected
+                                  ? 'bg-primary-action hover:bg-primary-action-hover text-primary-foreground border-primary shadow-2xs'
+                                  : 'bg-background/70 hover:bg-accent border-border/50 text-foreground/85',
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <Select value={val} onValueChange={(next) => onFieldChange(field.id, next)}>
+                        <SelectTrigger
+                          id={`sticker-field-${field.id}`}
+                          className="w-full h-8 text-xs bg-background border-border/50"
+                        >
+                          <SelectValue placeholder={field.label} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )
+                  ) : (
+                    <Input
+                      id={`sticker-field-${field.id}`}
+                      value={val}
+                      onChange={(e) => onFieldChange(field.id, e.target.value)}
+                      placeholder={field.placeholder || field.label}
+                      className="h-8 text-xs rounded-md bg-background border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none text-foreground"
+                    />
+                  )}
                 </div>
               );
             })}

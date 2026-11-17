@@ -148,6 +148,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     })),
   );
 
+  // قالب الصورة يخص الوضع الحر فقط — في الكولاج لا يُقرأ قالب سابق من الوضع الحر.
+  const activeTemplate = mode === 'single' ? template : null;
+
   // ✂️ علامات القص لا تُرسم إلا داخل منطقة النزيف (applyBleedAndCropMarks):
   // بلا نزيف لا شيء يُرسم، فالمفتاح يُعطَّل مع تلميح بدل لا-فعل صامت.
   const cropMarksEnabled = bleedMM > 0;
@@ -219,7 +222,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         // 🖨️ كثافة الحفظ: نفس القيمة المعروضة في «الدقة» أعلى الحوار (قالب →
         // إعدادات طباعة → 300). تُرسل لمسار الحفظ ليحقنها في بايتات PNG/JPEG
         // لكل ملف (المفرد والمُجلَّد) — TIFF/CMYK لا يحمل بيانات كثافة.
-        const exportDpi = template?.dpi || printSettings.dpi || 300;
+        const exportDpi = activeTemplate?.dpi || printSettings.dpi || 300;
         // All branches must validate sources before rendering or opening a save dialog.
         if (mode === 'collage') {
           const {
@@ -302,8 +305,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           const ext = 'tif';
           const dateStr = new Date().toISOString().slice(0, 10);
-          const name = template
-            ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
+          const name = activeTemplate
+            ? `Grido_${(activeTemplate.name || 'Template').replace(/\s+/g, '_')}_${activeTemplate.widthMM}x${activeTemplate.heightMM}mm_${dateStr}_CMYK.${ext}`
             : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
 
           setExportStep('جاري حفظ ملف CMYK...');
@@ -465,8 +468,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (shouldStop()) return;
             const ext = format === 'png' ? 'png' : 'jpg';
             const dateStr = new Date().toISOString().slice(0, 10);
-            const name = template
-              ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}.${ext}`
+            const name = activeTemplate
+              ? `Grido_${(activeTemplate.name || 'Template').replace(/\s+/g, '_')}_${activeTemplate.widthMM}x${activeTemplate.heightMM}mm_${dateStr}.${ext}`
               : mode === 'collage'
                 ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
                 : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
@@ -646,18 +649,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 {canvasWidth}×{canvasHeight}px
               </span>
             </div>
-            {template ? (
+            {activeTemplate ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
                   <span dir="ltr" className="font-semibold tabular-nums">
-                    {template.widthMM}×{template.heightMM} مم
+                    {activeTemplate.widthMM}×{activeTemplate.heightMM} مم
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الدقة:</span>
                   <span dir="ltr" className="font-mono tabular-nums">
-                    {template.dpi} DPI
+                    {activeTemplate.dpi} DPI
                   </span>
                 </div>
               </>

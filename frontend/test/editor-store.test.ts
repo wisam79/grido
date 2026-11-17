@@ -139,30 +139,30 @@ describe('Workflow slice & rail registry (sidebar de-clutter)', () => {
     expect(allSections).toEqual(['layers', 'stickers', 'shapes', 'text']);
     expect(quickSections).toEqual(allSections);
     expect(getDefaultStudioTab('quick')).toBe('layers');
-    expect(getDefaultStudioTab('studio')).toBe('stickers');
+    expect(getDefaultStudioTab('studio')).toBe('layers');
     // Collage sections unaffected by workflow
     expect(getSectionsForWorkflow('collage', 'quick')).toHaveLength(
       getSectionsForWorkflow('collage', 'studio').length,
     );
   });
 
-  it('registry has one tab per insertion tool and no filler duplicates', () => {
-    expect(STUDIO_TOOLS.filter((t) => ['stickers', 'shapes', 'text'].includes(t.id))).toHaveLength(
-      3,
-    );
+  it('registry has one tab per panel tool and no filler duplicates', () => {
+    expect(STUDIO_TOOLS.filter((t) => ['layers', 'shapes', 'text'].includes(t.id))).toHaveLength(3);
     expect(STUDIO_TOOLS.map((t) => t.id)).not.toContain('elements');
+    expect(STUDIO_TOOLS.map((t) => t.id)).not.toContain('stickers');
     expect(COLLAGE_TOOLS.map((t) => t.id)).not.toContain('backdrop');
     expect(COLLAGE_TOOLS.map((t) => t.id)).toContain('custom');
   });
 
   it('migrates legacy stored tabs and validates current ones', () => {
-    expect(migrateLegacyStudioTab('elements')).toBe('stickers');
-    expect(migrateLegacyStudioTab('presets')).toBe('stickers');
-    expect(migrateLegacyStudioTab('stickers')).toBeNull();
+    expect(migrateLegacyStudioTab('elements')).toBe('layers');
+    expect(migrateLegacyStudioTab('presets')).toBe('layers');
+    expect(migrateLegacyStudioTab('stickers')).toBe('layers');
     expect(migrateLegacyStudioTab('shapes')).toBeNull();
     expect(migrateLegacyStudioTab('text')).toBeNull();
     expect(migrateLegacyStudioTab('layers')).toBeNull();
-    expect(isStudioTab('stickers')).toBe(true);
+    expect(isStudioTab('stickers')).toBe(false);
+    expect(isStudioTab('layers')).toBe(true);
     expect(isStudioTab('elements')).toBe(false);
     expect(isStudioTab('presets')).toBe(false);
     expect(isCollageTab('backdrop')).toBe(false);

@@ -163,7 +163,8 @@ const RailToolButton = React.memo(function RailToolButton({
           onClick={() => onSelectSection(section)}
           data-testid={section.testId}
           aria-label={section.label}
-          aria-pressed={isActive}
+          aria-pressed={section.actionEvent ? undefined : isActive}
+          aria-haspopup={section.actionEvent ? 'dialog' : undefined}
           className={cn(
             'group h-9 w-full rounded-lg transition-colors duration-150 cursor-pointer relative',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
@@ -359,7 +360,7 @@ const PaletteGlobalCommandItem = React.memo(function PaletteGlobalCommandItem({
 });
 
 export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
-  activeStudioTab = 'stickers',
+  activeStudioTab = 'layers',
   activeCollageTab = 'custom',
   isZenMode: _isZenMode,
   onSelectStudioTab,
@@ -393,6 +394,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   const toolsHeading = isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر';
   const selectSection = useCallback(
     (section: WorkspaceModeSection) => {
+      if (section.actionEvent) {
+        window.dispatchEvent(new CustomEvent(section.actionEvent));
+        onLauncherOpenChange?.(false);
+        return;
+      }
       if (isCollage) {
         // النقر على الوجهة النشطة يبقي التبويب الحالي (فيتولّى الخطاف طيّ اللوح)
         const target =
@@ -488,7 +494,7 @@ interface CompactToolLauncherProps {
 }
 
 export function CompactToolLauncher({
-  activeStudioTab = 'stickers',
+  activeStudioTab = 'layers',
   activeCollageTab = 'custom',
   onSelectStudioTab,
   onSelectCollageTab,
@@ -532,6 +538,11 @@ export function CompactToolLauncher({
   );
   const selectSection = useCallback(
     (section: WorkspaceModeSection) => {
+      if (section.actionEvent) {
+        window.dispatchEvent(new CustomEvent(section.actionEvent));
+        onLauncherOpenChange(false);
+        return;
+      }
       if (isCollage) {
         const target =
           getCollageSectionForTab(activeCollageTab).id === section.id

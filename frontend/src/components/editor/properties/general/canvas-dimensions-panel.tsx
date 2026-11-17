@@ -64,6 +64,7 @@ function matchesPresetMm(
 
 export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel() {
   const {
+    mode,
     canvasWidth,
     canvasHeight,
     setCanvasSize,
@@ -76,6 +77,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     rulerUnit,
   } = useEditorStore(
     useShallow((state) => ({
+      mode: state.mode,
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       setCanvasSize: state.setCanvasSize,
@@ -89,12 +91,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     })),
   );
 
+  const activeTemplate = mode === 'single' ? template : null;
   const activeUnit = rulerUnit === 'px' ? 'px' : 'mm';
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [lockAspect, setLockAspect] = useState(false);
 
-  const currentDpi = template?.dpi || printSettings?.dpi || 300;
+  const currentDpi = activeTemplate?.dpi || printSettings?.dpi || 300;
 
   const MIN_PX = 10;
   const MAX_PX = 20000;
@@ -136,8 +139,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         ? clampPx(px / aspectRatio)
         : canvasHeight;
     if (px === canvasWidth && nextHeight === canvasHeight) return;
-    setCanvasSize(px, nextHeight);
-    if (template) setTemplate(null);
+    setCanvasSize(px, nextHeight, { templateAction: 'clear' });
   };
 
   // يطبّق الارتفاع الجديد ويشتق العرض منه عند قفل النسبة
@@ -148,8 +150,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         ? clampPx(px * aspectRatio)
         : canvasWidth;
     if (px === canvasHeight && nextWidth === canvasWidth) return;
-    setCanvasSize(nextWidth, px);
-    if (template) setTemplate(null);
+    setCanvasSize(nextWidth, px, { templateAction: 'clear' });
   };
 
   const handleWidthChange = (val: string) => {
@@ -206,7 +207,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   const handlePresetChange = (presetId: string) => {
     if (presetId === 'custom') {
-      if (template) setTemplate(null);
+      if (activeTemplate) setTemplate(null);
       return;
     }
 
@@ -223,11 +224,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         targetH = temp;
       }
 
-      setCanvasSize(Math.round(targetW), Math.round(targetH));
+      setCanvasSize(Math.round(targetW), Math.round(targetH), { templateAction: 'clear' });
       setShowBleedGuides(true);
       setBleedMarginMM(cardOrLabel.defaultBleedMM || 2);
       setCutShapeType(cardOrLabel.shape || 'rectangle');
-      if (template) setTemplate(null);
       return;
     }
 
@@ -248,28 +248,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const finalW = Math.round(targetW);
     const finalH = Math.round(targetH);
 
-    setCanvasSize(finalW, finalH);
+    setCanvasSize(finalW, finalH, { templateAction: 'preserve' });
     setShowBleedGuides(false);
-
-    if (template) {
-      setTemplate({
-        ...template,
-        width: finalW,
-        height: finalH,
-        dpi,
-      });
-    }
   };
 
   const handleSwapDimensions = () => {
     setCanvasSize(canvasHeight, canvasWidth);
-    if (template) {
-      setTemplate({
-        ...template,
-        width: canvasHeight,
-        height: canvasWidth,
-      });
-    }
   };
 
   const currentWMM = pxToMm(canvasWidth, currentDpi);
@@ -312,7 +296,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           >
             <DropdownMenuItem
               onClick={() => {
-                if (template) setTemplate(null);
+                if (activeTemplate) setTemplate(null);
               }}
               className={cn(
                 'text-xs text-start justify-between font-bold cursor-pointer rounded-md',

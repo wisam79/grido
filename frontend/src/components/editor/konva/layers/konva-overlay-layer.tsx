@@ -59,6 +59,11 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
     () => new Map(sortedElements.map((el) => [el.id, el])),
     [sortedElements],
   );
+  const editingTextId = useEditorStore((s) => s.editingTextId);
+  const transformerSelectedIds = React.useMemo(
+    () => (editingTextId ? selectedIds.filter((id) => id !== editingTextId) : selectedIds),
+    [editingTextId, selectedIds],
+  );
 
   const isText =
     selectedIds.length > 0 && selectedIds.every((id) => elementsById.get(id)?.type === 'text');
@@ -208,10 +213,10 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
 
   return (
     <Layer name="overlay-tools-layer">
-      {selectedIds.length > 0 && (
+      {transformerSelectedIds.length > 0 && (
         <EditorTransformer
           trRef={trRef}
-          selectedIds={selectedIds}
+          selectedIds={transformerSelectedIds}
           sortedElements={sortedElements}
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}

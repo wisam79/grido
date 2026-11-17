@@ -420,6 +420,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     // ويعوّض بمسافات، فنحاكيه بـ wordSpacing.
     letterSpacing: `${renderState.letterSpacing * scaleRatio}px`,
     wordSpacing: isArabicSpacing ? `${(textEl.letterSpacing || 0) * scaleRatio}px` : undefined,
+    caretColor: textEl.color && textEl.color !== 'transparent' ? textEl.color : 'var(--primary)',
     textShadow,
     WebkitTextStroke:
       strokeWidthPx > 0 ? `${strokeWidthPx}px ${textEl.stroke || TEXT_COLOR_DEFAULT}` : undefined,
@@ -448,7 +449,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
             ? `${borderWidthPx}px solid ${bgBorderColor}`
             : undefined,
         boxShadow:
-          '0 0 0 2px var(--primary) , 0 0 0 4px color-mix(in srgb, var(--primary) 25%, transparent), 0 4px 20px rgba(0, 0, 0, 0.25)',
+          '0 0 0 1.5px var(--primary), 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent), 0 6px 24px rgba(0, 0, 0, 0.2)',
         // P0: إخفاء المحرر حتى جاهزية الخط — يمنع وميض الخط البديل
         visibility: fontReady ? 'visible' : 'hidden',
       }}

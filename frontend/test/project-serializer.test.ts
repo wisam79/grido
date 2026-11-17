@@ -759,5 +759,40 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(hydrated!.slots[1].zoom).toBe(3);
       expect(hydrated!.slots[1].cropMode).toBe('centered');
     });
+
+    it('preserves landscape-fitted cells of a baked catalog collage template across save/reload', () => {
+      const flushCut = COLLAGE_TEMPLATES.find((t) => t.id === 'collage-flush-cut-8')!;
+      const landscapeCells = flushCut.cells.map((c) => ({
+        ...c,
+        w: (c.w * 2480) / 3508,
+        h: (c.h * 3508) / 2480,
+      }));
+      const project = {
+        version: 1,
+        mode: 'collage',
+        canvasWidth: 3508,
+        canvasHeight: 2480,
+        backgroundColor: '#FFFFFF',
+        elements: [],
+        collageTemplate: { ...flushCut, cells: landscapeCells },
+        slots: landscapeCells.map((cell, cellIndex) => ({
+          id: `baked-${cellIndex}`,
+          cellIndex,
+          ...cell,
+          filter: 'none',
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          zoom: 1,
+          dragX: 0,
+          dragY: 0,
+        })),
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+      expect(hydrated?.collageTemplate?.cells[0].w).toBeCloseTo(landscapeCells[0].w, 5);
+      expect(hydrated?.collageTemplate?.cells[0].h).toBeCloseTo(landscapeCells[0].h, 5);
+      expect(hydrated?.collageTemplate?.icon).toBe(flushCut.icon);
+    });
   });
 });

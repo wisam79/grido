@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { FreeformElementsTab } from '../src/components/editor/panels/freeform/freeform-elements-tab';
+import { WorkspacePanelRail } from '../src/components/editor/workspace/workspace-panel-rail';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { StickerCatalog } from '../src/features/stickers/components/sticker-catalog';
 import { StickerFontSelector } from '../src/features/stickers/components/sticker-font-selector';
@@ -13,7 +13,7 @@ import { StickerStudioDialog } from '../src/features/stickers/components/sticker
 import { loadStickerPresets } from '../src/features/stickers/lib/preset-utils';
 import { buildDefaultStickerParams } from '../src/features/stickers/lib/sticker-design/build-svg';
 import * as svgRasterizer from '../src/features/stickers/lib/svg-rasterizer';
-import { ALL_STICKER_TEMPLATES, BADGE_TEMPLATES } from '../src/features/stickers/templates';
+import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
 import { useEditorStore } from '../src/lib/editor-store';
 import { loadGoogleFont } from '../src/lib/io/fonts';
 
@@ -437,34 +437,25 @@ describe('Sticker Studio Unit & Component Tests', () => {
     }, 15_000);
   });
 
-  describe('FreeformElementsTab quick sticker insertion', () => {
-    it('attaches stickerSource metadata so quick-inserted stickers can be re-edited from the context menu', async () => {
-      const quickStickerTemplate = BADGE_TEMPLATES[0];
-      const rasterSpy = vi
-        .spyOn(svgRasterizer, 'renderSvgToPngBlob')
-        .mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
-      useEditorStore.setState({ elements: [] });
+  describe('WorkspacePanelRail direct Sticker Studio launch', () => {
+    it('dispatches grido:open-stickers-dialog directly from the rail stickers button without altering the active panel tab', () => {
+      useEditorStore.setState({ mode: 'single' });
+      const onSelectStudioTab = vi.fn();
+      const openSpy = vi.fn();
+      window.addEventListener('grido:open-stickers-dialog', openSpy);
 
       try {
-        renderWithProviders(<FreeformElementsTab category="stickers" />);
-        const [firstCard] = await screen.findAllByTitle(quickStickerTemplate.name);
-        fireEvent.click(firstCard);
+        renderWithProviders(
+          <WorkspacePanelRail activeStudioTab="layers" onSelectStudioTab={onSelectStudioTab} />,
+        );
+        const railBtn = screen.getByTestId('rail-studio-stickers');
+        expect(railBtn).toHaveAttribute('aria-haspopup', 'dialog');
+        fireEvent.click(railBtn);
 
-        await waitFor(() => {
-          expect(useEditorStore.getState().elements).toHaveLength(1);
-        });
-
-        const inserted = useEditorStore.getState().elements[0];
-        expect(inserted.type).toBe('image');
-        if (inserted.type === 'image') {
-          expect(inserted.stickerSource?.templateId).toBe(quickStickerTemplate.id);
-          expect(inserted.stickerSource?.params.primaryColor).toBe(
-            quickStickerTemplate.defaultColors.primary,
-          );
-          expect(inserted.stickerSource?.svg).toContain('<svg');
-        }
+        expect(openSpy).toHaveBeenCalledTimes(1);
+        expect(onSelectStudioTab).not.toHaveBeenCalled();
       } finally {
-        rasterSpy.mockRestore();
+        window.removeEventListener('grido:open-stickers-dialog', openSpy);
       }
     });
   });

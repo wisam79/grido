@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({ editingTextId: null as string | null }));
 const rendered = vi.hoisted(() => ({
   text: {} as Record<string, unknown>,
   shape: {} as Record<string, unknown>,
+  rects: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('@/lib/editor-store', () => ({
@@ -29,17 +30,29 @@ vi.mock('react-konva', () => ({
   Group: ({
     id,
     opacity,
+    onMouseEnter,
+    onMouseLeave,
     children,
   }: {
     id?: string;
     opacity?: number;
+    onMouseEnter?: (e: unknown) => void;
+    onMouseLeave?: (e: unknown) => void;
     children?: React.ReactNode;
   }) => (
-    <div data-testid={id ? 'text-root' : 'text-inner'} data-opacity={opacity}>
+    <div
+      data-testid={id ? 'text-root' : 'text-inner'}
+      data-opacity={opacity}
+      onMouseEnter={onMouseEnter as unknown as React.MouseEventHandler<HTMLDivElement>}
+      onMouseLeave={onMouseLeave as unknown as React.MouseEventHandler<HTMLDivElement>}
+    >
       {children}
     </div>
   ),
-  Rect: () => null,
+  Rect: (props: Record<string, unknown>) => {
+    rendered.rects.push(props);
+    return <div data-testid="text-rect" data-dash={props.dash ? 'dashed' : 'solid'} />;
+  },
   Text: (props: Record<string, unknown>) => {
     rendered.text = props;
     return <div data-testid="straight-text" />;
@@ -96,6 +109,7 @@ beforeEach(() => {
   state.editingTextId = null;
   rendered.text = {};
   rendered.shape = {};
+  rendered.rects = [];
 });
 
 describe('KonvaTextElement editing preview', () => {
@@ -161,5 +175,60 @@ describe('KonvaTextElement editing preview', () => {
     expect(rendered.text.letterSpacing).toBe(0);
     expect(rendered.text.text).toBe('بسم\nGrido');
     expect(rendered.text.height).toBeUndefined();
+  });
+
+  it('shows a dashed hover outline only when hovered while unselected and unlocked', async () => {
+    const node = { opacity: vi.fn(), scale: vi.fn(), to: vi.fn() };
+    const { rerender } = render(
+      <KonvaTextElement
+        element={base}
+        isSelected={false}
+        onMouseDown={vi.fn()}
+        onTouchStart={vi.fn()}
+        onClick={vi.fn()}
+        onTap={vi.fn()}
+        onChange={vi.fn()}
+        canvasWidth={1000}
+        canvasHeight={1000}
+        allElements={[base]}
+        setActiveGuides={vi.fn()}
+        elementRef={{ current: node as unknown as Konva.Node }}
+        altPressedRef={{ current: false }}
+        getKonvaNode={() => null}
+      />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const root = screen.getByTestId('text-root');
+    expect(screen.getAllByTestId('text-rect')).toHaveLength(1);
+
+    const { fireEvent } = await import('@testing-library/react');
+    fireEvent.mouseEnter(root);
+    expect(screen.getAllByTestId('text-rect')).toHaveLength(2);
+    expect(
+      rendered.rects.some((r) => Array.isArray(r.dash) && r.strokeScaleEnabled === false),
+    ).toBe(true);
+
+    rerender(
+      <KonvaTextElement
+        element={base}
+        isSelected={true}
+        onMouseDown={vi.fn()}
+        onTouchStart={vi.fn()}
+        onClick={vi.fn()}
+        onTap={vi.fn()}
+        onChange={vi.fn()}
+        canvasWidth={1000}
+        canvasHeight={1000}
+        allElements={[base]}
+        setActiveGuides={vi.fn()}
+        elementRef={{ current: node as unknown as Konva.Node }}
+        altPressedRef={{ current: false }}
+        getKonvaNode={() => null}
+      />,
+    );
+    expect(screen.getAllByTestId('text-rect')).toHaveLength(1);
   });
 });

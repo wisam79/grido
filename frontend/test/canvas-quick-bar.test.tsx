@@ -350,4 +350,55 @@ describe('CanvasQuickBar Component Tests', () => {
       canvasArea.remove();
     }
   });
+
+  it('renders icon-only inline edit and text-fit controls for a single text element', () => {
+    useEditorStore.setState({
+      mode: 'single',
+      selectedId: 'txt-1',
+      selectedIds: ['txt-1'],
+      editingTextId: null,
+      elements: [
+        {
+          id: 'txt-1',
+          type: 'text',
+          x: 0.2,
+          y: 0.4,
+          width: 0.3,
+          height: 0.1,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          text: 'نص تجريبي',
+          fontSize: 32,
+          fontFamily: 'Cairo',
+          fontWeight: 700,
+          textSizing: 'fixed',
+        },
+      ],
+    });
+
+    render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    const bar = screen.getByTestId('canvas-quick-bar');
+    expect(bar.textContent ?? '').not.toMatch(/[\u0621-\u064A]/);
+
+    const editBtn = screen.getByLabelText('تحرير النص');
+    const fitBtn = screen.getByLabelText('ملاءمة الصندوق للنص');
+    expect(editBtn).toBeInTheDocument();
+    expect(fitBtn).toBeInTheDocument();
+
+    act(() => {
+      fitBtn.click();
+    });
+    expect(useEditorStore.getState().elements[0]).toMatchObject({ textSizing: 'auto' });
+
+    act(() => {
+      editBtn.click();
+    });
+    expect(useEditorStore.getState().editingTextId).toBe('txt-1');
+  });
 });

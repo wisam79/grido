@@ -109,7 +109,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           ? '1:1'
           : 'الكل';
 
-  const currentDpi = template?.dpi || printSettings.dpi || 300;
+  const activeTemplate = mode === 'single' ? template : null;
+  const currentDpi = activeTemplate?.dpi || printSettings.dpi || 300;
   const { wMM, hMM } = canvasMm(canvasWidth, canvasHeight, currentDpi);
   const activePaper = findPaperByMm(wMM, hMM, ALL_PAPER_SIZES);
   const formattedDimensions = formatDimensions(canvasWidth, canvasHeight, currentDpi, rulerUnit);

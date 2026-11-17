@@ -192,14 +192,14 @@ export const EditorCanvas = React.memo(
     const { isLoading, setIsLoading, handleDragOver, handleDrop } = useImageDrop(innerRef);
 
     const widthMM = useMemo(() => {
-      if (template) return template.widthMM;
+      if (mode === 'single' && template) return template.widthMM;
       return pxToMm(canvasWidth, printSettings?.dpi || DEFAULT_DPI);
-    }, [template, canvasWidth, printSettings]);
+    }, [mode, template, canvasWidth, printSettings]);
 
     const heightMM = useMemo(() => {
-      if (template) return template.heightMM;
+      if (mode === 'single' && template) return template.heightMM;
       return pxToMm(canvasHeight, printSettings?.dpi || DEFAULT_DPI);
-    }, [template, canvasHeight, printSettings]);
+    }, [mode, template, canvasHeight, printSettings]);
 
     const marginPxX = useMemo(() => {
       if (

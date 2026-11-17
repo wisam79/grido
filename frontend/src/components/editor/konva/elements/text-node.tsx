@@ -314,6 +314,17 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const strokeColor = element.stroke || TEXT_COLOR_DEFAULT;
   const strokeFilterId = strokeW > 0 ? ensureTextStrokeFilter(strokeW, strokeColor) : '';
 
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  // مسح حالة التحويم عند التحديد أو بدء التحرير أو القفل لمنع بقاء إطار تحويم متخلف
+  React.useEffect(() => {
+    if (isSelected || isEditing || element.locked) {
+      setIsHovered(false);
+    }
+  }, [isSelected, isEditing, element.locked]);
+
+  const showHoverCue = isHovered && !isSelected && !isEditing && !element.locked;
+
   // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts).
   const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } = withShadowlessDrag(
     () => elementRef.current as unknown as Konva.Group | null,
@@ -345,6 +356,23 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onTap={onTap}
       onDblClick={onDblClick}
       onDblTap={onDblClick}
+      onMouseEnter={(e) => {
+        if (element.locked || isEditing) return;
+        setIsHovered(true);
+        const stage = e.target.getStage?.();
+        const cursor = stage?.container().style.cursor;
+        if (stage && cursor !== 'grab' && cursor !== 'grabbing') {
+          stage.container().style.cursor = isSelected ? 'move' : 'pointer';
+        }
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        const stage = e.target.getStage?.();
+        const cursor = stage?.container().style.cursor;
+        if (stage && cursor !== 'grab' && cursor !== 'grabbing') {
+          stage.container().style.cursor = '';
+        }
+      }}
     >
       <Group
         x={renderWidthPx / 2}
@@ -368,6 +396,21 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
           strokeWidth={bgBorderWidth > 0 ? bgBorderWidth : undefined}
           perfectDrawEnabled={false}
         />
+        {showHoverCue && (
+          <KonvaRect
+            x={-bgPaddingX}
+            y={-bgPaddingY}
+            width={renderWidthPx + bgPaddingX * 2}
+            height={layoutHeightPx + bgPaddingY * 2}
+            cornerRadius={Math.max(4, bgRadius)}
+            stroke="rgba(59, 130, 246, 0.72)"
+            strokeWidth={1.25}
+            dash={[4, 3]}
+            strokeScaleEnabled={false}
+            listening={false}
+            perfectDrawEnabled={false}
+          />
+        )}
 
         {hasCurve ? (
           <KonvaShape

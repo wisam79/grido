@@ -338,7 +338,7 @@ describe('ExportDialog Component Tests', () => {
       expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
     });
 
-    it('uses exported DPI rather than different project DPI for geometry and bleed', async () => {
+    it('uses the collage export DPI instead of a stale freeform template DPI', async () => {
       setupCollage();
       useEditorStore.setState({
         template: {
@@ -357,21 +357,21 @@ describe('ExportDialog Component Tests', () => {
       });
       renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
       await clickExportAndSettle();
-      expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining('≈ 150DPI'));
+      expect(toast.warning).not.toHaveBeenCalled();
       expect(applyBleedAndCropMarks).toHaveBeenCalledWith(
         expect.any(Blob),
         0,
         false,
         'png',
         0.95,
-        150,
+        600,
         expect.any(AbortSignal),
       );
       expect(mockDownloadBlob).toHaveBeenCalledWith(
         expect.any(Blob),
         expect.any(String),
         undefined,
-        150,
+        600,
         undefined,
         expect.any(AbortSignal),
       );
@@ -456,7 +456,7 @@ describe('ExportDialog Component Tests', () => {
           true,
           'png',
           0.95,
-          150,
+          600,
           signal,
         );
         expect(mockDownloadBlob).toHaveBeenNthCalledWith(
@@ -464,7 +464,7 @@ describe('ExportDialog Component Tests', () => {
           processed[index],
           expect.stringMatching(/\.png$/),
           'C:/mock/export',
-          150,
+          600,
           undefined,
           signal,
         );

@@ -68,8 +68,7 @@ test.describe('Integrated User Journeys E2E', () => {
     page,
   }) => {
     await page.getByTestId('mode-tab-single').click();
-    await openStudioElementsCategory(page, 'stickers');
-    const stickerBtn = page.getByTestId('element-open-sticker-studio');
+    const stickerBtn = page.getByTestId('rail-studio-stickers');
     await expect(stickerBtn).toBeVisible();
     await stickerBtn.click();
     const dialog = page.getByRole('dialog');

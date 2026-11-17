@@ -92,12 +92,7 @@ const ELEMENT_TABS = ['التنسيق', 'الألوان', 'التأثيرات', 
 
 const COLLAGE_RAIL_SECTIONS = ['rail-collage-grid', 'rail-collage-slots', 'rail-collage-paper'];
 
-const STUDIO_RAIL_SECTIONS = [
-  'rail-studio-layers',
-  'rail-studio-stickers',
-  'rail-studio-shapes',
-  'rail-studio-text',
-];
+const STUDIO_RAIL_SECTIONS = ['rail-studio-layers', 'rail-studio-shapes', 'rail-studio-text'];
 
 /**
  * يفتح كل الأقسام القابلة للطي داخل اللوح حتى تُقاس محتوياتها لا رؤوسها فقط.

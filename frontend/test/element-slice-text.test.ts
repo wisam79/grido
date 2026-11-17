@@ -240,4 +240,26 @@ describe('Element Slice — text resize anchor', () => {
     store.applyTextPreset(id, 'heading');
     expect(anchorOf(id)).toBeUndefined();
   });
+
+  it('cascades repeated text and preset insertions instead of stacking them identically', () => {
+    const id1 = useEditorStore.getState().addTextElement('أول نص');
+    const id2 = useEditorStore.getState().addTextElement('ثاني نص');
+    useEditorStore.getState().addTextPreset('heading', 'عنوان ثالث');
+
+    const [el1, el2, el3] = useEditorStore.getState().elements;
+    expect(el1.id).toBe(id1);
+    expect(el2.id).toBe(id2);
+    expect(el2.x !== el1.x || el2.y !== el1.y).toBe(true);
+    expect(el3.x !== el2.x || el3.y !== el2.y).toBe(true);
+  });
+
+  it('scales default plain text font size proportionally on high-res print sheets', () => {
+    useEditorStore.setState({ canvasWidth: 2480, canvasHeight: 3508 });
+    const id = useEditorStore.getState().addTextElement('عنوان طباعة');
+    const added = useEditorStore.getState().elements.find((el) => el.id === id);
+    expect(added?.type).toBe('text');
+    if (added?.type === 'text') {
+      expect(added.fontSize).toBeGreaterThanOrEqual(72);
+    }
+  });
 });

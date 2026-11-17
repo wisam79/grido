@@ -1,11 +1,24 @@
 import React, { useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Stage, Layer, Group, Image as KonvaImage } from 'react-konva';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+import { URLImage } from '../src/components/editor/konva/elements/image-node';
 import { MagicAiScanner } from '../src/components/editor/konva/elements/magic-ai-scanner';
 
+import type { ImageElement } from '../src/lib/editor-store';
 import type { Root } from 'react-dom/client';
+
+vi.mock('../src/hooks/use-async-image', () => ({
+  useAsyncImage: (src: string) =>
+    src
+      ? [{ width: 200, height: 200, naturalWidth: 200, naturalHeight: 200 }, 'loaded']
+      : [null, 'idle'],
+}));
+
+vi.mock('../src/hooks/use-display-image', () => ({
+  useDisplayImage: (img: unknown) => img,
+}));
 
 const noop = () => {};
 class MockContext2D {
@@ -256,6 +269,95 @@ describe('MagicAiScanner via react-konva', () => {
     await waitFrames(4);
     // بلا رسم صريح داخل الكولباك لا يرسم Konva.Animation أي طبقة إطلاقاً
     expect(draws).toBeGreaterThan(1);
+
+    root.unmount();
+  });
+
+  it('يرسم الظل على Shape حقيقية في URLImage (مباشرةً وعلى راسم الظل عند الفلاتر أو القناع)', async () => {
+    let stageRef: any = null;
+    const baseImage: ImageElement = {
+      id: 'img-shadow-node',
+      type: 'image',
+      imageSrc: 'mock://photo.png',
+      x: 0.1,
+      y: 0.1,
+      width: 0.3,
+      height: 0.3,
+      opacity: 1,
+      rotation: 0,
+      zIndex: 1,
+      shadowColor: '#1e293b',
+      shadowBlur: 16,
+      shadowOffsetX: 4,
+      shadowOffsetY: 6,
+      shadowOpacity: 0.6,
+    };
+
+    const noopFn = () => {};
+    const sharedProps = {
+      isSelected: false,
+      onMouseDown: noopFn,
+      onTouchStart: noopFn,
+      onClick: noopFn,
+      onTap: noopFn,
+      onChange: noopFn,
+      canvasWidth: 800,
+      canvasHeight: 600,
+      allElements: [baseImage],
+      setActiveGuides: noopFn,
+      elementRef: { current: null },
+      altPressedRef: { current: false },
+      getKonvaNode: () => null,
+    };
+
+    // 1. صورة عادية: الظل على KonvaImage (Konva.Shape) مباشرة لا على Group
+    root.render(
+      <Stage
+        ref={(s: any) => {
+          stageRef = s;
+        }}
+        width={800}
+        height={600}
+      >
+        <Layer>
+          <URLImage {...sharedProps} element={baseImage} />
+        </Layer>
+      </Stage>,
+    );
+    await waitFrames(3);
+
+    let layer = stageRef!.getLayers()[0];
+    let shadowShapes = layer.find('Shape').filter((s: any) => s.hasShadow());
+    expect(shadowShapes).toHaveLength(1);
+    expect(shadowShapes[0].shadowColor()).toBe('#1e293b');
+    expect(shadowShapes[0].shadowBlur()).toBe(16);
+    expect(shadowShapes[0].shadowOpacity()).toBe(0.6);
+
+    // 2. صورة بفلتر أو قناع دائري: راسم ظل غير مخزّن خلف الحاوية المقصوصة
+    root.render(
+      <Stage
+        ref={(s: any) => {
+          stageRef = s;
+        }}
+        width={800}
+        height={600}
+      >
+        <Layer>
+          <URLImage
+            {...sharedProps}
+            element={{ ...baseImage, filter: 'bw', maskShape: 'circle' }}
+          />
+        </Layer>
+      </Stage>,
+    );
+    await waitFrames(3);
+
+    layer = stageRef!.getLayers()[0];
+    shadowShapes = layer.find('Shape').filter((s: any) => s.hasShadow());
+    expect(shadowShapes).toHaveLength(1);
+    expect(shadowShapes[0].shadowColor()).toBe('#1e293b');
+    expect(shadowShapes[0].shadowBlur()).toBe(16);
+    expect(shadowShapes[0].shadowOpacity()).toBe(0.6);
 
     root.unmount();
   });

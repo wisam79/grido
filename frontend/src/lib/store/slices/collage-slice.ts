@@ -1,6 +1,7 @@
 import { normalizeSelection } from './element-slice';
 import {
   computeAdjacentSlotCandidate,
+  fitBakedNormalizedRects,
   getCollageGeometry,
   getSlotRect,
   isBakedCollageLayout,
@@ -12,7 +13,7 @@ import {
 } from '../../canvas/collage-slot-content';
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
-import { mmToPx, pxToMm } from '../../canvas/units';
+import { findPaperByMm, mmToPx, pxToMm } from '../../canvas/units';
 import { clamp } from '../../clamp';
 import { clampSlotZoom } from '../../export/export-primitives';
 import { AUTOFILL_IMAGE_LIMIT } from '../../schema';
@@ -20,6 +21,7 @@ import {
   COLLAGE_TEMPLATES,
   DEFAULT_COLLAGE_GAP_PX,
   DEFAULT_COLLAGE_MARGIN_PX,
+  PAPER_SIZES,
   computeDynamicCollageCells,
   getEffectiveDpi,
   getPhysicalMaxMarginMM,
@@ -785,6 +787,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           : DEFAULT_COLLAGE_MARGIN_PX;
 
       let cells = template.cells;
+      let resolvedTemplate = template;
       if (template.physicalLayout) {
         const dynamicCells = computeDynamicCollageCells(
           template,
@@ -796,6 +799,20 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         );
         if (dynamicCells) {
           cells = dynamicCells;
+        }
+      } else if (
+        template.isBaked &&
+        template.metadata?.paperWidthMM &&
+        template.metadata?.paperHeightMM
+      ) {
+        const refW = Math.round(mmToPx(template.metadata.paperWidthMM, dpi));
+        const refH = Math.round(mmToPx(template.metadata.paperHeightMM, dpi));
+        cells = fitBakedNormalizedRects(template.cells, refW, refH, currentWidth, currentHeight);
+        if (cells !== template.cells) {
+          resolvedTemplate = {
+            ...template,
+            cells,
+          };
         }
       }
 
@@ -830,7 +847,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       // لا تُمس هنا إطلاقاً — كان التبديل يمسحها فيضيع تصميم الوضع الحر بالكامل
       // عند اختيار أي قالب أو تعديل الشبكة من داخل الكولاج.
       set({
-        collageTemplate: template,
+        collageTemplate: resolvedTemplate,
         mode: 'collage',
         slots,
         collagePendingImages: [...get().collagePendingImages, ...overflowImages],
@@ -869,11 +886,15 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       .map((slot) => slot.imageSrc as string);
     const preserved = slots.filter((slot) => Boolean(slot.imageSrc)).length;
     const collagePendingImages = [...state.collagePendingImages, ...overflowImages];
+    const matchedPaper =
+      paperWidthMM && paperHeightMM
+        ? findPaperByMm(paperWidthMM, paperHeightMM, PAPER_SIZES)
+        : undefined;
     const printSettings =
       paperWidthMM && paperHeightMM
         ? {
             ...(state.printSettings as PrintSettings),
-            paperId: 'custom',
+            paperId: matchedPaper?.id ?? 'custom',
             paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
             paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
             orientation:

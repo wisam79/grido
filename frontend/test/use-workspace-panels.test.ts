@@ -1,13 +1,19 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useWorkspacePanels } from '../src/hooks/use-workspace-panels';
 import { useEditorStore } from '../src/lib/editor-store';
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';
 
-beforeEach(() => act(() => useEditorStore.getState().selectElement(null)));
-afterEach(() => act(() => useEditorStore.getState().selectElement(null)));
+vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
+
+beforeEach(() => {
+  act(() => useEditorStore.getState().selectElement(null));
+});
+afterEach(() => {
+  act(() => useEditorStore.getState().selectElement(null));
+});
 
 function setWindowWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', {
@@ -113,11 +119,11 @@ describe('useWorkspacePanels — استقرار الألواح عند تغيّر
 
     // نفس السلوك في الاستوديو
     act(() => {
-      result.current.selectStudioTab('stickers');
+      result.current.selectStudioTab('shapes');
     });
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
     act(() => {
-      result.current.selectStudioTab('stickers');
+      result.current.selectStudioTab('shapes');
     });
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
   });
