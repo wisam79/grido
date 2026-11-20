@@ -1,4 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+
+import { test } from './helpers/wails-mock';
 
 /**
  * @probe — مسار الاستعدال داخل العامل

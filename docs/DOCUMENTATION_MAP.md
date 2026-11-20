@@ -39,6 +39,8 @@
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
 
+**خطة وقبول E2E — 2026-11-20:** أضيفت `docs/plans/2026-11-20-real-e2e-acceptance-plan.md` و`docs/reviews/28-real-e2e-acceptance-2026-11-20.md` ضمن مجلداتهما المسجلة. قبول فعلي/fixtures/CI قيد التنفيذ؛ لا أرقام حالات جديدة بلا تشغيل ولا استنتاج قبول من الوثائق. الجرد المرجعي سيعاد بـdocs-gate بعد ظهور الملفات الاختبارية الجديدة، وتوثق النتائج وSHA والقدرات blocked منفصلة. أُجيز فرع اختبار مؤقت فقط لا main/deploy/release.
+
 **إضافة مراجعة وجرد — 2026-11-20:** سُجّل [التقرير 27: مراجعة حملة التعديلات](reviews/27-change-campaign-audit-2026-11-20.md) ضمن `docs/reviews/` المسجل، ورُبط بفهرسه ودليلَي المطور والاختبار وسجل الميزات. أعاد `node scripts/docs-gate.mjs --strict-refs` الجرد **186 Vitest / 32 E2E / 68 Go / 6 مستندات جذرية** وفشل مرحلياً بسبب Vitest الموثق178؛ حُدّث البلوك إلى186 بعد إضافة ثمانية ملفات frontend منفصلة. هذه أعداد ملفات لا حالات ناجحة. نتائج الاختبارات المستهدفة منفصلة بالتقرير؛ فحوص frontend typecheck/lint/format وadmin lint/tsc نجحت بعد الإصلاحات. إعادة docs-gate النهائية تُثبت في التقرير عند التشغيل، ولا تُستنتج من هذا التحديث؛ لا ملفات staged فمصفوفة commit/fragment في البوابة لا تُختبر، وتُفحص سكيمة fragment على الشجرة مستقلاً. لا CI/E2E/GUI/طابعة أو commit/push لهذه الجولة.
 
 **النتيجة الختامية لهذه الجولة — 2026-11-20:** إعادة `node scripts/docs-gate.mjs --strict-refs` **PASS** بالجرد186/32/68/6 وinventory20/assertions53، و`git diff --check` **PASS**. فحص سكيمة ومراجع fragmentَي اليوم مستقلاً بـNode **PASS**؛ لا index/staged أو commit/push، لذا لا ادعاء تحقق مصفوفة commit-doc أو CI. آخر نتائج44 ملف اختبار مستهدف منفرد PASS موثقة بالتقرير27، لا جمع للحالات ولا GUI/طابعة.
@@ -116,7 +118,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 ```docs-metrics
 vitest_test_files=186
 e2e_spec_files=32
-go_test_files=68
+go_test_files=69
 docs_files=6
 ```
 

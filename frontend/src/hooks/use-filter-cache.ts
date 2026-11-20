@@ -107,7 +107,8 @@ export function useFilterCache({
         return;
       }
       if (observeCropChanges && cropPendingRef.current) {
-        scheduleSettleRef.current?.();
+        // A gesture retry must not postpone the crop deadline set by dragend.
+        if (cropTimerRef.current === null) scheduleSettleRef.current?.();
         return;
       }
       const stageScaleX = stage && typeof stage.scaleX === 'function' ? stage.scaleX() : 0;

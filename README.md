@@ -51,6 +51,10 @@
 
 تطوير جزئي في شجرة العمل: مفتش تحديد مختلط بأهلية typed وتحكم مقفل inert، overflow لشريط الأدوات مع كشف التركيز، مفضلة محلية للمكتبات وربط loading/error/retry/customize، وتحسين أسماء/تركيز وإلغاء حوارات الإدارة وحالات الهاتف. **ليس تنفيذ الخطة كاملة أو قبولاً بصرياً**؛ onboarding الكامل وSaveRecovery/تغييرات print وبقية الرحلات والقياسات معلّقة. أدلة keyboard/DOM الإدارة والاختبارات المستهدفة في [تقرير25 المؤقت](docs/reviews/25-ux-development-acceptance-2026-11-13.md)، والحدود الحية في [الخطة](docs/plans/2026-11-13-comprehensive-ux-development-plan.md).
 
+## بوابة قبول E2E المعزولة — 2026-11-20
+
+تُشغّل `.github/workflows/e2e-acceptance.yml` يدوياً على فرع اختبار `test/*` وSHA محدد، دون نشر أو إصدار. تجمع كامل browser integration مع رحلات Go/SQLite وإعادة تشغيل فعلية، وSupabase محلي مؤقت للإدارة/الهاتف، ومسارWindowsWebView2native منفصل. `e2e` build-tag لا يُشحن للمستخدم؛ binary الاختبار غيرpublishable ولا يستخدمsecret production. التقارير تميّز محاكاةطرفثالث عنserviceحقيقي، وتسجلالقدراتhardware/OAuth/AIالمحجوبةصراحةً؛ كتابة الاختبارات ليستPASS. حالةالنتائج في [تقرير28](docs/reviews/28-real-e2e-acceptance-2026-11-20.md) ودليل [الاختبار](docs/testing_guide.md).
+
 ## 📋 المتطلبات
 
 | الأداة | الإصدار |

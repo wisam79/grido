@@ -20,12 +20,23 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_full:
+        description: Run every gated check and full Chromium/Firefox/WebKit suites on Linux and Windows
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      force_full:
+        description: Force complete isolated CI acceptance checks
+        type: boolean
+        default: true
   schedule:
     # فحص سباقات وتغطية الخلفية أسبوعياً خارج المسار السريع لكل push.
     - cron: "17 3 * * 1"
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,11 +61,11 @@ jobs:
       pull-requests: read
     timeout-minutes: 5
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend: ${{ steps.filter.outputs.backend }}
-      admin: ${{ steps.filter.outputs.admin }}
-      modal_ai: ${{ steps.filter.outputs.modal_ai }}
-      workflows: ${{ steps.filter.outputs.workflows }}
+      frontend: ${{ inputs.force_full && 'true' || steps.filter.outputs.frontend }}
+      backend: ${{ inputs.force_full && 'true' || steps.filter.outputs.backend }}
+      admin: ${{ inputs.force_full && 'true' || steps.filter.outputs.admin }}
+      modal_ai: ${{ inputs.force_full && 'true' || steps.filter.outputs.modal_ai }}
+      workflows: ${{ inputs.force_full && 'true' || steps.filter.outputs.workflows }}
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -112,6 +123,9 @@ jobs:
       - name: Run Documentation Sync Gate
         run: node scripts/docs-gate.mjs --push --ci
 
+      - name: Verify acceptance evidence gate (targeted synthetic reporter tests)
+        run: node --test scripts/e2e/report-selftest.test.mjs
+
       # 2026-09-26: ثلاث هجرات كانت غير قابلة للتطبيق بصمت (OLD داخل RLS + GRANT لتوقيع غير موجود)
       # فبقيت ثغرات مفتوحة؛ هذه البوابة تمنع تكرار الصنف نفسه.
       - name: Lint Database Migrations
@@ -131,7 +145,7 @@ jobs:
     name: Modal AI Unit Tests (Python 3.10)
     runs-on: ubuntu-latest
     needs: [changes]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.modal_ai == 'true' || needs.changes.outputs.workflows == 'true'
+    if: inputs.force_full || github.event_name == 'workflow_dispatch' || needs.changes.outputs.modal_ai == 'true' || needs.changes.outputs.workflows == 'true'
     timeout-minutes: 10
     steps:
       - name: Checkout code
@@ -234,6 +248,15 @@ jobs:
         id: typecheck
         working-directory: ./frontend
         run: npm run typecheck
+
+      - name: Typecheck Actual Acceptance Specs and Config
+        if: inputs.force_full
+        run: node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.acceptance.json
+
+      - name: Lint Actual Acceptance Specs and Config
+        if: inputs.force_full
+        working-directory: frontend
+        run: npx --no-install eslint e2e-acceptance playwright.acceptance.config.ts --report-unused-disable-directives --max-warnings 0
 
       - name: Lint Frontend (src + test + e2e)
         id: lint
@@ -380,7 +403,7 @@ jobs:
 
   backend-race-coverage:
     name: Backend Race & Coverage (Scheduled)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: inputs.force_full || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -419,7 +442,7 @@ jobs:
 
   print-performance-report:
     name: Print Performance & RSS Report (Windows)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: inputs.force_full || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -624,7 +647,7 @@ jobs:
     needs: [changes]
     # E2E runs against the mocked Wails bridge, so Go-only changes cannot
     # affect it — frontend or workflow changes re-run it.
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    if: ${{ !inputs.force_full && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -803,8 +826,10 @@ jobs:
         env:
           CGO_ENABLED: "1"
           APP_VERSION: "v0.0.0-ci"
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Inert loopback build values, not repository secrets. This smoke binary
+          # is sandbox-only, unsigned and never uploaded as a release asset.
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_ANON_KEY: ci-sandbox-nonpublishable
         run: wails3 task build
 
       # قراءة الميتاداتا هنا تمر بنفس مسار Windows/.NET: الترجمة (lang+codepage) ثم
@@ -863,7 +888,7 @@ jobs:
     name: WebKit Smoke (Shipping Engine)
     runs-on: ubuntu-24.04
     needs: [changes]
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    if: ${{ !inputs.force_full && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') }}
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -972,3 +997,137 @@ jobs:
             --note "WebKit أقرب محرك إلى WebKitGTK/WebView2 الذي يُشحن به التطبيق. الفحص مُلزم: فشله يفشل البناء." \
             --row "Playwright @smoke on WebKit=${{ steps.webkit.outcome }}" \
             --row "WebKit Browser Installation=${{ steps.install_browsers.outcome }}"
+
+  # Full browser acceptance is opt-in on normal CI, mandatory for force_full.
+  # Existing mocked Wails suite only: this must never be called actual backend acceptance.
+  e2e-full:
+    name: Full E2E ${{ matrix.os }} ${{ matrix.project }} ${{ matrix.shard }}/4
+    if: inputs.force_full
+    needs: [changes]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+        project: [chromium, firefox, webkit]
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout exact run SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Install pinned Wails bindings generator
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+          printf '%s/bin\n' "$(go env GOPATH)" >> "$GITHUB_PATH"
+          mkdir -p frontend/dist
+          printf '<html></html>\n' > frontend/dist/index.html
+      - name: Generate exact source bindings
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: wails3 generate bindings -ts -clean=true
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Cache browser binaries
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/AppData/Local/ms-playwright
+          key: ${{ runner.os }}-full-playwright-${{ matrix.project }}-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Install selected browser and OS dependencies
+        working-directory: frontend
+        run: npx --no-install playwright install --with-deps ${{ matrix.project }}
+      - name: Execute exact full-project shard with strict evidence
+        shell: bash
+        run: |
+          node scripts/e2e/report-run.mjs \
+            --root frontend --config playwright.config.ts \
+            --lane legacy-${{ runner.os == 'Windows' && 'windows' || 'linux' }} \
+            --project ${{ matrix.project }} --shard ${{ matrix.shard }}/4 \
+            --fixture-kind mocked-wails \
+            --fixture-input frontend/e2e/helpers/wails-mock.ts \
+            --fixture-input frontend/e2e/helpers/wails-v3-bridge.ts \
+            --output "$RUNNER_TEMP/evidence"
+      - name: Upload complete shard evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-legacy-${{ runner.os }}-${{ matrix.project }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+          retention-days: 7
+
+  full-gate:
+    name: Full CI gate (zero skipped required jobs)
+    if: always() && inputs.force_full
+    needs: [changes, docs-gate, validate-modal-ai, validate-frontend, validate-backend, backend-race-coverage, print-performance-report, admin-web-quality, windows-build, e2e-full]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact run SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Download all full-suite shard evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: acceptance-legacy-*
+          path: downloaded-evidence
+          merge-multiple: false
+      - name: Verify case sets, shard union, hashes and required job results
+        if: always()
+        run: |
+          node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
+            --expected legacy-linux/chromium:4 --expected legacy-linux/firefox:4 --expected legacy-linux/webkit:4 \
+            --expected legacy-windows/chromium:4 --expected legacy-windows/firefox:4 --expected legacy-windows/webkit:4 \
+            --job changes=${{ needs.changes.result }} --job docs=${{ needs.docs-gate.result }} \
+            --job modal-unit=${{ needs.validate-modal-ai.result }} --job frontend=${{ needs.validate-frontend.result }} \
+            --job backend=${{ needs.validate-backend.result }} --job race=${{ needs.backend-race-coverage.result }} \
+            --job print-report=${{ needs.print-performance-report.result }} --job admin=${{ needs.admin-web-quality.result }} \
+            --job windows-build=${{ needs.windows-build.result }} --job full-e2e=${{ needs.e2e-full.result }}
+      - name: Install report merger dependencies
+        if: always()
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Merge all browser blobs into HTML, JSON and JUnit
+        if: always()
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ../merged-evidence/html
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ../merged-evidence/results.json
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ../merged-evidence/results.xml
+        run: npx --no-install playwright merge-reports --config=../scripts/e2e/report-merge.config.mjs --reporter=html,json,junit ../merged-evidence/blob
+      - name: Upload full CI summary and merged reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-ci-summary
+          path: merged-evidence/
+          if-no-files-found: error
+          retention-days: 7

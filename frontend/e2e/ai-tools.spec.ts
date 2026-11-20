@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import { stageImageSources } from './helpers/konva-probes';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('AI Tools Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {

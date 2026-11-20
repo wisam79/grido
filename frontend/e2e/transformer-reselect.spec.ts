@@ -1,6 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * انحدار قاتل: تحديد عنصر ثم إلغاء تحديده ثم إعادة تحديده يجب أن يُظهر

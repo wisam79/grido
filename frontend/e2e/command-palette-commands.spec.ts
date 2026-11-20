@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { runWorkspaceCommand } from './helpers/studio-elements';
+
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * لوحة الأدوات (Ctrl+K) — مصدر واحد ومدخل واحد.
@@ -37,7 +39,7 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'));
     const before = await isDark();
 
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:toggle-theme')));
+    await runWorkspaceCommand(page, 'toggle-theme');
 
     await expect.poll(isDark, { timeout: 5000 }).toBe(!before);
   });
@@ -46,7 +48,7 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     // البيئة حتمية: لا حوار مفتوحاً عند الإقلاع — إثبات بلا تسامح صامت
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:open-account')));
+    await runWorkspaceCommand(page, 'account');
 
     const dialog = page.getByRole('dialog').first();
     await expect(dialog).toBeVisible();

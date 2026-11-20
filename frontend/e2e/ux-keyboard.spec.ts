@@ -1,6 +1,6 @@
-import { test as base, expect, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 import type { CanvasElement } from '../src/lib/store/types';
 
@@ -13,40 +13,6 @@ type EditorHarness = {
   };
   setState: (state: Record<string, unknown>) => void;
 };
-
-const test = base.extend<{ networkGuard: string[] }>({
-  networkGuard: [
-    async ({ context, baseURL }, provide) => {
-      const unexpected: string[] = [];
-      const origin = new URL(baseURL!).origin;
-      await context.route('**/*', async (route) => {
-        const url = new URL(route.request().url());
-        if (url.origin === origin) {
-          // Warmup is unrelated to keyboard UX; do not download model weights.
-          if (url.pathname.startsWith('/models/scanic/')) await route.abort('blockedbyclient');
-          else await route.continue();
-        } else {
-          unexpected.push(`${route.request().method()} ${url.origin}${url.pathname}`);
-          await route.abort('blockedbyclient');
-        }
-      });
-      await context.routeWebSocket('**/*', (socket) => {
-        const url = new URL(socket.url());
-        const local = new URL(baseURL!);
-        if (url.hostname === local.hostname && url.port === local.port) socket.connectToServer();
-        else {
-          unexpected.push(`WS ${url.hostname}`);
-          socket.close({ code: 1000, reason: 'Offline UX fixture' });
-        }
-      });
-      await provide(unexpected);
-      expect(unexpected, 'No external API, cloud or socket traffic').toEqual([]);
-    },
-    { auto: true },
-  ],
-});
-
-test.use({ serviceWorkers: 'block' });
 
 test.beforeEach(async ({ page }) => {
   await setupWailsMock(page);

@@ -4,6 +4,16 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 > **تحديث سحابة Supabase (2026-11-15):** أُزيل أثر الدالتين اليتيمتين `license` و`ai-enhance` حياً بإطلاق نسخة **v7** (`verify_jwt: true`, `410 Gone`) منزوعة `SUPABASE_SERVICE_ROLE_KEY`؛ كما تمت مواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق هجرة التقوية `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` عبر `supabase db push` (`43 = 43` متطابقة حياً، `0` تنبيهات `anon_security_definer_function_executable` و`0` `multiple_permissive_policies`). التفاصيل في [SECURITY_NOTICE.md](../SECURITY_NOTICE.md).
 
+## عزل أدوات قبول E2E — 2026-11-20
+
+مصدر قبول backend هو نفسmain/service/SQLite/assets مع `-tags=e2e,server,production` (Ubuntu)، أو`-tags=e2e,production` (Windowsnative). ملفات `runtime_harness*_e2e.go` محصورةtag؛ نسخةrelease تستخدمno-op ولا تملك منفذCDP/testdialogs. `prepareRuntimeHarness` يفرض absolute canonical `GRIDO_APP_DIR` وloopbackliteral وصحةMODE/ports، وnative CDP يمر عبرAdditionalBrowserArgs لا متغيرWebView2 الذي يمسحهWails. الإصدار العام لا يتغير بإعدادtest.
+
+`RuntimeProcess` في `scripts/e2e/runtime-process.mjs` يشغّل binary مبنياً مسبقاً، يتحقق/يعيد تشغيل العملية، ويعطي مساراتgrido.db/autosave.json/Media/Exports/webview_cache وFIFOdialogqueue مؤقتة. `runtime_dialog_e2e.go` يعالج اختيار الملف فقط بعدpath/symlink checks؛ media/export/project تبقى فعلية. تحويل استدعاءاتapp.go/backup للـRuntimeBridge لا يغيّر توقيعاتIPC. توليد الربطات/اختبارdrift يمران فيCI من المصادر الجديدة؛ لا خدماتgeneric testRPC تضافللrelease.
+
+Supabase provisioner يستعملCLI2.81.3 وDocker/psql داخلRUNNER_TEMP فقط، configfixture مثبتة للإصدار، ينسخmigrationsbyte-identical ويتعامل معhistoricalprincipalprereq ببياناتsynthetic، ثمAuthaccountsحقيقية منفصلةUSER/TARGET/PHONE/ADMIN. service-role/DBcredentials لا تصلsharedenv أوbrowser أوbinary أوartifact، والمرفقاتsanitizedprovision-report/cli-help فقط. Nativeauthcontract منفصلthird-partyMOCK يمرLoginAccount الحقيقي ولا يكتبprofile/entitlementلتجاوزauth.
+
+الرحلاتGUI فيe2e-acceptance لا تستوردbindingsللقيامبالعمليات ولا تكتبstore؛ القراءاتreadonly. pipeline evidence مطلوبSHA/runtime/fixtures/outputs/trace/screenshots/videoالمتاح، والقدراتغيرالمتاحةblocked. التنفيذالمكتوب ليس قبولاً قبلrun؛ [تقرير28](reviews/28-real-e2e-acceptance-2026-11-20.md) يحفظنتائجR0 والفشلوإعادةالتشغيل.
+
 ## عقود مراجعة حملة التعديلات — 2026-11-20
 
 تفاصيل الدليل والتنفيذ والحدود في [التقرير 27](reviews/27-change-campaign-audit-2026-11-20.md). لا تغييرات Go/IPC/migrations، ولا إعادة توليد bindings لازمة لهذه الجولة.

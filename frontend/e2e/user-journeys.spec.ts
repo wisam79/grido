@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { stageTextCount } from './helpers/konva-probes';
+import { stageTextCount, stageImageSources } from './helpers/konva-probes';
 import { openStudioElementsCategory } from './helpers/studio-elements';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Integrated User Journeys E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,16 +11,17 @@ test.describe('Integrated User Journeys E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('User Journey 1: Import image, edit, switch to collage, and trigger export', async ({
+  test('User Journey 1: Import image, transfer real design to collage, and complete mocked export', async ({
     page,
   }) => {
     // 1. Add image to canvas
     await page.getByTestId('mode-tab-single').click();
     await page.getByTestId('toolbar-insert').click();
-    await expect(page.locator('#canvas-area')).toBeVisible();
+    await expect.poll(() => stageImageSources(page)).not.toBe('');
 
-    // 2. Switch to Collage Mode
-    await page.getByTestId('mode-tab-collage').click();
+    // Transfer the actual design, not merely switch to an empty collage.
+    await page.getByTestId('toolbar-transfer-to-collage').click();
+    await expect(page.getByText(/إدراج التصميم في/)).toBeVisible();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 3. Open Export dialog
@@ -33,10 +34,17 @@ test.describe('Integrated User Journeys E2E', () => {
     const exportModal = page.getByRole('dialog').filter({ hasText: /تصدير/ });
     await expect(exportModal).toBeVisible();
 
-    // Close export dialog
-    const cancelBtn = exportModal.getByRole('button', { name: /إلغاء|إغلاق/ }).first();
-    await cancelBtn.click();
-    await expect(exportModal).not.toBeVisible();
+    const saveRequest = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/save-file' &&
+        response.request().method() === 'POST',
+    );
+    await exportModal.getByRole('button', { name: 'تصدير', exact: true }).click();
+    const saved = await saveRequest;
+    expect(saved.request().postDataBuffer()!.length).toBeGreaterThan(100);
+    expect(await saved.json()).toEqual({ status: 'success' });
+    await expect(page.getByText('تم تصدير الصورة بنجاح', { exact: true })).toBeVisible();
+    await expect(exportModal).toBeHidden();
   });
 
   test('User Journey 2: Freeform text insert and real undo removes it', async ({ page }) => {

@@ -1,12 +1,51 @@
+import { deflateSync } from 'node:zlib';
+
 import type { Page } from '@playwright/test';
 
-// 1x1 transparent PNG data URL & base64
-export const MOCK_PNG_BASE64 =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-export const MOCK_RAW_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  'base64',
-);
+// Deterministic 800x600 RGBA fixture. Dimensions, decoding and backend metadata
+// agree; the old corrupt/1px placeholder did not exercise a real image canvas.
+function fixturePNG(): Buffer {
+  const crc32 = (bytes: Buffer) => {
+    let crc = 0xffffffff;
+    for (const byte of bytes) {
+      crc ^= byte;
+      for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const name = Buffer.from(type);
+    const header = Buffer.alloc(4);
+    header.writeUInt32BE(data.length);
+    const checksum = Buffer.alloc(4);
+    checksum.writeUInt32BE(crc32(Buffer.concat([name, data])));
+    return Buffer.concat([header, name, data, checksum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(800, 0);
+  header.writeUInt32BE(600, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const pixels = Buffer.alloc((800 * 4 + 1) * 600);
+  for (let y = 0; y < 600; y++) {
+    for (let x = 0; x < 800; x++) {
+      const offset = y * (800 * 4 + 1) + 1 + x * 4;
+      const inside = x >= 40 && x < 760 && y >= 40 && y < 560;
+      pixels[offset] = inside ? 30 : 245;
+      pixels[offset + 1] = inside ? 110 : 245;
+      pixels[offset + 2] = inside ? 170 : 245;
+      pixels[offset + 3] = 255;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from('89504e470d0a1a0a', 'hex'),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+export const MOCK_RAW_PNG = fixturePNG();
+export const MOCK_PNG_BASE64 = `data:image/png;base64,${MOCK_RAW_PNG.toString('base64')}`;
 
 export const MOCK_USER_PROFILE = {
   id: 'e2e-user-id',
@@ -22,18 +61,191 @@ export const MOCK_USER_PROFILE = {
   updatedAt: '2026-01-01T00:00:00Z',
 };
 
-export const MOCK_PROJECTS: any[] = [
+export interface MockProject {
+  id: string;
+  name: string;
+  mode: string;
+  canvasWidth: number;
+  canvasHeight: number;
+  elements: string;
+  slots: string;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: unknown;
+}
+
+// Explicit saved-user fixtures, NOT discontinued built-in/official presets.
+export const MOCK_CUSTOM_TEMPLATES = [
+  { id: 1, name: 'طقم سفر', rows: 1, cols: 2 },
+  { id: 2, name: 'طقم تقديم', rows: 2, cols: 2 },
+  { id: 3, name: 'طقم عائلي', rows: 2, cols: 3 },
+].map(({ id, name, rows, cols }) => ({
+  id,
+  name,
+  slots: rows * cols,
+  cells: JSON.stringify(
+    Array.from({ length: rows * cols }, (_, index) => ({
+      x: (index % cols) / cols,
+      y: Math.floor(index / cols) / rows,
+      w: 1 / cols,
+      h: 1 / rows,
+    })),
+  ),
+  metadata: '',
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+}));
+
+export const MOCK_PROJECTS: MockProject[] = [
   {
     id: 'mock-proj-1',
     name: 'مشروع اختباري أول',
-    data: '{}',
-    preview: MOCK_PNG_BASE64,
+    mode: 'single',
+    canvasWidth: 2480,
+    canvasHeight: 3508,
+    backgroundColor: '#ffffff',
+    elements: '[]',
+    slots: '[]',
+    template: '',
+    collageTemplate: '',
+    printSettings: '',
+    editorState: '',
+    userGuides: '[]',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
   },
 ];
 
-export const MOCK_CUSTOM_TEMPLATES: any[] = [];
+export interface MockLedger {
+  fixtureKind: 'mocked-wails';
+  rpc: Array<{
+    object: number;
+    method: number;
+    methodID?: number;
+    name?: string;
+    args: unknown[];
+    result?: unknown;
+    error?: string;
+  }>;
+  errors: string[];
+  projects: MockProject[];
+}
+interface BridgeState {
+  ledger: MockLedger;
+  handlers: Record<number, (...args: any[]) => any>;
+}
+const bridges = new WeakMap<Page, BridgeState>();
+export function getMockLedger(page: Page): MockLedger | undefined {
+  return bridges.get(page)?.ledger;
+}
+
+function statefulHandlers(projects: MockProject[]) {
+  const templates = structuredClone(MOCK_CUSTOM_TEMPLATES);
+  let autosave = '';
+  let clipboard = '';
+  let phoneRunning = false;
+  let phoneSession = 0;
+  return {
+    2446384535: async (project: MockProject) => {
+      if (!project?.id || !project.name || !Array.isArray(JSON.parse(project.elements))) {
+        throw new Error('SaveProject requires an identified, named serialized document');
+      }
+      const saved = structuredClone(project);
+      const index = projects.findIndex((candidate) => candidate.id === project.id);
+      const now = new Date().toISOString();
+      saved.createdAt = index >= 0 ? projects[index].createdAt : now;
+      saved.updatedAt = now;
+      if (index >= 0) projects[index] = saved;
+      else projects.push(saved);
+      return 'success';
+    },
+    1640193742: async () =>
+      projects.map((project) => ({
+        ...structuredClone(project),
+        elements: '',
+        slots: '',
+        template: '',
+        collageTemplate: '',
+        editorState: '',
+      })),
+    71630846: async (id: string) =>
+      structuredClone(projects.find((project) => project.id === id) ?? null),
+    4228529901: async (id: string) => {
+      const index = projects.findIndex((project) => project.id === id);
+      if (index < 0) throw new Error(`Project ${id} not found`);
+      projects.splice(index, 1);
+      return 'success';
+    },
+    2659213342: async () => {
+      projects.splice(0);
+      return 'success';
+    },
+    1522265743: async () => structuredClone(templates),
+    1411792440: async (name: string, slots: number, cells: string, metadata = '') => {
+      const id = Math.max(0, ...templates.map((template) => template.id)) + 1;
+      templates.push({
+        id,
+        name,
+        slots,
+        cells,
+        metadata,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      return id;
+    },
+    1013443833: async (name: string, slots: number, cells: string) => {
+      const id = Math.max(0, ...templates.map((template) => template.id)) + 1;
+      templates.push({
+        id,
+        name,
+        slots,
+        cells,
+        metadata: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      return id;
+    },
+    1006108175: async (id: number) => {
+      const index = templates.findIndex((template) => template.id === id);
+      if (index < 0) throw new Error(`Template ${id} not found`);
+      templates.splice(index, 1);
+    },
+    2863230114: async (value: string) => {
+      autosave = value;
+    },
+    1086724551: async () => autosave,
+    485242536: async () => {
+      autosave = '';
+    },
+    966799716: async (value: string) => {
+      clipboard = value;
+    },
+    345087440: async () => clipboard,
+    93234400: async () => {
+      phoneRunning = true;
+      phoneSession++;
+      return {
+        ip: '127.0.0.1',
+        port: 8741,
+        token: `mock-token-${phoneSession}`,
+        url: `http://127.0.0.1:8741/cam?token=mock-token-${phoneSession}`,
+        isRunning: true,
+      };
+    },
+    1794026154: async () => ({
+      isRunning: phoneRunning,
+      url: '',
+      receivedCount: 0,
+      lastReceived: '',
+      pairedDevice: '',
+    }),
+    1433752998: async () => {
+      phoneRunning = false;
+    },
+  };
+}
 
 /**
  * خريطة استدعاءات Wails v3 عبر معرّفات الدوال الرقمية ($Call.ByID)
@@ -196,320 +408,208 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   1965354225: async () => undefined, // CancelPrintJob
 };
 
-/**
- * يقوم بتهيئة جسر محاكاة Wails v3 المتكامل لصفحة الاختبار في Playwright
- */
+/** Names are the generated bindings, not guessed RPC labels. */
+export const WAILS_METHOD_NAMES: Record<number, string> = {
+  '3084559015': 'ApplyMaskRaw',
+  '2977102455': 'ApplyMaskToImage',
+  '2347956003': 'CheckForUpdate',
+  '2320258599': 'CheckPendingCrashReport',
+  '3605864796': 'CleanUnusedMediaNow',
+  '485242536': 'ClearAutoSave',
+  '1006108175': 'DeleteCustomTemplate',
+  '2108673700': 'DismissCrashReport',
+  '2440793480': 'DownloadAndInstallUpdate',
+  '3363530620': 'EmptyMediaTrash',
+  '2111291824': 'EnhanceImageWithAI',
+  '2950359501': 'ExportSupportLogs',
+  '345087440': 'GetClipboardText',
+  '1522265743': 'GetCustomTemplates',
+  '143340993': 'GetImageDimensions',
+  '1585336687': 'GetLocalApiToken',
+  '896689433': 'GetMediaStorageStats',
+  '1794026154': 'GetPhoneBridgeStatus',
+  '3709429484': 'GetScreensInfo',
+  '3983598326': 'GetStartupFile',
+  '984446249': 'LoadAiUsageLogs',
+  '1086724551': 'LoadAutoSave',
+  '514392429': 'LogFrontendError',
+  '1188724780': 'OpenDirectoryDialog',
+  '1958968983': 'OpenFile',
+  '3894305329': 'OpenFolder',
+  '3132122792': 'OpenMultipleFiles',
+  '1049178424': 'ProcessLocalImageFile',
+  '1696913149': 'RemoveBackground',
+  '3192268814': 'RequestGracefulQuit',
+  '4162449642': 'RespondGracefulQuit',
+  '2892812386': 'SaveAiUsageLogs',
+  '2863230114': 'SaveAutoSave',
+  '1013443833': 'SaveCustomTemplate',
+  '1411792440': 'SaveCustomTemplateWithMetadata',
+  '1166008166': 'SaveFileDialog',
+  '211586642': 'SaveImageFromBase64',
+  '3958356690': 'SelectExportDirectory',
+  '2207617336': 'SendNotification',
+  '966799716': 'SetClipboardText',
+  '1338676276': 'SetTaskbarProgress',
+  '1225131967': 'ShowInFolder',
+  '93234400': 'StartPhoneBridge',
+  '1433752998': 'StopPhoneBridge',
+  '3948031462': 'WarmupBgRemoval',
+  '1327210012': 'ExportBackup',
+  '3760965235': 'ExportBackupToFile',
+  '1499912742': 'ExportBackupToPath',
+  '824902195': 'ImportBackup',
+  '2659213342': 'ResetLibrary',
+  '377054365': 'Startup',
+  '1507354738': 'ActivateLicenseKey',
+  '2824574168': 'GetLicenseStatus',
+  '4008420485': 'LoginAccount',
+  '3777204317': 'LoginWithGoogle',
+  '2529001923': 'Logout',
+  '844537991': 'RegisterAccount',
+  '2733599319': 'ResendOTP',
+  '952907889': 'ResetPassword',
+  '3668504133': 'VerifyOTP',
+  '874821600': 'VerifyRecoveryOTP',
+  '2833362764': 'CancelActivePrintJobs',
+  '1965354225': 'CancelPrintJob',
+  '2204090549': 'CancelSpoolJob',
+  '334009393': 'ExportPrintSheet',
+  '657414139': 'GetDefaultPrinterName',
+  '1916660602': 'GetPrinters',
+  '2075115632': 'GetSupportedPapers',
+  '2929786627': 'OpenPrinterPreferences',
+  '1373740449': 'PollJobStatus',
+  '1268920029': 'PrintDirect',
+  '100771007': 'PrintNative',
+  '1144725046': 'ResolvePrinterPlan',
+  '4228529901': 'DeleteProject',
+  '1640193742': 'GetAllProjects',
+  '71630846': 'GetProject',
+  '2446384535': 'SaveProject',
+  '4177774687': 'GetBatchImageDimensions',
+};
+
+// Explicit runtime controls used by the compatibility wrapper. Unlisted
+// objects/methods are contract failures, not a blanket successful true result.
+const RUNTIME_CONTROLS: Record<string, { name: string; value: unknown }> = {
+  '1:0': { name: 'Clipboard.SetText', value: null },
+  '1:1': { name: 'Clipboard.Text', value: '' },
+  '2:2': { name: 'Application.Quit', value: null },
+  '3:0': { name: 'Events.Emit', value: null },
+  '6:0': { name: 'Window.Position', value: { x: 0, y: 0 } },
+  '6:14': { name: 'Window.IsMaximised', value: false },
+  '6:17': { name: 'Window.Minimise', value: null },
+  '6:24': { name: 'Window.SetPosition', value: null },
+  '6:33': { name: 'Window.SetSize', value: null },
+  '6:37': { name: 'Window.Size', value: { width: 1280, height: 800 } },
+  '6:39': { name: 'Window.ToggleMaximise', value: null },
+  '6:49': { name: 'Window.SnapAssist', value: null },
+  '8:0': { name: 'System.IsDarkMode', value: false },
+  '8:1': { name: 'System.Environment', value: { OS: 'linux', Arch: 'amd64' } },
+  '10:0': { name: 'CancelCall.Cancel', value: null },
+};
+
+/** Mocked browser integration only. Nothing here starts Go or writes a file. */
 export async function setupWailsV3Bridge(
   page: Page,
   customHandlers?: Record<number, (...args: any[]) => any>,
 ) {
-  const handlers = { ...WAILS_V3_METHOD_HANDLERS, ...customHandlers };
-  const chunkedRequests = new Map<string, (Buffer | null)[]>();
+  const existing = bridges.get(page);
+  if (existing) {
+    Object.assign(existing.handlers, customHandlers);
+    return existing.ledger;
+  }
+  const projects = structuredClone(MOCK_PROJECTS);
+  const ledger: MockLedger = { fixtureKind: 'mocked-wails', rpc: [], errors: [], projects };
+  const handlers: Record<number, (...args: any[]) => any> = {
+    ...WAILS_V3_METHOD_HANDLERS,
+    ...statefulHandlers(projects),
+    ...customHandlers,
+  };
+  bridges.set(page, { ledger, handlers });
+  const chunksByID = new Map<string, { total: number; chunks: Buffer[] }>();
 
-  // 1. اعتراض مسار استدعاءات Wails v3 Runtime Network Requests
   await page.route('**/wails/runtime', async (route) => {
-    const request = route.request();
-    if (request.method() !== 'POST') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-    }
-
+    let entry: MockLedger['rpc'][number] | undefined;
     try {
-      let payload: any;
+      const request = route.request();
+      if (request.method() !== 'POST') throw new Error('Runtime requires POST');
       const headers = request.headers();
       const chunkId = headers['x-wails-chunk-id'];
-
+      let payload;
       if (chunkId) {
-        const chunkIndex = parseInt(headers['x-wails-chunk-index'] || '0', 10);
-        const chunkTotal = parseInt(headers['x-wails-chunk-total'] || '1', 10);
-        let chunks = chunkedRequests.get(chunkId);
-        if (!chunks) {
-          chunks = new Array(chunkTotal).fill(null);
-          chunkedRequests.set(chunkId, chunks);
-        }
-        chunks[chunkIndex] = request.postDataBuffer();
-
-        // القطع الوسيطة تُجاب بـ 200 OK فارغ حسب معيار Wails v3
-        if (chunkIndex < chunkTotal - 1) {
-          return route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: 'true',
-          });
-        }
-
-        // القطعة الختامية: تجميع كافة أجزاء الطلب وفك تشفير JSON
-        chunkedRequests.delete(chunkId);
-        const validBuffers = chunks.filter((b): b is Buffer => Boolean(b));
-        const assembled = Buffer.concat(validBuffers).toString('utf-8');
-        payload = JSON.parse(assembled);
-      } else {
-        payload = request.postDataJSON();
-      }
-
-      // payload: { object: number, method: number, args?: { "call-id"?: string, methodID?: number, args?: any[] } }
-      const objectId = payload?.object ?? 0;
+        const index = Number(headers['x-wails-chunk-index']);
+        const total = Number(headers['x-wails-chunk-total']);
+        if (
+          !Number.isInteger(index) ||
+          !Number.isInteger(total) ||
+          total < 1 ||
+          total > 1024 ||
+          index < 0 ||
+          index >= total
+        )
+          throw new Error('Invalid runtime chunk headers');
+        const state = chunksByID.get(chunkId) ?? { total, chunks: [] };
+        if (state.total !== total || state.chunks.length !== index)
+          throw new Error('Runtime chunks missing, duplicated or out of order');
+        const bytes = request.postDataBuffer();
+        if (!bytes) throw new Error('Empty runtime chunk');
+        state.chunks.push(bytes);
+        chunksByID.set(chunkId, state);
+        if (index < total - 1) return await route.fulfill({ json: true });
+        chunksByID.delete(chunkId);
+        payload = JSON.parse(Buffer.concat(state.chunks).toString('utf8'));
+      } else payload = request.postDataJSON();
+      const object = payload?.object;
+      const method = payload?.method;
       const rpcArgs = payload?.args;
-
-      if (objectId === 0 && rpcArgs && typeof rpcArgs.methodID === 'number') {
-        const methodId = rpcArgs.methodID;
-        const callArgs = Array.isArray(rpcArgs.args) ? rpcArgs.args : [];
-
-        if (handlers[methodId]) {
-          const result = await handlers[methodId](...callArgs);
-          return route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(result !== undefined ? result : null),
-          });
-        }
-
-        console.warn(`[Wails-v3-Mock] Unhandled methodID: ${methodId}`);
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(null),
-        });
+      entry = { object, method, args: [] };
+      ledger.rpc.push(entry);
+      let result: unknown;
+      if (
+        object === 0 &&
+        method === 0 &&
+        typeof rpcArgs?.methodID === 'number' &&
+        Array.isArray(rpcArgs.args)
+      ) {
+        entry.methodID = rpcArgs.methodID;
+        entry.name = WAILS_METHOD_NAMES[rpcArgs.methodID];
+        entry.args = structuredClone(rpcArgs.args);
+        const handler = handlers[rpcArgs.methodID];
+        if (!handler) throw new Error(`Unknown Wails methodID ${rpcArgs.methodID}`);
+        result = await handler(...rpcArgs.args);
+      } else {
+        const control = RUNTIME_CONTROLS[`${object}:${method}`];
+        if (!control) throw new Error(`Unknown runtime control ${object}:${method}`);
+        entry.name = control.name;
+        entry.args = [rpcArgs ?? null];
+        result = control.value;
       }
-
-      // باقي كائنات الـ Runtime (Window=6, Events=3, Clipboard=1, Application=2, System=8)
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(true),
-      });
-    } catch (err) {
-      console.error('[Wails-v3-Mock] Error routing /wails/runtime:', err);
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(null),
-      });
+      entry.result = structuredClone(result ?? null);
+      await route.fulfill({ json: result ?? null });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (entry) entry.error = message;
+      ledger.errors.push(message);
+      // Fatal in teardown even if production catches the visible rejection.
+      // Never mask malformed/unknown RPC with HTTP200 null.
+      await route.fulfill({ status: 501, json: { kind: 'RuntimeError', message } });
     }
   });
-
-  // 2. اعتراض مسار الميديا والصور المحلية
-  await page.route('**/local-image/**', async (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: 'image/png',
-      body: MOCK_RAW_PNG,
+  await page.route('**/local-image/**', (route) =>
+    route.fulfill({ contentType: 'image/png', body: MOCK_RAW_PNG }),
+  );
+  await page.addInitScript(() => {
+    localStorage.setItem('grido_workflow_mode', 'studio');
+    // Desktop detection only. All bindings use the audited v3 HTTP path;
+    // no divergent legacy window.go handlers bypass the ledger.
+    Object.defineProperty(window, 'wails', {
+      value: { fixtureKind: 'mocked-wails' },
+      configurable: true,
     });
   });
-
-  // 3. حقن كائنات التوافق العكسي وتجاوز شاشة الترحيب في بيئة الاختبار
-  await page.addInitScript((mockImage) => {
-    try {
-      if (!localStorage.getItem('grido_workflow_mode')) {
-        localStorage.setItem('grido_workflow_mode', 'studio');
-      }
-    } catch {
-      // تجاهل أخطاء التخزين إن وجدت
-    }
-
-    const legacyMockGo = {
-      main: {
-        App: {
-          ApplyMaskToImage: async () => mockImage,
-          ApplyMaskRaw: async () => mockImage,
-          CheckForUpdate: async () => ({
-            has_update: false,
-            current_version: 'v1.0.0',
-            latest_version: 'v1.0.0',
-            download_url: '',
-            release_notes: '',
-          }),
-          CheckPendingCrashReport: async () => null,
-          CleanUnusedMediaNow: async () => ({ cleaned: 0 }),
-          EmptyMediaTrash: async () => ({ deletedCount: 0, freedBytes: 0 }),
-          ClearAutoSave: async () => {},
-          DeleteCustomTemplate: async () => 'success',
-          DismissCrashReport: async () => {},
-          DownloadAndInstallUpdate: async () => {},
-          EnhanceImageWithAI: async () => mockImage,
-          ExportSupportLogs: async () => 'C:/mock/logs.txt',
-          GetBatchImageDimensions: async () => ({}),
-          GetCustomTemplates: async () => [],
-          GetDeviceProfiles: async () => [],
-          GetLocalApiToken: async () => 'e2e-local-api-session-token',
-          GetImageDimensions: async () => ({ width: 800, height: 600 }),
-          GetMediaStorageStats: async () => ({ count: 1, size_bytes: 1024 }),
-          GetPaperTemplates: async () => [],
-          GetPhoneBridgeStatus: async () => ({
-            isRunning: false,
-            url: '',
-            receivedCount: 0,
-            lastReceived: '',
-          }),
-          GetStartupFile: async () => '',
-          LoadAiUsageLogs: async () => '[]',
-          LoadAutoSave: async () => '',
-          LogFrontendError: async () => {},
-          OpenDirectoryDialog: async () => ['C:/mock/dir'],
-          OpenFile: async () => mockImage,
-          OpenFolderInExplorer: async () => {},
-          OpenMultipleFiles: async () => [mockImage],
-          OpenPath: async () => {},
-          RequestGracefulQuit: async () => 1,
-          RespondGracefulQuit: async () => true,
-          SaveAiUsageLogs: async () => {},
-          SaveAutoSave: async () => {},
-          SaveCustomTemplate: async () => 'success',
-          SaveCustomTemplateWithMetadata: async () => 'success',
-          SaveFile: async () => 'C:/mock/saved.png',
-          SaveFileDialog: async () => 'C:/mock/saved.png',
-          SaveImageFromBase64: async () => '/local-image/saved-b64.png',
-          SelectExportDirectory: async () => 'C:/mock/export',
-          SendNotification: async () => {},
-          SetClipboardText: async () => {},
-          SetProgressBar: async () => {},
-          ShowItemInFolder: async () => {},
-          StartPhoneBridge: async () => ({
-            ip: '127.0.0.1',
-            port: 8741,
-            token: 'mock',
-            url: 'http://127.0.0.1:8741',
-            isRunning: true,
-          }),
-          StopPhoneBridge: async () => {},
-        },
-      },
-      handlers: {
-        ProjectHandler: {
-          SaveProject: async () => 'success',
-          GetAllProjects: async () => [],
-          GetProject: async () => null,
-          DeleteProject: async () => 'success',
-        },
-        LicenseHandler: {
-          ActivateLicenseKey: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          GetLicenseStatus: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          LoginAccount: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          LoginWithGoogle: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          Logout: async () => 'success',
-          RegisterAccount: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          ResendOTP: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          ResetPassword: async () => 'success',
-          VerifyOTP: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-          VerifyRecoveryOTP: async () => ({
-            id: 'e2e-user',
-            plan: 'pro',
-            status: 'active',
-            expiresAt: '2030-01-01T00:00:00Z',
-            token: 'mock-tok',
-          }),
-        },
-        BackupHandler: {
-          ExportBackup: async () => 'C:/mock/backup.zip',
-          ExportBackupToFile: async () => undefined,
-          ExportBackupToPath: async () => 'C:/mock/backup.json',
-          ImportBackup: async () => 'success',
-          ResetLibrary: async () => 'success',
-          ResetSettings: async () => 'success',
-        },
-        PrintHandler: {
-          ExportPrintSheet: async () => ({
-            success: true,
-            imagePath: 'mock.png',
-            filePath: 'C:/mock/sheet.png',
-          }),
-          PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }),
-          PrintDirect: async () => ({
-            success: true,
-            jobId: 42,
-            status: 'Printed',
-            error: '',
-          }),
-          GetSupportedPapers: async () => ({ success: true, papers: [] }),
-          PollJobStatus: async () => ({ success: true, jobId: 42, status: 'Printed', error: '' }),
-          CancelActivePrintJobs: async () => undefined,
-          CancelPrintJob: async () => undefined,
-        },
-      },
-    };
-
-    const legacyMockRuntime = {
-      EventsOnMultiple: () => () => {},
-      EventsOn: () => () => {},
-      EventsOff: () => {},
-      EventsOffAll: () => {},
-      EventsOnce: () => {},
-      EventsEmit: () => {},
-      BrowserOpenURL: () => {},
-      WindowMinimise: () => {},
-      WindowToggleMaximise: () => {},
-      WindowIsMaximised: () => false,
-      WindowMaximise: () => {},
-      WindowUnmaximise: () => {},
-      WindowGetSize: async () => ({ w: 1024, h: 768 }),
-      WindowSetSize: () => {},
-      WindowGetPosition: async () => ({ x: 0, y: 0 }),
-      WindowSetPosition: () => {},
-      WindowSetTitle: () => {},
-      Quit: () => {},
-      OnFileDrop: () => {},
-      OnFileDropOff: () => {},
-      LogPrint: () => {},
-      LogTrace: () => {},
-      LogDebug: () => {},
-      LogInfo: () => {},
-      LogWarning: () => {},
-      LogError: () => {},
-      LogFatal: () => {},
-    };
-
-    Object.defineProperty(window, 'go', {
-      value: legacyMockGo,
-      writable: true,
-      configurable: true,
-    });
-    Object.defineProperty(window, 'runtime', {
-      value: legacyMockRuntime,
-      writable: true,
-      configurable: true,
-    });
-  }, MOCK_PNG_BASE64);
+  return ledger;
 }
 
 /**

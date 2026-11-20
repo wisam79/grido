@@ -44,6 +44,11 @@ var assets embed.FS
 var localApiSessionToken string
 
 func main() {
+	// Release builds compile a no-op; e2e builds validate isolation before I/O.
+	if err := prepareRuntimeHarness(); err != nil {
+		println("Runtime harness configuration error:", err.Error())
+		os.Exit(1)
+	}
 	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
 	service.InitLogger()
 
@@ -202,7 +207,7 @@ func main() {
 	}
 
 	// تهيئة تطبيق Wails v3
-	wailsApp := application.New(application.Options{
+	appOptions := application.Options{
 		Name:        "Grido Studio",
 		Description: "Professional Photo & Collage Studio",
 		Logger:      service.GlobalLogger,
@@ -269,7 +274,9 @@ func main() {
 				slog.Error("Failed to close database during shutdown", "error", err)
 			}
 		},
-	})
+	}
+	configureRuntimeHarness(&appOptions)
+	wailsApp := application.New(appOptions)
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
 	// ملاحظة: DefaultContextMenuDisabled يُترك false عمداً لأن الواجهة

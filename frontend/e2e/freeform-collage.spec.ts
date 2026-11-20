@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import { openStudioElementsCategory } from './helpers/studio-elements';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Freeform Collage & Elements Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {

@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import { applyCollagePreset } from './helpers/collage-presets';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Grid Collage Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe('Grid Collage Workflow E2E', () => {
     await page.getByTestId('mode-tab-collage').click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // تطبيق قالب جاهز مختلف («طقم تقديم») — تطبيق إلزامي بحالة نشطة مؤكدة
+    // تطبيق قالب مستخدم محفوظ محاكى مختلف («طقم تقديم») — تطبيق إلزامي بحالة نشطة مؤكدة
     await applyCollagePreset(page, 'طقم تقديم');
     await expect(page.locator('#canvas-area')).toBeVisible();
   });

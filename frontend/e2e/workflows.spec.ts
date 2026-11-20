@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import { applyCollagePreset } from './helpers/collage-presets';
 import { openStudioElementsCategory } from './helpers/studio-elements';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * سيناريوهات E2E إضافية — تغطي حلقات العمل الأساسية للمحرر:
@@ -23,11 +23,12 @@ test.describe('Editor Core Workflows E2E', () => {
     await expect(zoomIn).toBeVisible();
     await expect(zoomOut).toBeVisible();
 
-    // تكبير مرتين ثم تصغير مرة — يجب ألا ينهار التطبيق ويبقى الكانفس ظاهراً
+    const indicator = page.getByRole('button', { name: 'إعادة تعيين المقياس إلى 100%' });
+    const before = await indicator.textContent();
     await zoomIn.click();
     await zoomIn.click();
     await zoomOut.click();
-
+    await expect(indicator).not.toHaveText(before!);
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
@@ -82,14 +83,18 @@ test.describe('Editor Core Workflows E2E', () => {
     // زر المساطر جزء ثابت من سطح العرض أسفل الكانفس
     const rulerButton = page.getByRole('button', { name: /المساطر/ }).first();
     await expect(rulerButton).toBeVisible();
+    const before = await rulerButton.getAttribute('aria-pressed');
     await rulerButton.click();
+    await expect(rulerButton).toHaveAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
-  test('Apply a quick collage template from the panel', async ({ page }) => {
+  test('Apply a named saved-user collage template (mocked integration) from the panel', async ({
+    page,
+  }) => {
     await page.getByTestId('mode-tab-collage').click();
 
-    // تطبيق إلزامي لقالب جاهز عبر المساعد المشترك (بدل المحدد الميت القديم)
+    // تطبيق إلزامي لقالب مستخدم محفوظ محاكى عبر المساعد المشترك (بدل المحدد الميت القديم)
     await applyCollagePreset(page, 'طقم عائلي');
     await expect(page.locator('#canvas-area')).toBeVisible();
   });

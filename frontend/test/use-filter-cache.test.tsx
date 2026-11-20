@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-function setup() {
+function setup(observeCropChanges = false) {
   const stage = { width: () => 1000, scaleX: () => 1 };
   const node: CacheableKonvaNode = {
     getStage: () => stage,
@@ -27,6 +27,8 @@ function setup() {
     clearCache: vi.fn(),
     cache: vi.fn(),
     isCached: () => true,
+    on: vi.fn(),
+    off: vi.fn(),
   };
   const nodeRef = { current: node };
   const view = renderHook(() =>
@@ -35,6 +37,7 @@ function setup() {
       hasFilters: true,
       canvasWidth: 1000,
       image: null,
+      observeCropChanges,
     }),
   );
   vi.mocked(node.cache!).mockClear();
@@ -61,6 +64,38 @@ describe('useFilterCache all-image capture and gesture barrier', () => {
         resetCanvasInteraction();
         vi.advanceTimersByTime(120);
       });
+      expect(view.node.cache).toHaveBeenCalledTimes(1);
+      view.unmount();
+    },
+  );
+
+  it.each(['capture', 'drag', 'transform'] as const)(
+    'preserves pending crop settlement when the %s retry resumes',
+    (reason) => {
+      const view = setup(true);
+      const invalidateCrop = vi.mocked(view.node.on!).mock.calls[0][1];
+      act(() => invalidateCrop());
+      vi.mocked(view.node.clearCache!).mockClear();
+      act(() => {
+        if (reason === 'capture') capture.active = true;
+        else if (reason === 'drag') useCanvasInteraction.getState().setIsDragging(true);
+        else useCanvasInteraction.getState().setIsTransforming(true);
+        view.result.current(true);
+        vi.advanceTimersByTime(500);
+      });
+      expect(view.node.cache).not.toHaveBeenCalled();
+      expect(view.node.clearCache).not.toHaveBeenCalled();
+      act(() => {
+        capture.active = false;
+        resetCanvasInteraction();
+        vi.advanceTimersByTime(499);
+      });
+      expect(view.node.cache).not.toHaveBeenCalled();
+      expect(view.node.clearCache).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+      expect(view.node.cache).toHaveBeenCalledTimes(1);
+      expect(view.node.clearCache).toHaveBeenCalledTimes(1);
+      act(() => vi.advanceTimersByTime(1000));
       expect(view.node.cache).toHaveBeenCalledTimes(1);
       view.unmount();
     },

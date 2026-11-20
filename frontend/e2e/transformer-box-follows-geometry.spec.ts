@@ -1,6 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * انحدار: صندوق المحوّل يجب أن يتبع هندسة العنصر عندما تتغيّر من المتجر

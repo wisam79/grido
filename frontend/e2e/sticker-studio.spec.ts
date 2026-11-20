@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { runWorkspaceCommand } from './helpers/studio-elements';
+
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * استوديو الملصقات — المدخل الحتمي عبر حدث grido:open-stickers-dialog
@@ -16,7 +18,7 @@ test.describe('Sticker Studio & Barcode Generator E2E', () => {
   });
 
   test('Open sticker studio dialog and pick a template into customize stage', async ({ page }) => {
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog')));
+    await runWorkspaceCommand(page, 'stickers');
     const dialog = page.getByRole('dialog').first();
     await expect(dialog).toBeVisible();
 
@@ -36,7 +38,7 @@ test.describe('Sticker Studio & Barcode Generator E2E', () => {
   });
 
   test('Reach commercial barcode template through the codes category', async ({ page }) => {
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog')));
+    await runWorkspaceCommand(page, 'stickers');
     const dialog = page.getByRole('dialog').first();
     await expect(dialog).toBeVisible();
 
