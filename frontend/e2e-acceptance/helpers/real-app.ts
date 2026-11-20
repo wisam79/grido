@@ -2,14 +2,13 @@ import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { test as base, expect, chromium } from '@playwright/test';
+// @ts-expect-error Node-owned fixture generator intentionally stays outside frontend compilation.
 import { generateJourneyFixtures } from '../../../../scripts/e2e/journey-fixtures.mjs';
+// @ts-expect-error Backend-owned transparent native third-party auth contract fixture.
 import { startRuntimeAuthContract } from '../../../../scripts/e2e/runtime-auth-contract.mjs';
+// @ts-expect-error Node-owned process runner intentionally stays outside frontend compilation.
 import { launchRuntime } from '../../../../scripts/e2e/runtime-process.mjs';
 import type { Browser, BrowserContext, Page, TestInfo } from '@playwright/test';
-// Import only test infrastructure; application service bindings are deliberately absent.
-// @ts-expect-error Node-owned runtime helper has no declaration file.
-// @ts-expect-error Backend-owned transparent native third-party auth contract fixture.
-// @ts-expect-error Node-owned independent fixture generator.
 
 export type RuntimeHandle = {
   baseURL?: string;

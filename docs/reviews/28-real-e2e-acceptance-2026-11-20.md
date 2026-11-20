@@ -57,6 +57,12 @@
 
 **تصحيح F-R0-02 — الكود مثبت، إعادة CI كاملة معلّقة:** أُعيدت الحالة red محلياً في ملف واحد (22passed/1failed)، وثبت تداخل retry120ms معcrop settle500ms. التغيير المحدود في `frontend/src/hooks/use-filter-cache.ts` لا يحدد settlement جديداً إذا كان cropTimer قائماً، مع بقاء capture/drag/transform barriers. Green منفرد: `collage-image-crop`23/23 و`use-filter-cache`7/7، مع تأكيد499ms/500ms/no-late-duplicate/unmount. لم تُرخَّ توقعات الكاش أو تستخدم mock لتجاوز العيب؛ لا يعني green الفردي قبول R1 الكامل.
 
+## لقطة R1 — تنفيذ مكتوب جاهز للتشغيل، لا نتيجة قبول بعد
+
+أضيفت حزمةالمتصفحاتstrictledger/forcefull، وسبعرحلاتJ01–J07 فيستةspecsfrontendبخلفيةGo/SQLiteمضمّنة، وثلاثرحلاتA01/A02/P01 فيadmin/phoneSupabaselocal. nativeCDP/testdialogadapterتحملbuildtage2eفقط؛ releaseلايشحنها. wrapperيطابقfull/sharddiscoveryويرفضskipped/retries/missingevidence، nativevideoexplicitblocked، PDFGUI/hardware/OAuth/Modalأبوابغيرمغلقة.
+
+الفحوصالخفيقة: frontendtypecheck/lintوالأنواع/lintالمستقلةe2e-acceptance **PASS** بعدتصحيحموضعتعليقاتتعريفاتNodeالمسؤولة؛ reportselftest5/5 وjourneyverifier6/6 **PASS**، YAMLأولparseأصدرwarningleading! ثمصححت`${{...}}` وصارerrors/warningsصفر. لاE2Eمحلي. هذهتفاصيلتأسيسلاادعاءتشغيلR1.اللقطةالكودالأولى25993520متبوعةبتصحيحتعليقاتESMtypes، وتحددSHAالنهائيللدفعقبلdispatch.
+
 ## شروط الإغلاق
 
 آخر SHA واحد، discovery/project inventory مطابق للمنفذ، لا failed/flaky/skip غير مفسر، artifacts trace/screenshots/video المتاح ومخرجات/hash ومراجع البيئة، وإعادة كاملة أخيرة. نقص hardware/OAuth/Modal أو capability يُسجّل BLOCKED مستقلاً، ولا توصف شهادة التطبيق كاملة بأنها PASS مع نقص رحلة لازمة.
