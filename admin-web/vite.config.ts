@@ -23,6 +23,6 @@ export default defineConfig({
     include: ['three'],
   },
   test: {
-    exclude: ['**/node_modules/**', '**/.git/**', 'e2e/**'],
+    exclude: ['**/node_modules/**', '**/.git/**', 'e2e/**', 'e2e-acceptance/**'],
   },
 });

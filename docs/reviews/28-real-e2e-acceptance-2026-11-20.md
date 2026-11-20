@@ -63,6 +63,12 @@
 
 الفحوصالخفيقة: frontendtypecheck/lintوالأنواع/lintالمستقلةe2e-acceptance **PASS** بعدتصحيحموضعتعليقاتتعريفاتNodeالمسؤولة؛ reportselftest5/5 وjourneyverifier6/6 **PASS**، YAMLأولparseأصدرwarningleading! ثمصححت`${{...}}` وصارerrors/warningsصفر. لاE2Eمحلي. هذهتفاصيلتأسيسلاادعاءتشغيلR1.اللقطةالكودالأولى25993520متبوعةبتصحيحتعليقاتESMtypes، وتحددSHAالنهائيللدفعقبلdispatch.
 
+## تشغيل R1 الكامل للحزمة المسجلة
+
+run [44807851024](https://github.com/wisam79/grido/actions/runs/44807851024) على8c228110 عبر`ci.yml -f force_full=true` بدأ24شارد=نظامين×ثلاثمتصفحات×أربعشاردات، fullquality/race/report. المساراتactual لم تدخللأنworkflowالجديدغيرمسجلعلىdefaultbranch (dispatch404)، ولميُمسmainللتجاوز. نُقلتactualjobsإلىciالمسجلمعexpected_shaاختياريguard، وأصبحتconcurrencyبSHAتحفظR1عندتشغيلنسخةأحدث.
+
+**F-R1-01:** adminunitdiscovery التقط Playwrightspecsالجديدةe2e-acceptance داخلVitest (معSUPABASE_URLغيرموجود)، فتوقفت2filesمع190unitspass. إصلاحإعدادVitest يستبعدe2e-acceptanceمنunitrunnerويُبقيهاتنفذفيacceptancelaneالصحيحة؛ ليسtest.skipأوحذفGUIاختبار. تفاصيلسجلjob136536551271فيscratch/e2e-r1-admin.log. قبولR1لاينسبإلىالاختباراتغيرالمنفذة.
+
 ## شروط الإغلاق
 
 آخر SHA واحد، discovery/project inventory مطابق للمنفذ، لا failed/flaky/skip غير مفسر، artifacts trace/screenshots/video المتاح ومخرجات/hash ومراجع البيئة، وإعادة كاملة أخيرة. نقص hardware/OAuth/Modal أو capability يُسجّل BLOCKED مستقلاً، ولا توصف شهادة التطبيق كاملة بأنها PASS مع نقص رحلة لازمة.
