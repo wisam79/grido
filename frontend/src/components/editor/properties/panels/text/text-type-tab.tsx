@@ -54,7 +54,7 @@ const WRAP_OPTIONS = [
 const DIGITS_RE = /[0-9\u0660-\u0669\u06F0-\u06F9]/;
 
 const selectContentClassName =
-  'z-(--z-popover) max-h-[min(16rem,var(--radix-select-content-available-height))] font-cairo';
+  'max-h-[min(16rem,var(--radix-select-content-available-height))] font-cairo';
 
 export function TextTypeTab({ element, onUpdate }: TextTabProps) {
   const fontFamily = element.fontFamily || 'Cairo';

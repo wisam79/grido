@@ -99,6 +99,22 @@ export function ProjectsDialog({
   const isOpenRef = useRef(false);
   const dialogSessionRef = useRef(0);
   const fetchGenRef = useRef(0);
+  const fileReadGenRef = useRef(0);
+  const backupGenRef = useRef(0);
+  const readerRef = useRef<FileReader | null>(null);
+  const isCurrentDialog = (session: number) =>
+    isMountedRef.current && isOpenRef.current && session === dialogSessionRef.current;
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      isOpenRef.current = false;
+      dialogSessionRef.current += 1;
+      fileReadGenRef.current += 1;
+      backupGenRef.current += 1;
+      readerRef.current?.abort();
+      readerRef.current = null;
+    }
+    setIsOpen?.(next);
+  };
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,6 +122,10 @@ export function ProjectsDialog({
     return () => {
       isMountedRef.current = false;
       dialogSessionRef.current += 1;
+      fileReadGenRef.current += 1;
+      backupGenRef.current += 1;
+      readerRef.current?.abort();
+      readerRef.current = null;
     };
   }, []);
 
@@ -145,7 +165,11 @@ export function ProjectsDialog({
     e.stopPropagation();
     setPinnedProjects((prev) => {
       const newPinned = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
-      localStorage.setItem('grido_pinned_projects', JSON.stringify(newPinned));
+      try {
+        localStorage.setItem('grido_pinned_projects', JSON.stringify(newPinned));
+      } catch {
+        /* ignore */
+      }
       return newPinned;
     });
   };
@@ -192,6 +216,10 @@ export function ProjectsDialog({
   useEffect(() => {
     isOpenRef.current = Boolean(isOpen);
     dialogSessionRef.current += 1;
+    fileReadGenRef.current += 1;
+    backupGenRef.current += 1;
+    readerRef.current?.abort();
+    readerRef.current = null;
     if (isOpen) {
       if (defaultTab) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -212,6 +240,11 @@ export function ProjectsDialog({
         setIsSavingProject(false);
       }
       setBackupActionLoading(false);
+      setDeleteId(null);
+      setPendingLoadProject(null);
+      setImportConfirmOpen(false);
+      setResetConfirmOpen(false);
+      setSearchQuery('');
     }
   }, [isOpen, defaultTab]);
 
@@ -364,6 +397,9 @@ export function ProjectsDialog({
   // 🌊 التصدير يبثّ الأرشيف مباشرة من Go إلى المسار المختار في الحوار الأصلي —
   // لم تعد المكتبة كاملة تُسلسل كسلسلة عبر IPC ثم تعود بbase64 للحفظ.
   const handleExportBackup = async () => {
+    const session = dialogSessionRef.current;
+    const generation = ++backupGenRef.current;
+    const isCurrent = () => isCurrentDialog(session) && generation === backupGenRef.current;
     setBackupActionLoading(true);
     try {
       if (projectsList.length === 0) {
@@ -372,25 +408,32 @@ export function ProjectsDialog({
       }
 
       const savedPath = await ExportBackupToPath('grido_backup.json');
+      if (!isCurrent()) return;
       if (!savedPath) {
         toast.info('تم إلغاء التصدير');
         return;
       }
       toast.success('تم تصدير النسخة الاحتياطية');
     } catch (err) {
+      if (!isCurrent()) return;
       logger.error('Failed to export backup:', err);
       toast.error(toErrorMessage(err, 'فشل تصدير النسخة الاحتياطية'));
     } finally {
-      setBackupActionLoading(false);
+      if (isCurrent()) setBackupActionLoading(false);
     }
   };
 
   const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
+    if (!file || !isOpenRef.current) return;
+    const session = dialogSessionRef.current;
+    const generation = ++fileReadGenRef.current;
+    readerRef.current?.abort();
     const reader = new FileReader();
+    readerRef.current = reader;
+    const isCurrent = () => isCurrentDialog(session) && generation === fileReadGenRef.current;
     reader.onload = (event) => {
+      if (!isCurrent()) return;
       const content = event.target?.result as string;
       try {
         const parsed = JSON.parse(content);
@@ -404,24 +447,37 @@ export function ProjectsDialog({
         toast.error('فشل قراءة الملف');
       }
     };
+    reader.onerror = () => {
+      if (isCurrent()) toast.error('فشل قراءة الملف');
+    };
+    reader.onloadend = () => {
+      if (readerRef.current === reader) readerRef.current = null;
+    };
     reader.readAsText(file);
     e.target.value = '';
   };
 
   const handleConfirmImport = async () => {
-    if (!importJsonData) return;
+    if (!importJsonData || !isOpenRef.current) return;
+    const session = dialogSessionRef.current;
+    const generation = ++backupGenRef.current;
+    const isCurrent = () => isCurrentDialog(session) && generation === backupGenRef.current;
     setBackupActionLoading(true);
     setImportConfirmOpen(false);
     try {
       await ImportBackup(importJsonData, importMode);
+      if (!isCurrent()) return;
       toast.success('تم استيراد المشاريع');
       fetchProjects();
     } catch (err) {
+      if (!isCurrent()) return;
       logger.error('Failed to import backup:', err);
       toast.error(toErrorMessage(err, 'فشل استيراد المشاريع'));
     } finally {
-      setBackupActionLoading(false);
-      setImportJsonData('');
+      if (isCurrent()) {
+        setBackupActionLoading(false);
+        setImportJsonData('');
+      }
     }
   };
 
@@ -467,7 +523,7 @@ export function ProjectsDialog({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
         <DialogContent
           showCloseButton={false}
@@ -691,7 +747,7 @@ export function ProjectsDialog({
                             </div>
                           </button>
 
-                          <div className="flex items-center px-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity gap-1">
+                          <div className="flex items-center px-2 opacity-100 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -740,7 +796,7 @@ export function ProjectsDialog({
                     <Button
                       size="sm"
                       onClick={handleExportBackup}
-                      disabled={backupActionLoading}
+                      disabled={backupActionLoading || isFetchingProjects}
                       className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
                     >
                       {backupActionLoading ? (
@@ -764,8 +820,8 @@ export function ProjectsDialog({
                       </h4>
                       <p className="text-xs text-muted-foreground">استعادة المشاريع من JSON</p>
                     </div>
-                    <label className="cursor-pointer">
-                      <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
+                    <label className="cursor-pointer relative focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md">
+                      <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
                         <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
                         <span>رفع ملف</span>
                       </span>
@@ -773,7 +829,7 @@ export function ProjectsDialog({
                         type="file"
                         accept=".json"
                         onChange={handleImportFileChange}
-                        className="hidden"
+                        className="sr-only"
                         disabled={backupActionLoading}
                       />
                     </label>

@@ -86,7 +86,6 @@ export function useScannerCanvasRender(
   // كله (سايدبار + قائمة) ويُعيد إنشاء drawCanvas — الآن رسم أمر imperatively.
   const isHoveringCornerRef = useRef<number | null>(null);
 
-  const displayScaleRef = useRef<number>(1);
   const drawRafRef = useRef<number | null>(null);
   const loupeRafRef = useRef<number | null>(null);
 
@@ -106,10 +105,12 @@ export function useScannerCanvasRender(
 
     const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
     if (scale <= 0) return;
-    displayScaleRef.current = scale;
 
     const displayW = Math.max(1, Math.round(img.naturalWidth * scale));
     const displayH = Math.max(1, Math.round(img.naturalHeight * scale));
+
+    const scaleX = displayW / img.naturalWidth;
+    const scaleY = displayH / img.naturalHeight;
 
     // دعم دقة الشاشات العالية HiDPI / Retina
     const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2.5) : 1;
@@ -140,10 +141,10 @@ export function useScannerCanvasRender(
         if (idx === activeDocIndex || !doc.corners || doc.corners.length !== 4) return;
         ctx.save();
         ctx.beginPath();
-        ctx.moveTo(doc.corners[0].x * scale, doc.corners[0].y * scale);
-        ctx.lineTo(doc.corners[1].x * scale, doc.corners[1].y * scale);
-        ctx.lineTo(doc.corners[2].x * scale, doc.corners[2].y * scale);
-        ctx.lineTo(doc.corners[3].x * scale, doc.corners[3].y * scale);
+        ctx.moveTo(doc.corners[0].x * scaleX, doc.corners[0].y * scaleY);
+        ctx.lineTo(doc.corners[1].x * scaleX, doc.corners[1].y * scaleY);
+        ctx.lineTo(doc.corners[2].x * scaleX, doc.corners[2].y * scaleY);
+        ctx.lineTo(doc.corners[3].x * scaleX, doc.corners[3].y * scaleY);
         ctx.closePath();
 
         ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
@@ -155,9 +156,11 @@ export function useScannerCanvasRender(
 
         // رسم شارة رقم المستند في المنتصف
         const cx =
-          ((doc.corners[0].x + doc.corners[1].x + doc.corners[2].x + doc.corners[3].x) / 4) * scale;
+          ((doc.corners[0].x + doc.corners[1].x + doc.corners[2].x + doc.corners[3].x) / 4) *
+          scaleX;
         const cy =
-          ((doc.corners[0].y + doc.corners[1].y + doc.corners[2].y + doc.corners[3].y) / 4) * scale;
+          ((doc.corners[0].y + doc.corners[1].y + doc.corners[2].y + doc.corners[3].y) / 4) *
+          scaleY;
         ctx.fillStyle = 'rgba(16, 185, 129, 0.95)';
         ctx.beginPath();
         ctx.arc(cx, cy, 13, 0, Math.PI * 2);
@@ -178,10 +181,10 @@ export function useScannerCanvasRender(
 
     // المضلع المحيطي التفاعلي الشفاف للمستند النشط
     ctx.beginPath();
-    ctx.moveTo(corners[0].x * scale, corners[0].y * scale);
-    ctx.lineTo(corners[1].x * scale, corners[1].y * scale);
-    ctx.lineTo(corners[2].x * scale, corners[2].y * scale);
-    ctx.lineTo(corners[3].x * scale, corners[3].y * scale);
+    ctx.moveTo(corners[0].x * scaleX, corners[0].y * scaleY);
+    ctx.lineTo(corners[1].x * scaleX, corners[1].y * scaleY);
+    ctx.lineTo(corners[2].x * scaleX, corners[2].y * scaleY);
+    ctx.lineTo(corners[3].x * scaleX, corners[3].y * scaleY);
     ctx.closePath();
 
     ctx.fillStyle = 'rgba(99, 102, 241, 0.20)';
@@ -195,8 +198,8 @@ export function useScannerCanvasRender(
 
     // رسم الدبابيس الأربعة
     corners.forEach((pt, idx) => {
-      const px = pt.x * scale;
-      const py = pt.y * scale;
+      const px = pt.x * scaleX;
+      const py = pt.y * scaleY;
 
       const isActive = activeCorner === idx || selectedCorner === idx;
       const isHover = isHoveringCornerRef.current === idx;
@@ -260,13 +263,13 @@ export function useScannerCanvasRender(
   }, [requestDraw]);
 
   const updateLoupe = useCallback(
-    (cornerIndex: number, clientX: number, clientY: number) => {
+    (cornerIndex: number, clientX: number, clientY: number, ptOverride?: Point) => {
       const loupeCanvas = loupeCanvasRef.current;
       const img = imgRef.current;
       const canvas = canvasRef.current;
-      if (!loupeCanvas || !img || !canvas || corners.length <= cornerIndex) return;
+      if (!loupeCanvas || !img || !canvas || (corners.length <= cornerIndex && !ptOverride)) return;
 
-      const pt = corners[cornerIndex];
+      const pt = ptOverride ?? corners[cornerIndex];
       const lCtx = loupeCanvas.getContext('2d');
       if (!lCtx) return;
 
@@ -282,8 +285,8 @@ export function useScannerCanvasRender(
       lCtx.clip();
 
       const zoomFactor = 3.5;
-      const srcRegionW = loupeSize / zoomFactor;
-      const srcRegionH = loupeSize / zoomFactor;
+      const srcRegionW = Math.min(img.naturalWidth, loupeSize / zoomFactor);
+      const srcRegionH = Math.min(img.naturalHeight, loupeSize / zoomFactor);
 
       const sx = Math.max(0, Math.min(img.naturalWidth - srcRegionW, pt.x - srcRegionW / 2));
       const sy = Math.max(0, Math.min(img.naturalHeight - srcRegionH, pt.y - srcRegionH / 2));
@@ -291,12 +294,13 @@ export function useScannerCanvasRender(
       lCtx.imageSmoothingEnabled = false;
       lCtx.drawImage(img, sx, sy, srcRegionW, srcRegionH, 0, 0, loupeSize, loupeSize);
 
-      const center = loupeSize / 2;
+      const crossX = ((pt.x - sx) / srcRegionW) * loupeSize;
+      const crossY = ((pt.y - sy) / srcRegionH) * loupeSize;
       lCtx.beginPath();
-      lCtx.moveTo(center - 10, center);
-      lCtx.lineTo(center + 10, center);
-      lCtx.moveTo(center, center - 10);
-      lCtx.lineTo(center, center + 10);
+      lCtx.moveTo(crossX - 10, crossY);
+      lCtx.lineTo(crossX + 10, crossY);
+      lCtx.moveTo(crossX, crossY - 10);
+      lCtx.lineTo(crossX, crossY + 10);
       lCtx.strokeStyle = docScannerLoupe();
       lCtx.lineWidth = 1.8;
       lCtx.stroke();
@@ -305,16 +309,17 @@ export function useScannerCanvasRender(
 
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
-        let lx = clientX - containerRect.left - loupeSize / 2;
-        let ly = clientY - containerRect.top - loupeSize - 20;
+        const loupeOuterSize = loupeCanvas.parentElement?.getBoundingClientRect().width || 115;
+        let lx = clientX - containerRect.left - loupeOuterSize / 2;
+        let ly = clientY - containerRect.top - loupeOuterSize - 20;
 
         // 🔒 حماية المكبرة من الخروج أعلى الإطار عبر قلب موضعها للأسفل
         if (ly < 10) {
           ly = clientY - containerRect.top + 30;
         }
 
-        lx = Math.max(8, Math.min(containerRect.width - loupeSize - 8, lx));
-        ly = Math.max(8, Math.min(containerRect.height - loupeSize - 8, ly));
+        lx = Math.max(8, Math.min(containerRect.width - loupeOuterSize - 8, lx));
+        ly = Math.max(8, Math.min(containerRect.height - loupeOuterSize - 8, ly));
 
         setLoupePos({ x: lx, y: ly });
       }
@@ -323,13 +328,13 @@ export function useScannerCanvasRender(
   );
 
   const scheduleLoupeUpdate = useCallback(
-    (cornerIndex: number, clientX: number, clientY: number) => {
+    (cornerIndex: number, clientX: number, clientY: number, ptOverride?: Point) => {
       if (loupeRafRef.current !== null) {
         cancelAnimationFrame(loupeRafRef.current);
       }
       loupeRafRef.current = requestAnimationFrame(() => {
         loupeRafRef.current = null;
-        updateLoupe(cornerIndex, clientX, clientY);
+        updateLoupe(cornerIndex, clientX, clientY, ptOverride);
       });
     },
     [updateLoupe],
@@ -343,16 +348,18 @@ export function useScannerCanvasRender(
 
       const rect = canvas.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      const clickX = (e.clientX - rect.left) * (imgSize.w / rect.width);
-      const clickY = (e.clientY - rect.top) * (imgSize.h / rect.height);
+      const scaleX = imgSize.w / rect.width;
+      const scaleY = imgSize.h / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
 
       let closestIdx = -1;
-      let minDist = 32;
+      let minDist = e.pointerType === 'touch' ? 40 : 28;
 
       corners.forEach((pt, idx) => {
-        const dist = Math.hypot(pt.x - clickX, pt.y - clickY);
-        if (dist < minDist) {
-          minDist = dist;
+        const distCss = Math.hypot((pt.x - clickX) / scaleX, (pt.y - clickY) / scaleY);
+        if (distCss < minDist) {
+          minDist = distCss;
           closestIdx = idx;
         }
       });
@@ -366,7 +373,7 @@ export function useScannerCanvasRender(
         } catch {
           // ignore
         }
-        scheduleLoupeUpdate(closestIdx, e.clientX, e.clientY);
+        scheduleLoupeUpdate(closestIdx, e.clientX, e.clientY, corners[closestIdx]);
       } else if (detectedDocs.length > 1) {
         const clickedDocIdx = detectedDocs.findIndex(
           (doc, idx) =>
@@ -398,26 +405,27 @@ export function useScannerCanvasRender(
 
       const rect = canvas.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      const clickX = (e.clientX - rect.left) * (imgSize.w / rect.width);
-      const clickY = (e.clientY - rect.top) * (imgSize.h / rect.height);
+      const scaleX = imgSize.w / rect.width;
+      const scaleY = imgSize.h / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
 
       if (activeCorner !== null && corners.length === 4) {
         const clampedX = Math.max(0, Math.min(imgSize.w, Math.round(clickX)));
         const clampedY = Math.max(0, Math.min(imgSize.h, Math.round(clickY)));
+        const nextPt = { x: clampedX, y: clampedY };
 
-        const nextCorners = corners.map((pt, idx) =>
-          idx === activeCorner ? { x: clampedX, y: clampedY } : pt,
-        );
+        const nextCorners = corners.map((pt, idx) => (idx === activeCorner ? nextPt : pt));
         onCornersChange(nextCorners);
 
-        scheduleLoupeUpdate(activeCorner, e.clientX, e.clientY);
+        scheduleLoupeUpdate(activeCorner, e.clientX, e.clientY, nextPt);
       } else {
         let hoverIdx: number | null = null;
-        let minHoverDist = 25;
+        let minHoverDist = 24;
         corners.forEach((pt, idx) => {
-          const dist = Math.hypot(pt.x - clickX, pt.y - clickY);
-          if (dist < minHoverDist) {
-            minHoverDist = dist;
+          const distCss = Math.hypot((pt.x - clickX) / scaleX, (pt.y - clickY) / scaleY);
+          if (distCss < minHoverDist) {
+            minHoverDist = distCss;
             hoverIdx = idx;
           }
         });

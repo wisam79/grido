@@ -39,16 +39,24 @@ export function useScannerProcessor(
   // إلغاء التصدير متعدد المستندات (R39: عملية >3s قابلة للإلغاء).
   const exportCancelRef = useRef(false);
 
-  const operationRef = useRef<{ generation: number; controller: AbortController } | null>(null);
+  const operationRef = useRef<{
+    generation: number;
+    controller: AbortController;
+    kind: 'preview' | 'export';
+  } | null>(null);
   const generationRef = useRef(0);
 
-  const beginOperation = useCallback(() => {
+  const beginOperation = useCallback((kind: 'preview' | 'export') => {
     operationRef.current?.controller.abort();
     const operation = {
       generation: ++generationRef.current,
       controller: new AbortController(),
+      kind,
     };
     operationRef.current = operation;
+    setIsPreviewing(false);
+    setIsExporting(false);
+    setExportProgress(null);
     exportCancelRef.current = false;
     return operation;
   }, []);
@@ -83,18 +91,23 @@ export function useScannerProcessor(
   // 🔒 تنظيف وتصفير حالات التصدير والمعاينة عند إغلاق النافذة
   useEffect(() => {
     if (open === false) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset export/preview state on close
-      setIsExporting(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cancel owned work on close
+      cancelExport();
       setIsPreviewMode(false);
       setIsPreviewing(false);
       setPreviewSrc(null);
       revokePreviewUrl();
     }
-  }, [open, revokePreviewUrl]);
+  }, [open, revokePreviewUrl, cancelExport]);
 
-  // 🧹 تفكيك: تصفير المراجع (لا عامل ويب يبقى بعد الترحيل — Go يحلّه).
+  // 🧹 تفكيك: إلغاء أي عملية استعدال جارية وتصفير المراجع.
   useEffect(
     () => () => {
+      openRef.current = false;
+      exportCancelRef.current = true;
+      generationRef.current++;
+      operationRef.current?.controller.abort();
+      operationRef.current = null;
       previewUrlRef.current = null;
     },
     [],
@@ -113,6 +126,7 @@ export function useScannerProcessor(
       docFilter?: ScannerFilterMode,
       operation?: { generation: number; controller: AbortController },
     ): Promise<string | null> => {
+      if (operation && !isCurrentOperation(operation)) return null;
       const img = imgRef.current;
       if (!img || docCorners.length !== 4) return null;
 
@@ -147,9 +161,9 @@ export function useScannerProcessor(
         setIsPreviewMode(false);
         return;
       }
-      if (isPreviewing) return;
+      if (operationRef.current) return;
 
-      const operation = beginOperation();
+      const operation = beginOperation('preview');
       setIsPreviewing(true);
       try {
         const url = await generateWarpedUrlForDoc(
@@ -160,8 +174,9 @@ export function useScannerProcessor(
           undefined,
           operation,
         );
-        if (!url || !openRef.current || !isCurrentOperation(operation)) {
-          if (!url && (corners.length !== 4 || !imgRef.current)) {
+        if (!isCurrentOperation(operation) || !openRef.current) return;
+        if (!url) {
+          if (corners.length !== 4 || !imgRef.current) {
             toast.error('حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط');
           }
           return;
@@ -176,14 +191,7 @@ export function useScannerProcessor(
         }
       }
     },
-    [
-      isPreviewMode,
-      isPreviewing,
-      beginOperation,
-      generateWarpedUrlForDoc,
-      imgRef,
-      isCurrentOperation,
-    ],
+    [isPreviewMode, beginOperation, generateWarpedUrlForDoc, imgRef, isCurrentOperation],
   );
 
   const handleApplyActive = useCallback(
@@ -193,7 +201,8 @@ export function useScannerProcessor(
       onSave: (url: string) => void,
       onDone: () => void,
     ) => {
-      const operation = beginOperation();
+      if (operationRef.current) return;
+      const operation = beginOperation('export');
       setIsExporting(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -238,7 +247,8 @@ export function useScannerProcessor(
         return;
       }
 
-      const operation = beginOperation();
+      if (operationRef.current) return;
+      const operation = beginOperation('export');
       setIsExporting(true);
       setExportProgress({ done: 0, total: docsToExport.length });
       try {
@@ -284,6 +294,12 @@ export function useScannerProcessor(
     setIsPreviewMode(false);
     setPreviewSrc(null);
     revokePreviewUrl();
+    if (operationRef.current?.kind === 'preview') {
+      generationRef.current++;
+      operationRef.current.controller.abort();
+      operationRef.current = null;
+      setIsPreviewing(false);
+    }
   }, [revokePreviewUrl]);
 
   const resetProcessorState = useCallback(() => {

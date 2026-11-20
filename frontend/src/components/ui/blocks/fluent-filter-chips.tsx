@@ -71,7 +71,9 @@ export function FluentFilterChips<T extends string = string>({
               radiusClass,
               size === 'sm' ? 'h-7 px-2.5 text-xs gap-1.5' : 'h-8 px-3 text-xs gap-2',
               isActive
-                ? 'text-foreground font-bold shadow-2xs'
+                ? variant === 'brand'
+                  ? 'text-primary-foreground font-bold shadow-2xs'
+                  : 'text-foreground font-bold shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground font-medium',
               opt.disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
             )}

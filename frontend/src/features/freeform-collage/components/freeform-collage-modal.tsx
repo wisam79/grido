@@ -78,6 +78,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const [panelTab, setPanelTab] = useState('insert');
   const [panelOpen, setPanelOpen] = useState(true);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const sessionRef = useRef(0);
+  const saveAttemptRef = useRef<object | null>(null);
+  const invalidateSession = useCallback(() => {
+    sessionRef.current++;
+    saveAttemptRef.current = null;
+  }, []);
 
   // التحديد المتعدد: مجموعة خلايا نشطة إضافة للخلية الأساسية
   const [multiSelectedIds, setMultiSelectedIds] = useState<string[]>([]);
@@ -101,10 +107,15 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
   const {
     historyState,
+    documentRevision,
     slots,
     slotsRef,
     documentValueRef,
     dragStartDocumentRef,
+    slotEditHistoryRef,
+    beginSlotEdit,
+    commitSlotEdit,
+    cancelSlotEdit,
     replaceHistory,
     updateDocumentOptions,
     updateSlotsWithHistory,
@@ -133,6 +144,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
   const setSlotSelection = useCallback(
     (primaryId: string | null, secondaryIds: readonly string[] = []) => {
+      commitSlotEdit();
       finishNudgeBurst();
       const selection = normalizeSlotSelection(primaryId, secondaryIds);
       selectedSlotIdRef.current = selection.selectedSlotId;
@@ -140,7 +152,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       setSelectedSlotId(selection.selectedSlotId);
       setMultiSelectedIds(selection.multiSelectedIds);
     },
-    [finishNudgeBurst],
+    [commitSlotEdit, finishNudgeBurst],
   );
 
   const handleSelectSlot = useCallback(
@@ -194,6 +206,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     showCutLines,
     enableSnapping,
     layoutName,
+    open,
   });
 
   useFreeformKeyboard({
@@ -216,7 +229,6 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const hasDraftChanges =
     initialDocument !== null &&
     JSON.stringify({
-      ...historyState.present,
       name: layoutName,
       paperWidthMM,
       paperHeightMM,
@@ -225,11 +237,23 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       enableSnapping,
       packGapMM,
       packMarginMM,
-    }) !== JSON.stringify(initialDocument);
+    }) !==
+      JSON.stringify({
+        name: initialDocument.name,
+        paperWidthMM: initialDocument.paperWidthMM,
+        paperHeightMM: initialDocument.paperHeightMM,
+        slots: initialDocument.slots,
+        showCutLines: initialDocument.showCutLines,
+        enableSnapping: initialDocument.enableSnapping,
+        packGapMM: initialDocument.packGapMM,
+        packMarginMM: initialDocument.packMarginMM,
+      });
 
   // Reset local transactions and resume the applied document on every opening.
   useEffect(() => {
+    invalidateSession();
     finishNudgeBurst();
+    slotEditHistoryRef.current = null;
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsApplying(false);
@@ -286,16 +310,20 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       clipboardRef.current = null;
     }
     return () => {
+      invalidateSession();
       finishNudgeBurst();
       dragStartDocumentRef.current = null;
+      slotEditHistoryRef.current = null;
     };
   }, [
     open,
+    invalidateSession,
     finishNudgeBurst,
     replaceHistory,
     applyDocumentToUI,
     setSlotSelection,
     dragStartDocumentRef,
+    slotEditHistoryRef,
     clipboardRef,
   ]);
 
@@ -313,6 +341,11 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   }, [slots, selectedSlotId, multiSelectedIds, setSlotSelection]);
 
   const handleSaveAsCustomTemplate = async () => {
+    if (!open || saveAttemptRef.current) return;
+    const session = sessionRef.current;
+    const attempt = {};
+    saveAttemptRef.current = attempt;
+    const ownsDialog = () => sessionRef.current === session && saveAttemptRef.current === attempt;
     finishNudgeBurst();
     try {
       setIsSavingTemplate(true);
@@ -338,7 +371,8 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
           JSON.stringify(gridoTemplate.cells),
           JSON.stringify(gridoTemplate.metadata),
         );
-        toast.success(`حُفظ القالب "${templateName}" في قوالبك!`);
+        // Persistence and library refresh remain owned by this background save.
+        if (ownsDialog()) toast.success(`حُفظ القالب "${templateName}" في قوالبك!`);
         await onTemplateSaved?.();
       } else {
         const raw = localStorage.getItem('grido_custom_templates');
@@ -356,13 +390,16 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         }
         saved.push({ name: templateName, template: gridoTemplate });
         localStorage.setItem('grido_custom_templates', JSON.stringify(saved));
-        toast.success(`حُفظ الكولاج "${templateName}"`);
+        if (ownsDialog()) toast.success(`حُفظ الكولاج "${templateName}"`);
         await onTemplateSaved?.();
       }
     } catch (err: unknown) {
-      toast.error(toErrorMessage(err, 'فشل الحفظ'));
+      if (ownsDialog()) toast.error(toErrorMessage(err, 'فشل الحفظ'));
     } finally {
-      setIsSavingTemplate(false);
+      if (ownsDialog()) {
+        saveAttemptRef.current = null;
+        setIsSavingTemplate(false);
+      }
     }
   };
 
@@ -440,7 +477,14 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         aria-describedby={undefined}
         onPointerDownCapture={finishNudgeBurst}
         onClickCapture={finishNudgeBurst}
-        onEscapeKeyDown={() => setSlotSelection(selectedSlotIdRef.current)}
+        onEscapeKeyDown={(event) => {
+          if (event.target instanceof HTMLInputElement && event.target.type === 'number') {
+            event.preventDefault();
+            cancelSlotEdit();
+            return;
+          }
+          setSlotSelection(selectedSlotIdRef.current);
+        }}
       >
         <DialogHeader className="px-3 py-2 border-b border-border/60 shrink-0">
           <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -609,16 +653,24 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
               ))}
               <TabsContent value="properties" className="min-h-0 overflow-y-auto">
                 <FreeformRightInspectorPanel
+                  key={`${historyState.present.id}:${selectedSlotId}:${paperWidthMM}:${paperHeightMM}:${documentRevision}`}
                   slot={selectedSlot}
                   multiSelectedCount={multiCountTotal}
                   paperWidthMM={paperWidthMM}
                   paperHeightMM={paperHeightMM}
                   onUpdateSlot={handleUpdateSlot}
+                  onBeginEdit={beginSlotEdit}
+                  onCommitEdit={commitSlotEdit}
+                  onCancelEdit={cancelSlotEdit}
                 />
               </TabsContent>
             </Tabs>
           </aside>
-          <main aria-label="مساحة تخطيط الكولاج" className="flex-1 min-w-0 min-h-0 flex">
+          <div
+            role="region"
+            aria-label="مساحة تخطيط الكولاج"
+            className="flex-1 min-w-0 min-h-0 flex"
+          >
             <FreeformCanvasEditor
               paperWidthMM={paperWidthMM}
               paperHeightMM={paperHeightMM}
@@ -633,7 +685,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
               onSlotsChange={handleSlotsChange}
               onDragEnd={handleDragEnd}
             />
-          </main>
+          </div>
         </div>
 
         <footer className="h-8 px-3 border-t border-border/60 flex items-center gap-4 shrink-0 text-mini text-muted-foreground tabular-nums">

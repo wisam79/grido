@@ -321,4 +321,23 @@ describe('TextEditingOverlay Component Tests', () => {
     // ارتفاع المحتوى الكامل = صندوق النص + حشوة عمودية (border-box)
     expect(textarea.style.minHeight).toBe('120px');
   });
+
+  it('disables CSS textTransform for Arabic text to preserve cursive shaping', () => {
+    render(
+      <TextEditingOverlay
+        {...baseProps}
+        elements={[
+          {
+            ...textElement,
+            text: 'مرحبا بالعالم',
+            textTransform: 'uppercase',
+          },
+        ]}
+        updateElement={vi.fn()}
+        pushHistory={vi.fn()}
+        setEditingTextId={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('textbox').style.textTransform).toBe('none');
+  });
 });

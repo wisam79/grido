@@ -109,9 +109,11 @@ export function useFreeformDocumentHistory({
     return { past: [], present: createDocument(100, 150, slots), future: [] };
   });
 
+  const [documentRevision, setDocumentRevision] = useState(0);
   const historyStateRef = useRef(historyState);
   const dragStartDocumentRef = useRef<FreeformDocument | null>(null);
   const nudgeStartDocumentRef = useRef<FreeformDocument | null>(null);
+  const slotEditHistoryRef = useRef<DocumentHistory | null>(null);
   const nudgeDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slots = historyState.present.slots;
 
@@ -167,8 +169,42 @@ export function useFreeformDocumentHistory({
     [applyDocumentToUI],
   );
 
+  const commitSlotEdit = useCallback(() => {
+    const baseline = slotEditHistoryRef.current;
+    slotEditHistoryRef.current = null;
+    if (!baseline) return;
+    const prev = historyStateRef.current;
+    if (prev.present.id !== baseline.present.id) return;
+    if (JSON.stringify(prev.present.slots) === JSON.stringify(baseline.present.slots)) {
+      replaceHistory({ ...prev, past: baseline.past, future: baseline.future });
+      return;
+    }
+    replaceHistory({
+      ...prev,
+      past: [...baseline.past.slice(-(HISTORY_LIMIT - 1)), baseline.present],
+      future: [],
+    });
+  }, [replaceHistory]);
+
+  const beginSlotEdit = useCallback(() => {
+    finishNudgeBurst();
+    commitSlotEdit();
+    slotEditHistoryRef.current = historyStateRef.current;
+  }, [finishNudgeBurst, commitSlotEdit]);
+
+  const cancelSlotEdit = useCallback(() => {
+    const baseline = slotEditHistoryRef.current;
+    slotEditHistoryRef.current = null;
+    if (!baseline || historyStateRef.current.present.id !== baseline.present.id) return;
+    setDocumentRevision((revision) => revision + 1);
+    replaceHistory(baseline);
+    restoreDocument(baseline.present);
+  }, [replaceHistory, restoreDocument]);
+
   const pushDocumentWithHistory = useCallback(
     (next: FreeformDocument) => {
+      commitSlotEdit();
+      setDocumentRevision((revision) => revision + 1);
       finishNudgeBurst();
       dragStartDocumentRef.current = null;
       const prev = historyStateRef.current;
@@ -179,56 +215,89 @@ export function useFreeformDocumentHistory({
       });
       restoreDocument(next);
     },
-    [finishNudgeBurst, replaceHistory, restoreDocument],
+    [commitSlotEdit, finishNudgeBurst, replaceHistory, restoreDocument],
   );
 
   const updateDocumentOptions = useCallback(
     (patch: Partial<Omit<FreeformDocument, 'id' | 'slots'>>) => {
+      commitSlotEdit();
       finishNudgeBurst();
       const prev = historyStateRef.current;
       const next = { ...prev.present, ...patch };
-      replaceHistory({ ...prev, present: next, future: [] });
+      // Non-undoable options survive geometry undo/redo, not just the current frame.
+      replaceHistory({
+        past: prev.past.map((document) =>
+          document.id === next.id ? { ...document, ...patch } : document,
+        ),
+        present: next,
+        future: prev.future.map((document) =>
+          document.id === next.id ? { ...document, ...patch } : document,
+        ),
+      });
       restoreDocument(next);
     },
-    [finishNudgeBurst, replaceHistory, restoreDocument],
+    [commitSlotEdit, finishNudgeBurst, replaceHistory, restoreDocument],
   );
 
   const updateSlotsWithHistory = useCallback(
-    (newSlots: FreeformSlot[]) =>
-      pushDocumentWithHistory({ ...documentValueRef.current, slots: newSlots }),
-    [pushDocumentWithHistory],
+    (newSlots: FreeformSlot[], preview = false) => {
+      const hadEdit = slotEditHistoryRef.current !== null;
+      if (!preview) {
+        commitSlotEdit();
+        if (hadEdit) setDocumentRevision((revision) => revision + 1);
+      }
+      const prev = historyStateRef.current;
+      if (newSlots === prev.present.slots) return;
+      if (slotEditHistoryRef.current) {
+        const baseline = slotEditHistoryRef.current;
+        replaceHistory({
+          ...prev,
+          past: [...baseline.past.slice(-(HISTORY_LIMIT - 1)), baseline.present],
+          present: { ...prev.present, slots: newSlots },
+          future: [],
+        });
+      } else {
+        pushDocumentWithHistory({ ...documentValueRef.current, slots: newSlots });
+      }
+    },
+    [commitSlotEdit, pushDocumentWithHistory, replaceHistory],
   );
 
   const handleUndo = useCallback(() => {
+    commitSlotEdit();
     finishNudgeBurst();
     dragStartDocumentRef.current = null;
     const prev = historyStateRef.current;
     if (prev.past.length === 0) return;
     const previous = prev.past[prev.past.length - 1];
+    setDocumentRevision((revision) => revision + 1);
     replaceHistory({
       past: prev.past.slice(0, -1),
       present: previous,
       future: [prev.present, ...prev.future].slice(0, HISTORY_LIMIT),
     });
     restoreDocument(previous);
-  }, [finishNudgeBurst, replaceHistory, restoreDocument]);
+  }, [commitSlotEdit, finishNudgeBurst, replaceHistory, restoreDocument]);
 
   const handleRedo = useCallback(() => {
+    commitSlotEdit();
     finishNudgeBurst();
     dragStartDocumentRef.current = null;
     const prev = historyStateRef.current;
     if (prev.future.length === 0) return;
     const next = prev.future[0];
+    setDocumentRevision((revision) => revision + 1);
     replaceHistory({
       past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), prev.present],
       present: next,
       future: prev.future.slice(1),
     });
     restoreDocument(next);
-  }, [finishNudgeBurst, replaceHistory, restoreDocument]);
+  }, [commitSlotEdit, finishNudgeBurst, replaceHistory, restoreDocument]);
 
   const handleNudge = useCallback(
     (dx: number, dy: number) => {
+      commitSlotEdit();
       const { selectedIds } = normalizeSlotSelection(
         selectedSlotIdRef.current,
         multiSelectedIdsRef.current,
@@ -248,13 +317,14 @@ export function useFreeformDocumentHistory({
       if (nudgeDebounceTimer.current !== null) clearTimeout(nudgeDebounceTimer.current);
       nudgeDebounceTimer.current = setTimeout(finishNudgeBurst, 150);
     },
-    [finishNudgeBurst, replaceHistory, selectedSlotIdRef, multiSelectedIdsRef],
+    [commitSlotEdit, finishNudgeBurst, replaceHistory, selectedSlotIdRef, multiSelectedIdsRef],
   );
 
   const handleDragStart = useCallback(() => {
+    commitSlotEdit();
     finishNudgeBurst();
     dragStartDocumentRef.current = documentValueRef.current;
-  }, [finishNudgeBurst]);
+  }, [commitSlotEdit, finishNudgeBurst]);
 
   const handleSlotsChange = useCallback(
     (next: FreeformSlot[]) => {
@@ -282,12 +352,17 @@ export function useFreeformDocumentHistory({
 
   return {
     historyState,
+    documentRevision,
     historyStateRef,
     slots,
     slotsRef,
     documentValue,
     documentValueRef,
     dragStartDocumentRef,
+    slotEditHistoryRef,
+    beginSlotEdit,
+    commitSlotEdit,
+    cancelSlotEdit,
     replaceHistory,
     pushDocumentWithHistory,
     updateDocumentOptions,

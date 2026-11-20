@@ -117,9 +117,14 @@ export const StickerProperties = React.memo(function StickerProperties({
       return;
     }
     const saved = saveStickerPreset(trimmed, template.id, params);
-    setPresets((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
+    const persisted = loadStickerPresets();
+    setPresets(persisted);
+    if (!persisted.some((preset) => preset.id === saved.id)) {
+      toast.error('فشل حفظ القالب');
+      return;
+    }
     setNewPresetName('');
-    toast.success(`حُفظ القالب "${saved.name}"`);
+    toast.success(`حُفظ القالب "${trimmed}"`);
   };
 
   const handleDeletePreset = (id: string, name: string) => {

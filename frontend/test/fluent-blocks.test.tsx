@@ -14,6 +14,8 @@ import {
   FluentEmptyState,
   FluentIconButton,
 } from '../src/components/ui/blocks';
+import { FluentCapsuleButton } from '../src/components/ui/blocks/fluent-capsule-button';
+import { FluentFilterChips } from '../src/components/ui/blocks/fluent-filter-chips';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
@@ -222,6 +224,36 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
     });
   });
 
+  it('keeps disabled capsule actions inert and brand chips readable', () => {
+    const onClick = vi.fn();
+    render(
+      <TooltipProvider>
+        <FluentCapsuleButton
+          icon={<Sparkle />}
+          label="إجراء معطل"
+          tooltip="إجراء معطل"
+          disabled
+          onClick={onClick}
+        />
+        <FluentFilterChips
+          variant="brand"
+          value="a"
+          onChange={vi.fn()}
+          options={[
+            { id: 'a', label: 'نشط' },
+            { id: 'b', label: 'متاح' },
+          ]}
+        />
+      </TooltipProvider>,
+    );
+    const disabled = screen.getByRole('button', { name: 'إجراء معطل' });
+    expect(disabled).toBeDisabled();
+    fireEvent.click(disabled);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'نشط' })).toHaveClass('text-primary-foreground');
+    expect(screen.getByRole('button', { name: 'متاح' })).toHaveClass('text-muted-foreground');
+  });
+
   describe.each(['stacked', 'inline'] as const)('FluentSliderField (%s)', (layout) => {
     it('renders slider field with editable numeric value and unit', () => {
       const handleChange = vi.fn();
@@ -266,6 +298,33 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       fireEvent.keyDown(input, { key: 'Enter' });
       expect(handleChange).toHaveBeenCalledWith(50);
       expect(handleCommit).toHaveBeenCalledWith(50);
+    });
+
+    it('cancels a numeric draft with Escape without closing the enclosing overlay', () => {
+      const outsideEscape = vi.fn();
+      const onChange = vi.fn();
+      const onCommit = vi.fn();
+      render(
+        <div onKeyDown={outsideEscape}>
+          <FluentSliderField
+            layout={layout}
+            label="الهامش"
+            value={15}
+            min={0}
+            max={50}
+            onChange={onChange}
+            onCommit={onCommit}
+          />
+        </div>,
+      );
+      const input = screen.getByRole('textbox', { name: 'قيمة الهامش' });
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '42' } });
+      expect(fireEvent.keyDown(input, { key: 'Escape' })).toBe(false);
+      expect(input).toHaveValue('15');
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(outsideEscape).not.toHaveBeenCalled();
     });
 
     it('accepts Arabic-Indic digits and Arabic decimal separator', () => {

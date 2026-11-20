@@ -1,5 +1,6 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { renderHook, act, cleanup } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useTheme } from '../src/hooks/use-theme';
 import { useWindowControls } from '../src/hooks/use-window-controls';
@@ -52,6 +53,75 @@ describe('Hooks Unit Tests', () => {
     expect(result.current.theme).toBe('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(localStorage.getItem('grido-theme')).toBe('dark');
+  });
+});
+
+describe('useTheme — shared snapshot ownership', () => {
+  let dark = true;
+  let listeners: Set<(event: MediaQueryListEvent) => void>;
+  let media: MediaQueryList;
+
+  beforeEach(() => {
+    dark = true;
+    listeners = new Set();
+    media = {
+      get matches() {
+        return dark;
+      },
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addEventListener: vi.fn((_type, callback) => listeners.add(callback)),
+      removeEventListener: vi.fn((_type, callback) => listeners.delete(callback)),
+    } as unknown as MediaQueryList;
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => media),
+    );
+    localStorage.clear();
+  });
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('shares a cached snapshot across consumers with one removable media listener', () => {
+    const first = renderHook(() => useTheme());
+    const second = renderHook(() => useTheme());
+    expect(listeners.size).toBe(1);
+    act(() => first.result.current.setThemeMode('light'));
+    expect(second.result.current.themeMode).toBe('light');
+    expect(second.result.current.theme).toBe('light');
+    first.unmount();
+    expect(listeners.size).toBe(1);
+    second.unmount();
+    expect(listeners.size).toBe(0);
+  });
+
+  it('reconciles a system change between rendering and subscribing', () => {
+    let reads = 0;
+    Object.defineProperty(media, 'matches', {
+      get: () => ++reads <= 2,
+    });
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe('light');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+
+  it('survives StrictMode replay and follows system changes after remount', () => {
+    const first = renderHook(() => useTheme(), { wrapper: StrictMode });
+    expect(listeners.size).toBe(1);
+    act(() => {
+      dark = false;
+      listeners.forEach((listener) => listener({ matches: false } as MediaQueryListEvent));
+    });
+    expect(first.result.current.theme).toBe('light');
+    first.unmount();
+    expect(listeners.size).toBe(0);
+    dark = true;
+    const second = renderHook(() => useTheme());
+    expect(second.result.current.theme).toBe('dark');
+    expect(listeners.size).toBe(1);
   });
 });
 

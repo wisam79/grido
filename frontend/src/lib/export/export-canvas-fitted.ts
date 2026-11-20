@@ -323,15 +323,7 @@ export async function renderFittedBranch(
       const pathBounds = el.shape === 'path' && el.svgPath ? getSvgPathBounds(el.svgPath) : null;
       const pathScaleX = pathBounds ? w / pathBounds.w : 1;
       const pathScaleY = pathBounds ? h / pathBounds.h : 1;
-      ctx.fillStyle = resolveElementFill(
-        ctx,
-        el,
-        w,
-        h,
-        fillImg,
-        // نفس تعويض مقياس عقدة المسار المستخدم في المعاينة
-        pathBounds ? { scaleX: pathScaleX, scaleY: pathScaleY } : undefined,
-      );
+      ctx.fillStyle = resolveElementFill(ctx, el, w, h, fillImg);
 
       if (el.shape === 'rect') {
         // مصفوفة الزوايا المستقلة تتقدم على الاستدارة الموحدة (نفس عقد Konva)
@@ -414,8 +406,7 @@ export async function renderFittedBranch(
       } else if (el.shape === 'arrow') {
         const pLen = el.pointerLength || 14;
         const pWidth = el.pointerWidth || 14;
-        const arrowH = Math.max(h, strokeW, 16);
-        const arrowY = arrowH / 2;
+        const arrowY = h / 2;
         ctx.strokeStyle = el.stroke || el.fill || gradientStart();
         ctx.fillStyle = el.fill || el.stroke || gradientStart();
         ctx.beginPath();
@@ -443,12 +434,25 @@ export async function renderFittedBranch(
         // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath:
         // إزاحة بأدنى إحداثي داخل المسار ثم مقياس الصندوق إلى حدود الحبر
         const path2d = new Path2D(el.svgPath);
-        ctx.save();
-        ctx.translate(-pathBounds.minX * pathScaleX, -pathBounds.minY * pathScaleY);
-        ctx.scale(pathScaleX, pathScaleY);
-        ctx.fill(path2d);
-        if (strokeW > 0) ctx.stroke(path2d);
-        ctx.restore();
+        // Fill in element space: gradients are created there and patterns use
+        // its affine matrix. Applying the viewBox CTM again distorts the paint.
+        const fittedPath = new Path2D();
+        fittedPath.addPath(path2d, {
+          a: pathScaleX,
+          b: 0,
+          c: 0,
+          d: pathScaleY,
+          e: -pathBounds.minX * pathScaleX,
+          f: -pathBounds.minY * pathScaleY,
+        });
+        ctx.fill(fittedPath);
+        if (strokeW > 0) {
+          ctx.save();
+          ctx.translate(-pathBounds.minX * pathScaleX, -pathBounds.minY * pathScaleY);
+          ctx.scale(pathScaleX, pathScaleY);
+          ctx.stroke(path2d);
+          ctx.restore();
+        }
       }
     }
     ctx.restore();

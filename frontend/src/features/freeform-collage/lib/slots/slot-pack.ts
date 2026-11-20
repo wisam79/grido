@@ -79,8 +79,22 @@ export function autoPackSlots(
   gapMM: number = 0,
   marginMM: number = 0,
 ): FreeformSlot[] {
-  const availWMM = Math.max(10, paperWidthMM - 2 * marginMM);
-  const availHMM = Math.max(10, paperHeightMM - 2 * marginMM);
+  if (
+    ![paperWidthMM, paperHeightMM, gapMM, marginMM].every(Number.isFinite) ||
+    paperWidthMM <= 0 ||
+    paperHeightMM <= 0 ||
+    gapMM < 0 ||
+    marginMM < 0
+  )
+    return [];
+  const availWMM = paperWidthMM - 2 * marginMM;
+  const availHMM = paperHeightMM - 2 * marginMM;
+  if (availWMM <= 0 || availHMM <= 0) return [];
+  const canFit = (wMM: number, hMM: number) =>
+    wMM <= availWMM &&
+    hMM <= availHMM &&
+    wMM / paperWidthMM >= MIN_SIZE &&
+    hMM / paperHeightMM >= MIN_SIZE;
 
   const slots: FreeformSlot[] = [];
 
@@ -90,21 +104,22 @@ export function autoPackSlots(
     type: PhotoPresetType,
     label: string,
   ): FreeformSlot[] => {
-    const cols = Math.max(1, Math.floor((availWMM + gapMM) / (wMM + gapMM)));
-    const rows = Math.max(1, Math.floor((availHMM + gapMM) / (hMM + gapMM)));
+    if (!canFit(wMM, hMM)) return [];
+    const cols = Math.floor((availWMM + gapMM) / (wMM + gapMM));
+    const rows = Math.floor((availHMM + gapMM) / (hMM + gapMM));
 
     const result: FreeformSlot[] = [];
+    const marginXRel = marginMM / paperWidthMM;
+    const marginYRel = marginMM / paperHeightMM;
     const wRel = wMM / paperWidthMM;
     const hRel = hMM / paperHeightMM;
     const gapXRel = gapMM / paperWidthMM;
     const gapYRel = gapMM / paperHeightMM;
-    const marginXRel = marginMM / paperWidthMM;
-    const marginYRel = marginMM / paperHeightMM;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const x = marginXRel + c * (wRel + gapXRel);
-        const y = marginYRel + r * (hRel + gapYRel);
+        const x = Math.min(1 - wRel, marginXRel + c * (wRel + gapXRel));
+        const y = Math.min(1 - hRel, marginYRel + r * (hRel + gapYRel));
         result.push({
           id: newSlotId('slot_pack'),
           x: Number(x.toFixed(4)),
@@ -142,7 +157,8 @@ export function autoPackSlots(
     const iW = 35;
     const iH = 45;
 
-    const pCols = Math.max(1, Math.floor((availWMM + gapMM) / (pW + gapMM)));
+    if (!canFit(pW, pH)) return [];
+    const pCols = Math.floor((availWMM + gapMM) / (pW + gapMM));
     const pWRel = pW / paperWidthMM;
     const pHRel = pH / paperHeightMM;
     const iWRel = iW / paperWidthMM;
@@ -192,6 +208,7 @@ export function autoPackSlots(
     const isLargeSheet = paperWidthMM >= 180;
     const bigW = isLargeSheet ? 100 : 60;
     const bigH = isLargeSheet ? 150 : 90;
+    if (!canFit(bigW, bigH)) return [];
     const bigWRel = bigW / paperWidthMM;
     const bigHRel = bigH / paperHeightMM;
     const marginXRel = marginMM / paperWidthMM;
@@ -208,7 +225,7 @@ export function autoPackSlots(
     });
 
     const sideWMM = availWMM - bigW - gapMM;
-    if (sideWMM >= 35) {
+    if (sideWMM >= 35 && canFit(35, 45)) {
       const sideCols = Math.floor((sideWMM + gapMM) / (35 + gapMM));
       const sideRows = Math.floor((bigH + gapMM) / (45 + gapMM));
       for (let r = 0; r < sideRows; r++) {
@@ -229,7 +246,7 @@ export function autoPackSlots(
     }
 
     const bottomHMM = availHMM - bigH - gapMM;
-    if (bottomHMM >= 45) {
+    if (bottomHMM >= 45 && canFit(35, 45)) {
       const bCols = Math.floor((availWMM + gapMM) / (35 + gapMM));
       const bRows = Math.floor((bottomHMM + gapMM) / (45 + gapMM));
       for (let r = 0; r < bRows; r++) {
@@ -264,6 +281,8 @@ export function splitSlot(
   if (targetIndex === -1) return slots;
 
   const target = slots[targetIndex];
+  if (direction === 'horizontal' && target.w / 2 < MIN_SIZE) return slots;
+  if (direction === 'vertical' && target.h / 2 < MIN_SIZE) return slots;
   const newSlots = [...slots];
 
   if (direction === 'horizontal') {

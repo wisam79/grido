@@ -226,4 +226,57 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
     expect(result.current.isInspectorPinned).toBe(true);
   });
+
+  it('preserves explicit Zen across responsive thresholds and restores both panels', async () => {
+    setWindowWidth(1600);
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => result.current.toggleZenMode());
+    await resizeTo(1100);
+    await resizeTo(1600);
+    expect(result.current.isZenMode).toBe(true);
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    expect(result.current.isInspectorOpen).toBe(false);
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    expect(result.current.isInspectorPinned).toBe(true);
+    expect(result.current.isInspectorOpen).toBe(true);
+  });
+
+  it('functional drawer opening exits Zen just like a literal true update', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => result.current.toggleZenMode());
+    act(() => result.current.setIsTemplatesDrawerOpen((open) => !open));
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    act(() => useEditorStore.getState().selectElement('selected-after-drawer-open'));
+    expect(result.current.isInspectorOpen).toBe(true);
+  });
+
+  it('exiting Zen at compact width restores the inspector without opening a desktop drawer', async () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => result.current.toggleZenMode());
+    await resizeTo(900);
+    act(() => result.current.toggleZenMode());
+    expect(result.current.isInspectorPinned).toBe(true);
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    await resizeTo(1280);
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.isInspectorOpen).toBe(true);
+  });
+
+  it('closes an unpinned selection-opened inspector when togglePanel("properties") is called', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => {
+      result.current.setIsInspectorPinned(false);
+    });
+    act(() => {
+      useEditorStore.getState().selectElement('el-1');
+    });
+    expect(result.current.isInspectorOpen).toBe(true);
+
+    act(() => {
+      result.current.togglePanel('properties');
+    });
+    expect(result.current.isInspectorOpen).toBe(false);
+  });
 });

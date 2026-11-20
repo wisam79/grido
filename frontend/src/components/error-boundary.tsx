@@ -4,6 +4,7 @@ import { LogFrontendError } from '@bindings/grido/app';
 
 import { Button } from '@/components/ui/button';
 import { WarningOctagon } from '@/components/ui/icons';
+import { clearAutoSave } from '@/hooks/use-autosave';
 import { createLogger } from '@/lib/logger';
 
 import type { ErrorInfo, ReactNode } from 'react';
@@ -17,15 +18,31 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  isClearing: boolean;
+  clearError: string | null;
+  showClearConfirmation: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    isClearing: false,
+    clearError: null,
+    showClearConfirmation: false,
   };
+  private isMounted = false;
+  private clearingDraft = false;
 
-  public static getDerivedStateFromError(error: Error): State {
+  public componentDidMount() {
+    this.isMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.isMounted = false;
+  }
+
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
@@ -41,8 +58,30 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
-    this.setState({ hasError: false, error: null });
     window.location.reload();
+  };
+
+  private handleClearDraftAndReload = async () => {
+    if (this.clearingDraft || !this.state.showClearConfirmation) return;
+    this.clearingDraft = true;
+    this.setState({ isClearing: true, clearError: null });
+    try {
+      const cleared = await clearAutoSave();
+      if (!this.isMounted) return;
+      if (!cleared) {
+        this.setState({ clearError: 'تغيّر المستند أثناء الانتظار. لم تُحذف المسودة.' });
+        return;
+      }
+      window.location.reload();
+    } catch (error) {
+      log.error('Failed to clear autosave draft:', error);
+      if (this.isMounted) {
+        this.setState({ clearError: 'تعذّر مسح المسودة. لم تُعَد تهيئة التطبيق؛ حاول مرة أخرى.' });
+      }
+    } finally {
+      this.clearingDraft = false;
+      if (this.isMounted) this.setState({ isClearing: false });
+    }
   };
 
   public render() {
@@ -69,14 +108,54 @@ export class ErrorBoundary extends Component<Props, State> {
                 {this.state.error.toString()}
               </div>
             )}
+            {this.state.showClearConfirmation && (
+              <div className="space-y-2 border border-destructive/30 rounded-md p-3">
+                <p className="text-xs text-muted-foreground">
+                  سيُحذف ملف الحفظ التلقائي للعمل غير المحفوظ. المشاريع المحفوظة لن تُحذف.
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={this.state.isClearing}
+                    onClick={() => this.setState({ showClearConfirmation: false })}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={this.state.isClearing}
+                    onClick={() => void this.handleClearDraftAndReload()}
+                  >
+                    تأكيد مسح المسودة
+                  </Button>
+                </div>
+              </div>
+            )}
+            {this.state.clearError && (
+              <p role="alert" className="text-xs text-destructive">
+                {this.state.clearError}
+              </p>
+            )}
             <div className="flex gap-2.5 justify-center pt-2">
               <Button
                 onClick={this.handleReset}
+                disabled={this.state.isClearing}
                 variant="default"
                 size="sm"
-                className="w-full h-8 rounded-md text-xs font-bold shadow-xs"
+                className="flex-1 h-8 rounded-md text-xs font-bold shadow-xs"
               >
                 إعادة تحميل التطبيق
+              </Button>
+              <Button
+                onClick={() => this.setState({ showClearConfirmation: true, clearError: null })}
+                disabled={this.state.isClearing}
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md text-xs font-semibold"
+              >
+                مسح المسودة وإعادة التحميل
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 import { parseSanitizedCanvasElements } from '@/lib/schema';
@@ -19,7 +20,12 @@ const logger = createLogger('clipboard-utils');
  * دالة عامة موحدة للصق المحتوى (من حافظة النظام أو حافظة الـ Store الداخلية)
  * تعمل بسلاسة في اختصارات الكيبورد (Ctrl+V) وتتكامل مع الزر الأيمن (Context Menu)
  */
-export async function pasteFromClipboardOrStore(): Promise<boolean> {
+export async function pasteFromClipboardOrStore(
+  options: { canCommit?: () => boolean } = {},
+): Promise<boolean> {
+  const session = getDocumentSession();
+  const canCommit = () => session === getDocumentSession() && (options.canCommit?.() ?? true);
+  if (!canCommit()) return false;
   // 🛡️ كل قراءة للحالة تأتي من getState() **لحظة الاستخدام** — التقاط مرجع واحد
   // قبل await navigator.clipboard كان يُقرأ بعد ثوانٍ فيرى slots/selectedId قديمة
   // فتذهب الصورة الملصوقة إلى خانة خاطئة أو إلى الوضع الخطأ (E-تزامن).
@@ -35,6 +41,8 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
     logger.warn('System clipboard text read not permitted, falling back to Wails', err);
   }
 
+  if (!canCommit()) return false;
+
   // استخدام بديل Wails الأصلي إذا تعذرت القراءة عبر المتصفح
   if ((!text || !text.trim()) && typeof GetClipboardText === 'function') {
     try {
@@ -44,6 +52,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
     }
   }
 
+  if (!canCommit()) return false;
   if (text && text.trim()) {
     if (text.startsWith('GRIDO_ELEMENTS:')) {
       try {
@@ -63,8 +72,10 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
       const sanitized = sanitizeText(text);
       if (text.length > TEXT_MAX_LENGTH) {
         const { toast } = await import('sonner');
+        if (!canCommit()) return false;
         toast.info(`تم اقتطاع النص الطويل إلى ${TEXT_MAX_LENGTH} حرفاً`);
       }
+      if (!canCommit()) return false;
       readState().addTextElement(sanitized);
       return true;
     }
@@ -74,10 +85,12 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
   try {
     if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
       const items = await navigator.clipboard.read();
+      if (!canCommit()) return false;
       for (const item of items) {
         const imageType = item.types.find((t) => t.startsWith('image/'));
         if (imageType) {
           const blob = await item.getType(imageType);
+          if (!canCommit()) return false;
           let localPath: string | null = null;
           let aspect: number | null = null;
 
@@ -107,12 +120,13 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
             }
           }
 
+          if (!canCommit()) return false;
           // 2. المسار الاحتياطي: تحويل Base64 فقط إذا تعذر البث الثنائي المباشر
           if (!localPath) {
             localPath = await new Promise<string | null>((resolve) => {
               const reader = new FileReader();
               reader.onload = async (event) => {
-                if (event.target?.result) {
+                if (event.target?.result && canCommit()) {
                   try {
                     const saved = await SaveImageFromBase64(event.target.result as string);
                     resolve(saved || null);
@@ -128,8 +142,9 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
             });
           }
 
+          if (!canCommit()) return false;
           if (localPath) {
-            const { mode, selectedId, slots, setSlotImage, addImageElement } = readState();
+            const { mode, selectedId, slots, setSlotImage } = readState();
             if (mode === 'collage') {
               let targetSlotId = selectedId;
               if (!targetSlotId) {
@@ -140,7 +155,8 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
               if (targetSlotId) setSlotImage(targetSlotId, localPath);
             } else {
               const resolvedAspect = aspect ?? (await resolveImageAspectRatio(localPath));
-              addImageElement(localPath, resolvedAspect);
+              if (!canCommit()) return false;
+              readState().addImageElement(localPath, resolvedAspect);
             }
             return true;
           }
@@ -151,6 +167,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
     logger.warn('System clipboard image read not permitted or failed', err);
   }
 
+  if (!canCommit()) return false;
   // 3. الفحص الاحتياطي لحافظة الـ Store الداخلية
   const fallbackState = readState();
   if (fallbackState.clipboardElements && fallbackState.clipboardElements.length > 0) {

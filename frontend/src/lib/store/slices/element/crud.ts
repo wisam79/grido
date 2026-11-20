@@ -155,7 +155,7 @@ export const createElementCrudSlice: StateCreator<
         }),
         ...normalizeSelection(
           remainingIds,
-          targetSet.has(s.selectedId || '') ? null : s.selectedId,
+          remainingIds.includes(s.selectedId || '') ? s.selectedId : null,
         ),
       };
     });
@@ -230,7 +230,7 @@ export const createElementCrudSlice: StateCreator<
 
   renameElement: (id, name) => {
     const el = get().elements.find((e: CanvasElement) => e.id === id);
-    if (!el) return;
+    if (!el || el.locked) return;
     // الاسم الفارغ = رجوع إلى التسمية التلقائية؛ ولا سجل لعملية لم تغيّر اسماً
     const next =
       name

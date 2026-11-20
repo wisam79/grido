@@ -6,6 +6,8 @@
  * مستخرج من element-slice.ts لتحقيق النقاء الحسابي وقابلية الفحص الآلي المستقل.
  */
 
+import { canArrangeSelection } from '../selection-properties';
+
 import { getElementVisualBox } from './element-geometry';
 
 import type { CanvasElement } from '../store/types';
@@ -28,6 +30,7 @@ export function calculateAlignmentPatches(
   canvasWidth: number,
   canvasHeight: number,
 ): ElementPatch[] {
+  if (!canArrangeSelection(elements, targetIds)) return [];
   const elementsToAlign = elements.filter(
     (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,
   );
@@ -152,7 +155,7 @@ export function calculateDistributionPatches(
   canvasWidth: number,
   canvasHeight: number,
 ): ElementPatch[] {
-  if (targetIds.length < 3) return [];
+  if (targetIds.length < 3 || !canArrangeSelection(elements, targetIds)) return [];
 
   const elementsToDistribute = elements.filter(
     (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,

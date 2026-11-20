@@ -38,9 +38,23 @@ const SPACE_CONSUMED_TAGS = new Set([
 ]);
 
 export function isSpaceHandledByTarget(target: EventTarget | null): boolean {
+  if (
+    typeof document !== 'undefined' &&
+    document.querySelector('[role="dialog"], [role="alertdialog"], [aria-modal="true"]')
+  ) {
+    return true;
+  }
   const el = target as HTMLElement | null;
   if (!el || typeof el.tagName !== 'string') return false;
-  return SPACE_CONSUMED_TAGS.has(el.tagName) || el.isContentEditable === true;
+  return (
+    SPACE_CONSUMED_TAGS.has(el.tagName) ||
+    el.isContentEditable === true ||
+    Boolean(
+      el.closest?.(
+        'input, textarea, select, button, a, summary, [contenteditable="true"], [role="button"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"], [role="slider"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="listbox"]',
+      ),
+    )
+  );
 }
 
 function cameraInput(viewport: ViewportSize) {
@@ -372,6 +386,7 @@ export function useCanvasViewport(
       if (isSpaceHandledByTarget(e.target)) return;
       if (e.button !== 1 && !(e.button === 0 && spacePressed)) return;
       e.preventDefault();
+      e.stopPropagation();
       flush();
       freezeFit();
       pointerId = e.pointerId;
@@ -485,7 +500,7 @@ export function useCanvasViewport(
       }
     });
     node.addEventListener('wheel', handleWheel, { passive: false });
-    node.addEventListener('pointerdown', handlePointerDown);
+    node.addEventListener('pointerdown', handlePointerDown, { capture: true });
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleBlur);
@@ -501,7 +516,7 @@ export function useCanvasViewport(
       unsubscribe();
       controllerRef.current = null;
       node.removeEventListener('wheel', handleWheel);
-      node.removeEventListener('pointerdown', handlePointerDown);
+      node.removeEventListener('pointerdown', handlePointerDown, true);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);

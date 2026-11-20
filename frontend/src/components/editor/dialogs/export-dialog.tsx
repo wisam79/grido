@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
@@ -174,10 +175,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   }, [open]);
 
   useEffect(() => {
-    if (open && showBleedGuides && bleedMarginMM > 0) {
+    if (!open) return;
+    if (showBleedGuides && bleedMarginMM > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBleedMM(bleedMarginMM);
       setShowCropMarks(true);
+    } else {
+      setBleedMM(0);
+      setShowCropMarks(false);
     }
   }, [open, showBleedGuides, bleedMarginMM]);
 
@@ -548,6 +553,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold truncate">تصدير الصورة</DialogTitle>
+                <DialogDescription className="sr-only">
+                  ضبط صيغة ودقة الملف وخيارات النزيف وعلامات القص قبل التصدير
+                </DialogDescription>
               </div>
             </div>
             <DialogCloseButton />
@@ -699,12 +707,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           <div className="space-y-3">
-            {(template?.dpi || printSettings.dpi || 300) < 150 && (
+            {(activeTemplate?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="font-medium">
-                  الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300 DPI
-                  للطباعة.
+                  الدقة الحالية ({activeTemplate?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300
+                  DPI للطباعة.
                 </span>
               </div>
             )}

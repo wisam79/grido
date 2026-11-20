@@ -12,6 +12,25 @@ const STORAGE_KEY = 'grido-print-selected-printer';
 const getPrintersMock = vi.fn();
 const getDefaultPrinterMock = vi.fn();
 const openPrefsMock = vi.fn((_name: string) => Promise.resolve({ success: true }));
+const papersMock = vi.fn();
+const invocation = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock('../src/components/editor/print/use-print-export', () => {
+  const cancelExport = () => {};
+  const handlePrint = vi.fn();
+  const handlePrintRef = { current: handlePrint };
+  const setPrintInvocation = (value: unknown) => {
+    invocation.current = value;
+  };
+  return {
+    usePrintExport: () => ({
+      isExporting: false,
+      cancelExport,
+      handlePrint,
+      handlePrintRef,
+      setPrintInvocation,
+    }),
+  };
+});
 
 vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
   ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
@@ -19,7 +38,7 @@ vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
   GetPrinters: () => getPrintersMock(),
   GetDefaultPrinterName: () => getDefaultPrinterMock(),
   OpenPrinterPreferences: (name: string) => openPrefsMock(name),
-  GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [] })),
+  GetSupportedPapers: () => papersMock(),
 }));
 
 vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
@@ -47,6 +66,8 @@ describe('PrintDialog — مزامنة الطابعة المبدئية (الخي
     localStorage.clear();
     getDefaultPrinterMock.mockResolvedValue('');
     openPrefsMock.mockResolvedValue({ success: true });
+    papersMock.mockResolvedValue({ success: true, papers: [] });
+    invocation.current = null;
     act(() => {
       useEditorStore.getState().reset();
       useEditorStore.getState().setMode('single');
@@ -69,6 +90,46 @@ describe('PrintDialog — مزامنة الطابعة المبدئية (الخي
     const calls = openPrefsMock.mock.calls;
     return calls[calls.length - 1]?.[0];
   };
+
+  it.each([
+    { papers: [], marginMM: 0, expected: false },
+    {
+      papers: [{ id: 9, name: 'A4', widthMM: 210, heightMM: 297, isBorderless: false }],
+      marginMM: 0,
+      expected: false,
+    },
+    {
+      papers: [{ id: 9, name: 'A4 borderless', widthMM: 210, heightMM: 297, isBorderless: true }],
+      marginMM: 0,
+      expected: true,
+    },
+    {
+      papers: [{ id: 9, name: 'A4 borderless', widthMM: 210, heightMM: 297, isBorderless: true }],
+      marginMM: 5,
+      expected: false,
+    },
+  ])(
+    'requests borderless=$expected only with an explicitly capable matched form (margin $marginMM)',
+    async ({ papers, marginMM, expected }) => {
+      getPrintersMock.mockResolvedValue({
+        success: true,
+        printers: [{ name: EPSON, isDefault: true }],
+      });
+      papersMock.mockResolvedValue({ success: true, papers });
+      act(() =>
+        useEditorStore
+          .getState()
+          .setPrintSettings({ paperId: 'a4', paperWidthMM: 210, paperHeightMM: 297, marginMM }),
+      );
+      const view = renderDialog();
+      await waitFor(() => expect(papersMock).toHaveBeenCalled());
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(invocation.current).toMatchObject({ options: { borderless: expected } });
+      view.unmount();
+    },
+  );
 
   it('يفضّل الطابعة المحفوظة من جلسة سابقة على الافتراضية', async () => {
     localStorage.setItem(STORAGE_KEY, BROTHER);

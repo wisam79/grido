@@ -124,7 +124,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               onChange={(col) => {
                 onUpdate(element.id, {
                   fill: col,
-                  stroke: isLine ? col : element.stroke || col,
+                  stroke: isLinearShape ? col : element.stroke || col,
                 });
               }}
               onCommit={() => useEditorStore.getState().pushHistory()}
@@ -138,13 +138,13 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             <FluentSliderField
               label={isLine ? 'سمك الخط' : 'سماكة الحد'}
               value={
-                isLine
+                isLinearShape
                   ? element.strokeWidth && element.strokeWidth > 0
                     ? element.strokeWidth
                     : 4
                   : (element.strokeWidth ?? 0)
               }
-              min={isLine ? 1 : 0}
+              min={isLinearShape ? 1 : 0}
               max={50}
               step={0.5}
               unit="px"
@@ -153,33 +153,40 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             />
 
             {/* أزرار سماكة سريعة في مسار مجوف Fluent 2 */}
-            <div className="grid grid-cols-5 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
-              {STROKE_WIDTH_PRESETS.map((preset) => {
-                const currVal = isLine
-                  ? element.strokeWidth && element.strokeWidth > 0
-                    ? element.strokeWidth
-                    : 4
-                  : (element.strokeWidth ?? 0);
-                const isActive = Math.round(currVal) === preset.val;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    className={cn(
-                      'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                      isActive
-                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                    )}
-                    onClick={() => {
-                      onUpdate(element.id, { strokeWidth: preset.val });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
+            <div
+              className={cn(
+                'grid gap-1 p-0.5 rounded-md bg-muted border border-border/60',
+                isLinearShape ? 'grid-cols-4' : 'grid-cols-5',
+              )}
+            >
+              {STROKE_WIDTH_PRESETS.filter((preset) => !isLinearShape || preset.val > 0).map(
+                (preset) => {
+                  const currVal = isLinearShape
+                    ? element.strokeWidth && element.strokeWidth > 0
+                      ? element.strokeWidth
+                      : 4
+                    : (element.strokeWidth ?? 0);
+                  const isActive = Math.round(currVal) === preset.val;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      className={cn(
+                        'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
+                        isActive
+                          ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
+                      )}
+                      onClick={() => {
+                        onUpdate(element.id, { strokeWidth: preset.val });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                },
+              )}
             </div>
           </div>
 
@@ -204,45 +211,46 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             </div>
           )}
 
-          {/* نمط الحد: متصل / متقطع / منقّط — خصائص Konva أصلية (dash + lineCap)
-            والـdash يتدرّج مع سماكة الحد فلا تختفي الشرطات في الحدود السميكة */}
-          <div className="space-y-1.5 pt-2 border-t border-border/30">
-            <span className="text-mini font-semibold text-muted-foreground block">نمط الحد</span>
-            <FluentSegmentedControl<'solid' | 'dashed' | 'dotted'>
-              layoutId="shape-stroke-style"
-              variant="field"
-              value={element.strokeStyle ?? 'solid'}
-              onChange={(style) => {
-                onUpdate(element.id, { strokeStyle: style });
-                useEditorStore.getState().pushHistory();
-              }}
-              size="sm"
-              options={[
-                { id: 'solid', label: 'متصل' },
-                { id: 'dashed', label: 'متقطع' },
-                { id: 'dotted', label: 'منقّط' },
-              ]}
-            />
-            {/* طرف الخط — للخط والسهم فقط، والمنقّط يُثبَّت على مستدير
-              (توثيق Konva: النقاط الدائرية تحتاج lineCap: round) */}
-            {isLinearShape && (element.strokeStyle ?? 'solid') !== 'dotted' && (
-              <FluentSegmentedControl<'butt' | 'round' | 'square'>
-                layoutId="shape-line-cap"
+          {/* نمط الحد: متصل / متقطع / منقّط — يظهر للخط/السهم أو عند وجود حد > 0 */}
+          {(isLinearShape || (element.strokeWidth ?? 0) > 0) && (
+            <div className="space-y-1.5 pt-2 border-t border-border/30">
+              <span className="text-mini font-semibold text-muted-foreground block">نمط الحد</span>
+              <FluentSegmentedControl<'solid' | 'dashed' | 'dotted'>
+                layoutId="shape-stroke-style"
                 variant="field"
-                value={element.lineCap ?? 'butt'}
-                onChange={(cap) => {
-                  onUpdate(element.id, { lineCap: cap });
+                value={element.strokeStyle ?? 'solid'}
+                onChange={(style) => {
+                  onUpdate(element.id, { strokeStyle: style });
                   useEditorStore.getState().pushHistory();
                 }}
                 size="sm"
                 options={[
-                  { id: 'round', label: 'مستدير' },
-                  { id: 'butt', label: 'مسطح' },
-                  { id: 'square', label: 'مربع' },
+                  { id: 'solid', label: 'متصل' },
+                  { id: 'dashed', label: 'متقطع' },
+                  { id: 'dotted', label: 'منقّط' },
                 ]}
               />
-            )}
-          </div>
+              {/* طرف الخط — للخط والسهم فقط، والمنقّط يُثبَّت على مستدير
+                (توثيق Konva: النقاط الدائرية تحتاج lineCap: round) */}
+              {isLinearShape && (element.strokeStyle ?? 'solid') !== 'dotted' && (
+                <FluentSegmentedControl<'butt' | 'round' | 'square'>
+                  layoutId="shape-line-cap"
+                  variant="field"
+                  value={element.lineCap ?? 'butt'}
+                  onChange={(cap) => {
+                    onUpdate(element.id, { lineCap: cap });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  size="sm"
+                  options={[
+                    { id: 'round', label: 'مستدير' },
+                    { id: 'butt', label: 'مسطح' },
+                    { id: 'square', label: 'مربع' },
+                  ]}
+                />
+              )}
+            </div>
+          )}
 
           {/* سلايدر استدارة الزوايا للمستطيلات مع كبسولات سريعة */}
           {element.shape === 'rect' &&
@@ -492,6 +500,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
  */
 export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps) {
   const isLine = element.shape === 'line';
+  const isLinearShape = isLine || element.shape === 'arrow';
   const currentFill = element.fill || '#6366f1';
   const currentStroke = element.stroke || currentFill;
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
@@ -502,8 +511,9 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         {/* بطاقة 1: التعبئة والتدرج */}
         <FluentSection title="تعبئة الشكل" collapsible defaultOpen={true}>
           <GradientPicker
-            fillType={element.fillType || 'solid'}
-            allowImageFill
+            fillType={isLinearShape ? 'solid' : element.fillType || 'solid'}
+            showFillType={!isLinearShape}
+            allowImageFill={!isLinearShape}
             imageFill={{
               fillImageSrc: element.fillImageSrc,
               fillImageFit: element.fillImageFit,
@@ -513,6 +523,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               fillImageOffsetY: element.fillImageOffsetY,
             }}
             onChangeImageFill={(patch) => {
+              if (isLinearShape) return;
               // إزالة الصورة تُعيد الشكل لتعبئة مصمتة بدل إبقاء وضع صورة بلا صورة
               onUpdate(element.id, normalizeImageFillPatch(patch));
             }}
@@ -523,13 +534,14 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               element.fillRadialGradientColorStops || [0, '#3b82f6', 1, '#8b5cf6']
             }
             onChangeType={(type) => {
+              if (isLinearShape) return;
               onUpdate(element.id, { fillType: type });
               useEditorStore.getState().pushHistory();
             }}
             onChangeSolidColor={(col) => {
               onUpdate(element.id, {
                 fill: col,
-                stroke: isLine ? col : element.stroke || col,
+                stroke: isLinearShape ? col : element.stroke || col,
               });
             }}
             onChangeColorStops={(stops) => {

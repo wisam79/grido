@@ -520,15 +520,7 @@ export function SheetPreview({
           })
         ) : safePreviewSrc ? (
           <img src={safePreviewSrc} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div
-            role="status"
-            aria-busy="true"
-            className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo"
-          >
-            جاري تحميل المعاينة ...
-          </div>
-        )}
+        ) : null}
         {cutLineElements}
         {cropMarkElements}
       </div>

@@ -55,21 +55,34 @@ export function LicenseLockScreen({
         className={`border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 fluent-specular ${
           !isFocused ? 'opacity-75' : ''
         }`}
-        onDoubleClick={onMaximize}
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement).closest('.title-bar-controls, button, a, input, select')) {
+            return;
+          }
+          onMaximize();
+        }}
       >
         <div className="flex items-center justify-between px-4 py-1.5 relative">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-destructive shrink-0 animate-pulse" />
-            <h1 className="text-xs font-bold text-foreground/80">Grido Studio | تفعيل الترخيص</h1>
+            <span className="text-xs font-bold text-foreground/80">
+              Grido Studio | تفعيل الترخيص
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 title-bar-controls">
+          <div
+            className="flex items-center gap-2 title-bar-controls"
+            onDoubleClick={(e) => e.stopPropagation()}
+          >
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onToggleTheme}
+                  aria-label={
+                    theme === 'light' ? 'التبديل إلى الوضع الداكن' : 'التبديل إلى الوضع المضيء'
+                  }
                   className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 >
                   {theme === 'light' ? (

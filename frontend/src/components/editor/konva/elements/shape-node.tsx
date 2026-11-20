@@ -22,7 +22,7 @@ import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
 
 import { withShadowlessDrag } from './drag-shadow';
-import { getFillProps } from './fill-utils';
+import { createElementSpaceSceneFunc, getFillProps } from './fill-utils';
 import { propsAreEqual } from './types';
 
 import type { ElementProps } from './types';
@@ -97,6 +97,56 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     }
   }, [elementRef, element.opacity]);
 
+  const isCentroidShape =
+    element.shape === 'ellipse' ||
+    element.shape === 'star' ||
+    element.shape === 'polygon' ||
+    element.shape === 'ring' ||
+    element.shape === 'arc' ||
+    element.shape === 'wedge';
+  const fillSpace = pathBounds
+    ? {
+        scaleX: w / pathBounds.w,
+        scaleY: h / pathBounds.h,
+        originX: pathBounds.minX,
+        originY: pathBounds.minY,
+      }
+    : isCentroidShape
+      ? { originX: -w / 2, originY: -h / 2 }
+      : undefined;
+
+  const elementSpaceScene = React.useMemo(() => {
+    if (
+      element.fillType !== 'image' &&
+      element.fillType !== 'linear' &&
+      element.fillType !== 'radial'
+    ) {
+      return undefined;
+    }
+    if (pathBounds && w > 0 && h > 0) {
+      return createElementSpaceSceneFunc(element, w, h, fillImage ?? null, [
+        pathBounds.w / w,
+        0,
+        0,
+        pathBounds.h / h,
+        pathBounds.minX,
+        pathBounds.minY,
+      ]);
+    }
+    if (element.shape === 'arc' || element.shape === 'wedge') {
+      // The geometry rotates -90°, not the paint. Invert T(center) R(-90°).
+      return createElementSpaceSceneFunc(element, w, h, fillImage ?? null, [
+        0,
+        1,
+        -1,
+        0,
+        h / 2,
+        -w / 2,
+      ]);
+    }
+    return undefined;
+  }, [element, w, h, fillImage, pathBounds]);
+
   const commonVisualProps = {
     perfectDrawEnabled: false,
     // 🚀 توصية Konva الرسمية (Optimize Strokes): لا ظل للحدود — الرسم
@@ -109,13 +159,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     shadowOffsetX: element.shadowOffsetX || 0,
     shadowOffsetY: element.shadowOffsetY || 0,
     shadowOpacity: element.shadowOpacity ?? 0,
-    ...getFillProps(
-      element,
-      w,
-      h,
-      fillImage ?? null,
-      pathBounds ? { scaleX: w / pathBounds.w, scaleY: h / pathBounds.h } : undefined,
-    ),
+    ...getFillProps(element, w, h, fillImage ?? null, fillSpace),
     stroke: isLinearShape
       ? element.stroke || element.fill || gradientStart()
       : element.strokeWidth && element.strokeWidth > 0
@@ -136,14 +180,13 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
 
     if (element.shape === 'line') {
       const strokeW = resolvedStrokeWidth;
-      const lineH = Math.max(h, strokeW, 16);
       return (
         <KonvaLine
           {...commonVisualProps}
           x={0}
           y={0}
-          height={lineH}
-          points={[0, lineH / 2, w, lineH / 2]}
+          height={h}
+          points={[0, h / 2, w, h / 2]}
           hitStrokeWidth={Math.max(20, strokeW + 12)}
         />
       );
@@ -151,13 +194,12 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
 
     if (element.shape === 'arrow') {
       const strokeW = resolvedStrokeWidth;
-      const arrowH = Math.max(h, strokeW, 16);
       return (
         <KonvaArrow
           {...commonVisualProps}
           x={0}
           y={0}
-          points={[0, arrowH / 2, w, arrowH / 2]}
+          points={[0, h / 2, w, h / 2]}
           pointerLength={element.pointerLength ?? 14}
           pointerWidth={element.pointerWidth ?? 14}
           pointerAtBeginning={element.pointerAtBeginning === true}
@@ -224,6 +266,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
           outerRadius={ringOuterRadius(w, h)}
           angle={element.arcAngle ?? 270}
           rotation={-90}
+          sceneFunc={elementSpaceScene}
         />
       );
     }
@@ -238,6 +281,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
           radius={Math.min(w, h) / 2}
           angle={element.arcAngle ?? 90}
           rotation={-90}
+          sceneFunc={elementSpaceScene}
         />
       );
     }
@@ -256,6 +300,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
           data={element.svgPath || ''}
           scaleX={scaleX}
           scaleY={scaleY}
+          sceneFunc={elementSpaceScene}
         />
       );
     }

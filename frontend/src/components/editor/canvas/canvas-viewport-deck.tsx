@@ -40,10 +40,12 @@ import { useCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { cn } from '@/lib/utils';
 
 export interface CanvasViewportDeckProps {
+  isZenMode?: boolean;
   className?: string;
 }
 
 export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
+  isZenMode = false,
   className,
 }: CanvasViewportDeckProps) {
   // الحالة عبر المحددات المشتركة (كانت 16 حقلاً في useShallow واحد هنا)
@@ -75,6 +77,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     fitWidthZoom,
     autoFitZoom,
     actualSizeZoom,
+    canZoomIn,
+    canZoomOut,
   } = useCanvasZoom();
 
   // أوضاع الملاءمة في قائمة واحدة — الفعل يعيّن الوضع ويرجع الزوم لـ 100%
@@ -227,10 +231,11 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
 
         {/* زر وضع التركيز / إخفاء الألواح */}
         <FluentCapsuleButton
-          icon={<Eye className="w-4 h-4" weight="regular" />}
+          icon={<Eye className="w-4 h-4" weight={isZenMode ? 'duotone' : 'regular'} />}
           label="وضع التركيز (Ctrl + .)"
           tooltip="إخفاء أو استعادة الألواح الجانبية لمساحة رؤية كاملة"
           shortcut="Ctrl+."
+          active={isZenMode}
           onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'))}
           testId="canvas-zen-mode-toggle"
         />
@@ -246,6 +251,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               label="تصغير"
               tooltip="تصغير"
               shortcut="Ctrl+-"
+              disabled={!canZoomOut}
               onClick={zoomOut}
               testId="canvas-zoom-out"
             />
@@ -281,6 +287,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               label="تكبير"
               tooltip="تكبير"
               shortcut="Ctrl++"
+              disabled={!canZoomIn}
               onClick={zoomIn}
               testId="canvas-zoom-in"
             />

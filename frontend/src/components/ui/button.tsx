@@ -5,7 +5,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "font-sans inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-control font-semibold select-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  "font-sans inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-control font-semibold select-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   {
     variants: {
       variant: {
@@ -52,15 +52,56 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, shape, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, shape, asChild = false, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
+    const blockActivation = (event: React.SyntheticEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    // Slot runs child handlers before wrapper handlers. Override activation on the
+    // child too: a disabled anchor/custom control has no native disabled behavior.
+    const content =
+      asChild && disabled && React.isValidElement(children)
+        ? React.cloneElement(
+            children as React.ReactElement<
+              React.HTMLAttributes<HTMLElement> & { disabled?: boolean }
+            >,
+            {
+              disabled: true,
+              'aria-disabled': true,
+              tabIndex: -1,
+              onClick: blockActivation,
+              onClickCapture: blockActivation,
+              onKeyDownCapture: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') blockActivation(event);
+              },
+            },
+          )
+        : children;
     return (
       <Comp
         data-slot="button"
-        className={cn(buttonVariants({ variant, size, shape, className }))}
+        className={cn(
+          buttonVariants({ variant, size, shape, className }),
+          asChild && disabled && 'opacity-50 cursor-not-allowed',
+        )}
         ref={ref}
+        disabled={disabled}
         {...props}
-      />
+        {...(asChild && disabled
+          ? {
+              'aria-disabled': true,
+              tabIndex: -1,
+              onClick: blockActivation,
+              onClickCapture: blockActivation,
+              onKeyDownCapture: (event: React.KeyboardEvent<HTMLElement>) => {
+                if (event.key === 'Enter' || event.key === ' ') blockActivation(event);
+              },
+            }
+          : {})}
+      >
+        {content}
+      </Comp>
     );
   },
 );

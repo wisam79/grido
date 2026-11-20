@@ -285,6 +285,16 @@ function SlotSizeFields({
         skipCommitRef.current = false;
         return;
       }
+      const baseline =
+        axis === 'width'
+          ? safeWidthMM !== null
+            ? safeWidthMM.toFixed(1)
+            : ''
+          : safeHeightMM !== null
+            ? safeHeightMM.toFixed(1)
+            : '';
+      const currentVal = axis === 'width' ? width : height;
+      if (currentVal === baseline) return;
       commitSize(axis);
     },
   });

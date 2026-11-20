@@ -29,6 +29,8 @@ export function useAdminKeys(
   const { notify } = useFeedback();
   const { captureOwner, invalidateOwnership } = useAdminOperationOwnership(supabase, sessionOwnerRef);
   const batchReqIdRef = useRef(0);
+  // One synchronous lock for both forms; state alone cannot guard same-tick submits.
+  const generationOwnerRef = useRef<(() => boolean) | null>(null);
 
   const [keys, setKeys] = useState<LicenseKey[]>([]);
   const [keysTotal, setKeysTotal] = useState(0);
@@ -52,6 +54,7 @@ export function useAdminKeys(
   const resetKeysData = useCallback(() => {
     invalidateOwnership();
     batchReqIdRef.current += 1;
+    generationOwnerRef.current = null;
     fetchReqIdRef.current += 1;
     setKeys([]);
     setKeysTotal(0);
@@ -130,6 +133,7 @@ export function useAdminKeys(
   // Generate Single License Key
   const handleGenerateKey = async (e: FormEvent) => {
     e.preventDefault();
+    if (generationOwnerRef.current?.()) return;
     const ownsOperation = captureOwner();
     if (!supabase || !ownsOperation()) return;
 
@@ -140,6 +144,8 @@ export function useAdminKeys(
     }
 
     const customKey = buildCustomKey(genPrefix, genPlan, randomKeySuffix());
+    generationOwnerRef.current = ownsOperation;
+    setGeneratingBatch(true);
 
     try {
       const { data, error } = await supabase.rpc('admin_create_license_key', {
@@ -161,12 +167,18 @@ export function useAdminKeys(
     } catch (err) {
       if (!ownsOperation()) return;
       notify('فشل توليد المفتاح سحابياً: ' + (err as Error).message, 'error');
+    } finally {
+      if (generationOwnerRef.current === ownsOperation) {
+        generationOwnerRef.current = null;
+        if (ownsOperation()) setGeneratingBatch(false);
+      }
     }
   };
 
   // Generate Batch License Keys
   const handleGenerateBatchKeys = async (e: FormEvent) => {
     e.preventDefault();
+    if (generationOwnerRef.current?.()) return;
     const ownsOperation = captureOwner();
     if (!supabase || !ownsOperation()) return;
 
@@ -184,6 +196,7 @@ export function useAdminKeys(
 
     const batchReqId = ++batchReqIdRef.current;
     const ownsBatch = () => ownsOperation() && batchReqId === batchReqIdRef.current;
+    generationOwnerRef.current = ownsBatch;
     setGeneratingBatch(true);
     setGeneratedBatchKeys([]);
 
@@ -237,7 +250,10 @@ export function useAdminKeys(
       if (!ownsBatch()) return;
       notify('فشل توليد الدفعة: ' + (err as Error).message, 'error');
     } finally {
-      if (ownsBatch()) setGeneratingBatch(false);
+      if (generationOwnerRef.current === ownsBatch) {
+        generationOwnerRef.current = null;
+        if (ownsBatch()) setGeneratingBatch(false);
+      }
     }
   };
 

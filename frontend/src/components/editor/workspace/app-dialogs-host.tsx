@@ -42,7 +42,7 @@ export function DialogLazyFallback() {
     <div
       role="status"
       aria-label="جاري التحميل ..."
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      className="fixed inset-0 z-(--z-dialog) flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
     >
       <div className="w-[min(480px,90vw)] rounded-lg border border-border/60 bg-background/95 p-5 space-y-3 shadow-2xl fluent-specular">
         <Skeleton className="h-6 w-1/2" />

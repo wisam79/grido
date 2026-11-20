@@ -99,7 +99,7 @@ export function AccountLicenseModal() {
     <Dialog open={accountModalOpen} onOpenChange={handleModalOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[95vw] sm:max-w-[460px] bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl p-5 sm:p-6 fluent-specular overflow-hidden"
+        className="w-[95vw] sm:max-w-[460px] bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl p-5 sm:p-6 fluent-specular"
         dir="rtl"
       >
         {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}
@@ -109,11 +109,15 @@ export function AccountLicenseModal() {
               <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
                 الحساب والترخيص
               </DialogTitle>
-              {!(user && user.token) && (
-                <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5 truncate">
-                  سجّل لتفعيل الذكاء الاصطناعي والمزامنة
-                </DialogDescription>
-              )}
+              <DialogDescription
+                className={
+                  user && user.token
+                    ? 'sr-only'
+                    : 'text-xs text-muted-foreground/80 mt-0.5 truncate'
+                }
+              >
+                سجّل لتفعيل الذكاء الاصطناعي والمزامنة
+              </DialogDescription>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -160,7 +164,10 @@ export function AccountLicenseModal() {
                 <span className="text-xs font-bold text-foreground block truncate">
                   {user.name || 'مستخدم مسجل'}
                 </span>
-                <span className="font-mono text-mini text-muted-foreground truncate block">
+                <span
+                  dir="ltr"
+                  className="font-mono text-mini text-muted-foreground truncate block"
+                >
                   {user.email}
                 </span>
               </div>

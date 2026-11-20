@@ -1,4 +1,4 @@
-import { useId, type CSSProperties } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { useEditorStore } from '@/lib/editor-store';
@@ -48,6 +48,7 @@ function TileSample({ element, style }: { element: TextElement; style?: CSSPrope
 }
 
 export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
+  const [isDraggingCurve, setIsDraggingCurve] = useState(false);
   const shadowActive = hasTextShadow(element);
   const shadowPreset = matchTextShadowPreset(element);
   const bgMode = resolveTextBackgroundMode(element);
@@ -301,7 +302,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
             ))}
           </div>
 
-          {curve !== 0 && (
+          {(curve !== 0 || isDraggingCurve) && (
             <FluentSliderField
               label="الزاوية"
               value={curve}
@@ -311,6 +312,8 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
               unit="°"
               onChange={(val) => update({ curve: val })}
               onCommit={pushHistory}
+              onDragStart={() => setIsDraggingCurve(true)}
+              onDragEnd={() => setIsDraggingCurve(false)}
               className="animate-in fade-in duration-100"
             />
           )}

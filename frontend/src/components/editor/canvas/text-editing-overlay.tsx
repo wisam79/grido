@@ -305,8 +305,10 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     bgBorderColor && (textEl.textBgBorderWidth || 0) > 0
       ? (textEl.textBgBorderWidth || 0) * scaleRatio
       : 0;
-  // حد CSS يُرسم داخل الصندوق بعكس حد Konva المركزي — نعوّضه كي يبقى
-  // محتوى النص بعرض w تماماً كما في عقدة الكانفس.
+  // حد CSS يُرسم داخل الصندوق بعكس حد Konva المركزي — نوسّع الصندوق ليشمل
+  // الحد دون تقليص مساحة النص الفعلية أو المسافة الداخلية.
+  const outerPadX = Math.max(paddingXPx, borderWidthPx);
+  const outerPadY = Math.max(paddingYPx, borderWidthPx);
   const insetXPx = Math.max(0, paddingXPx - borderWidthPx);
   const insetYPx = Math.max(0, paddingYPx - borderWidthPx);
 
@@ -405,14 +407,14 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
     transformOrigin: 'center',
     backgroundColor: 'transparent',
     padding: `${insetYPx + editorOffsetYPx}px ${insetXPx}px`,
-    minHeight: `${contentHeightPx + paddingYPx * 2 - borderWidthPx * 2}px`,
+    minHeight: `${contentHeightPx + insetYPx * 2}px`,
     fontSize: `${(textEl.fontSize || 16) * scaleRatio}px`,
     fontFamily: textEl.fontFamily || (isCurved ? 'Cairo, sans-serif' : 'sans-serif'),
     fontWeight: renderState.fontWeight,
     fontStyle: textEl.fontStyle || 'normal',
     textDecoration: textEl.textDecoration || 'none',
     textDecorationColor: decorationColor,
-    textTransform: textEl.textTransform || 'none',
+    textTransform: renderState.isArabic ? 'none' : textEl.textTransform || 'none',
     textAlign: isCurved ? 'center' : textEl.textAlign || 'center',
     lineHeight: textEl.lineHeight || 1.2,
     // التباعد قيمة منطقية على الكانفس — يجب تحجيمها مثل fontSize لتطابق
@@ -435,12 +437,12 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
       className="absolute z-(--z-canvas-text-overlay) pointer-events-auto font-cairo"
       style={{
         // نتمدد بحشوة الشارة للخارج مع تثبيت نقطة الدوران على أصل النص (x,y)
-        left: `${boxLeftPx - paddingXPx}px`,
-        top: `${boxTopPx - paddingYPx}px`,
-        width: `${widthPx + paddingXPx * 2}px`,
-        minHeight: `${contentHeightPx + paddingYPx * 2}px`,
+        left: `${boxLeftPx - outerPadX}px`,
+        top: `${boxTopPx - outerPadY}px`,
+        width: `${widthPx + outerPadX * 2}px`,
+        minHeight: `${contentHeightPx + outerPadY * 2}px`,
         transform: `rotate(${textEl.rotation || 0}deg)`,
-        transformOrigin: `${paddingXPx}px ${paddingYPx}px`,
+        transformOrigin: `${outerPadX}px ${outerPadY}px`,
         // An opaque DOM badge would hide the faint Konva arc underneath it.
         backgroundColor: isCurved ? 'transparent' : bgColor,
         borderRadius: radiusPx > 0 ? `${radiusPx}px` : '4px',

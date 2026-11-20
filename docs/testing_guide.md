@@ -2,6 +2,23 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات مراجعة حملة التعديلات — 2026-11-20
+
+نتائج **44 ملفاً مستهدفاً منفرداً**، لا full suite أو coverage أو E2E أو build محلي. الجدول الكامل لكل مسار وآخر نتيجة في [التقرير 27](reviews/27-change-campaign-audit-2026-11-20.md#التحقق-التنفيذي-المستهدف). كل أمر يستخدم ملفاً واحداً وعاملاً واحداً؛ حلقات التسلسل لا تمرر القائمة إلى تشغيل Vitest واحد.
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+```
+
+أُضيفت ثمانية ملفات frontend مستقلة: `clipboard-utils`، `error-boundary`، `image-node`، `sticker-inline-editor`، `sticker-insert-actions`، `toolbar-image-filters`، `use-filter-cache`، `vdp-import-dialog` تحت `frontend/test/`. باقي الاختبارات توسعات ملفات قائمة، وadmin خارج عدّاد frontend. جرد `docs-gate` الفعلي أصبح **186 Vitest / 32 E2E / 68 Go / 6 مستندات جذرية**؛ هذا جرد لا عدد حالات ناجحة.
+
+الإخفاقات قبل الإصلاح وتلك الناتجة من fixtures/نوع mock محفوظة في التقرير. لا إسقاط لتوقعات geometry/locks/history: shared minima بقيت كما هي بعد إعادة raw typing مع clamped preview؛ Canvas constructor mock أضاف getImageData قبل capture؛ file inputs تستهدف Portal الحقيقي؛ App fixture توكن صريح وخانتان صحيحتان. تحذيرات `act` وغياب Canvas jsdom وبعض سجلات failure mocks لا تثبت native/UI acceptance. لا حسابات/كاميرا/طابعة فعلية، ولا CI جديد دون push مأذون.
+
+### متابعة اختبار طبقات القوائم — 2026-11-20
+
+أُعيدت ملفات منفردة بالقالب أعلاه بعد إزالة z overrides في مستهلكي القوائم: `test/ui-compliance.test.ts` **57/57** (يحرس الستة actual callers)، `test/font-selector.test.tsx` **17/17**، `test/freeform-editor.test.tsx` **53/53**، `test/print-dialog-backstage.test.tsx` **18/18**، `test/element-properties-tabs.test.tsx` **54/54**. لم يُضف ملف اختبار جديد فلا يتغير جرد186. قياس متصفح محدود في harness معزول أكد computed z/hit-testing لقائمة Select؛ لا E2E محلي أو قبول visual، والنقر الآلي timeouts لا يُحسب نجاحاً. التفاصيل المؤرخة في التقرير27.
+
 ## إصلاحات دورة حياة Wails والإغلاق الآمن (`RV-LIFE-01…06`) — 2026-11-15
 
 اختبارات مستهدفة بعامل واحد ودون تغطية، واختبارات Go مع `-race` للتحقق من إغلاق الملاحظات `RV-LIFE-01…06` (لا تمثل تشغيل نافذة Wails أصلية حيّة أو حزمة E2E محلياً):

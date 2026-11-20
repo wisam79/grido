@@ -39,7 +39,7 @@ interface ColorRoleButtonProps {
 
 function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonProps) {
   return (
-    <div
+    <label
       className={cn(
         'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-colors',
         disabled
@@ -52,14 +52,15 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
         <span className="w-full h-full block" style={{ backgroundColor: color }} />
         <input
           type="color"
+          disabled={disabled}
           value={color.startsWith('#') && color.length === 7 ? color : '#000000'}
           onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
           title={label}
         />
       </div>
       <span className="text-micro font-semibold text-foreground/80">{label}</span>
-    </div>
+    </label>
   );
 }
 

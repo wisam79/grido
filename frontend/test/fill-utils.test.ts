@@ -2,8 +2,12 @@ import Konva from 'konva';
 import { SceneCanvas } from 'konva/lib/Canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getFillProps } from '../src/components/editor/konva/elements/fill-utils';
+import {
+  createElementSpaceSceneFunc,
+  getFillProps,
+} from '../src/components/editor/konva/elements/fill-utils';
 import { TEXT_COLOR_DEFAULT } from '../src/lib/canvas/canvas-colors';
+import { multiplyAffine, type AffineMatrix } from '../src/lib/canvas/fill-paint';
 import { renderFittedBranch } from '../src/lib/export/export-canvas-fitted';
 
 vi.mock('../src/lib/io/fonts', async (importOriginal) => ({
@@ -98,6 +102,199 @@ describe('getFillProps', () => {
         50,
       ),
     ).toMatchObject({ fillPriority: 'color', fill: '#abcdef' });
+  });
+});
+
+describe('element-space shape paint under native geometry transforms', () => {
+  const identity: AffineMatrix = [1, 0, 0, 1, 0, 0];
+  const nearMatrix = (actual: AffineMatrix, expected: AffineMatrix) =>
+    actual.forEach((value, index) => expect(value).toBeCloseTo(expected[index]));
+
+  function affineContext(initial: AffineMatrix) {
+    let matrix = initial;
+    const stack: AffineMatrix[] = [];
+    const gradientMatrices: AffineMatrix[] = [];
+    const fills: AffineMatrix[] = [];
+    const ctx = {
+      save: () => stack.push(matrix),
+      restore: () => {
+        matrix = stack.pop()!;
+      },
+      transform: (...args: AffineMatrix) => {
+        matrix = multiplyAffine(matrix, args);
+      },
+      createLinearGradient: vi.fn((..._args: number[]) => {
+        gradientMatrices.push(matrix);
+        return { addColorStop: vi.fn() };
+      }),
+      createRadialGradient: vi.fn((..._args: number[]) => {
+        gradientMatrices.push(matrix);
+        return { addColorStop: vi.fn() };
+      }),
+      createPattern: vi.fn(() => ({ setTransform: vi.fn() })),
+      fill: () => fills.push(matrix),
+      fillStyle: '',
+    };
+    return { ctx, gradientMatrices, fills };
+  }
+
+  it.each(['linear', 'radial', 'image'] as const)(
+    'paints %s in element space for shifted paths with nonuniform scaling and rotated patterns',
+    (fillType) => {
+      const el = shapeElement({
+        shape: 'path',
+        fillType,
+        fillImageSrc: 'pattern.png',
+        fillImageRotation: 35,
+      });
+      const shapeToElement: AffineMatrix = [3, 0, 0, 5, -30, 100];
+      const inverse: AffineMatrix = [1 / 3, 0, 0, 1 / 5, 10, -20];
+      const recording = affineContext(shapeToElement);
+      const nativeFill = vi.fn();
+      const shape = {
+        _fillFunc: nativeFill,
+        _sceneFunc(context: Konva.Context) {
+          this._fillFunc(context);
+        },
+      };
+      const scene = createElementSpaceSceneFunc(
+        el,
+        300,
+        200,
+        { width: 100, height: 50 } as HTMLImageElement,
+        inverse,
+      );
+      scene(
+        { _context: recording.ctx } as unknown as Konva.Context,
+        shape as unknown as Konva.Shape,
+      );
+      nearMatrix(recording.fills[0], identity);
+      recording.gradientMatrices.forEach((matrix) => nearMatrix(matrix, identity));
+      expect(shape._fillFunc).toBe(nativeFill);
+      const args =
+        fillType === 'radial'
+          ? recording.ctx.createRadialGradient.mock.calls[0]
+          : recording.ctx.createLinearGradient.mock.calls[0];
+      if (fillType === 'radial') expect(args).toEqual([150, 100, 0, 150, 100, 150]);
+      if (fillType === 'linear') expect(args).toEqual([0, 0, 300, 200]);
+    },
+  );
+
+  it.each(['arc', 'wedge'] as const)(
+    'does not rotate %s gradients with its -90-degree geometry',
+    (shapeType) => {
+      const recording = affineContext([0, -1, 1, 0, 150, 100]);
+      const nativeFill = vi.fn();
+      const shape = {
+        _fillFunc: nativeFill,
+        _sceneFunc(context: Konva.Context) {
+          this._fillFunc(context);
+        },
+      };
+      createElementSpaceSceneFunc(
+        shapeElement({ shape: shapeType, fillType: 'linear' }),
+        300,
+        200,
+        null,
+        [0, 1, -1, 0, 100, -150],
+      )({ _context: recording.ctx } as unknown as Konva.Context, shape as unknown as Konva.Shape);
+      nearMatrix(recording.gradientMatrices[0], identity);
+      nearMatrix(recording.fills[0], identity);
+    },
+  );
+
+  it('restores the native fill hook and Canvas state on paint failure', () => {
+    const recording = affineContext(identity);
+    recording.ctx.fill = () => {
+      throw new Error('paint failed');
+    };
+    const nativeFill = vi.fn();
+    const shape = {
+      _fillFunc: nativeFill,
+      _sceneFunc(context: Konva.Context) {
+        this._fillFunc(context);
+      },
+    };
+    expect(() =>
+      createElementSpaceSceneFunc(
+        shapeElement({ fillType: 'linear' }),
+        100,
+        50,
+        null,
+        identity,
+      )({ _context: recording.ctx } as unknown as Konva.Context, shape as unknown as Konva.Shape),
+    ).toThrow('paint failed');
+    expect(shape._fillFunc).toBe(nativeFill);
+  });
+
+  it('fallback thin-arrow shaft stays at the same half-height as Konva instead of inventing a 16px box', async () => {
+    const ctx = new Proxy(
+      {
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+      },
+      { get: (target, key) => Reflect.get(target, key) ?? (() => {}) },
+    ) as unknown as CanvasRenderingContext2D;
+    await renderFittedBranch(
+      ctx,
+      [
+        shapeElement({
+          shape: 'arrow',
+          width: 0.1,
+          height: 0.002,
+          strokeWidth: 4,
+        }),
+      ],
+      1000,
+      1000,
+    );
+    expect(ctx.moveTo).toHaveBeenCalledWith(0, 1);
+    expect(ctx.lineTo).toHaveBeenCalledWith(86, 1);
+  });
+
+  it('fallback path fill applies geometry once and leaves stroke scaling unchanged', async () => {
+    class RecordedPath {
+      transforms: unknown[] = [];
+      constructor(_path?: string) {}
+      addPath(_path: unknown, transform: unknown) {
+        this.transforms.push(transform);
+      }
+    }
+    vi.stubGlobal('Path2D', RecordedPath);
+    try {
+      const ctx = new Proxy(
+        {
+          fill: vi.fn(),
+          stroke: vi.fn(),
+          scale: vi.fn(),
+          translate: vi.fn(),
+          createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+        },
+        { get: (target, key) => Reflect.get(target, key) ?? (() => {}) },
+      ) as unknown as CanvasRenderingContext2D;
+      await renderFittedBranch(
+        ctx,
+        [
+          shapeElement({
+            shape: 'path',
+            width: 0.3,
+            height: 0.2,
+            fillType: 'linear',
+            strokeWidth: 2,
+            svgPath: 'M10,-20 L110,-20 L110,20 L10,20 Z',
+          }),
+        ],
+        1000,
+        1000,
+      );
+      const fitted = vi.mocked(ctx.fill).mock.calls[0][0] as unknown as RecordedPath;
+      expect(fitted.transforms).toEqual([{ a: 3, b: 0, c: 0, d: 5, e: -30, f: 100 }]);
+      expect(ctx.createLinearGradient).toHaveBeenCalledWith(0, 0, 300, 200);
+      expect(ctx.scale).toHaveBeenCalledWith(3, 5);
+      expect(ctx.stroke).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 
@@ -221,4 +418,16 @@ describe('text decoration paint parity — Konva and manual export', () => {
       expect(exported.fills).toEqual([expectedFill, expectedFill]);
     },
   );
+
+  it('translates gradient coordinates by originX/originY for centroid-centered shapes', () => {
+    const el = textElement({
+      fillType: 'linear',
+      fillLinearGradientStartPoint: { x: 0, y: 0 },
+      fillLinearGradientEndPoint: { x: 1, y: 1 },
+      fillLinearGradientColorStops: [0, '#000000', 1, '#ffffff'],
+    });
+    const props = getFillProps(el, 100, 60, null, { originX: -50, originY: -30 });
+    expect(props.fillLinearGradientStartPoint).toEqual({ x: -50, y: -30 });
+    expect(props.fillLinearGradientEndPoint).toEqual({ x: 50, y: 30 });
+  });
 });

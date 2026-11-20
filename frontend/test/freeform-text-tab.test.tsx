@@ -91,6 +91,17 @@ describe('FreeformTextTab', () => {
     });
   });
 
+  it('inserts instead of applying a preset when the selected text is locked', () => {
+    const id = useEditorStore.getState().addTextElement('Locked original');
+    useEditorStore.getState().updateElement(id, { locked: true });
+    const original = useEditorStore.getState().elements[0];
+    render(<FreeformTextTab />);
+    expect(screen.queryByText('سيُطبَّق النمط على المحدد')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('element-add-text-body'));
+    expect(useEditorStore.getState().elements).toHaveLength(2);
+    expect(useEditorStore.getState().elements[0]).toBe(original);
+  });
+
   it('inserts a new element from the plus action while a text is selected', () => {
     useEditorStore.getState().addTextElement('نصي الحالي');
     render(<FreeformTextTab />);

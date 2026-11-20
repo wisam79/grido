@@ -34,14 +34,18 @@ description: معايير وهندسة محرك التنسيق والتصميم 
   --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
 
   /* مؤشرات الطبقات الصارمة (Z-Index Scales) */
+  --z-panel: 40;
   --z-canvas-overlay: 45;
-  --z-guides: 60;
+  --z-canvas-guides: 60;
+  --z-canvas-text-overlay: 70;
   --z-ruler: 100;
   --z-print-toolbar: 150;
   --z-quick-bar: 500;
   --z-menu: 1000;
   --z-popover: 1500;
-  --z-modal: 2000;
+  --z-dialog: 2000;
+  --z-dialog-popover: 2500;
+  --z-toast: 3000;
 
   /* توكنز الألوان المعيارية */
   --color-primary: var(--primary);
@@ -60,6 +64,8 @@ description: معايير وهندسة محرك التنسيق والتصميم 
   `z-(--z-quick-bar)` أو `z-(--z-popover)`
 - ❌ **المحظور قطيعاً:** استخدام قيم سحرية اعتباطية:
   `z-[9999]` أو `z-50` عشوائي يُخفي القوائم أو يؤدي إلى تداخل النوافذ مع الكانفاس.
+
+- متابعة 2026-11-20: الحوارات تستخدم `--z-dialog`، والقوائم والتلميحات المشتركة `--z-dialog-popover`، والتنبيهات `--z-toast`. لا تستخدم `--z-modal` أو `--z-guides` من الأمثلة القديمة؛ الاسمان الفعليان `--z-dialog` و`--z-canvas-guides`. راجع `frontend/src/index.css` قبل استدعاء أي توكن. CSS غير المطبّق داخل طبقة لمكتبة خارجية قد يغلب utilities؛ غلاف Sonner يثبت `zIndex` عبر `style` بالتوكن نفسه، لا رقم سحري جديد.
 
 ### ب) الرسوم المتحركة والتدرجات (Motion & Gradients):
 - استخدام حزمة `tw-animate-css` أو تعريف الـ Keyframes داخل CSS مباشرة.

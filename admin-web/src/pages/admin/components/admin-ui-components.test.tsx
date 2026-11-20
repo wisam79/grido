@@ -274,6 +274,29 @@ describe('Admin UI Desktop Identity & Organizational Components', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('UserDetailsDrawer restores trigger focus after controlled user-null close and can reopen', async () => {
+    function Harness() {
+      const [user, setUser] = useState<UserProfile | null>(null);
+      return <main>
+        <button onClick={() => setUser(sampleUsers[0])}>فتح التفاصيل</button>
+        <UserDetailsDrawer user={user} aiUsageLogs={sampleLogs} onClose={() => setUser(null)}
+          onOpenEditUser={vi.fn()} onExtendLicense={vi.fn()} onRevokeLicense={vi.fn()} onToggleBanUser={vi.fn()} />
+      </main>;
+    }
+    const { container } = await mountNode(<FeedbackProvider><Harness /></FeedbackProvider>);
+    const trigger = container.querySelector('button')!;
+    act(() => trigger.focus());
+    await act(async () => { trigger.click(); });
+    const close = document.querySelector<HTMLButtonElement>('button[aria-label="إغلاق لوحة التفاصيل"]')!;
+    expect(document.activeElement).toBe(close);
+    await act(async () => { close.click(); });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    await act(async () => { trigger.click(); });
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('إغلاق لوحة التفاصيل');
+  });
+
   it('UserDetailsDrawer restores focus to the triggering drawer button after canceling nested confirmDialog', async () => {
     function DrawerConfirmHarness() {
       const { confirmDialog } = useFeedback();
@@ -369,6 +392,11 @@ describe('Admin UI Desktop Identity & Organizational Components', () => {
       'button[aria-label="إظهار كلمة المرور"]',
     )!;
     expect(togglePwd.getAttribute('aria-pressed')).toBe('false');
+    expect(togglePwd.classList.contains('right-1')).toBe(true);
+    const passwordInput = loginBox.querySelector<HTMLInputElement>('input[autocomplete="current-password"]')!;
+    expect(passwordInput.dir).toBe('ltr');
+    expect(passwordInput.classList.contains('pr-10')).toBe(true);
+    expect(passwordInput.classList.contains('pl-3')).toBe(true);
     act(() => togglePwd.click());
     expect(
       loginBox.querySelector<HTMLButtonElement>('button[aria-label="إخفاء كلمة المرور"]')
@@ -396,6 +424,23 @@ describe('Admin UI Desktop Identity & Organizational Components', () => {
     expect(switchBtn.getAttribute('aria-checked')).toBe('true');
     act(() => switchBtn.click());
     expect(onMaintenanceToggle).toHaveBeenCalledOnce();
+  });
+
+  it.each(['single', 'batch'] as const)('KeysTable disables the %s submit while either generator is busy', async (genMode) => {
+    const onGenerate = vi.fn((event: React.FormEvent) => event.preventDefault());
+    const { container } = await mountNode(<FeedbackProvider>
+      <KeysTable genMode={genMode} genPlan="pro" genDuration="12" genCount="1" genPrefix=""
+        generatedKey="" generatedBatchKeys={[]} generatingBatch keysCount={0} totalKeys={0}
+        keyStatusFilter="all" keySearchQuery="" filteredKeys={[]}
+        onGenModeChange={vi.fn()} onGenPlanChange={vi.fn()} onGenDurationChange={vi.fn()}
+        onGenCountChange={vi.fn()} onGenPrefixChange={vi.fn()} onGenerateKey={onGenerate}
+        onGenerateBatchKeys={onGenerate} onExportBatch={vi.fn()} onCopyKey={vi.fn()}
+        onKeyStatusFilterChange={vi.fn()} onKeySearchChange={vi.fn()} />
+    </FeedbackProvider>);
+    const submit = container.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(submit.disabled).toBe(true);
+    act(() => submit.click());
+    expect(onGenerate).not.toHaveBeenCalled();
   });
 
   it('KeysTable supports collapsing generator header and resolves used_by user', async () => {

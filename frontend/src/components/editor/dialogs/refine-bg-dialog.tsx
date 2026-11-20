@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { toast } from 'sonner';
 
 import { FluentSliderField } from '@/components/ui/blocks';
@@ -60,14 +60,31 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   const [brushSize, setBrushSize] = useState(20);
   const [tolerance, setTolerance] = useState(20);
   const [previewBg, setPreviewBg] = useState<'checker' | 'white' | 'black' | 'blue'>('checker');
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number; visible: boolean }>({
+  const [cursorPos, setCursorPos] = useState<{
+    x: number;
+    y: number;
+    visible: boolean;
+    fitRatio?: number;
+  }>({
     x: 0,
     y: 0,
     visible: false,
+    fitRatio: 1,
   });
   const [isSaving, setIsSaving] = useState(false);
   const saveAttemptRef = useRef(0);
   const saveInFlightRef = useRef(false);
+  const dialogSessionRef = useRef(0);
+  const latestSourceRef = useRef(element.imageSrc);
+  useLayoutEffect(() => {
+    latestSourceRef.current = element.imageSrc;
+  }, [element.imageSrc]);
+  useEffect(() => {
+    dialogSessionRef.current += 1;
+    return () => {
+      dialogSessionRef.current += 1;
+    };
+  }, [open, element.id]);
   useEffect(() => {
     saveAttemptRef.current += 1;
     saveInFlightRef.current = false;
@@ -81,6 +98,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
+      dialogSessionRef.current += 1;
       saveAttemptRef.current += 1;
       saveInFlightRef.current = false;
       setIsSaving(false);
@@ -111,20 +129,22 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCursorPos((p) => ({ ...p, visible: false }));
+      setIsSpacePressed(false);
       return;
     }
+
+    const isInteractiveTarget = (t: HTMLElement | null) =>
+      t?.tagName === 'INPUT' ||
+      t?.tagName === 'TEXTAREA' ||
+      t?.tagName === 'SELECT' ||
+      t?.isContentEditable ||
+      Boolean(t?.closest?.('button, a, [role="combobox"], [role="slider"], [role="switch"]'));
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // 🛡️ لا تسرق ضربات حقول الإدخال والأزرار: الكتابة والمسافة للتفعيل
       // تبقى لمالكها (يطابق حارس SPACE_CONSUMED_TAGS للكانفس).
       const t = e.target as HTMLElement | null;
-      if (
-        t?.tagName === 'INPUT' ||
-        t?.tagName === 'TEXTAREA' ||
-        t?.tagName === 'SELECT' ||
-        t?.isContentEditable ||
-        t?.closest?.('button, a, [role="combobox"], [role="slider"], [role="switch"]')
-      ) {
+      if (isInteractiveTarget(t)) {
         return;
       }
       if (e.code === 'Space') {
@@ -145,7 +165,9 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        e.preventDefault();
+        if (!isInteractiveTarget(e.target as HTMLElement | null)) {
+          e.preventDefault();
+        }
         setIsSpacePressed(false);
       }
     };
@@ -567,6 +589,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     const attempt = ++saveAttemptRef.current;
     const session = getDocumentSession();
+    const dialogSession = dialogSessionRef.current;
     const isActive = () => attempt === saveAttemptRef.current && session === getDocumentSession();
     saveInFlightRef.current = true;
     setIsSaving(true);
@@ -581,7 +604,15 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         throw new Error('Invalid path returned from uploadCanvasBlob');
       }
       const committed = await onSave(localPath, isActive);
-      if (committed === false) return;
+      // A successful consumer may already have rerendered with this uploaded source.
+      if (
+        committed === false ||
+        dialogSession !== dialogSessionRef.current ||
+        session !== getDocumentSession() ||
+        (!isActive() && latestSourceRef.current !== localPath)
+      ) {
+        return;
+      }
       handleOpenChange(false);
       toast.success('تم حفظ التعديلات');
     } catch (err) {
@@ -709,6 +740,8 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                     key={item.id}
                     type="button"
                     title={item.label}
+                    aria-label={item.label}
+                    aria-pressed={previewBg === item.id}
                     onClick={() => setPreviewBg(item.id as 'checker' | 'white' | 'black' | 'blue')}
                     className={cn(
                       'h-7 rounded-md border border-border/60 transition-colors flex items-center justify-center cursor-pointer shadow-2xs',
@@ -794,10 +827,14 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             onMouseEnter={(e) => {
               const rect = containerRef.current?.getBoundingClientRect();
               if (rect) {
+                const cw = canvasRef.current?.clientWidth || 0;
+                const iw = originalImage?.width || 0;
+                const fitRatio = cw > 0 && iw > 0 ? cw / iw : 1;
                 setCursorPos({
                   x: e.clientX - rect.left,
                   y: e.clientY - rect.top,
                   visible: true,
+                  fitRatio,
                 });
               }
             }}
@@ -809,10 +846,14 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             onMouseMove={(e) => {
               const rect = containerRef.current?.getBoundingClientRect();
               if (rect) {
+                const cw = canvasRef.current?.clientWidth || 0;
+                const iw = originalImage?.width || 0;
+                const fitRatio = cw > 0 && iw > 0 ? cw / iw : 1;
                 setCursorPos({
                   x: e.clientX - rect.left,
                   y: e.clientY - rect.top,
                   visible: true,
+                  fitRatio,
                 });
               }
               handlePointerMove(e);
@@ -832,8 +873,8 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 style={{
                   left: cursorPos.x,
                   top: cursorPos.y,
-                  width: Math.max(6, brushSize * scale),
-                  height: Math.max(6, brushSize * scale),
+                  width: Math.max(6, brushSize * (cursorPos.fitRatio ?? 1) * scale),
+                  height: Math.max(6, brushSize * (cursorPos.fitRatio ?? 1) * scale),
                   backgroundColor:
                     tool === 'erase'
                       ? 'rgba(239,68,68,0.2)'
@@ -867,8 +908,6 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 pointerEvents: 'none',
                 maxWidth: '90%',
                 maxHeight: '90%',
-                width: '100%',
-                height: '100%',
                 aspectRatio: originalImage
                   ? `${originalImage.width} / ${originalImage.height}`
                   : 'auto',

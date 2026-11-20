@@ -19,8 +19,8 @@ const logger = createLogger('crash-recovery-dialog');
 interface CrashRecoveryDialogProps {
   open: boolean;
   report: CrashReport | null;
-  onRecover: () => void;
-  onDismiss: () => void;
+  onRecover: () => void | Promise<void>;
+  onDismiss: () => void | Promise<void>;
 }
 
 export const CrashRecoveryDialog: React.FC<CrashRecoveryDialogProps> = ({
@@ -31,16 +31,34 @@ export const CrashRecoveryDialog: React.FC<CrashRecoveryDialogProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const pendingRef = useRef(false);
+  const mountedRef = useRef(false);
+  const sessionRef = useRef(0);
   // 🛡️ مؤقّت إخفاء شارة «تم النسخ» يُحفظ في ref ويُلغى عند إلغاء التركيب —
   // بدونه يطلق setState على مكوّن مفكوك (تحذير React) ولو أُغلق الحوار مبكراً
   const copiedTimerRef = useRef<number | null>(null);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    sessionRef.current += 1;
+    if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCopied(false);
+    setShowDetails(false);
+    setActionError(null);
+    return () => {
+      sessionRef.current += 1;
+    };
+  }, [open, report]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
       if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
-    },
-    [],
-  );
+    };
+  }, []);
 
   if (!report) return null;
 
@@ -50,7 +68,28 @@ export const CrashRecoveryDialog: React.FC<CrashRecoveryDialogProps> = ({
   // showCloseButton={false} وحده لا يكفي: يخفي زر X فقط ولا يعطّل إغلاق Radix.
   const blockImplicitDismiss = (event: Event | KeyboardEvent) => event.preventDefault();
 
+  const handleAction = async (fn: () => void | Promise<void>) => {
+    if (pendingRef.current || !open) return;
+    const session = sessionRef.current;
+    pendingRef.current = true;
+    setIsPending(true);
+    setActionError(null);
+    try {
+      await fn();
+    } catch (error) {
+      logger.error('Crash recovery action failed:', error);
+      if (mountedRef.current && session === sessionRef.current) {
+        setActionError('تعذّر إكمال الإجراء. حاول مرة أخرى.');
+      }
+    } finally {
+      // The backend action cannot be cancelled; reopening must not start a second one.
+      pendingRef.current = false;
+      if (mountedRef.current) setIsPending(false);
+    }
+  };
+
   const handleCopy = async () => {
+    const session = sessionRef.current;
     const text = `--- Grido Studio Crash Report ---
 Time: ${report.timestamp}
 Version: ${report.app_version}
@@ -64,6 +103,7 @@ ${report.stack_trace}
 
     try {
       await navigator.clipboard.writeText(text);
+      if (!mountedRef.current || session !== sessionRef.current) return;
       setCopied(true);
       if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = window.setTimeout(() => {
@@ -148,13 +188,19 @@ ${report.stack_trace}
           )}
         </div>
 
+        {actionError && (
+          <p role="alert" className="text-xs text-destructive">
+            {actionError}
+          </p>
+        )}
         <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2 sm:justify-start">
           {report.has_autosave ? (
             <>
               <Button
                 variant="default"
                 size="sm"
-                onClick={onRecover}
+                disabled={isPending}
+                onClick={() => void handleAction(onRecover)}
                 className="w-full sm:w-auto h-8 px-4 text-xs font-bold shadow-xs cursor-pointer"
               >
                 استعادة المسودة
@@ -162,7 +208,8 @@ ${report.stack_trace}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onDismiss}
+                disabled={isPending}
+                onClick={() => void handleAction(onDismiss)}
                 className="w-full sm:w-auto h-8 px-3 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 تجاهل المسودة
@@ -172,7 +219,8 @@ ${report.stack_trace}
             <Button
               variant="default"
               size="sm"
-              onClick={onDismiss}
+              disabled={isPending}
+              onClick={() => void handleAction(onDismiss)}
               className="w-full sm:w-auto h-8 px-4 text-xs font-bold cursor-pointer"
             >
               متابعة

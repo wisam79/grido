@@ -12,25 +12,39 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
   displayW,
   displayH,
 }: CanvasBleedGuidesProps) {
-  const { showBleedGuides, bleedMarginMM, safeMarginMM, cutShapeType, canvasWidth, printSettings } =
-    useEditorStore(
-      useShallow((state) => ({
-        showBleedGuides: state.showBleedGuides,
-        bleedMarginMM: state.bleedMarginMM,
-        safeMarginMM: state.safeMarginMM,
-        cutShapeType: state.cutShapeType,
-        canvasWidth: state.canvasWidth,
-        printSettings: state.printSettings,
-      })),
-    );
+  const {
+    showBleedGuides,
+    bleedMarginMM,
+    safeMarginMM,
+    cutShapeType,
+    canvasWidth,
+    printSettings,
+    mode,
+    template,
+  } = useEditorStore(
+    useShallow((state) => ({
+      showBleedGuides: state.showBleedGuides,
+      bleedMarginMM: state.bleedMarginMM,
+      safeMarginMM: state.safeMarginMM,
+      cutShapeType: state.cutShapeType,
+      canvasWidth: state.canvasWidth,
+      printSettings: state.printSettings,
+      mode: state.mode,
+      template: state.template,
+    })),
+  );
 
   if (!showBleedGuides || displayW <= 0 || displayH <= 0 || canvasWidth <= 0) {
     return null;
   }
 
-  const dpi = printSettings?.dpi || 300;
-  // النسبة الدقيقة بين بكسل العرض الفعلي displayW والمليمترات
-  const mmToDisplayPx = (dpi / 25.4) * (displayW / canvasWidth);
+  const activeTemplate = mode === 'single' ? template : null;
+  const dpi = activeTemplate?.dpi || printSettings?.dpi || 300;
+  // النسبة الدقيقة بين بكسل العرض الفعلي displayW والمليمترات (بتعريف القالب إن وُجد)
+  const mmToDisplayPx =
+    activeTemplate?.widthMM && activeTemplate.widthMM > 0
+      ? displayW / activeTemplate.widthMM
+      : (dpi / 25.4) * (displayW / canvasWidth);
 
   const bleedPx = Math.max(0, bleedMarginMM * mmToDisplayPx);
   const safePx = Math.max(1, safeMarginMM * mmToDisplayPx);

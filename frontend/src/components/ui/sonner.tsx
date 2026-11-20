@@ -3,14 +3,12 @@ import { Toaster as Sonner } from 'sonner';
 
 import { Spinner } from '@/components/ui/huge-icon';
 import { CheckCircle, XCircle, WarningCircle, Info } from '@/components/ui/icons';
+import { useTheme } from '@/hooks/use-theme';
 
 import type { ToasterProps } from 'sonner';
 
-const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
-  const theme =
-    typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-      ? 'dark'
-      : 'light';
+const Toaster = ({ offset = 20, style, ...props }: ToasterProps) => {
+  const { theme } = useTheme();
 
   return (
     <Sonner
@@ -19,6 +17,8 @@ const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
       theme={theme as ToasterProps['theme']}
       dir="rtl"
       className="toaster group z-(--z-toast)"
+      // Sonner injects unlayered CSS with a numeric z-index; a utility cannot override it.
+      style={{ zIndex: 'var(--z-toast)', ...style }}
       offset={offset}
       icons={{
         success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="fill" />,
@@ -31,7 +31,8 @@ const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
         classNames: {
           /* التنسيق البصري الموحد (الحبة العائمة) يعيش في index.css — هنا الأصناف الوظيفية فقط */
           toast: 'group toast font-sans transition-all duration-150',
-          title: 'text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap',
+          title:
+            'text-xs font-medium text-foreground tracking-normal font-sans whitespace-normal break-words',
           description: 'text-xs text-muted-foreground font-sans mt-0.5',
           actionButton:
             'group-[.toast]:bg-primary-action group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary-action-hover text-xs font-medium px-2.5 py-1 rounded-full transition-colors',

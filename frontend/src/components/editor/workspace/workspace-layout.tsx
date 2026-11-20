@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 
 import { CanvasOverlayHost } from '@/components/editor/canvas/canvas-overlay-host';
 import { notifyPanelTransition } from '@/components/editor/canvas/use-stable-viewport-size';
@@ -42,6 +42,27 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
   // Desktop sidebars (>= 1024px): Left tools drawer and Right inspector are independent and docked
   const isLeftDrawerOpen = !isCompact && isTemplatesDrawerOpen;
   const isRightPanelOpen = !isCompact && panelsHook.isInspectorOpen;
+  const templatesRef = useRef<HTMLElement>(null);
+  const propertiesRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLElement>(null);
+  const panelFocusRef = useRef<'templates' | 'properties' | null>(null);
+  useLayoutEffect(() => {
+    const focusedPanel = panelFocusRef.current;
+    const closed =
+      focusedPanel === 'templates'
+        ? !isLeftDrawerOpen
+        : focusedPanel === 'properties'
+          ? !isRightPanelOpen
+          : false;
+    if (!closed) return;
+    const active = document.activeElement;
+    const panel = focusedPanel === 'templates' ? templatesRef.current : propertiesRef.current;
+    // Do not steal focus from a newly opened dialog or an already focused rail button.
+    if (active === document.body || (active instanceof Node && panel?.contains(active))) {
+      canvasRef.current?.focus({ preventScroll: true });
+    }
+    panelFocusRef.current = null;
+  }, [isLeftDrawerOpen, isRightPanelOpen]);
 
   // 🧭 تتبع تغير حالة ظهور الألواح الجانبية لبدء حلقة المزامنة النشطة للكانفاس فوراً بـ 60fps
   const isInitialMount = useRef(true);
@@ -81,7 +102,20 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         {/* 2. درج الأدوات والقوالب الأيسر (Left Drawer - 288px) — يظهر في كل شاشات سطح المكتب */}
         {!isCompact && (
           <aside
+            ref={templatesRef}
+            onFocusCapture={() => {
+              panelFocusRef.current = 'templates';
+            }}
+            onBlurCapture={(event) => {
+              if (
+                event.relatedTarget instanceof Node &&
+                !event.currentTarget.contains(event.relatedTarget)
+              )
+                panelFocusRef.current = null;
+            }}
             aria-label="لوحة القوالب"
+            aria-hidden={!isLeftDrawerOpen}
+            inert={!isLeftDrawerOpen}
             data-testid="workspace-panel-templates"
             data-collapsed={!isLeftDrawerOpen}
             className={cn(
@@ -105,9 +139,12 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
         {/* 3. منطقة الكانفس الرئيسية (الوسط - مضمونة بأقصى مساحة ممكنة) */}
         <section
+          ref={canvasRef}
+          tabIndex={-1}
+          aria-label="مساحة الرسم"
           data-testid="workspace-canvas-shell"
           data-layout="canvas-center"
-          className="flex-1 flex flex-col min-w-0 bg-background relative z-(--z-canvas-overlay) overflow-hidden h-full"
+          className="flex-1 flex flex-col min-w-0 bg-background relative z-(--z-canvas-overlay) overflow-hidden h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
         >
           {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
               شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
@@ -140,7 +177,20 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         {/* 4. لوحة المفتش والخصائص اليمنى (Right Inspector - 288px) — مثبتة ومستقرة يميناً دائماً */}
         {!isCompact && (
           <aside
+            ref={propertiesRef}
+            onFocusCapture={() => {
+              panelFocusRef.current = 'properties';
+            }}
+            onBlurCapture={(event) => {
+              if (
+                event.relatedTarget instanceof Node &&
+                !event.currentTarget.contains(event.relatedTarget)
+              )
+                panelFocusRef.current = null;
+            }}
             aria-label="لوحة خصائص العنصر"
+            aria-hidden={!isRightPanelOpen}
+            inert={!isRightPanelOpen}
             data-testid="workspace-panel-properties"
             data-collapsed={!isRightPanelOpen}
             className={cn(
@@ -166,7 +216,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
       {/* 5. ورقة اللوحات للجوال والشاشات المدمجة (< 1024px) */}
       <MobilePanelsSheet
-        open={isMobileSheetOpen}
+        open={isCompact && isMobileSheetOpen}
         onOpenChange={setIsMobileSheetOpen}
         activeTab={mobileActiveTab}
         onActiveTabChange={setMobileActiveTab}

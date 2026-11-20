@@ -63,6 +63,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           <Input
             id="recovery-email"
             type="email"
+            dir="ltr"
             placeholder="name@example.com"
             className="pr-9 h-9 text-xs rounded-md"
             required
@@ -279,6 +280,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 <Input
                   id="auth-email"
                   type="email"
+                  dir="ltr"
                   placeholder="name@example.com"
                   className="pr-9 h-9 text-xs rounded-md"
                   required
@@ -314,6 +316,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 <Input
                   id="auth-password"
                   type="password"
+                  dir="ltr"
                   placeholder="••••••••"
                   className="pr-9 h-9 text-xs rounded-md"
                   required
@@ -345,15 +348,17 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         )}
       </form>
 
-      <div className="text-center pt-2 border-t border-border/30">
-        <button
-          type="button"
-          onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-          className="text-xs text-primary hover:underline font-bold cursor-pointer"
-        >
-          {authMode === 'login' ? 'إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول'}
-        </button>
-      </div>
+      {!showOtp && (
+        <div className="text-center pt-2 border-t border-border/30">
+          <button
+            type="button"
+            onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+            className="text-xs text-primary hover:underline font-bold cursor-pointer"
+          >
+            {authMode === 'login' ? 'إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول'}
+          </button>
+        </div>
+      )}
     </>
   );
 }

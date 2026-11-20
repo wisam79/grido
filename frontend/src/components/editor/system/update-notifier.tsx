@@ -204,7 +204,7 @@ export function UpdateNotifier() {
                 تحديث جديد متوفر
               </DialogTitle>
             </div>
-            <DialogCloseButton />
+            {!isDownloading && <DialogCloseButton />}
           </div>
         </DialogHeader>
 

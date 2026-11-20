@@ -5,6 +5,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ShadowGlowSection } from '../src/components/editor/properties/element/shared/shadow-glow-section';
 import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
+import { GradientPicker } from '../src/components/editor/properties/gradient-picker';
+import { ShapeStyleProperties } from '../src/components/editor/properties/panels/shape-properties';
+import { FontSizeField } from '../src/components/editor/properties/panels/text/font-size-field';
+import { TextEffectsTab } from '../src/components/editor/properties/panels/text/text-effects-tab';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
 import { useEditorStore } from '../src/lib/editor-store';
@@ -307,6 +311,93 @@ describe('ElementArrangeTab — focused size drafts and history', () => {
   });
 
   afterEach(() => vi.restoreAllMocks());
+
+  it.each(['X', 'Y'] as const)(
+    'Escape restores only the owned live %s preview without history',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      act(() => input.focus());
+      const axis = label === 'X' ? 'x' : 'y';
+      const other = label === 'X' ? 'y' : 'x';
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      fireEvent.change(input, { target: { value: '60' } });
+      expect(useEditorStore.getState().elements[0][axis]).toBe(0.6);
+      act(() => useEditorStore.getState().updateElement(shape.id, { [other]: 0.75, opacity: 0.4 }));
+      fireEvent.keyDown(input, { key: 'Escape' });
+      expect(useEditorStore.getState().elements[0]).toMatchObject({
+        [axis]: shape[axis],
+        [other]: 0.75,
+        opacity: 0.4,
+      });
+      expect(history).not.toHaveBeenCalled();
+      expect(input).not.toHaveFocus();
+    },
+  );
+
+  it.each(['X', 'Y'] as const)(
+    'commits a live %s edit once and skips returning-to-start history',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      const axis = label === 'X' ? 'x' : 'y';
+      act(() => input.focus());
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      fireEvent.change(input, { target: { value: '60' } });
+      fireEvent.change(input, { target: { value: String(shape[axis] * 100) } });
+      act(() => input.blur());
+      expect(history).not.toHaveBeenCalled();
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '60' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      act(() => input.blur());
+      expect(history).toHaveBeenCalledTimes(1);
+      act(() => useEditorStore.getState().undo());
+      expect(useEditorStore.getState().elements[0][axis]).toBe(shape[axis]);
+    },
+  );
+
+  it.each(['X', 'Y'] as const)(
+    'preserves external %s updates and rejects stale reset-document drafts',
+    (label) => {
+      render(<Harness />);
+      const input = screen.getByRole('spinbutton', { name: label });
+      const axis = label === 'X' ? 'x' : 'y';
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '60' } });
+      act(() => useEditorStore.getState().updateElement(shape.id, { [axis]: 0.8 }));
+      fireEvent.change(input, { target: { value: '70' } });
+      fireEvent.keyDown(input, { key: 'Escape' });
+      expect(useEditorStore.getState().elements[0][axis]).toBe(0.8);
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '60' } });
+      act(() => {
+        useEditorStore.getState().reset();
+        useEditorStore.setState({
+          elements: [{ ...shape, [axis]: 0.6 }],
+          history: [],
+          historyIndex: -1,
+        });
+        useEditorStore.getState().pushHistory();
+      });
+      const before = useEditorStore.getState();
+      fireEvent.change(input, { target: { value: '90' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(useEditorStore.getState().elements).toBe(before.elements);
+      expect(useEditorStore.getState().history).toBe(before.history);
+    },
+  );
+
+  it('commits the owned coordinate preview on unmount, not into a replacement document', () => {
+    const view = render(<Harness />);
+    const input = screen.getByRole('spinbutton', { name: 'X' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '60' } });
+    view.unmount();
+    expect(useEditorStore.getState().history).toHaveLength(2);
+    act(() => useEditorStore.getState().undo());
+    expect(useEditorStore.getState().elements[0].x).toBe(shape.x);
+  });
 
   it.each(['W', 'H'] as const)(
     'Escape discards a below-minimum %s draft before native blur',
@@ -727,6 +818,124 @@ describe('Freeform inspector — physical locked numeric bounds', () => {
     fireEvent.change(input, { target: { value: '999' } });
     expect(useEditorStore.getState().elements).toBe(elements);
     expect(useEditorStore.getState().history).toBe(history);
+  });
+});
+
+describe('Curve and gradient slider commit contracts', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('untouched font-size focus/blur preserves an external update and Enter commits once', () => {
+    const onCommit = vi.fn();
+    const view = render(<FontSizeField value={24} onCommit={onCommit} />);
+    const input = screen.getByRole('textbox', { name: 'حجم الخط' });
+    act(() => input.focus());
+    view.rerender(<FontSizeField value={48} onCommit={onCommit} />);
+    act(() => input.blur());
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(input).toHaveValue('48');
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '64' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith(64);
+  });
+
+  it('records curve history only once on pointer release, including crossing straight', () => {
+    const text: TextElement = {
+      id: 'curve',
+      type: 'text',
+      text: 'Curve',
+      fontSize: 24,
+      x: 0.1,
+      y: 0.1,
+      width: 0.3,
+      height: 0.1,
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1,
+      curve: 20,
+    };
+    useEditorStore.getState().reset();
+    useEditorStore.setState({ elements: [text] });
+    const onUpdate = vi.fn();
+    const view = render(
+      <TooltipProvider>
+        <TextEffectsTab element={text} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    const thumb = screen.getByRole('slider', { name: 'الزاوية' });
+    thumb.setPointerCapture = vi.fn();
+    thumb.releasePointerCapture = vi.fn();
+    thumb.hasPointerCapture = vi.fn().mockReturnValue(false);
+    fireEvent.pointerDown(thumb, { button: 0, pointerId: 11 });
+    view.rerender(
+      <TooltipProvider>
+        <TextEffectsTab element={{ ...text, curve: 0 }} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
+    expect(screen.getByRole('slider', { name: 'الزاوية' })).toBeInTheDocument();
+    fireEvent.pointerUp(window, { pointerId: 11 });
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('slider', { name: 'الزاوية' })).not.toBeInTheDocument();
+  });
+
+  it('forwards the actual gradient numeric commit value rather than the old angle prop', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(
+      <TooltipProvider>
+        <GradientPicker
+          fillType="linear"
+          color="#000000"
+          colorStops={[0, '#000000', 1, '#ffffff']}
+          onChangeType={vi.fn()}
+          onChangeSolidColor={vi.fn()}
+          onChangeColorStops={vi.fn()}
+          angle={-90}
+          onChangeAngle={onChange}
+          onCommitAngle={onCommit}
+          showPresets={false}
+        />
+      </TooltipProvider>,
+    );
+    const input = screen.getByRole('textbox', { name: 'قيمة زاوية التدرج' });
+    expect(input).toHaveValue('270');
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '45' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith(45);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith(45);
+  });
+
+  it('keeps arrow thickness and solid color controls consistent with the renderer', () => {
+    const arrow: ShapeElement = {
+      id: 'arrow',
+      type: 'shape',
+      shape: 'arrow',
+      x: 0.1,
+      y: 0.1,
+      width: 0.3,
+      height: 0.1,
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1,
+      fill: '#123456',
+      stroke: '#000000',
+      strokeWidth: 0,
+    };
+    const onUpdate = vi.fn();
+    render(
+      <TooltipProvider>
+        <ShapeStyleProperties element={arrow} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
+    const thickness = screen.getByRole('slider', { name: 'سماكة الحد' });
+    expect(thickness).toHaveAttribute('aria-valuemin', '1');
+    expect(thickness).toHaveAttribute('aria-valuenow', '4');
+    fireEvent.click(screen.getByRole('button', { name: 'لون أحمر' }));
+    expect(onUpdate).toHaveBeenCalledWith('arrow', { fill: '#EF4444', stroke: '#EF4444' });
   });
 });
 

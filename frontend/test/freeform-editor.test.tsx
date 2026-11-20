@@ -1,7 +1,24 @@
-import { act, cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  render,
+  renderHook,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { SaveCustomTemplateWithMetadata } from '@bindings/grido/app';
+
+const templateSave = vi.hoisted(() => vi.fn<(...args: unknown[]) => Promise<void>>());
+vi.mock('@bindings/grido/app', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@bindings/grido/app')>()),
+  SaveCustomTemplateWithMetadata: templateSave,
+}));
 
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { FreeformCanvasEditor } from '../src/features/freeform-collage/components/freeform-canvas-editor';
@@ -14,6 +31,10 @@ import {
 import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
 import { FreeformTopActionBar } from '../src/features/freeform-collage/components/freeform-top-action-bar';
 import { convertToGridoTemplate } from '../src/features/freeform-collage/lib/freeform-math';
+import {
+  createDocument,
+  useFreeformDocumentHistory,
+} from '../src/features/freeform-collage/lib/use-freeform-document-history';
 import { useEditorStore } from '../src/lib/editor-store';
 
 import type { FreeformSlot } from '../src/features/freeform-collage/types';
@@ -253,6 +274,67 @@ describe('Freeform Editor Unit & Component Tests', () => {
         expect.objectContaining({ presetType: 'iq-national-id', w: 0.35, h: 0.45 }),
       );
     });
+
+    it('lets MmField type multi-digit values starting with 1-4 and commits on Enter', () => {
+      const onUpdateSlot = vi.fn();
+      renderWithProviders(
+        <FreeformRightInspectorPanel
+          slot={{ id: 's1', x: 0, y: 0, w: 0.5, h: 0.5, presetType: 'custom' }}
+          multiSelectedCount={1}
+          paperWidthMM={100}
+          paperHeightMM={100}
+          onUpdateSlot={onUpdateSlot}
+        />,
+      );
+      const widthInput = screen.getByRole('spinbutton', { name: 'العرض' });
+      fireEvent.focus(widthInput);
+      fireEvent.change(widthInput, { target: { value: '3' } });
+      expect(widthInput).toHaveValue(3);
+      expect(onUpdateSlot).toHaveBeenCalledWith({ w: 0.05 });
+
+      fireEvent.change(widthInput, { target: { value: '35' } });
+      expect(onUpdateSlot).toHaveBeenCalledWith({ w: 0.35 });
+      fireEvent.keyDown(widthInput, { key: 'Enter' });
+      expect(widthInput).toHaveValue(50);
+    });
+
+    it('clears a partial MmField draft when a different slot becomes primary', () => {
+      const onUpdateSlot = vi.fn();
+      const props = { multiSelectedCount: 1, paperWidthMM: 100, paperHeightMM: 100, onUpdateSlot };
+      const view = renderWithProviders(
+        <FreeformRightInspectorPanel {...props} slot={{ id: 'a', x: 0, y: 0, w: 0.2, h: 0.2 }} />,
+      );
+      const width = screen.getByRole('spinbutton', { name: 'العرض' });
+      fireEvent.focus(width);
+      fireEvent.change(width, { target: { value: '3' } });
+      view.rerender(
+        <TooltipProvider>
+          <FreeformRightInspectorPanel {...props} slot={{ id: 'b', x: 0, y: 0, w: 0.5, h: 0.5 }} />
+        </TooltipProvider>,
+      );
+      expect(screen.getByRole('spinbutton', { name: 'العرض' })).toHaveValue(50);
+      expect(onUpdateSlot).toHaveBeenCalledTimes(1);
+      expect(onUpdateSlot).toHaveBeenCalledWith({ w: 0.05 });
+    });
+
+    it('clamps positions using exact geometry rather than the rounded display width', () => {
+      const onUpdateSlot = vi.fn();
+      renderWithProviders(
+        <FreeformRightInspectorPanel
+          slot={{ id: 'a', x: 0.1, y: 0, w: 0.2004, h: 0.2 }}
+          multiSelectedCount={1}
+          paperWidthMM={100}
+          paperHeightMM={100}
+          onUpdateSlot={onUpdateSlot}
+        />,
+      );
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'الموقع X' }), {
+        target: { value: '80' },
+      });
+      const patch = onUpdateSlot.mock.lastCall![0] as Partial<FreeformSlot>;
+      expect(patch.x).toBeCloseTo(0.7996, 12);
+      expect(patch.x! + 0.2004).toBeLessThanOrEqual(1);
+    });
   });
 
   describe('FreeformCanvasEditor free drag clamping', () => {
@@ -390,6 +472,8 @@ describe('Freeform Editor Unit & Component Tests', () => {
           fireEvent.pointerUp(card, { clientX: 132, clientY: 120, pointerId: 1 });
 
           const moved = onSlotsChange.mock.lastCall![0] as FreeformSlot[];
+          // Composite center is exactly at the .02 tolerance boundary here;
+          // floating-point distance can exceed it, so this fixture stays unsnapped.
           expect(moved[0].x).toBeCloseTo(0.18);
           expect(moved[0].y).toBeCloseTo(0.15);
           expect(moved[1].x - moved[0].x).toBeCloseTo(0.4);
@@ -522,6 +606,84 @@ describe('Freeform Editor Unit & Component Tests', () => {
       fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
       expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument();
+    });
+
+    it.each(['Enter', 'Escape'])('owns numeric live preview and one undo baseline on %s', (key) => {
+      seedEditableLayout();
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+      const first = slotCards()[0];
+      fireEvent.keyDown(first, { key: 'Enter' });
+      const width = screen.getByRole('spinbutton', { name: 'العرض' });
+      act(() => (width as HTMLElement).focus());
+      fireEvent.change(width, { target: { value: '3' } });
+      expect(width).toHaveValue(3);
+      expect(first.style.width).toBe('5%');
+      fireEvent.change(width, { target: { value: '35' } });
+      fireEvent.change(width, { target: { value: '36' } });
+      expect(first.style.width).toBe('36%');
+      fireEvent.keyDown(width, { key });
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      if (key === 'Escape') {
+        expect(first.style.width).toBe('20%');
+        expect(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' })).toBeDisabled();
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' }));
+        expect(first.style.width).toBe('20%');
+        expect(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' }));
+        expect(first.style.width).toBe('36%');
+      }
+    });
+
+    it('invalidates a focused numeric draft on undo and never replays it on blur', () => {
+      seedEditableLayout();
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+      fireEvent.keyDown(slotCards()[0], { key: 'Enter' });
+      const width = screen.getByRole('spinbutton', { name: 'العرض' });
+      act(() => (width as HTMLElement).focus());
+      fireEvent.change(width, { target: { value: '35' } });
+      fireEvent.change(width, { target: { value: '3' } });
+      fireEvent.click(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' }));
+      expect(screen.getByRole('spinbutton', { name: 'العرض' })).toHaveValue(20);
+      fireEvent.blur(width);
+      expect(slotCards()[0].style.width).toBe('20%');
+      expect(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' })).toBeDisabled();
+    });
+
+    it('restores the pending redo branch when numeric preview is escaped', () => {
+      seedEditableLayout();
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' }));
+      fireEvent.keyDown(slotCards()[0], { key: 'Enter' });
+      const width = screen.getByRole('spinbutton', { name: 'العرض' });
+      act(() => (width as HTMLElement).focus());
+      fireEvent.change(width, { target: { value: '35' } });
+      expect(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' })).toBeDisabled();
+      fireEvent.keyDown(width, { key: 'Escape' });
+      expect(slotCards()[0].style.width).toBe('20%');
+      expect(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' })).not.toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' }));
+      expect(slotCards()).toHaveLength(4);
+      expect(slotCards()[0].style.width).toBe('20%');
+    });
+
+    it('keeps options through geometry redo and confirms persisted cut-line-only changes', () => {
+      seedEditableLayout();
+      renderWithProviders(<FreeformSession />);
+      fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' }));
+      fireEvent.click(screen.getByRole('button', { name: 'إظهار خطوط القص للطباعة' }));
+      expect(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' })).not.toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'إعادة (Ctrl+Y)' }));
+      expect(screen.getByRole('button', { name: 'إخفاء خطوط القص' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'تراجع (Ctrl+Z)' }));
+      expect(slotCards()).toHaveLength(3);
+      fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     });
 
     it.each(['إلغاء', 'إغلاق'])(
@@ -678,6 +840,62 @@ describe('Freeform Editor Unit & Component Tests', () => {
       } finally {
         commit.mockRestore();
       }
+    });
+  });
+
+  describe('Freeform document identity in history', () => {
+    it('keeps imported options scoped to the imported document across undo/redo', () => {
+      const primary = { current: 'first' };
+      const secondary = { current: [] as string[] };
+      const { result } = renderHook(() =>
+        useFreeformDocumentHistory({
+          ui: {
+            paperWidthMM: 100,
+            paperHeightMM: 100,
+            layoutName: 'Original',
+            showCutLines: false,
+            enableSnapping: false,
+            packGapMM: 2,
+            packMarginMM: 2,
+          },
+          applyDocumentToUI: vi.fn(),
+          selectedSlotIdRef: primary,
+          multiSelectedIdsRef: secondary,
+        }),
+      );
+      const original = createDocument(100, 100, editableSlots, {
+        id: 'original',
+        name: 'Original',
+      });
+      const imported = createDocument(150, 100, editableSlots, {
+        id: 'imported',
+        name: 'Imported',
+      });
+      act(() => {
+        result.current.replaceHistory({ past: [], present: original, future: [] });
+      });
+      act(() => {
+        result.current.pushDocumentWithHistory(imported);
+      });
+      act(() => {
+        result.current.updateDocumentOptions({ name: 'Renamed', showCutLines: true });
+      });
+      act(() => {
+        result.current.handleUndo();
+      });
+      expect(result.current.historyState.present).toMatchObject({
+        id: 'original',
+        name: 'Original',
+        showCutLines: false,
+      });
+      act(() => {
+        result.current.handleRedo();
+      });
+      expect(result.current.historyState.present).toMatchObject({
+        id: 'imported',
+        name: 'Renamed',
+        showCutLines: true,
+      });
     });
   });
 
@@ -924,6 +1142,131 @@ describe('Freeform Editor Unit & Component Tests', () => {
       unmount();
       expect(cancel).toHaveBeenCalledWith(timer);
       act(() => vi.advanceTimersByTime(300));
+    });
+  });
+
+  describe('Freeform async session ownership', () => {
+    beforeEach(() => {
+      useEditorStore.getState().reset();
+      templateSave.mockReset().mockResolvedValue(undefined);
+    });
+
+    it('keeps persisted background saves and library refresh without clearing a newer save', async () => {
+      let resolveFirst!: () => void;
+      let resolveSecond!: () => void;
+      const first = new Promise<void>((resolve) => {
+        resolveFirst = resolve;
+      });
+      const second = new Promise<void>((resolve) => {
+        resolveSecond = resolve;
+      });
+      templateSave.mockReturnValueOnce(first).mockReturnValueOnce(second);
+      const refresh = vi.fn();
+      const change = vi.fn();
+      const props = { onOpenChange: change, onTemplateSaved: refresh };
+      const view = renderWithProviders(<FreeformCollageModal {...props} open />);
+      fireEvent.click(screen.getByRole('button', { name: 'حفظ قالب' }));
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open={false} />
+        </TooltipProvider>,
+      );
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open />
+        </TooltipProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'حفظ قالب' }));
+      expect(SaveCustomTemplateWithMetadata).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        resolveFirst();
+        await first;
+      });
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'حفظ قالب' })).toBeDisabled();
+      await act(async () => {
+        resolveSecond();
+        await second;
+      });
+      expect(refresh).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'حفظ قالب' })).not.toBeDisabled();
+      expect(change).not.toHaveBeenCalled();
+    });
+
+    it('suppresses stale save rejection after controlled reopening', async () => {
+      let reject!: (error: Error) => void;
+      const pending = new Promise<void>((_, rejectPromise) => {
+        reject = rejectPromise;
+      });
+      templateSave.mockReturnValueOnce(pending);
+      const errorToast = vi.spyOn(toast, 'error');
+      const props = { onOpenChange: vi.fn() };
+      const view = renderWithProviders(<FreeformCollageModal {...props} open />);
+      fireEvent.click(screen.getByRole('button', { name: 'حفظ قالب' }));
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open={false} />
+        </TooltipProvider>,
+      );
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open />
+        </TooltipProvider>,
+      );
+      await act(async () => {
+        reject(new Error('late'));
+        await pending.catch(() => {});
+      });
+      expect(errorToast).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'حفظ قالب' })).not.toBeDisabled();
+    });
+
+    it('aborts an import on close and rejects its already-queued onload after reopening', () => {
+      const readers: FileReader[] = [];
+      vi.spyOn(FileReader.prototype, 'readAsText').mockImplementation(function (this: FileReader) {
+        Object.defineProperty(this, 'readyState', {
+          value: FileReader.LOADING,
+          configurable: true,
+        });
+        readers.push(this);
+      });
+      const abort = vi.spyOn(FileReader.prototype, 'abort').mockImplementation(() => {});
+      const errorToast = vi.spyOn(toast, 'error');
+      const props = { onOpenChange: vi.fn() };
+      const view = renderWithProviders(<FreeformCollageModal {...props} open />);
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      fireEvent.change(input, { target: { files: [new File(['{}'], 'layout.json')] } });
+      const oldLoad = readers[0].onload!;
+      const oldError = readers[0].onerror!;
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open={false} />
+        </TooltipProvider>,
+      );
+      expect(abort).toHaveBeenCalledTimes(1);
+      view.rerender(
+        <TooltipProvider>
+          <FreeformCollageModal {...props} open />
+        </TooltipProvider>,
+      );
+      const ids = slotCards().map((card) => card.dataset.slotId);
+      Object.defineProperty(readers[0], 'result', {
+        value: JSON.stringify({
+          format: 'grido-freeform',
+          version: 1,
+          name: 'Late imported document',
+          paperWidthMM: 100,
+          paperHeightMM: 100,
+          slots: [{ x: 0, y: 0, w: 0.2, h: 0.2 }],
+        }),
+      });
+      act(() => {
+        oldLoad.call(readers[0], new ProgressEvent('load') as ProgressEvent<FileReader>);
+        oldError.call(readers[0], new ProgressEvent('error') as ProgressEvent<FileReader>);
+      });
+      expect(slotCards().map((card) => card.dataset.slotId)).toEqual(ids);
+      expect(screen.getByRole('textbox', { name: 'اسم التخطيط' })).toHaveValue('كولاج حر مخصص');
+      expect(errorToast).not.toHaveBeenCalled();
     });
   });
 

@@ -97,6 +97,7 @@
   --z-menu: 1000;
   --z-popover: 1500;
   --z-dialog: 2000;
+  --z-dialog-popover: 2500;
   --z-toast: 3000;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -421,7 +422,7 @@
   --print-zoom-text: #e4e4e7;
   --print-zoom-hover: rgba(255, 255, 255, 0.08);
   --print-paper-border: rgba(255, 255, 255, 0.12);
-  --print-margin-line: rgba(255, 255, 255, 0.3);
+  --print-margin-line: rgba(15, 23, 42, 0.32);
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.3), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.2);
@@ -518,24 +519,34 @@
 
   /* Deep Native Desktop Hardening */
   ::selection {
-    background: rgba(30, 64, 175, 0.08) !important;
-    color: var(--primary) !important;
+    background: color-mix(in srgb, var(--primary) 28%, transparent);
+    color: inherit;
   }
 
   button,
-  input,
   optgroup,
   select,
-  textarea,
   [role='button'],
   [role='tab'],
   [role='menuitem'],
   [role='option'],
   input[type='submit'],
   input[type='button'],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='color'],
+  input[type='range'],
   .touch-target {
-    font-family: inherit !important;
+    font-family: inherit;
     cursor: pointer;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']):not(
+      [type='color']
+    ):not([type='range']),
+  textarea {
+    font-family: inherit;
+    cursor: text;
   }
 
   button:disabled,
@@ -1035,7 +1046,9 @@
 [data-sonner-toast] [data-title] {
   font-size: 12px !important;
   font-weight: 600 !important;
-  line-height: 1.35 !important;
+  line-height: 1.45 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
   color: var(--foreground) !important;
 }
 
@@ -1043,6 +1056,16 @@
   font-size: 11px !important;
   color: var(--muted-foreground) !important;
   opacity: 0.9 !important;
+}
+
+/* Unlayered toast styling must not override the base reduced-motion fallback. */
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster],
+  [data-sonner-toast],
+  [data-sonner-toast] * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* زر الإغلاق بنمط Fluent 2 */

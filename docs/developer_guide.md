@@ -4,6 +4,20 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 > **تحديث سحابة Supabase (2026-11-15):** أُزيل أثر الدالتين اليتيمتين `license` و`ai-enhance` حياً بإطلاق نسخة **v7** (`verify_jwt: true`, `410 Gone`) منزوعة `SUPABASE_SERVICE_ROLE_KEY`؛ كما تمت مواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق هجرة التقوية `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` عبر `supabase db push` (`43 = 43` متطابقة حياً، `0` تنبيهات `anon_security_definer_function_executable` و`0` `multiple_permissive_policies`). التفاصيل في [SECURITY_NOTICE.md](../SECURITY_NOTICE.md).
 
+## عقود مراجعة حملة التعديلات — 2026-11-20
+
+تفاصيل الدليل والتنفيذ والحدود في [التقرير 27](reviews/27-change-campaign-audit-2026-11-20.md). لا تغييرات Go/IPC/migrations، ولا إعادة توليد bindings لازمة لهذه الجولة.
+
+- **اشتراكات السمة/الفلاتر:** `use-theme.ts` يملك لقطة cached بـ`useSyncExternalStore` ومستمع نظام واحد ينظف بعد آخر subscriber؛ `toolbar-image-filters.tsx` يشترك بمراجع store مستقرة ولا يضع مصفوفة مشتقة جديدة داخل كائن useShallow، ويتحقق من الأقفال والتحديد الحي وقت الفعل.
+- **استعادة تعثر العرض:** ErrorBoundary يستخدم `clearAutoSave()` من الكاتب المرتب بعد تأكيد مرئي، لا localStorage key وهمي ولا reload عند فشل أو superseded clear. CrashRecovery يمنع تراكب العملية غير القابلة للإلغاء حتى بعد reopen، ويعزل الرسائل عن الجلسة القديمة.
+- **تحديد/ترتيب ذري:** `canArrangeSelection` يحرس complete unlocked groups. `buildElementLayerMovePatches` في `selection-properties.ts` يعيد استعمال z slots للمتأثرين فقط، يمنع locked crossing، ويرفض legacy interleaved units تحفظياً بدل إعادة ترقيم الكل. setters تطبع/تزيل duplicate IDs، وعمليات no-op لا تخلق history.
+- **الحقول والنتائج غير المتزامنة:** معاملات X/Y وMmField تملك baseline/preview وجلسة مستند؛ raw draft منفصل عن geometry المقيدة، Escape يستعيد owned preview/redo، Enter/blur يثبّت مرة. حراس readiness generation تمنع clipboard results القديمة من العودة بعد تعطيل/إعادة تمكين، والقطارة تنظف listeners/cursor والطلب الأصلي.
+- **الرسم/الطباعة:** shadow caster يقرأ live Image/crop في serialized capture ويستعمل capture DPI دون الاحتفاظ بمصدر export بعد finally؛ element-space paint يحفظ affine/path/arc/wedge parity، مع بقاء pattern2048 وcut guides بلا clipping. URL preview ملك الحوار فقط، وتحديد collage يستعاد وفق slots، وborderless لا يستنتج من غياب capabilities.
+- **Freeform/scanner/stickers:** نقل المجموعة AABB بترجمة واحدة، directional resize مع normalized aspect، pack المستحيل لا يشوّه preset، options تنقل عبر snapshots لنفس المستند. scanner operation identity يملك preview/export/abort، وsource replacement يبطل metadata/results. sticker insert/VDP/batch تستعمل محاولة/جلسة/target/layout حية؛ crop/refine completion مستقل عن تغير المصدر الناتج من حفظ المحاولة نفسها.
+- **الواجهة/الإدارة:** dialog2000/dialog-popover2500/toast3000 من CSS، Sonner style يقاوم unlayered vendor CSS، والألواح inert تسلّم التركيز دون سرقة modal. Phone zoom يتحقق من capabilities/settings وcamera owner وsrcObject؛ capture يتبع crop المرئي. مولد admin single/batch له قفل مشترك متزامن، وليس ذلك تفويض خادم أو rollback كتابة.
+
+الملاحظات baseline `BASE-01…04` بالتقرير تبقى مفتوحة؛ لا ادعاء اكتمال حماية جميع المشاريع/الهاتف/toolbar refine/sticker export. اختبارات mocks لا تثبت Wails أصلي أو pixels أو طابعة.
+
 ## عقود تطوير UX الجزئية وCI — 2026-11-13
 
 **الحالة الحالية:** فحوص `frontend` و`admin-web` الخفيفة و`gofmt` وبوابة `docsstrict` (**174/32/67/6** و`inventory 20 / assertions 53`) **PASS** بعد إغلاق إصلاحات التشخيص ومواءمة عقد ترويسة اللوح (`panel-shell.tsx` `min-h-12` مع `ui-compliance.test.ts` و`fluent2-design-system/SKILL.md`)؛ لا `final global E2E/CI/build` محلي بعد. التنفيذ سلوكي وبصري محدود، لا اكتمال خطة أو AA/fullwave.

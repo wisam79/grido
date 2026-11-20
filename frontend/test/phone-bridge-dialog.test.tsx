@@ -1,10 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
+import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { PhoneBridgeDialog } from '../src/components/editor/dialogs/phone-bridge-dialog';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import * as AppWails from '../wailsjs/go/main/App';
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 vi.mock('../wailsjs/go/main/App', () => ({
   StartPhoneBridge: vi.fn(),
@@ -38,6 +41,24 @@ describe('PhoneBridgeDialog Component Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
+
+  it.each(['reject', 'stopped'] as const)(
+    'does not claim restart success when the backend %s',
+    async (outcome) => {
+      renderWithProviders(<PhoneBridgeDialog open onOpenChange={vi.fn()} />);
+      await screen.findByText('الجسر متصل ويعمل');
+      if (outcome === 'reject')
+        vi.mocked(AppWails.StartPhoneBridge).mockRejectedValueOnce(new Error('restart failed'));
+      else
+        vi.mocked(AppWails.StartPhoneBridge).mockResolvedValueOnce({
+          ...mockBridgeInfo,
+          isRunning: false,
+        } as unknown as Awaited<ReturnType<typeof AppWails.StartPhoneBridge>>);
+      fireEvent.click(screen.getByText('إعادة تعيين الجلسة'));
+      await screen.findByText('تعذر تشغيل خادم الكاميرا');
+      expect(toast.success).not.toHaveBeenCalledWith('تمت إعادة تشغيل الجسر');
+    },
+  );
 
   it('renders dialog title when open is true', async () => {
     renderWithProviders(<PhoneBridgeDialog open={true} onOpenChange={vi.fn()} />);

@@ -8,10 +8,12 @@ import { cn } from '@/lib/utils';
 
 function RadioGroup({
   className,
+  dir = 'rtl',
   ...props
 }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
   return (
     <RadioGroupPrimitive.Root
+      dir={dir}
       data-slot="radio-group"
       className={cn('grid gap-3', className)}
       {...props}

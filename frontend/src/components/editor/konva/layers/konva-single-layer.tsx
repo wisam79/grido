@@ -150,7 +150,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         };
 
         if (el.type === 'image' && el.imageSrc) {
-          return <URLImage key={el.id} {...elementProps} />;
+          return <URLImage key={el.id} {...elementProps} onDblClick={getDblClickHandler(el.id)} />;
         }
         if (el.type === 'text') {
           return (

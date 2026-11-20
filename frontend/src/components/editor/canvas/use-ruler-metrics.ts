@@ -85,6 +85,11 @@ export function useRulerMetricsPreview(
 
   const handleWorkspaceMouseLeave = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (mouseMoveRafId.current !== null) {
+        cancelAnimationFrame(mouseMoveRafId.current);
+        mouseMoveRafId.current = null;
+      }
+      pendingEventRef.current = null;
       if (!showRuler || printMode) return;
       const scope =
         (e.currentTarget as HTMLElement | null)?.closest?.(

@@ -5,9 +5,14 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+function Tabs({
+  className,
+  dir = 'rtl',
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return (
     <TabsPrimitive.Root
+      dir={dir}
       data-slot="tabs"
       className={cn('flex flex-col gap-2', className)}
       {...props}

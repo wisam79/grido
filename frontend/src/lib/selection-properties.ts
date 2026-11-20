@@ -62,7 +62,7 @@ export function isSelectionHex(value: string): boolean {
 function readNumeric(element: CanvasElement, key: SelectionNumericKey): number | undefined {
   switch (key) {
     case 'opacity':
-      return Number.isFinite(element.opacity) ? element.opacity * 100 : undefined;
+      return Number.isFinite(element.opacity) ? Math.round(element.opacity * 100) : undefined;
     case 'fontSize':
       return element.type === 'text' && Number.isFinite(element.fontSize)
         ? element.fontSize
@@ -150,7 +150,14 @@ export function buildSelectionPropertyPatches(
     if (field.kind === 'number' && typeof change.value === 'number') {
       const value = change.value;
       if (!Number.isFinite(value) || value < field.min || value > field.max) return [];
-      if (Object.is(readNumeric(element, field.key), value)) continue;
+      if (
+        Object.is(
+          field.key === 'opacity' ? element.opacity : readNumeric(element, field.key),
+          field.key === 'opacity' ? value / 100 : value,
+        )
+      ) {
+        continue;
+      }
       switch (field.key) {
         case 'opacity':
           patch = { opacity: value / 100 };
@@ -206,6 +213,74 @@ export function canArrangeSelection(
         (targets.has(element.id) && !element.locked),
     )
   );
+}
+
+/** A row action operates on the entire group, never just the clicked member. */
+export function getElementLayerIds(elements: readonly CanvasElement[], id: string): string[] {
+  const element = elements.find((item) => item.id === id);
+  if (!element) return [];
+  return elements
+    .filter((item) => (element.groupId ? item.groupId === element.groupId : item.id === id))
+    .map((item) => item.id);
+}
+
+/** Swap/reinsert whole layer units using only their existing z slots. Locks are barriers. */
+export function buildElementLayerMovePatches(
+  elements: readonly CanvasElement[],
+  id: string,
+  destination: 'forward' | 'backward' | 'front' | 'back' | { overId: string },
+): { id: string; patch: Partial<CanvasElement> }[] {
+  if (elements.some((element) => !Number.isFinite(element.zIndex))) return [];
+  const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
+  const units: CanvasElement[][] = [];
+  const seenGroups = new Set<string>();
+  for (const element of sorted) {
+    const previous = units[units.length - 1];
+    if (element.groupId && previous?.[0].groupId === element.groupId) {
+      previous.push(element);
+    } else {
+      // Interleaved legacy groups have no unambiguous atomic one-step order.
+      if (element.groupId && seenGroups.has(element.groupId)) return [];
+      if (element.groupId) seenGroups.add(element.groupId);
+      units.push([element]);
+    }
+  }
+  const from = units.findIndex((unit) => unit.some((element) => element.id === id));
+  if (from < 0) return [];
+  const to =
+    typeof destination === 'string'
+      ? destination === 'front'
+        ? units.length - 1
+        : destination === 'back'
+          ? 0
+          : from + (destination === 'forward' ? 1 : -1)
+      : units.findIndex((unit) => unit.some((element) => element.id === destination.overId));
+  if (to < 0 || to >= units.length || to === from) return [];
+  const start = Math.min(from, to);
+  const end = Math.max(from, to);
+  const affected = units.slice(start, end + 1);
+  if (affected.some((unit) => unit.some((element) => element.locked))) return [];
+  if (destination === 'front' || destination === 'back') {
+    return buildSelectionLayerPatches(
+      elements,
+      units[from].map((element) => element.id),
+      destination,
+    );
+  }
+  const original = affected.flat();
+  // Equal slots cannot represent a reliable changed ordering.
+  if (original.some((element, index) => index > 0 && element.zIndex <= original[index - 1].zIndex))
+    return [];
+  const reordered = [...affected];
+  const [moved] = reordered.splice(from - start, 1);
+  reordered.splice(to - start, 0, moved);
+  return reordered
+    .flat()
+    .flatMap((element, index) =>
+      element.zIndex === original[index].zIndex
+        ? []
+        : [{ id: element.id, patch: { zIndex: original[index].zIndex } }],
+    );
 }
 
 /** Move the eligible stack together, preserving internal layer order in one batch. */

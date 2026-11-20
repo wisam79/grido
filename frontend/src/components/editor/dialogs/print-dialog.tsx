@@ -135,6 +135,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
   const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
   const previewRequestRef = useRef(0);
+  const ownedPreviewUrlRef = useRef('');
+  const replacePreviewImage = useCallback((src: string, ownedUrl = false) => {
+    const previous = ownedPreviewUrlRef.current;
+    ownedPreviewUrlRef.current = ownedUrl ? src : '';
+    if (previous && previous !== src) URL.revokeObjectURL(previous);
+    setPreviewImageSrc(src);
+  }, []);
   const savedSelectionRef = useRef<string[] | null>(null);
 
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
@@ -153,16 +160,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   // استعلام قوالب الورق المدعومة من الطابعة المختارة لاستخراج اسم القالب الأنسب
   useEffect(() => {
     if (!open || !selectedPrinter || typeof GetSupportedPapers !== 'function') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSupportedPapers([]);
       return;
     }
     let cancelled = false;
+    setSupportedPapers([]);
     GetSupportedPapers(selectedPrinter)
       .then((res) => {
-        if (!cancelled && res?.success && Array.isArray(res.papers)) {
-          setSupportedPapers(res.papers);
+        if (!cancelled) {
+          setSupportedPapers(res?.success && Array.isArray(res.papers) ? res.papers : []);
         }
       })
       .catch((err) => {
+        if (!cancelled) setSupportedPapers([]);
         logger.warn('Failed to query supported papers:', err);
       });
     return () => {
@@ -261,6 +272,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   });
 
   const {
+    originalImageWidthMM,
+    originalImageHeightMM,
     imageWidthMM,
     imageHeightMM,
     gapMM,
@@ -312,7 +325,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setZoom(1);
       const st = useEditorStore.getState();
-      savedSelectionRef.current = [...(st.selectedIds ?? [])];
+      if (savedSelectionRef.current === null) {
+        savedSelectionRef.current = [...(st.selectedIds ?? [])];
+      }
       st.selectElement(null);
 
       // 🧭 ملاءمة ذكية لاتجاه الورقة مع أبعاد الكانفاس الحالية عند الفتح
@@ -335,7 +350,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       savedSelectionRef.current = null;
       if (saved && saved.length > 0) {
         const st = useEditorStore.getState();
-        const alive = saved.filter((id) => st.elements.some((el) => el.id === id));
+        const alive = saved.filter((id) =>
+          st.mode === 'collage'
+            ? st.slots.some((slot) => slot.id === id)
+            : st.elements.some((el) => el.id === id),
+        );
         if (alive.length > 0) st.setSelectedIds(alive);
       }
     }
@@ -494,19 +513,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         printerName: selectedPrinter,
         formName: matchedPaper?.name,
         paperId: matchedPaper?.id,
-        borderless: matchedPaper?.isBorderless ?? false,
+        borderless: effectiveMarginMM === 0 && matchedPaper?.isBorderless === true,
       },
     });
   }, [exporter, effectiveMarginMM, onOpenChange, selectedPrinter, matchedPaper]);
 
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      replacePreviewImage('');
       return;
     }
 
     if (mode === 'collage') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPreviewImageSrc('');
+      replacePreviewImage('');
       return;
     }
 
@@ -529,7 +549,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             (el): el is import('@/lib/store/types').ImageElement =>
               el.type === 'image' && Boolean(el.imageSrc),
           );
-          if (!cancelled && firstImg?.imageSrc) setPreviewImageSrc(firstImg.imageSrc);
+          if (!cancelled && firstImg?.imageSrc) replacePreviewImage(firstImg.imageSrc);
         }
         return;
       }
@@ -559,10 +579,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         );
         if (cancelled || requestId !== previewRequestRef.current || !blob) return;
         previewUrl = URL.createObjectURL(blob);
-        setPreviewImageSrc((previous) => {
-          if (previous.startsWith('blob:')) URL.revokeObjectURL(previous);
-          return previewUrl;
-        });
+        replacePreviewImage(previewUrl, true);
         previewUrl = '';
       } catch (err) {
         if (cancelled || requestId !== previewRequestRef.current) return;
@@ -573,10 +590,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             el.type === 'image' && Boolean(el.imageSrc),
         );
         if (firstImg?.imageSrc) {
-          setPreviewImageSrc((previous) => {
-            if (previous.startsWith('blob:')) URL.revokeObjectURL(previous);
-            return firstImg.imageSrc;
-          });
+          replacePreviewImage(firstImg.imageSrc);
         }
       } finally {
         if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -590,13 +604,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       clearTimeout(timer);
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [open, stageRef, mode]);
+  }, [open, stageRef, mode, replacePreviewImage]);
 
   useEffect(
     () => () => {
-      if (previewImageSrc.startsWith('blob:')) URL.revokeObjectURL(previewImageSrc);
+      const url = ownedPreviewUrlRef.current;
+      ownedPreviewUrlRef.current = '';
+      if (url) URL.revokeObjectURL(url);
     },
-    [previewImageSrc],
+    [],
   );
 
   const spaceUsedPercent = Math.round(
@@ -604,8 +620,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   );
   const isOverflowing =
     spaceUsedPercent > 101 ||
-    imageWidthMM > availableWidthMM + 0.5 ||
-    imageHeightMM > availableHeightMM + 0.5;
+    originalImageWidthMM > availableWidthMM + 0.5 ||
+    originalImageHeightMM > availableHeightMM + 0.5;
 
   const attachPreviewViewport = useCallback((node: HTMLDivElement | null) => {
     previewViewportRef.current = node;
@@ -702,7 +718,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         {selectedPrinter || undefined}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
+                    <SelectContent dir="rtl">
                       {printers.map((p) => (
                         <SelectItem
                           key={p.name}
@@ -774,11 +790,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 value={selectedPaperValue}
                 onValueChange={(val) => {
                   if (val === 'canvas') {
-                    const isCanvasLandscape = (imageWidthMM || 210) > (imageHeightMM || 297);
+                    const isCanvasLandscape =
+                      (originalImageWidthMM || 210) > (originalImageHeightMM || 297);
                     setPrintSettings({
                       paperId: 'canvas',
-                      paperWidthMM: imageWidthMM || 210,
-                      paperHeightMM: imageHeightMM || 297,
+                      paperWidthMM: originalImageWidthMM || 210,
+                      paperHeightMM: originalImageHeightMM || 297,
                       orientation: isCanvasLandscape ? 'landscape' : 'portrait',
                       marginMM: 0,
                     });
@@ -816,12 +833,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 >
                   <SelectValue placeholder="مقاس الورقة">{selectedPaperLabel}</SelectValue>
                 </SelectTrigger>
-                <SelectContent className="z-(--z-print-toolbar) max-h-72" dir="rtl">
+                <SelectContent className="max-h-72" dir="rtl">
                   <SelectItem
                     value="canvas"
                     className="text-xs font-bold text-primary cursor-pointer"
                   >
-                    {`الكانفاس (${Math.round(imageWidthMM || 0)} × ${Math.round(imageHeightMM || 0)} مم)`}
+                    {`الكانفاس (${Math.round(originalImageWidthMM || 0)} × ${Math.round(originalImageHeightMM || 0)} مم)`}
                   </SelectItem>
 
                   {sanitizedDriverPapers.length > 0
@@ -930,41 +947,43 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </div>
 
               {/* مبدل صيغة المخرجات (sRGB فقط — CMYK يفرض TIFF في مسار التصدير) */}
-              <div className="flex flex-col gap-1.5 pt-2 border-t border-border/30">
-                <Label className="text-xs font-semibold text-foreground">صيغة المخرجات</Label>
-                <div className="grid grid-cols-2 p-0.5 rounded-md bg-muted/40 border border-border/40 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setPrintSettings({ outputFormat: 'jpeg' })}
-                    title="JPEG: أسرع ترميزاً وملف أصغر — مناسب للصور الفوتوغرافية"
-                    aria-label="صيغة JPEG"
-                    aria-pressed={printSettings.outputFormat !== 'png'}
-                    className={cn(
-                      'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      printSettings.outputFormat !== 'png'
-                        ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
-                    )}
-                  >
-                    <span>JPEG (أسرع)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPrintSettings({ outputFormat: 'png' })}
-                    title="PNG: بلا ضجيج ضغط — أدق للنصوص والباركود والملصقات (ملف أكبر)"
-                    aria-label="صيغة PNG"
-                    aria-pressed={printSettings.outputFormat === 'png'}
-                    className={cn(
-                      'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      printSettings.outputFormat === 'png'
-                        ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
-                    )}
-                  >
-                    <span>PNG (أدق للنص)</span>
-                  </button>
+              {!isCmykPrint && (
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-border/30">
+                  <Label className="text-xs font-semibold text-foreground">صيغة المخرجات</Label>
+                  <div className="grid grid-cols-2 p-0.5 rounded-md bg-muted/40 border border-border/40 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPrintSettings({ outputFormat: 'jpeg' })}
+                      title="JPEG: أسرع ترميزاً وملف أصغر — مناسب للصور الفوتوغرافية"
+                      aria-label="صيغة JPEG"
+                      aria-pressed={printSettings.outputFormat !== 'png'}
+                      className={cn(
+                        'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                        printSettings.outputFormat !== 'png'
+                          ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
+                      )}
+                    >
+                      <span>JPEG (أسرع)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPrintSettings({ outputFormat: 'png' })}
+                      title="PNG: بلا ضجيج ضغط — أدق للنصوص والباركود والملصقات (ملف أكبر)"
+                      aria-label="صيغة PNG"
+                      aria-pressed={printSettings.outputFormat === 'png'}
+                      className={cn(
+                        'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                        printSettings.outputFormat === 'png'
+                          ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
+                      )}
+                    >
+                      <span>PNG (أدق للنص)</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* صف خطوط وعلامات القص */}
               <div className="flex flex-col gap-2 pt-2 border-t border-border/30">
@@ -1002,7 +1021,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
+                      <SelectContent dir="rtl">
                         <SelectItem value="dashed" className="text-xs font-semibold cursor-pointer">
                           متقطع
                         </SelectItem>
@@ -1033,7 +1052,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
+                      <SelectContent dir="rtl">
                         <SelectItem value="sRGB" className="text-xs font-semibold cursor-pointer">
                           sRGB (رقمي)
                         </SelectItem>
@@ -1210,7 +1229,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             <span dir="ltr">
               {Math.round(paperWidth)} × {Math.round(paperHeight)} مم
             </span>
-            <span dir="ltr">{printSettings.dpi || 300} DPI</span>
+            <span dir="ltr">{layout.dpi || printSettings.dpi || 300} DPI</span>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -1233,7 +1252,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   printerName: selectedPrinter,
                   formName: matchedPaper?.name,
                   paperId: matchedPaper?.id,
-                  borderless: matchedPaper?.isBorderless ?? false,
+                  borderless: effectiveMarginMM === 0 && matchedPaper?.isBorderless === true,
                 })
               }
               title={

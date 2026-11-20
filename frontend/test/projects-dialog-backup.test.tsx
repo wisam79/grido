@@ -183,6 +183,52 @@ describe('ProjectsDialog list states and fetch ownership', () => {
   const projectList = (name = 'مشروع') =>
     [{ id: 'p1', name }] as unknown as Awaited<ReturnType<typeof GetAllProjects>>;
 
+  it('does not reopen import confirmation after a native file read completes in a newer session', async () => {
+    const readers: FileReader[] = [];
+    const read = vi.spyOn(FileReader.prototype, 'readAsText').mockImplementation(function (
+      this: FileReader,
+    ) {
+      readers.push(this);
+    });
+    const frame = (open: boolean) => (
+      <ProjectsDialog open={open} onOpenChange={vi.fn()} defaultTab="list" />
+    );
+    const view = render(frame(true));
+    try {
+      await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+      fireEvent.click(screen.getByRole('tab', { name: 'النسخ' }));
+      fireEvent.change(document.querySelector('input[type="file"]')!, {
+        target: { files: [new File(['[]'], 'old.json')] },
+      });
+      const oldOnload = readers[0].onload!;
+      view.rerender(frame(false));
+      view.rerender(frame(true));
+      await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+      act(() =>
+        oldOnload.call(readers[0], {
+          target: { result: '[]' },
+        } as unknown as ProgressEvent<FileReader>),
+      );
+      expect(screen.queryByText('استيراد المشاريع')).not.toBeInTheDocument();
+    } finally {
+      read.mockRestore();
+    }
+  });
+
+  it('keeps pin interaction functional when local storage refuses writes', async () => {
+    render(<ProjectsDialog open onOpenChange={vi.fn()} defaultTab="list" />);
+    await screen.findByRole('button', { name: 'فتح المشروع مشروع' });
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage disabled');
+    });
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'تثبيت في الأعلى' }));
+      expect(screen.getByRole('button', { name: 'إلغاء التثبيت' })).toBeInTheDocument();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
   it('shows loading without claiming that the library is empty', async () => {
     const request = deferred<Awaited<ReturnType<typeof GetAllProjects>>>();
     vi.mocked(GetAllProjects).mockReturnValueOnce(request.promise);

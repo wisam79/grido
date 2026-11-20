@@ -450,6 +450,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               }
               onTouchEnd={() => handleSlotClick?.(slot.id, false)}
               onDblClick={() => handleSlotDblClick?.(slot.id)}
+              onDblTap={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
               {slot.bgColor && slot.bgColor !== 'transparent' && (

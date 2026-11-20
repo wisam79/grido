@@ -25,6 +25,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import { SquaresFour, Image, SidebarSimple } from '@/components/ui/icons';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
 import { useAutoSave } from '@/hooks/use-autosave';
@@ -111,7 +112,6 @@ export default function App() {
   const { isMaximized, isFocused, handleMinimize, handleMaximize, handleClose } =
     useWindowControls();
 
-  useKeyboardShortcuts();
   useAutoSave();
   usePhoneBridgeListener();
   const { quitState, retryQuitSave, cancelQuit, quitWithoutSaving } = useQuitProtocol();
@@ -150,6 +150,8 @@ export default function App() {
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
   const logoutAccount = useEditorStore((state) => state.logoutAccount);
+
+  useKeyboardShortcuts(!isInitializing && isLicenseActive);
 
   // أوامر لوحة الأدوات التي مصدرها هذا المكوّن وحده: الثيم (مصدره useTheme هنا)
   // ونافذة الحساب — فلا تملك اللوحة نسخة ثانية من حالة الثيم أو المودال.
@@ -224,6 +226,7 @@ export default function App() {
             onCancel={cancelQuit}
             onQuitWithoutSaving={quitWithoutSaving}
           />
+          <SonnerToaster position="bottom-center" duration={2000} offset={20} />
         </TooltipProvider>
       </FluentIconProvider>
     );
@@ -262,15 +265,15 @@ export default function App() {
               }}
             >
               <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0" />
                     <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
                       <span>GRIDO</span>
                       <span className="sr-only">Grido Studio | استوديو الهوية</span>
                     </h1>
                   </div>
-                  <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
+                  <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block shrink-0" />
                   <div
                     className="hidden sm:flex items-center title-bar-controls"
                     onDoubleClick={(e) => e.stopPropagation()}
@@ -283,12 +286,36 @@ export default function App() {
                     role="tablist"
                     aria-label="وضع العمل"
                     dir="rtl"
-                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted border border-border/70 select-none title-bar-controls"
+                    tabIndex={-1}
+                    onKeyDown={(e) => {
+                      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
+                        return;
+                      let nextMode: 'collage' | 'single' | null = null;
+                      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                        nextMode = mode === 'collage' ? 'single' : 'collage';
+                      } else if (e.key === 'Home') {
+                        nextMode = 'collage';
+                      } else if (e.key === 'End') {
+                        nextMode = 'single';
+                      }
+                      if (!nextMode) return;
+                      e.preventDefault();
+                      setMode(nextMode);
+                      const nextBtn = e.currentTarget.querySelector<HTMLButtonElement>(
+                        nextMode === 'collage'
+                          ? '[data-compact-mode="collage"]'
+                          : '[data-compact-mode="single"]',
+                      );
+                      nextBtn?.focus();
+                    }}
+                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted border border-border/70 select-none title-bar-controls shrink-0"
                   >
                     <button
                       type="button"
                       role="tab"
+                      data-compact-mode="collage"
                       aria-selected={mode === 'collage'}
+                      tabIndex={mode === 'collage' ? 0 : -1}
                       aria-label="وضع الكولاج"
                       title="وضع الكولاج (Ctrl+Alt+1)"
                       onClick={() => setMode('collage')}
@@ -309,7 +336,9 @@ export default function App() {
                     <button
                       type="button"
                       role="tab"
+                      data-compact-mode="single"
                       aria-selected={mode === 'single'}
+                      tabIndex={mode === 'single' ? 0 : -1}
                       aria-label="وضع التعديل الحر"
                       title="وضع التعديل الحر (Ctrl+Alt+2)"
                       onClick={() => setMode('single')}
@@ -334,7 +363,7 @@ export default function App() {
                     انتقلت عناصر الثيم والحساب والألواح إلى قائمة الإعدادات الموحدة
                     في أسفل الشريط الجانبي (RailSettingsMenu) لتحرير شريط العنوان */}
                 <div
-                  className="flex items-center gap-1 h-full title-bar-controls"
+                  className="flex items-center gap-1 h-full title-bar-controls shrink-0"
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
                   <Button
@@ -432,7 +461,7 @@ export default function App() {
                 </div>
               ) : null
             }
-            footerContent={<CanvasViewportDeck />}
+            footerContent={<CanvasViewportDeck isZenMode={panelsHook.isZenMode} />}
           />
 
           {/* استضافة الحوارات الكسولة والمودال والإشعارات */}

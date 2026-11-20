@@ -51,11 +51,22 @@ function detectDeviceModel(): string {
 }
 
 function playShutterSound() {
+  let ctx: AudioContext | null = null;
+  let closeTimer: ReturnType<typeof setTimeout> | null = null;
+  const close = () => {
+    if (closeTimer !== null) clearTimeout(closeTimer);
+    closeTimer = null;
+    const current = ctx;
+    ctx = null;
+    if (current && current.state !== 'closed') void current.close().catch(() => {});
+  };
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    ctx = new AudioContextClass();
+    // A suspended/interrupted context may never emit ended; always release it.
+    closeTimer = setTimeout(close, 1000);
+    if (ctx.state === 'suspended') void ctx.resume().catch(close);
     const now = ctx.currentTime;
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
@@ -79,7 +90,9 @@ function playShutterSound() {
     gain2.connect(ctx.destination);
     osc2.start(now + 0.04);
     osc2.stop(now + 0.075);
+    osc2.onended = close;
   } catch {
+    close();
     // قد يحجب المتصفح الصوت قبل تفاعل المستخدم.
   }
 }
@@ -123,6 +136,8 @@ function PhoneCameraPageInner() {
   const pairingView = getPhoneBridgePairingView(pairingState, sessionId);
   const canChoosePhoto = Boolean(supabase) && pairingView.canUpload;
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [hardwareZoomLevel, setHardwareZoomLevel] = useState(1);
+  const [isZooming, setIsZooming] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchActive, setTorchActive] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -142,6 +157,9 @@ function PhoneCameraPageInner() {
   const retryOwnerRef = useRef<SessionOwner | null>(null);
   const thumbnailRef = useRef<string | null>(null);
   const cameraRequestRef = useRef(0);
+  const zoomOwnerRef = useRef<object | null>(null);
+  const torchOwnerRef = useRef<object | null>(null);
+  const initialHardwareZoomRef = useRef(1);
   const isCurrentSession = useCallback((owner: SessionOwner) =>
     mountedRef.current && sessionOwnerRef.current === owner, []);
 
@@ -336,6 +354,12 @@ function PhoneCameraPageInner() {
 
   const startCamera = useCallback(async () => {
     const request = ++cameraRequestRef.current;
+    zoomOwnerRef.current = null;
+    torchOwnerRef.current = null;
+    initialHardwareZoomRef.current = 1;
+    setZoomLevel(1);
+    setHardwareZoomLevel(1);
+    setIsZooming(false);
     setHasCameraPermission(null);
     setTorchAvailable(false);
     setTorchActive(false);
@@ -358,6 +382,9 @@ function PhoneCameraPageInner() {
         return;
       }
       streamRef.current = stream;
+      // A cached permission can batch null → true without unmounting the video,
+      // so the stable ref callback alone cannot attach a replacement stream.
+      if (videoRef.current) videoRef.current.srcObject = stream;
       setHasCameraPermission(true);
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack && 'getCapabilities' in videoTrack) {
@@ -365,7 +392,8 @@ function PhoneCameraPageInner() {
         const capabilities = (videoTrack as any).getCapabilities?.();
         setTorchAvailable(Boolean(capabilities?.torch));
       }
-      setZoomLevel(1);
+      const initialZoom = videoTrack?.getSettings?.().zoom;
+      initialHardwareZoomRef.current = typeof initialZoom === 'number' && Number.isFinite(initialZoom) && initialZoom > 0 ? initialZoom : 1;
     } catch (err) {
       if (!mountedRef.current || request !== cameraRequestRef.current) return;
       console.warn('Live camera viewfinder not available, fallback to native camera input:', err);
@@ -388,32 +416,70 @@ function PhoneCameraPageInner() {
   }, []);
 
   const toggleTorch = async () => {
+    if (torchOwnerRef.current) return;
     const stream = streamRef.current;
     const request = cameraRequestRef.current;
     const track = stream?.getVideoTracks()[0];
-    if (track && 'applyConstraints' in track) {
-      try {
-        const next = !torchActive;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (track as any).applyConstraints({ advanced: [{ torch: next }] });
-        if (!mountedRef.current || streamRef.current !== stream || cameraRequestRef.current !== request) return;
-        setTorchActive(next);
-        if (typeof navigator.vibrate === 'function') navigator.vibrate(10);
-      } catch (err) {
-        console.warn('Torch toggle failed:', err);
-      }
+    if (!track?.applyConstraints) return;
+    const owner = {};
+    torchOwnerRef.current = owner;
+    const isCurrent = () => mountedRef.current && streamRef.current === stream
+      && cameraRequestRef.current === request && torchOwnerRef.current === owner;
+    try {
+      const next = !torchActive;
+      await track.applyConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet & { torch: boolean }] });
+      if (!isCurrent()) return;
+      // Some browsers silently ignore advanced constraints.
+      const actual = track.getSettings?.().torch;
+      setTorchActive(typeof actual === 'boolean' ? actual : next);
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(10);
+    } catch (err) {
+      if (isCurrent()) console.warn('Torch toggle failed:', err);
+    } finally {
+      if (torchOwnerRef.current === owner) torchOwnerRef.current = null;
     }
   };
   const applyZoom = async (level: number) => {
-    setZoomLevel(level);
-    if (typeof navigator.vibrate === 'function') navigator.vibrate(8);
-    const track = streamRef.current?.getVideoTracks()[0];
-    if (track && 'applyConstraints' in track) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (track as any).applyConstraints({ advanced: [{ zoom: level }] });
-      } catch {
-        // التكبير الرقمي عبر CSS وCanvas بديل عند عدم دعم المستشعر.
+    if (zoomOwnerRef.current) return;
+    const stream = streamRef.current;
+    const request = cameraRequestRef.current;
+    const track = stream?.getVideoTracks()[0];
+    if (!track) return;
+    const owner = {};
+    zoomOwnerRef.current = owner;
+    const isCurrent = () => mountedRef.current && streamRef.current === stream
+      && cameraRequestRef.current === request && zoomOwnerRef.current === owner;
+    setIsZooming(true);
+    try {
+      const baseline = initialHardwareZoomRef.current;
+      const capabilities = track.getCapabilities?.() as (MediaTrackCapabilities & {
+        zoom?: { min: number; max: number };
+      }) | undefined;
+      const range = capabilities?.zoom;
+      if (range && Number.isFinite(range.min) && Number.isFinite(range.max) && track.applyConstraints) {
+        const target = baseline * level;
+        // Reset the sensor before using digital zoom outside its advertised range.
+        const hardwareTarget = target >= range.min && target <= range.max ? target : baseline;
+        try {
+          await track.applyConstraints({ advanced: [{ zoom: hardwareTarget } as MediaTrackConstraintSet & { zoom: number }] });
+        } catch {
+          // Read what the sensor actually retained before selecting a digital fallback.
+        }
+      }
+      if (!isCurrent()) return;
+      const setting = track.getSettings?.().zoom;
+      const actualZoom = typeof setting === 'number' && Number.isFinite(setting) && setting > 0
+        ? Math.max(1, setting / baseline) : 1;
+      setHardwareZoomLevel(actualZoom);
+      // Digital fallback accounts for any retained sensor crop, never multiplies it twice.
+      setZoomLevel(Math.max(level, actualZoom));
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(8);
+    } catch {
+      if (isCurrent()) setZoomLevel(Math.max(level, hardwareZoomLevel));
+    } finally {
+      if (zoomOwnerRef.current === owner) {
+        if (isCurrent()) setIsZooming(false);
+        zoomOwnerRef.current = null;
       }
     }
   };
@@ -521,7 +587,7 @@ function PhoneCameraPageInner() {
   };
   const handleCapture = async () => {
     const owner = sessionOwnerRef.current;
-    if (!canChoosePhoto || !isCurrentSession(owner) || isCapturingRef.current) return;
+    if (!canChoosePhoto || !isCurrentSession(owner) || isCapturingRef.current || zoomOwnerRef.current) return;
     isCapturingRef.current = true;
     try {
       setFlashActive(true);
@@ -533,15 +599,20 @@ function PhoneCameraPageInner() {
         const canvas = document.createElement('canvas');
         const vw = video.videoWidth;
         const vh = video.videoHeight;
-        let outW = vw;
-        let outH = vh;
+        const preview = video.getBoundingClientRect();
+        // Match object-cover's central visible rectangle before applying digital zoom.
+        const previewAspect = preview.width > 0 && preview.height > 0 ? preview.width / preview.height : vw / vh;
+        const visibleW = Math.min(vw, vh * previewAspect);
+        const visibleH = Math.min(vh, vw / previewAspect);
+        let outW = Math.round(visibleW);
+        let outH = Math.round(visibleH);
         const maxDim = 2048;
         if (outW > maxDim || outH > maxDim) {
           if (outW > outH) {
-            outH = Math.round((vh * maxDim) / vw);
+            outH = Math.round((visibleH * maxDim) / visibleW);
             outW = maxDim;
           } else {
-            outW = Math.round((vw * maxDim) / vh);
+            outW = Math.round((visibleW * maxDim) / visibleH);
             outH = maxDim;
           }
         }
@@ -549,13 +620,10 @@ function PhoneCameraPageInner() {
         canvas.height = outH;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          if (zoomLevel > 1) {
-            const cropW = vw / zoomLevel;
-            const cropH = vh / zoomLevel;
-            ctx.drawImage(video, (vw - cropW) / 2, (vh - cropH) / 2, cropW, cropH, 0, 0, outW, outH);
-          } else {
-            ctx.drawImage(video, 0, 0, vw, vh, 0, 0, outW, outH);
-          }
+          const digitalZoom = Math.max(1, zoomLevel / hardwareZoomLevel);
+          const cropW = visibleW / digitalZoom;
+          const cropH = visibleH / digitalZoom;
+          ctx.drawImage(video, (vw - cropW) / 2, (vh - cropH) / 2, cropW, cropH, 0, 0, outW, outH);
           canvas.toBlob((blob) => {
             if (!isCurrentSession(owner)) return;
             if (blob) {
@@ -605,7 +673,7 @@ function PhoneCameraPageInner() {
       dir="rtl"
     >
       <div className={`fixed inset-0 bg-white z-50 pointer-events-none transition-opacity duration-150 ${flashActive ? 'opacity-100' : 'opacity-0'}`} />
-      <input ref={nativeCameraInputRef} type="file" accept="image/*" capture="environment"
+      <input ref={nativeCameraInputRef} type="file" accept="image/*" capture={facingMode}
         aria-label="صور كاميرا النظام" disabled={!canChoosePhoto} className="hidden" onChange={handleMultipleFilesChange} />
       <input ref={galleryInputRef} type="file" accept="image/*" multiple
         aria-label="ملفات الصور" disabled={!canChoosePhoto} className="hidden" onChange={handleMultipleFilesChange} />
@@ -669,7 +737,10 @@ function PhoneCameraPageInner() {
         {hasCameraPermission ? (
           <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
             <video ref={attachVideo} autoPlay playsInline muted
-              className="w-full h-full object-cover transition-transform duration-200 ease-out" style={{ transform: `scale(${zoomLevel})` }} />
+              className="w-full h-full object-cover transition-transform duration-200 ease-out"
+              style={{
+                transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${Math.max(1, zoomLevel / hardwareZoomLevel)})`,
+              }} />
           </div>
         ) : (
           <div onClick={(e) => e.stopPropagation()} className="relative z-10 flex flex-col items-center justify-center gap-3 p-4 text-center">
@@ -685,7 +756,7 @@ function PhoneCameraPageInner() {
             </div>
           </div>
         )}
-        <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-20">
+        <div dir="ltr" className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-20">
           <div className="border-r border-b border-white/30" /><div className="border-r border-b border-white/30" /><div className="border-b border-white/30" />
           <div className="border-r border-b border-white/30" /><div className="border-r border-b border-white/30" /><div className="border-b border-white/30" />
           <div className="border-r border-white/30" /><div className="border-r border-white/30" /><div />
@@ -700,7 +771,7 @@ function PhoneCameraPageInner() {
         {hasCameraPermission && (
           <div onClick={(e) => e.stopPropagation()} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1 rounded-full bg-black/50 border border-white/15 backdrop-blur-md shadow-xl">
             {[1, 2, 3].map((lvl) => (
-              <button key={lvl} type="button" onClick={() => applyZoom(lvl)} aria-label={`تكبير ${lvl}x`} aria-pressed={zoomLevel === lvl}
+              <button key={lvl} type="button" onClick={() => applyZoom(lvl)} disabled={isZooming} aria-label={`تكبير ${lvl}x`} aria-pressed={zoomLevel === lvl}
                 className={`coarse-touch-target w-7 h-7 rounded-full text-[11px] font-bold transition-colors duration-150 flex items-center justify-center focus-visible:outline-2 focus-visible:outline-white ${zoomLevel === lvl ? 'bg-amber-400 text-black shadow-md' : 'text-neutral-300 hover:text-white'}`}>
                 {lvl}x
               </button>
@@ -725,7 +796,7 @@ function PhoneCameraPageInner() {
           {photosSent > 0 && <span aria-label={`رُفعت ${photosSent} صور إلى التخزين`} className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-black shadow">{photosSent}</span>}
         </button>
         <div className="relative flex items-center justify-center">
-          <button type="button" onClick={handleCapture} aria-label="التقاط صورة" disabled={!canChoosePhoto}
+          <button type="button" onClick={handleCapture} aria-label="التقاط صورة" disabled={!canChoosePhoto || isZooming}
             className="coarse-touch-target shrink-0 w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center shadow-2xl cursor-pointer disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white">
             <div className="w-full h-full rounded-full bg-white shadow-md flex items-center justify-center">
               {isUploading && <RefreshCw className="w-6 h-6 text-black animate-spin motion-reduce:animate-none" aria-hidden="true" />}

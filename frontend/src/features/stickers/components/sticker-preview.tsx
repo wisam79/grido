@@ -147,7 +147,10 @@ export const StickerPreview = React.memo(function StickerPreview({
   /** استنتاج حقل النص من العنصر: data-field-id الصريح ثم مطابقة المحتوى */
   const resolveTextField = useCallback(
     (textEl: SVGTextElement): { id: string; target: SVGElement } | null => {
-      const explicit = textEl.getAttribute('data-field-id');
+      const explicit =
+        textEl.getAttribute('data-field-id') ??
+        textEl.closest('[data-field-id]')?.getAttribute('data-field-id') ??
+        null;
       const content = textEl.textContent?.trim() || '';
       const byId = explicit ? template.fields.find((f) => f.id === explicit) : undefined;
       const byContent = byId
@@ -378,7 +381,19 @@ export const StickerPreview = React.memo(function StickerPreview({
         {/* Floating In-Place Contextual Editor */}
         <StickerInlineEditor
           activeField={activeField}
-          activeColor={activeColor}
+          activeColor={
+            activeColor
+              ? {
+                  ...activeColor,
+                  currentColor:
+                    activeColor.role === 'primary'
+                      ? params.primaryColor
+                      : activeColor.role === 'secondary'
+                        ? params.secondaryColor
+                        : params.backgroundColor,
+                }
+              : null
+          }
           template={template}
           activeFieldValue={
             activeField

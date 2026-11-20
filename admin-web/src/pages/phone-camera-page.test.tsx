@@ -15,10 +15,15 @@ function deferred<T>() {
   const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
   return { promise, resolve, reject };
 }
-function cameraStream(torch = true) {
+function cameraStream(torch = true, zoom?: { min: number; max: number }) {
+  let zoomSetting = 1;
   const track = {
-    stop: vi.fn(), getCapabilities: vi.fn(() => ({ torch })),
-    applyConstraints: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(), getCapabilities: vi.fn(() => ({ torch, zoom })),
+    getSettings: vi.fn(() => ({ zoom: zoomSetting })),
+    applyConstraints: vi.fn().mockImplementation(async (constraints: MediaTrackConstraints) => {
+      const value = (constraints.advanced?.[0] as { zoom?: number } | undefined)?.zoom;
+      if (zoom && typeof value === 'number') zoomSetting = value;
+    }),
   };
   const stream = { getTracks: () => [track], getVideoTracks: () => [track] } as unknown as MediaStream;
   return { stream, track };
@@ -401,6 +406,144 @@ describe('actual PhoneCameraPage utility and async ownership (no network)', () =
     expect(newCamera.track.stop).not.toHaveBeenCalled();
     expect(container.querySelector('video')?.srcObject).toBe(newCamera.stream);
     expect(getUserMedia.mock.calls[1][0].video.facingMode).toEqual({ ideal: 'user' });
+  });
+
+  it.each(['unsupported', 'ignored', 'hardware'] as const)('uses one zoom path and matches the visible object-cover capture (%s)', async (kind) => {
+    const camera = cameraStream(true, kind === 'unsupported' ? undefined : { min: 1, max: 3 });
+    if (kind === 'ignored') camera.track.applyConstraints.mockResolvedValue(undefined);
+    getUserMedia.mockResolvedValueOnce(camera.stream);
+    await mount();
+    const video = container.querySelector('video')!;
+    Object.defineProperty(video, 'videoWidth', { configurable: true, value: 1920 });
+    Object.defineProperty(video, 'videoHeight', { configurable: true, value: 1080 });
+    vi.spyOn(video, 'getBoundingClientRect').mockReturnValue({ width: 400, height: 400 } as DOMRect);
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => callback(new Blob(['captured'], { type: 'image/jpeg' })));
+    await click(button('صوت الغالق'));
+    await click(button('تكبير 2x'));
+    expect(video.style.transform).toBe(kind === 'hardware' ? 'scale(1)' : 'scale(2)');
+    if (kind === 'unsupported') expect(camera.track.applyConstraints).not.toHaveBeenCalled();
+    await click(button('التقاط صورة'));
+    const crop = kind === 'hardware' ? 1080 : 540;
+    expect(drawImage).toHaveBeenCalledWith(video, (1920 - crop) / 2, (1080 - crop) / 2, crop, crop, 0, 0, 1080, 1080);
+    expect(client.photoUpload).toHaveBeenCalledOnce();
+  });
+
+  it('accounts for retained sensor zoom when a later constraint fails', async () => {
+    const camera = cameraStream(true, { min: 1, max: 3 });
+    getUserMedia.mockResolvedValueOnce(camera.stream);
+    await mount();
+    await click(button('تكبير 2x'));
+    camera.track.applyConstraints.mockRejectedValueOnce(new Error('constraint failed (mock)'));
+    await click(button('تكبير 3x'));
+    expect(container.querySelector('video')?.style.transform).toBe('scale(1.5)');
+    expect(button('تكبير 3x').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('resets to digital zoom outside the hardware range and retains truthful sensor state if reset fails', async () => {
+    const camera = cameraStream(true, { min: 1, max: 2 });
+    getUserMedia.mockResolvedValueOnce(camera.stream);
+    await mount();
+    await click(button('تكبير 2x'));
+    await click(button('تكبير 3x'));
+    expect(camera.track.applyConstraints).toHaveBeenLastCalledWith({ advanced: [{ zoom: 1 }] });
+    expect(container.querySelector('video')?.style.transform).toBe('scale(3)');
+    await click(button('تكبير 2x'));
+    camera.track.applyConstraints.mockRejectedValueOnce(new Error('cannot reset'));
+    await click(button('تكبير 1x'));
+    expect(button('تكبير 2x').getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('video')?.style.transform).toBe('scale(1)');
+  });
+
+  it.each(['resolve', 'reject'] as const)('serializes zoom and ignores a late old-camera %s', async (outcome) => {
+    const oldCamera = cameraStream(true, { min: 1, max: 3 });
+    const newCamera = cameraStream();
+    const pending = deferred<void>();
+    oldCamera.track.applyConstraints.mockReturnValueOnce(pending.promise);
+    getUserMedia.mockResolvedValueOnce(oldCamera.stream).mockResolvedValueOnce(newCamera.stream);
+    await mount();
+    await act(async () => { button('تكبير 2x').click(); button('تكبير 3x').click(); });
+    expect(oldCamera.track.applyConstraints).toHaveBeenCalledOnce();
+    expect(button('التقاط صورة').disabled).toBe(true);
+    await click(button('تبديل الكاميرا'));
+    expect(container.querySelector('video')?.srcObject).toBe(newCamera.stream);
+    expect(oldCamera.track.stop).toHaveBeenCalledOnce();
+    expect(newCamera.track.stop).not.toHaveBeenCalled();
+    expect(input('صور كاميرا النظام').getAttribute('capture')).toBe('user');
+    await click(button('تكبير 3x'));
+    expect(container.querySelector('video')?.style.transform).toBe('scaleX(-1) scale(3)');
+    await act(async () => {
+      if (outcome === 'resolve') pending.resolve(); else pending.reject(new Error('old zoom'));
+      await pending.promise.catch(() => {});
+    });
+    expect(container.querySelector('video')?.srcObject).toBe(newCamera.stream);
+    expect(container.querySelector('video')?.style.transform).toBe('scaleX(-1) scale(3)');
+    expect(button('تكبير 3x').getAttribute('aria-pressed')).toBe('true');
+    expect(button('التقاط صورة').disabled).toBe(false);
+  });
+
+  it('serializes torch toggles and never publishes the old camera torch state', async () => {
+    const oldCamera = cameraStream();
+    const newCamera = cameraStream();
+    const pending = deferred<void>();
+    oldCamera.track.applyConstraints.mockReturnValueOnce(pending.promise);
+    getUserMedia.mockResolvedValueOnce(oldCamera.stream).mockResolvedValueOnce(newCamera.stream);
+    await mount();
+    await act(async () => { button('الفلاش').click(); button('الفلاش').click(); });
+    expect(oldCamera.track.applyConstraints).toHaveBeenCalledOnce();
+    await click(button('تبديل الكاميرا'));
+    await settle(pending, undefined);
+    expect(button('الفلاش').getAttribute('aria-pressed')).toBe('false');
+    await click(button('الفلاش'));
+    expect(button('الفلاش').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('does not publish an active torch when advanced constraints are ignored', async () => {
+    const camera = cameraStream();
+    camera.track.getSettings.mockReturnValue({ zoom: 1, torch: false } as { zoom: number });
+    getUserMedia.mockResolvedValueOnce(camera.stream);
+    await mount();
+    await click(button('الفلاش'));
+    expect(button('الفلاش').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it.each(['ended', 'resume-reject', 'setup-throw', 'suspended-timeout'] as const)('releases shutter AudioContext on %s', async (kind) => {
+    vi.useFakeTimers();
+    const close = vi.fn().mockResolvedValue(undefined);
+    const resume = vi.fn().mockImplementation(() => kind === 'resume-reject'
+      ? Promise.reject(new Error('blocked (mock)')) : Promise.resolve());
+    const oscillators: Array<{ onended: (() => void) | null }> = [];
+    class MockAudioContext {
+      state = kind === 'ended' || kind === 'setup-throw' ? 'running' : 'suspended';
+      currentTime = 0;
+      destination = {};
+      close = close;
+      resume = resume;
+      createOscillator() {
+        if (kind === 'setup-throw') throw new Error('setup failed (mock)');
+        const oscillator = { onended: null as (() => void) | null, type: '',
+          frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+          connect: vi.fn(), start: vi.fn(), stop: vi.fn() };
+        oscillators.push(oscillator);
+        return oscillator;
+      }
+      createGain() {
+        return { gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn() };
+      }
+    }
+    vi.stubGlobal('AudioContext', MockAudioContext);
+    try {
+      await mount();
+      await click(button('التقاط صورة'));
+      if (kind === 'ended') oscillators[1].onended?.();
+      if (kind === 'suspended-timeout') act(() => vi.advanceTimersByTime(1000));
+      expect(close).toHaveBeenCalledOnce();
+      act(() => vi.advanceTimersByTime(1000));
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('a delayed shutter encoding callback cannot upload into a replacement session', async () => {

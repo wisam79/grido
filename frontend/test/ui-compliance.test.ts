@@ -11,6 +11,7 @@ import {
   RADIUS,
   MOTION,
   Z,
+  Z_CLASS,
   pickWaitComponent,
 } from '@/lib/ui/ui-compliance';
 
@@ -319,30 +320,19 @@ describe('UI Compliance Guard — حلقة التركيز البؤرية (R24/R3
 });
 
 describe('UI Compliance Guard — طبقات z-index', () => {
-  // الترخيص الوحيد لـ z-50 الخام: أوامر Radix overlay هذه (قيم التراكب الصحيحة).
-  // أي استخدام خارجها يجب أن يمرّ عبر توكن z-(--z-*).
-  const OVERLAY_PRIMITIVES = new Set([
-    'dialog.tsx',
-    'alert-dialog.tsx',
-    'popover.tsx',
-    'select.tsx',
-    'sheet.tsx',
-    'tooltip.tsx',
-    'dropdown-menu.tsx',
-  ]);
-
+  // كل مكوّنات ui/* يجب أن تستخدم توكنات z-(--z-*) الموحّدة بلا z-20/z-30/z-50 خام
+  // حتى تتفوّق الحوارات (2000) والأدوات العائمة داخلها (2500) على قوائم/بوب أوفر مساحة العمل (1000/1500).
   it('مقابض النافذة تستعمل توكن z ولا قيمة z خامة (عشوائية)', () => {
     const source = read('components/editor/system/window-controls.tsx');
     expect(source).not.toMatch(/(?:^|\s)z-(20|30|50)(?=\s|$)/);
     expect(source).toMatch(/z-\(--z-[a-z-]+\)/);
   });
 
-  it('لا z خام (20/30/50) في مكوّنات ui خارج أوامر overlay المرخّصة', () => {
+  it('لا z خام (20/30/50) في مكوّنات ui — كلها تستعمل توكنات z-(--z-*)', () => {
     const uiDir = join(SRC, 'components/ui');
     const violations: string[] = [];
     for (const full of walkSource(uiDir)) {
       const base = basename(full);
-      if (OVERLAY_PRIMITIVES.has(base)) continue;
       const lines = readFileSync(full, 'utf-8').split('\n');
       lines.forEach((line, i) => {
         if (/(?:^|\s)z-(20|30|50)(?=\s|$)/.test(line)) {
@@ -350,13 +340,53 @@ describe('UI Compliance Guard — طبقات z-index', () => {
         }
       });
     }
-    expect(violations, `z خام خارج التراخيص:\n${violations.join('\n')}`).toEqual([]);
+    expect(violations, `z خام في ui:\n${violations.join('\n')}`).toEqual([]);
   });
 
-  it('أوامر overlay المرخّصة تحتفظ فعلاً بقيمة z-50 الصحيحة', () => {
-    // هذه هي الطبقات التي يُسمح فيها بالـ z-50 — وثّق الاستثناء صراحةً
-    expect(read('components/ui/dialog.tsx')).toContain('z-50');
-    expect(read('components/ui/popover.tsx')).toContain('z-50');
+  it('أوامر overlay تستعمل توكنات الطبقات الموحّدة z-(--z-dialog) وz-(--z-dialog-popover)', () => {
+    expect(read('components/ui/dialog.tsx')).toContain('z-(--z-dialog)');
+    expect(read('components/ui/alert-dialog.tsx')).toContain('z-(--z-dialog)');
+    expect(read('components/ui/sheet.tsx')).toContain('z-(--z-dialog)');
+    expect(read('components/ui/popover.tsx')).toContain('z-(--z-dialog-popover)');
+    expect(read('components/ui/select.tsx')).toContain('z-(--z-dialog-popover)');
+    expect(read('components/ui/dropdown-menu.tsx')).toContain('z-(--z-dialog-popover)');
+    expect(read('components/ui/tooltip.tsx')).toContain('z-(--z-dialog-popover)');
+  });
+
+  it('modal callers and reusable pickers never lower the shared portaled overlay depth', () => {
+    const callers = [
+      'components/editor/dialogs/print-dialog.tsx',
+      'features/freeform-collage/components/freeform-paper-selector.tsx',
+      'features/freeform-collage/components/freeform-top-action-bar.tsx',
+      'features/freeform-collage/components/freeform-right-inspector-panel.tsx',
+      'components/ui/font-selector.tsx',
+      'components/editor/properties/panels/text/text-type-tab.tsx',
+    ];
+    for (const path of callers) {
+      const source = read(path);
+      expect(source, path).not.toMatch(/z-\(--z-(?:print-toolbar|popover|menu)\)/);
+    }
+  });
+
+  it('keeps overlay CSS values and exported token classes in sync and ordered', () => {
+    const css = read('index.css');
+    expect(Z.popover).toBeLessThan(Z.dialog);
+    expect(Z.dialog).toBeLessThan(Z.dialogPopover);
+    expect(Z.dialogPopover).toBeLessThan(Z.toast);
+    for (const key of ['dialog', 'dialogPopover'] as const) {
+      const name = key === 'dialog' ? 'dialog' : 'dialog-popover';
+      expect(Z_CLASS[key]).toBe(`z-(--z-${name})`);
+      expect(css).toMatch(new RegExp(`--z-${name}:\\s*${Z[key]};`));
+    }
+    expect(read('components/ui/sonner.tsx')).toContain("zIndex: 'var(--z-toast)'");
+  });
+
+  it('keeps wrapping toast copy and an explicit unlayered reduced-motion fallback', () => {
+    const css = read('index.css');
+    expect(css).toContain('overflow-wrap: anywhere !important;');
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\[data-sonner-toaster\],[\s\S]*?transition: none !important;[\s\S]*?animation: none !important;/,
+    );
   });
 
   it('كل توكن z-(--z-*) مُشار إليه معرَّف فعلاً في index.css', () => {

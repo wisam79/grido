@@ -202,8 +202,9 @@ export const GradientPicker = ({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
+                      aria-label="عكس الألوان"
                       onClick={handleReverseStops}
-                      className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0"
+                      className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       title="عكس الألوان"
                     >
                       <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
@@ -234,29 +235,33 @@ export const GradientPicker = ({
               <div className="space-y-2 pt-1 border-t border-border/30 w-full">
                 <FluentSliderField
                   label="زاوية التدرج"
-                  value={Math.round(angle)}
+                  value={Math.round(((angle % 360) + 360) % 360)}
                   min={0}
                   max={360}
                   step={1}
                   unit="°"
                   onChange={(v) => onChangeAngle?.(v)}
-                  onCommit={() => onCommitAngle?.(angle)}
+                  onCommit={(value) => onCommitAngle?.(value)}
                 />
 
                 <div className="grid grid-cols-6 gap-1 w-full">
                   {QUICK_ANGLES.map(({ deg, label, tip }) => {
-                    const isAngleActive = Math.round(angle) === deg;
+                    const normalizedAngle = Math.round(((angle % 360) + 360) % 360);
+                    const isAngleActive =
+                      normalizedAngle === deg || (deg === 0 && normalizedAngle === 360);
                     return (
                       <Tooltip key={deg}>
                         <TooltipTrigger asChild>
                           <button
                             type="button"
+                            aria-label={tip}
+                            aria-pressed={isAngleActive}
                             onClick={() => {
                               onChangeAngle(deg);
                               onCommitAngle?.(deg);
                             }}
                             className={cn(
-                              'h-6 text-mini font-semibold rounded-md transition-colors cursor-pointer border flex items-center justify-center tabular-nums select-none',
+                              'h-6 text-mini font-semibold rounded-md transition-colors cursor-pointer border flex items-center justify-center tabular-nums select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                               isAngleActive
                                 ? 'bg-primary/20 text-primary border-primary/40 font-bold shadow-2xs'
                                 : 'bg-muted/40 hover:bg-muted text-muted-foreground border-border/40 hover:text-foreground',

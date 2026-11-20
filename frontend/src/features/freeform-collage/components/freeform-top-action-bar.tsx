@@ -219,10 +219,7 @@ export const FreeformTopActionBar: React.FC<FreeformTopActionBarProps> = React.m
               توزيع المسافات والمحاذاة الجماعية
             </TooltipContent>
           </Tooltip>
-          <DropdownMenuContent
-            align="start"
-            className="w-52 font-cairo text-xs z-(--z-print-toolbar)"
-          >
+          <DropdownMenuContent align="start" className="w-52 font-cairo text-xs">
             <DropdownMenuLabel className="text-mini text-muted-foreground">
               محاذاة في الورقة
             </DropdownMenuLabel>

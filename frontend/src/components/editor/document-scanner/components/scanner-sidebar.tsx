@@ -102,6 +102,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           layoutId="scanner-detection-mode-pill"
           value={detectionMode === 'multi' ? 'multi' : 'single'}
           onChange={(newMode) => {
+            if (newMode === (detectionMode === 'multi' ? 'multi' : 'single')) return;
             onModeChange?.(newMode);
             onAutoDetect(newMode);
           }}
@@ -206,6 +207,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                   size="sm"
                   className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
                   onClick={onSelectAllDocs}
+                  disabled={isDetecting}
                 >
                   {isAllSelected ? 'إلغاء الكل' : 'تحديد الكل'}
                 </Button>
@@ -218,6 +220,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                       size="sm"
                       className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer flex items-center gap-0.5"
                       onClick={onAddDocument}
+                      disabled={isDetecting}
                     >
                       <Plus size={12} weight="bold" />
                       <span>إضافة</span>
@@ -239,6 +242,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                   isActive={activeDocIndex === idx}
                   isSelected={selectedDocIds.includes(doc.id)}
                   canDelete={detectedDocs.length > 1}
+                  disabled={isDetecting}
                   onSelect={onSelectDoc}
                   onToggleCheck={onToggleCheckDoc}
                   onDelete={onDeleteDoc}

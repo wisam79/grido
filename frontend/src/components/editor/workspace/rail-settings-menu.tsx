@@ -124,7 +124,13 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
             <User className="size-4" />
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="truncate text-xs font-semibold text-foreground text-start" dir="ltr">
+            <span
+              className={cn(
+                'truncate text-xs font-semibold text-foreground',
+                user?.email ? 'text-end' : 'text-start',
+              )}
+              dir={user?.email ? 'ltr' : 'rtl'}
+            >
               {user?.email || 'إدارة الحساب والترخيص'}
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
