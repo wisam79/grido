@@ -14,4 +14,5 @@ related_files:
   - admin-web/vite.config.ts:25
 ---
 بوابة قبول سحابية شاملة على فرع اختبار معزول: كامل متصفحات الحزمة الحالية، ورحلات GUI مع Go/SQLite والمخرجات الفعلية، وWebView2 أصلي ومصادقة/Storage/Realtime محلية مؤقتة؛ شهادات المسارات والقدرات المحجوبة منفصلة دون نشر إنتاج.
+GitHub workflow registration/job-env blockers عولجت عبرCIالمسجلعلىtestrefوإعدادمسارbinaryداخلstepدونsecrets؛ R1errorsمحفوظةبالتقريروليستقبولاًنهائياً.
 تقوية fixtures والنتائج لمنع نجاح IPC غير معروف أو حفظ مشروع مختلف، وإصلاح تداخل مؤقت الكاش الذي كشفه CI؛ نتائج التنفيذ التفصيلية وSHA والعيوب/القدرات في docs/reviews/28-real-e2e-acceptance-2026-11-20.md (IN PROGRESS، لا قبول نهائي قبل التشغيل).

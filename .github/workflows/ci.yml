@@ -1174,8 +1174,10 @@ jobs:
       CI: "true"
       CGO_ENABLED: "1"
       GRIDO_ACCEPTANCE_LANE: server
-      GRIDO_E2E_BINARY: ${{ runner.temp }}/GridoStudio-acceptance-server
     steps:
+      - name: Set isolated server binary path (not a credential)
+        shell: bash
+        run: printf 'GRIDO_E2E_BINARY=%s/GridoStudio-acceptance-server\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Checkout exact dispatch SHA
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -1319,8 +1321,10 @@ jobs:
       CI: "true"
       CGO_ENABLED: "1"
       GRIDO_ACCEPTANCE_LANE: native
-      GRIDO_E2E_BINARY: ${{ runner.temp }}/GridoStudio-acceptance-native.exe
     steps:
+      - name: Set isolated native binary path (not a credential)
+        shell: bash
+        run: printf 'GRIDO_E2E_BINARY=%s/GridoStudio-acceptance-native.exe\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Checkout exact dispatch SHA
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
