@@ -97,9 +97,14 @@ export async function canvasSnapshot(page: Page): Promise<CanvasSnapshot> {
         const propQueue = props ? [props] : [];
         for (let inspected = 0; propQueue.length && inspected < 10_000; inspected++) {
           const rendered = propQueue.pop()!;
-          if (Array.isArray(rendered.sortedElements))
+          if (Array.isArray(rendered.sortedElements) && typeof rendered.canvasWidth === 'number')
             elements = rendered.sortedElements as ElementSnapshot[];
-          if (Array.isArray(rendered.slots)) slots = rendered.slots as SlotSnapshot[];
+          if (
+            Array.isArray(rendered.slots) &&
+            typeof rendered.collageMargin === 'number' &&
+            typeof rendered.canvasWidth === 'number'
+          )
+            slots = rendered.slots as SlotSnapshot[];
           if (
             typeof rendered.canvasWidth === 'number' &&
             typeof rendered.canvasHeight === 'number'

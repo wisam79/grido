@@ -28,19 +28,22 @@ test.describe('Transformer box follows store geometry', () => {
               y: () => number;
               width: () => number;
               height: () => number;
-              nodes: () => unknown[];
+              nodes: () => Array<{ scaleX?: () => number; scaleY?: () => number }>;
             }>;
           };
         }
       ).__gridoStage;
       const tr = stage?.find('Transformer')?.[0];
       if (!tr) return null;
+      const nodes = tr.nodes();
       return {
         x: tr.x(),
         y: tr.y(),
         w: tr.width(),
         h: tr.height(),
-        nodes: tr.nodes().length,
+        nodes: nodes.length,
+        scaleX: nodes[0]?.scaleX?.() ?? 1,
+        scaleY: nodes[0]?.scaleY?.() ?? 1,
       };
     });
   }
@@ -56,6 +59,19 @@ test.describe('Transformer box follows store geometry', () => {
       .first()
       .click();
     await expect(page.getByRole('button', { name: 'قص وتدوير' })).toBeVisible();
+
+    // انتظار استقرار حركة دخول الصورة (280ms BackEaseOut من 0.8 إلى 1) قبل قياس البداية
+    await expect
+      .poll(
+        async () => {
+          const b = await transformerBox(page);
+          return (
+            b && b.nodes === 1 && Math.abs(b.scaleX - 1) < 1e-4 && Math.abs(b.scaleY - 1) < 1e-4
+          );
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
 
     const initial = await transformerBox(page);
     expect(initial).not.toBeNull();

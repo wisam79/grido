@@ -325,6 +325,15 @@ test('scanner corner keys change the submitted quad, not sidebar keys or editor 
   });
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  const endShot = testInfo.outputPath('scanner-corner-end.png');
+  await page.screenshot({ path: endShot });
+  await testInfo.attach('screenshot', { path: endShot, contentType: 'image/png' });
 });
 
 test('responsive overflow reveals original commands and keeps keyboard focus in view', async ({

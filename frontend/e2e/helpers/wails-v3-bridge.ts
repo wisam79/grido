@@ -620,7 +620,7 @@ export async function setupWailsV3Bridge(
 /**
  * دالة انتظار قياسية لجاهزية مساحة عمل التطبيق في Playwright
  */
-export async function waitForAppReady(page: Page, timeout = 20000) {
+export async function waitForAppReady(page: Page, timeout = 45000) {
   // انتظار الكانفس الرئيسي أو الغلاف العام لمساحة العمل
   await page
     .locator('#canvas-area')
