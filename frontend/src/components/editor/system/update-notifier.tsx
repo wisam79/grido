@@ -20,6 +20,7 @@ import {
   Tag,
 } from '@/components/ui/icons';
 import { flushAutoSave } from '@/hooks/use-autosave';
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -79,8 +80,10 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
 }
 
 export function UpdateNotifier() {
+  const accountModalOpen = useEditorStore((state) => state.accountModalOpen);
   const [updateInfo, setUpdateInfo] = useState<service.UpdateInfo | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +96,7 @@ export function UpdateNotifier() {
       const info = await CheckForUpdate();
       if (info && info.has_update) {
         setUpdateInfo(info);
+        setIsManualOpen(isManual);
         setIsOpen(true);
       } else if (isManual) {
         toast.success('أنت على أحدث إصدار');
@@ -147,6 +151,7 @@ export function UpdateNotifier() {
   // كان يترك isDownloading/progress معلقة للجلسة التالية
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
+      setIsManualOpen(false);
       setIsDownloading(false);
       setProgress(0);
       setError(null);
@@ -185,7 +190,7 @@ export function UpdateNotifier() {
 
   return (
     <Dialog
-      open={isOpen}
+      open={isOpen && (!accountModalOpen || isManualOpen)}
       onOpenChange={(open) => {
         if (isDownloading) return;
         handleOpenChange(open);

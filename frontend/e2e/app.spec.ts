@@ -57,6 +57,10 @@ test.describe('Project save/reload — stateful mocked integration, not real fil
 
     // Change the real document via GUI so reload must actually restore it.
     await page.keyboard.press('Escape');
+    await expect(library).toBeHidden();
+    // Move focus off the toolbar-projects trigger button restored by Radix Dialog;
+    // Delete shortcut intentionally ignores events whose target is a button.
+    await page.locator('#canvas-area').click({ position: { x: 20, y: 20 } });
     await page.keyboard.press('Control+a');
     await page.keyboard.press('Delete');
     await expect.poll(() => stageImageSources(page)).toBe('');

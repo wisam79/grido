@@ -1243,7 +1243,8 @@ jobs:
       - name: Build production frontend and same-main server (test-tagged; nonpublishable)
         run: |
           npm --prefix frontend run build
-          go build -trimpath -tags=e2e,server,production -o "$GRIDO_E2E_BINARY" .
+          APP_VERSION="v$(node -e "process.stdout.write(require('./frontend/package.json').version.trim())")"
+          go build -trimpath -tags=e2e,server,production -ldflags="-X grido/internal/service.AppVersion=${APP_VERSION}" -o "$GRIDO_E2E_BINARY" .
           go test -tags=e2e,server,production ./internal/service -run '^TestE2EDialogAdapter$' -count=1
           go test -tags=e2e,server,production . -run '^TestE2EHarness(Options|EndpointBoundary)$' -count=1
       - name: Install Chromium and OS dependencies
@@ -1370,7 +1371,8 @@ jobs:
         shell: bash
         run: |
           npm --prefix frontend run build
-          go build -trimpath -tags=e2e,production -o "$GRIDO_E2E_BINARY" .
+          APP_VERSION="v$(node -e "process.stdout.write(require('./frontend/package.json').version.trim())")"
+          go build -trimpath -tags=e2e,production -ldflags="-X grido/internal/service.AppVersion=${APP_VERSION}" -o "$GRIDO_E2E_BINARY" .
       - name: Install Chromium driver for native CDP
         working-directory: frontend
         run: npx --no-install playwright install chromium
