@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { runWorkspaceCommand } from './helpers/studio-elements';
+
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Batch Photo Insert Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -12,10 +14,7 @@ test.describe('Batch Photo Insert Workflow E2E', () => {
   test('Open batch insert dialog, add mocked images and inspect layout controls', async ({
     page,
   }) => {
-    // Open Batch Insert dialog via custom event
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
-    });
+    await runWorkspaceCommand(page, 'batch-insert');
 
     const dialog = page.getByRole('dialog').filter({ hasText: /إدراج دفعة/ });
     await expect(dialog).toBeVisible();

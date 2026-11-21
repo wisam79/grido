@@ -71,10 +71,12 @@ export function ElementMenuSection({
     duplicateElement,
     duplicateElements,
     removeElement,
+    removeElements,
     bringToFront,
     sendToBack,
     updateElement,
     elements,
+    selectedIds,
   } = useEditorStore(
     useShallow((state) => ({
       copySelectedElements: state.copySelectedElements,
@@ -82,16 +84,24 @@ export function ElementMenuSection({
       duplicateElement: state.duplicateElement,
       duplicateElements: state.duplicateElements,
       removeElement: state.removeElement,
+      removeElements: state.removeElements,
       bringToFront: state.bringToFront,
       sendToBack: state.sendToBack,
       updateElement: state.updateElement,
       elements: state.elements,
+      selectedIds: state.selectedIds,
     })),
   );
 
   const el = elements.find((e) => e.id === targetId);
   const imgEl = el?.type === 'image' ? (el as ImageElement) : null;
   const isLocked = el?.locked === true;
+  const targetSelectionIds =
+    selectedIds.length > 1 && selectedIds.includes(targetId) ? selectedIds : [targetId];
+  const selectedTargets = elements.filter((e) => targetSelectionIds.includes(e.id));
+  const unlockedIds = selectedTargets.filter((e) => !e.locked).map((e) => e.id);
+  const allTargetsLocked = selectedTargets.length > 0 && unlockedIds.length === 0;
+  const hasSomeLocked = unlockedIds.length < selectedTargets.length;
   const lockableItemClassName = `${menuItemClassName} disabled:opacity-40 disabled:pointer-events-none`;
   const lockableSpinnerClassName = `${menuItemSpinnerClassName} disabled:pointer-events-none`;
 
@@ -105,8 +115,10 @@ export function ElementMenuSection({
             <button
               role="menuitem"
               tabIndex={-1}
-              className={menuItemClassName}
+              disabled={isLocked}
+              className={lockableItemClassName}
               onClick={() => {
+                if (isLocked) return;
                 handleAction(() => requestStickerReedit(imgEl.id));
               }}
             >
@@ -275,7 +287,7 @@ export function ElementMenuSection({
           className={menuItemClassName}
           onClick={() =>
             handleAction(() => {
-              copySelectedElements([targetId]);
+              copySelectedElements(targetSelectionIds);
             })
           }
         >
@@ -289,12 +301,20 @@ export function ElementMenuSection({
         <button
           role="menuitem"
           tabIndex={-1}
-          className={menuItemClassName}
-          onClick={() =>
+          disabled={allTargetsLocked}
+          className={lockableItemClassName}
+          onClick={() => {
+            if (unlockedIds.length === 0) {
+              toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للقص');
+              return;
+            }
+            if (hasSomeLocked) {
+              toast.info('تجاهلنا العناصر المقفلة وقصصنا غير المقفلة فقط');
+            }
             handleAction(() => {
-              cutSelectedElements([targetId]);
-            })
-          }
+              cutSelectedElements(unlockedIds);
+            });
+          }}
         >
           <Scissors
             className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
@@ -326,9 +346,9 @@ export function ElementMenuSection({
           className={menuItemClassName}
           onClick={() =>
             handleAction(() => {
-              const { selectedIds } = useEditorStore.getState();
-              if (selectedIds.length > 1) {
-                duplicateElements(selectedIds);
+              const { selectedIds: liveSelectedIds } = useEditorStore.getState();
+              if (liveSelectedIds.length > 1) {
+                duplicateElements(liveSelectedIds);
               } else {
                 duplicateElement(targetId);
               }
@@ -375,23 +395,24 @@ export function ElementMenuSection({
         <button
           role="menuitem"
           tabIndex={-1}
-          className={menuItemDangerClassName}
-          onClick={() =>
+          disabled={allTargetsLocked}
+          className={`${menuItemDangerClassName} disabled:opacity-40 disabled:pointer-events-none`}
+          onClick={() => {
+            if (unlockedIds.length === 0) {
+              toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
+              return;
+            }
+            if (hasSomeLocked) {
+              toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
+            }
             handleAction(() => {
-              const { selectedIds, removeElements } = useEditorStore.getState();
-              const removableIds = selectedIds.filter((id) => {
-                const found = elements.find((e) => e.id === id);
-                return found && !found.locked;
-              });
-              if (removableIds.length > 1) {
-                removeElements(removableIds);
-              } else if (removableIds.length === 1) {
-                removeElement(removableIds[0]);
-              } else if (!el?.locked) {
-                removeElement(targetId);
+              if (unlockedIds.length > 1) {
+                removeElements(unlockedIds);
+              } else {
+                removeElement(unlockedIds[0]);
               }
-            })
-          }
+            });
+          }}
         >
           <Trash className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
           <span className="truncate font-bold">حذف</span>

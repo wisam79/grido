@@ -1,6 +1,6 @@
-import { test, expect, type Page, type Locator } from '@playwright/test';
+import { expect, type Page, type Locator } from '@playwright/test';
 
-import { setupWailsMock, setupWailsV3Bridge, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, setupWailsV3Bridge, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * 🖨️ المسار الكامل لحوار الطباعة: الفتح ← اختيار الطابعة ← طباعة الورقة.

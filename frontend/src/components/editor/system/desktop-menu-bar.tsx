@@ -85,6 +85,11 @@ export function DesktopMenuBar() {
     historyIndex,
     selectedId,
     selectedIds,
+    slots,
+    moveSlotContentsBatch,
+    updateSlotsBatch,
+    setSelectedIds,
+    pushHistory,
     duplicateElement,
     duplicateElements,
     removeElement,
@@ -116,6 +121,11 @@ export function DesktopMenuBar() {
       historyIndex: state.historyIndex,
       selectedId: state.selectedId,
       selectedIds: state.selectedIds,
+      slots: state.slots,
+      moveSlotContentsBatch: state.moveSlotContentsBatch,
+      updateSlotsBatch: state.updateSlotsBatch,
+      setSelectedIds: state.setSelectedIds,
+      pushHistory: state.pushHistory,
       duplicateElement: state.duplicateElement,
       duplicateElements: state.duplicateElements,
       removeElement: state.removeElement,
@@ -142,7 +152,18 @@ export function DesktopMenuBar() {
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
-  const hasSelection = !!selectedId || selectedIds.length > 0;
+  const selectedSlotIds =
+    mode === 'collage'
+      ? (selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : []).filter((id) =>
+          slots.some((slot) => slot.id === id),
+        )
+      : [];
+  const filledSelectedSlotIds = selectedSlotIds.filter((id) =>
+    Boolean(slots.find((slot) => slot.id === id)?.imageSrc),
+  );
+  const hasFilledSlotSelection = filledSelectedSlotIds.length > 0;
+  const hasSelection =
+    mode === 'collage' ? hasFilledSlotSelection : !!selectedId || selectedIds.length > 0;
 
   // Handle open directory directly
   const handleOpenDirectory = async () => {
@@ -387,6 +408,24 @@ export function DesktopMenuBar() {
           <DropdownMenuItem
             disabled={!hasSelection}
             onClick={() => {
+              if (mode === 'collage') {
+                const state = useEditorStore.getState();
+                const emptySlots = state.slots.filter((s) => !s.imageSrc);
+                if (emptySlots.length === 0) {
+                  toast.info('لا توجد خانات فارغة متاحة لتكرار الصورة');
+                  return;
+                }
+                const sourceSlots = filledSelectedSlotIds
+                  .map((id) => state.slots.find((s) => s.id === id))
+                  .filter((s): s is NonNullable<typeof s> => Boolean(s?.imageSrc));
+                moveSlotContentsBatch(
+                  sourceSlots.slice(0, emptySlots.length).map((src, index) => ({
+                    slotId: emptySlots[index].id,
+                    sourceSlotId: src.id,
+                  })),
+                );
+                return;
+              }
               if (selectedIds.length > 0) {
                 if (selectedIds.length === 1) duplicateElement(selectedIds[0]);
                 else duplicateElements(selectedIds);
@@ -403,6 +442,15 @@ export function DesktopMenuBar() {
           <DropdownMenuItem
             disabled={!hasSelection}
             onClick={() => {
+              if (mode === 'collage') {
+                if (filledSelectedSlotIds.length === 0) return;
+                updateSlotsBatch(filledSelectedSlotIds, {
+                  imageSrc: undefined,
+                  originalImageSrc: undefined,
+                });
+                pushHistory();
+                return;
+              }
               const { elements } = useEditorStore.getState();
               const targetIds =
                 selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
@@ -435,7 +483,16 @@ export function DesktopMenuBar() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={selectAllElements}
+            onClick={() => {
+              if (mode === 'collage') {
+                const { slots: latestSlots } = useEditorStore.getState();
+                if (latestSlots.length > 0) {
+                  setSelectedIds(latestSlots.map((slot) => slot.id));
+                }
+                return;
+              }
+              selectAllElements();
+            }}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <SelectionAll className="w-4 h-4 text-muted-foreground" />
@@ -737,7 +794,13 @@ export function DesktopMenuBar() {
       </DropdownMenu>
 
       {/* حوار تأكيد إفراغ سلة الوسائط الأصيل وفق Fluent 2 */}
-      <AlertDialog open={emptyTrashDialogOpen} onOpenChange={setEmptyTrashDialogOpen}>
+      <AlertDialog
+        open={emptyTrashDialogOpen}
+        onOpenChange={(open) => {
+          if (isClearingTrash && !open) return;
+          setEmptyTrashDialogOpen(open);
+        }}
+      >
         <AlertDialogContent
           dir="rtl"
           className="font-cairo rounded-lg border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-16 p-6 max-w-md"

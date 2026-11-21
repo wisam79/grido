@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { Cropper } from 'react-cropper';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
@@ -72,6 +73,17 @@ export function CropDialog({
   const [isSaving, setIsSaving] = useState(false);
   const saveAttemptRef = useRef(0);
   const saveInFlightRef = useRef(false);
+  const dialogSessionRef = useRef(0);
+  const latestSourceRef = useRef(imageSrc);
+  useLayoutEffect(() => {
+    latestSourceRef.current = imageSrc;
+  }, [imageSrc]);
+  useEffect(() => {
+    dialogSessionRef.current += 1;
+    return () => {
+      dialogSessionRef.current += 1;
+    };
+  }, [open]);
 
   // إعادة ضبط الحالة عند فتح النافذة أو تغيير الصورة
   useEffect(() => {
@@ -93,6 +105,7 @@ export function CropDialog({
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
+      dialogSessionRef.current += 1;
       saveAttemptRef.current += 1;
       saveInFlightRef.current = false;
       setIsSaving(false);
@@ -105,6 +118,11 @@ export function CropDialog({
       setCurrentSrc(originalImageSrc);
       setStraightenAngle(0);
       setBaseRotation(0);
+      const cropper = cropperRef.current?.cropper;
+      if (cropper) {
+        cropper.reset();
+        cropper.rotateTo(0);
+      }
     }
   };
 
@@ -142,6 +160,7 @@ export function CropDialog({
       if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
         const attempt = ++saveAttemptRef.current;
         const session = getDocumentSession();
+        const dialogSession = dialogSessionRef.current;
         const isActive = () =>
           attempt === saveAttemptRef.current && session === getDocumentSession();
         saveInFlightRef.current = true;
@@ -168,7 +187,16 @@ export function CropDialog({
             { width: croppedCanvas.width, height: croppedCanvas.height },
             isActive,
           );
-          if (committed !== false) handleOpenChange(false);
+          // The consumer can rerender with our saved source before its promise resolves.
+          // That invalidates the precommit attempt, not this dialog's successful completion.
+          if (
+            committed !== false &&
+            dialogSession === dialogSessionRef.current &&
+            session === getDocumentSession() &&
+            (isActive() || latestSourceRef.current === finalPath)
+          ) {
+            handleOpenChange(false);
+          }
         } catch {
           if (isActive()) toast.error('فشل حفظ الصورة المقصوصة');
         } finally {
@@ -222,6 +250,9 @@ export function CropDialog({
               <DialogTitle className="text-base font-bold text-foreground truncate">
                 قص وتدوير الصورة
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                قص الصورة وتعديل الأبعاد وزاوية التدوير
+              </DialogDescription>
             </div>
           </div>
           <DialogCloseButton />
@@ -272,6 +303,7 @@ export function CropDialog({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="تدوير 90°"
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={handleRotate}
                     >
@@ -286,6 +318,7 @@ export function CropDialog({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="تكبير"
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(0.1)}
                     >
@@ -300,6 +333,7 @@ export function CropDialog({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="تصغير"
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(-0.1)}
                     >

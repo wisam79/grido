@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 import { openStudioElementsCategory } from './helpers/studio-elements';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 import type { Page, Locator } from '@playwright/test';
 
@@ -99,29 +99,31 @@ const STUDIO_RAIL_SECTIONS = ['rail-studio-layers', 'rail-studio-shapes', 'rail-
  * نستثني عناصر Radix (`data-state`) لأن النقر عليها يفتح قائمة منسدلة تعترض
  * المؤشر على كامل الصفحة.
  */
-async function expandAllSections(panel: Locator, page: Page) {
+async function expandAllSections(panel: Locator) {
   const collapsedSelector = 'button[aria-expanded="false"]:not([data-state])';
   for (let i = 0; i < 12; i++) {
     const collapsed = panel.locator(collapsedSelector).first();
     if (!(await collapsed.count())) break;
-    const clicked = await collapsed
-      .click({ timeout: 3000 })
-      .then(() => true)
-      .catch(() => false);
-    if (!clicked) break;
-    await page.waitForTimeout(60);
+    const before = await panel.locator(collapsedSelector).count();
+    await collapsed.click();
+    await expect(panel.locator(collapsedSelector)).toHaveCount(before - 1);
   }
+  await expect(panel.locator(collapsedSelector)).toHaveCount(0);
 }
 
-async function openRailPanel(page: Page, toolId: string): Promise<Locator | null> {
+async function openRailPanel(page: Page, toolId: string): Promise<Locator> {
   const tool = page.getByTestId(toolId);
-  if (!(await tool.count())) return null;
-  await tool.click();
-  await page.waitForTimeout(300);
-  const panel = page.locator('[data-testid="workspace-panel-templates"]:visible').first();
-  if (!(await panel.count())) return null;
-  await expandAllSections(panel, page);
-  await page.keyboard.press('Escape');
+  const panel = page.getByTestId('workspace-panel-templates');
+  await expect(tool).toBeVisible();
+  if (
+    (await tool.getAttribute('aria-pressed')) !== 'true' ||
+    (await panel.getAttribute('data-collapsed')) === 'true'
+  )
+    await tool.click();
+  await expect(tool).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel).toHaveAttribute('data-collapsed', 'false');
+  await expect(panel).toBeVisible();
+  await expandAllSections(panel);
   return panel;
 }
 
@@ -148,13 +150,22 @@ test.describe('Panel geometry guard', () => {
           .getByTestId(kind === 'text' ? 'element-add-text-heading' : 'element-add-shape-rect')
           .click();
       }
-      await expect(page.getByRole('tabpanel')).toBeVisible();
-
-      const panel = page.getByRole('tabpanel');
+      const inspector = page.getByTestId('workspace-panel-properties');
+      const panel = inspector.getByRole('tabpanel').filter({ visible: true });
+      await expect(panel).toBeVisible();
       for (const tabName of ELEMENT_TABS) {
-        const tabButton = page.getByRole('tab', { name: new RegExp(tabName) }).first();
-        if (await tabButton.count()) await tabButton.click();
-        await page.waitForTimeout(150);
+        const tabButton = inspector.getByRole('tab', { name: new RegExp(tabName) }).first();
+        await expect(tabButton).toBeVisible();
+        if (await tabButton.isDisabled()) {
+          // Capability gating is an asserted outcome, not a silently skipped tab.
+          expect(kind, 'Only shapes currently lack a capable effects tab').toBe('shape');
+          expect(tabName).toBe('التأثيرات');
+          continue;
+        }
+        await tabButton.click();
+        await expect(tabButton).toHaveAttribute('aria-selected', 'true');
+        await expect(panel).toBeVisible();
+        await expandAllSections(panel);
         expectPanelClean(`${kind}/${tabName}`, await auditPanel(panel));
       }
     });
@@ -173,10 +184,10 @@ test.describe('Panel geometry guard', () => {
           .click();
       }
 
+      await page.getByTestId(mode === 'كولاج' ? 'mode-tab-collage' : 'mode-tab-single').click();
       const opened: string[] = [];
       for (const toolId of sections) {
         const panel = await openRailPanel(page, toolId);
-        if (!panel) continue;
         opened.push(toolId);
         expectPanelClean(`${mode}/${toolId}`, await auditPanel(panel));
       }

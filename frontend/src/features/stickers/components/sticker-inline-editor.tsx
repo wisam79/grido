@@ -65,13 +65,18 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
   const [hexDraft, setHexDraft] = useState('');
   const lastCommittedColorRef = useRef<string | null>(null);
 
+  const lastColorRoleRef = useRef(activeColor?.role);
   useEffect(() => {
     const current = activeColor?.currentColor ?? '';
-    if (current !== lastCommittedColorRef.current) {
+    if (
+      activeColor?.role !== lastColorRoleRef.current ||
+      current !== lastCommittedColorRef.current
+    ) {
+      lastColorRoleRef.current = activeColor?.role;
       lastCommittedColorRef.current = current;
       setHexDraft(current);
     }
-  }, [activeColor?.currentColor]);
+  }, [activeColor?.role, activeColor?.currentColor]);
 
   const handleHexDraftChange = (value: string) => {
     setHexDraft(value);
@@ -107,7 +112,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [onClose]);
 
-  /** تنقل بين حقول القالب بالترتيب (Tab / Enter + أسهم لوحة المفاتيح) */
+  /** تنقل بين حقول القالب بالترتيب (Enter + أسهم التنقل) */
   const stepField = (dir: 1 | -1) => {
     if (!activeField) return;
     const ids = template.fields.map((f) => f.id);
@@ -116,11 +121,14 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     const nextIdx = (idx + dir + ids.length) % ids.length;
     const nextId = ids[nextIdx];
     if (nextId === activeField.fieldId) return;
-    // نفتح الحقل التالي عبر محاكاة النقر على عنصره في الـ SVG
+    // نفتح الحقل التالي عبر إطلاق حدث نقر حقيقي على عنصره في الـ SVG
     const host = containerRef.current?.parentElement?.querySelector('.sticker-svg-interactive');
     const nextEl = host?.querySelector(`[data-field-id="${nextId}"]`) as SVGElement | null;
     if (nextEl) {
-      (nextEl as unknown as HTMLElement).click?.();
+      const text = nextEl.matches('text, textPath')
+        ? nextEl
+        : nextEl.querySelector('text, textPath');
+      (text ?? nextEl).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     }
   };
 
@@ -215,7 +223,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 type="button"
                 onClick={() => stepField(-1)}
                 className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
-                title="الحقل السابق (Shift+Tab)"
+                title="الحقل السابق"
               >
                 <CaretUp className="w-3.5 h-3.5" />
               </button>
@@ -223,7 +231,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 type="button"
                 onClick={() => stepField(1)}
                 className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
-                title="الحقل التالي (Tab)"
+                title="الحقل التالي (Enter)"
               >
                 <CaretDown className="w-3.5 h-3.5" />
               </button>
@@ -278,7 +286,11 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
           <button
             key={c}
             type="button"
-            onClick={() => onChangeColor(activeColor!.role, c)}
+            onClick={() => {
+              lastCommittedColorRef.current = c;
+              setHexDraft(c);
+              onChangeColor(activeColor!.role, c);
+            }}
             className={cn(
               'h-7 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-xs',
               activeColor!.currentColor.toLowerCase() === c.toLowerCase()
@@ -305,9 +317,11 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
         <input
           type="color"
           value={
-            /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(activeColor!.currentColor)
+            /^#[0-9a-f]{6}$/i.test(activeColor!.currentColor)
               ? activeColor!.currentColor
-              : '#000000'
+              : /^#[0-9a-f]{3}$/i.test(activeColor!.currentColor)
+                ? `#${activeColor!.currentColor[1]}${activeColor!.currentColor[1]}${activeColor!.currentColor[2]}${activeColor!.currentColor[2]}${activeColor!.currentColor[3]}${activeColor!.currentColor[3]}`
+                : '#000000'
           }
           onChange={(e) => {
             lastCommittedColorRef.current = e.target.value;

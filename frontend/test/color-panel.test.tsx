@@ -1,11 +1,12 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ColorField } from '../src/components/editor/properties/color-panel';
+import { ColorField, ColorWheelPicker } from '../src/components/editor/properties/color-panel';
 import { ColorWheel } from '../src/components/editor/properties/color-wheel';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useRenderQuality } from '../src/lib/canvas/render-quality';
+import { advanceDocumentSession } from '../src/lib/io/document-session';
 import type { ReactElement } from 'react';
 
 const renderField = (ui: ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
@@ -164,6 +165,114 @@ describe('components/color-panel', () => {
         (window as unknown as { EyeDropper: unknown }).EyeDropper = originalEyeDropper;
       }
     }
+  });
+
+  it('tears down the fallback sampler on unmount without intercepting later pointer events', () => {
+    const original = (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+    delete (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+    const onChange = vi.fn();
+    const onActive = vi.fn();
+    document.body.style.cursor = 'help';
+    try {
+      const view = render(
+        <ColorWheelPicker color="#FF0000" onChange={onChange} onDropperActiveChange={onActive} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'قطارة الشاشة' }));
+      expect(document.body.style.cursor).toBe('crosshair');
+      expect(onActive).toHaveBeenLastCalledWith(true);
+      view.unmount();
+      expect(document.body.style.cursor).toBe('help');
+      expect(onActive).toHaveBeenLastCalledWith(false);
+      const pointer = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
+      window.dispatchEvent(pointer);
+      expect(pointer.defaultPrevented).toBe(false);
+      expect(onChange).not.toHaveBeenCalled();
+    } finally {
+      document.body.style.cursor = '';
+      if (original) (window as unknown as { EyeDropper: unknown }).EyeDropper = original;
+    }
+  });
+
+  it('aborts native eyedropper ownership on unmount and rejects its late result', async () => {
+    const original = (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+    let resolve!: (result: { sRGBHex: string }) => void;
+    let signal: AbortSignal | undefined;
+    class PendingEyeDropper {
+      open(options?: { signal: AbortSignal }) {
+        signal = options?.signal;
+        return new Promise<{ sRGBHex: string }>((done) => {
+          resolve = done;
+        });
+      }
+    }
+    (window as unknown as { EyeDropper: unknown }).EyeDropper = PendingEyeDropper;
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    try {
+      const view = render(
+        <ColorWheelPicker color="#FF0000" onChange={onChange} onCommit={onCommit} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'قطارة الشاشة' }));
+      view.unmount();
+      expect(signal?.aborted).toBe(true);
+      await act(async () => resolve({ sRGBHex: '#123456' }));
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onCommit).not.toHaveBeenCalled();
+    } finally {
+      if (original) (window as unknown as { EyeDropper: unknown }).EyeDropper = original;
+      else delete (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+    }
+  });
+
+  it('preserves a focused HEX draft but never commits a later external color as its own', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const view = render(
+      <ColorWheelPicker color="#FF0000" onChange={onChange} onCommit={onCommit} />,
+    );
+    const input = screen.getByRole('textbox', { name: 'قيمة HEX' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '123456' } });
+    expect(onChange).toHaveBeenLastCalledWith('#123456');
+    view.rerender(<ColorWheelPicker color="#00FF00" onChange={onChange} onCommit={onCommit} />);
+    expect(input).toHaveValue('123456');
+    act(() => input.blur());
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(input).toHaveValue('00FF00');
+  });
+
+  it('commits HEX once across Enter, blur and teardown and normalizes an invalid tail', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const view = render(
+      <ColorWheelPicker color="#FF0000" onChange={onChange} onCommit={onCommit} />,
+    );
+    const input = screen.getByRole('textbox', { name: 'قيمة HEX' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '123456' } });
+    view.rerender(<ColorWheelPicker color="#123456" onChange={onChange} onCommit={onCommit} />);
+    fireEvent.change(input, { target: { value: '12345x' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    act(() => input.blur());
+    expect(input).toHaveValue('123456');
+    view.unmount();
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith('#123456');
+  });
+
+  it('does not commit a dirty HEX preview onto a replacement document', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const view = render(
+      <ColorWheelPicker color="#FF0000" onChange={onChange} onCommit={onCommit} />,
+    );
+    const input = screen.getByRole('textbox', { name: 'قيمة HEX' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '123456' } });
+    advanceDocumentSession();
+    view.rerender(<ColorWheelPicker color="#123456" onChange={onChange} onCommit={onCommit} />);
+    view.unmount();
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('يرسل onCommit مرة واحدة فقط عند إفلات سحب عجلة الألوان مع استمرار المعاينة الحية عبر onChange', () => {

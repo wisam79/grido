@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { Minus, Plus } from '@/components/ui/icons';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { cn } from '@/lib/utils';
 
 import { FONT_SIZE_MAX, FONT_SIZE_MIN, clampFontSize, nextFontSizeStep } from './font-size-utils';
@@ -31,6 +32,9 @@ export const FontSizeField = React.memo(function FontSizeField({
 }) {
   const [draft, setDraft] = useState(String(value));
   const editingRef = useRef(false);
+  const skipBlurCommitRef = useRef(false);
+  const dirtyRef = useRef(false);
+  const sessionRef = useRef(getDocumentSession());
 
   useEffect(() => {
     if (!editingRef.current) setDraft(String(value));
@@ -43,6 +47,13 @@ export const FontSizeField = React.memo(function FontSizeField({
     }
     setDraft(String(next));
     onCommit(next);
+  };
+
+  const commitDraft = () => {
+    const ownsDraft = dirtyRef.current && sessionRef.current === getDocumentSession();
+    dirtyRef.current = false;
+    if (ownsDraft) apply(parseSize(draft));
+    else setDraft(String(value));
   };
 
   return (
@@ -70,26 +81,42 @@ export const FontSizeField = React.memo(function FontSizeField({
         aria-label="حجم الخط"
         value={draft}
         onFocus={(event) => {
+          skipBlurCommitRef.current = false;
+          dirtyRef.current = false;
+          sessionRef.current = getDocumentSession();
+          setDraft(String(value));
           editingRef.current = true;
           event.currentTarget.select();
         }}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          dirtyRef.current = true;
+          setDraft(event.target.value);
+        }}
         onBlur={() => {
           editingRef.current = false;
-          apply(parseSize(draft));
+          if (skipBlurCommitRef.current) {
+            skipBlurCommitRef.current = false;
+            return;
+          }
+          commitDraft();
         }}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             event.preventDefault();
-            apply(parseSize(draft));
+            skipBlurCommitRef.current = true;
+            editingRef.current = false;
+            commitDraft();
             event.currentTarget.blur();
           } else if (event.key === 'Escape') {
             event.preventDefault();
+            skipBlurCommitRef.current = true;
+            dirtyRef.current = false;
             setDraft(String(value));
             editingRef.current = false;
             event.currentTarget.blur();
           } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
+            dirtyRef.current = false;
             apply(clampFontSize(value + (event.key === 'ArrowUp' ? 1 : -1)));
           }
         }}

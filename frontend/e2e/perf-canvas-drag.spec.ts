@@ -1,109 +1,98 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { openStudioElementsCategory } from './helpers/studio-elements';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
-/**
- * Performance regression guard for canvas interactivity.
- */
-test.describe('Canvas interactivity performance', () => {
+/** Report-only pending an approved cloud baseline. A working actual drag and
+ * populated frame measurements are still mandatory, never silently skipped. */
+test.describe('Canvas actual pointer drag — report-only performance', () => {
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
   });
-
-  test('mouse-move event loop stays above 30 FPS synthetic', async ({ page }) => {
+  test('Report pointer drag frame timing and assert movement, without an invented FPS floor', async ({
+    page,
+  }, testInfo) => {
     await page.goto('/');
     await waitForAppReady(page);
-
-    await page.waitForFunction(
-      () => {
-        const stage =
-          document.querySelector('.konvajs-content') || document.querySelector('#canvas-area');
-        return stage !== null;
-      },
-      { timeout: 10000 },
-    );
-
-    const report = await page.evaluate(async () => {
-      const idle1: number[] = [];
-      const interaction: number[] = [];
-      const idle2: number[] = [];
-      const buckets = [idle1, interaction, idle2] as const;
-      let bucketIdx = 0;
-      let lastTs = performance.now();
-      let rafId = 0;
-      const collect = (ts: number) => {
-        const dt = ts - lastTs;
-        if (dt > 0 && dt < 1000) buckets[bucketIdx].push(1000 / dt);
-        lastTs = ts;
-        rafId = requestAnimationFrame(collect);
-      };
-
-      rafId = requestAnimationFrame(collect);
-      await new Promise<void>((r) => setTimeout(r, 400));
-      bucketIdx = 1;
-
-      // Continuous mouse sweep over the canvas — exercises Konva
-      // hit-testing and overlay re-render on every move event.
-      const canvas = document.querySelector('#canvas-area') as HTMLElement | null;
-      if (!canvas) {
-        cancelAnimationFrame(rafId);
-        return { error: 'canvas-area not found' };
-      }
-      const rect = canvas.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const radius = Math.min(rect.width, rect.height) * 0.3;
-
-      const endAt = performance.now() + 800;
-      let angle = 0;
-      while (performance.now() < endAt) {
-        angle += 0.15;
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius;
-        canvas.dispatchEvent(
-          new PointerEvent('pointermove', {
-            bubbles: true,
-            cancelable: true,
-            clientX: x,
-            clientY: y,
-            pointerId: 1,
-            pointerType: 'mouse',
-          }),
-        );
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      }
-
-      bucketIdx = 2;
-      await new Promise<void>((r) => setTimeout(r, 400));
-      cancelAnimationFrame(rafId);
-
-      const summarize = (samples: number[]) => {
-        if (samples.length === 0) return { median: 0, n: 0 };
-        const sorted = [...samples].sort((a, b) => a - b);
+    await page.getByTestId('mode-tab-single').click();
+    await page.getByTestId('canvas-fit-all').click();
+    await openStudioElementsCategory(page, 'shapes');
+    await page.getByTestId('element-add-shape-rect').click();
+    const read = () =>
+      page.evaluate(() => {
+        const stage = (window as any).__gridoStage;
+        const node = stage?.find('Transformer')[0]?.nodes()[0];
+        if (!node) return null;
+        const rect = node.getClientRect();
+        const canvas = stage.container().getBoundingClientRect();
         return {
-          median: sorted[Math.floor(sorted.length / 2)],
-          n: sorted.length,
+          x: node.x() as number,
+          y: node.y() as number,
+          pointerX: canvas.left + rect.x + rect.width / 2,
+          pointerY: canvas.top + rect.y + rect.height / 2,
         };
-      };
-
-      return {
-        idle1: summarize(idle1),
-        interaction: summarize(interaction),
-        idle2: summarize(idle2),
-      };
+      });
+    await expect.poll(read).not.toBeNull();
+    const before = (await read())!;
+    testInfo.annotations.push({
+      type: 'performance-policy',
+      description: 'report-only: no approved FPS floor',
     });
-
-    if ('error' in report) {
-      test.skip(true, `FPS measurement unavailable: ${report.error}`);
-      return;
+    await page.evaluate(() => {
+      const report = { samples: [] as number[], last: null as number | null, frame: 0 };
+      const collect = (time: number) => {
+        if (report.last !== null) {
+          report.samples.push(time - report.last);
+        }
+        report.last = time;
+        report.frame = requestAnimationFrame(collect);
+      };
+      (window as any).__dragPerf = report;
+      report.frame = requestAnimationFrame(collect);
+    });
+    await page.mouse.move(before.pointerX, before.pointerY);
+    await page.mouse.down();
+    // Trusted mouse input, pressed throughout; rAF is measurement cadence only.
+    for (let step = 1; step <= 48; step++) {
+      await page.mouse.move(before.pointerX + step * 1.5, before.pointerY + step * 0.5);
+      await page.evaluate(
+        () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+      );
     }
-    console.log(
-      `[perf] idle1=${report.idle1.median.toFixed(1)}fps | ` +
-        `interaction=${report.interaction.median.toFixed(1)}fps (n=${report.interaction.n}) | ` +
-        `idle2=${report.idle2.median.toFixed(1)}fps`,
-    );
-
-    // Synthetic floor: a healthy app measures ~30 FPS here.
-    expect(report.interaction.median).toBeGreaterThanOrEqual(20);
+    await page.mouse.up();
+    await expect
+      .poll(async () => {
+        const after = await read();
+        return after ? Math.hypot(after.x - before.x, after.y - before.y) : 0;
+      })
+      .toBeGreaterThan(10);
+    const samples = await page.evaluate(() => {
+      const report = (window as any).__dragPerf;
+      cancelAnimationFrame(report.frame);
+      return report.samples as number[];
+    });
+    expect(samples.length, 'Drag measurement must collect actual frames').toBeGreaterThan(10);
+    expect(samples.every((sample) => Number.isFinite(sample) && sample > 0)).toBe(true);
+    const sorted = [...samples].sort((a, b) => a - b);
+    await testInfo.attach('actual-pointer-drag-performance-report', {
+      body: Buffer.from(
+        JSON.stringify(
+          {
+            policy: 'report-only',
+            browser: testInfo.project.name,
+            samples: samples.length,
+            medianFrameMs: sorted[Math.floor(sorted.length / 2)],
+            p95FrameMs: sorted[Math.floor(sorted.length * 0.95)],
+            medianFps: 1000 / sorted[Math.floor(sorted.length / 2)],
+            before,
+            after: await read(),
+            frameIntervalsMs: samples,
+          },
+          null,
+          2,
+        ),
+      ),
+      contentType: 'application/json',
+    });
   });
 });

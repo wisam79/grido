@@ -259,6 +259,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         inputRef.current?.blur();
       } else if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         setIsEditing(false);
         skipCommitRef.current = true;
         inputRef.current?.blur();

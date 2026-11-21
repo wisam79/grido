@@ -1,6 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import {
+  test,
+  setupWailsMock,
+  waitForAppReady,
+  getMockMemoryTrimCount,
+} from './helpers/wails-mock';
 
 test.describe('Document Scanner Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,8 +32,10 @@ test.describe('Document Scanner Workflow E2E', () => {
       timeout: 10000,
     });
 
-    // Cancel and close via Escape
+    // Cancel and close via Escape; unmount must request authorized native cleanup.
+    const trimsBefore = getMockMemoryTrimCount(page);
     await page.keyboard.press('Escape');
     await expect(scannerModal).not.toBeVisible();
+    await expect.poll(() => getMockMemoryTrimCount(page)).toBeGreaterThan(trimsBefore);
   });
 });

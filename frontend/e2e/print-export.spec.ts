@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 import { setupWailsV3Bridge } from './helpers/wails-v3-bridge';
 
 test.describe('Print & Export Workflows E2E', () => {

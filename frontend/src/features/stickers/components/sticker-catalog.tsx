@@ -55,12 +55,14 @@ const SHAPE_LABEL: Record<StickerShape, string> = {
   square: 'مربع',
 };
 
-const shapeLabel = (template: StickerTemplate): string =>
-  template.shape
-    ? SHAPE_LABEL[template.shape]
+const shapeLabel = (template: StickerTemplate): string => {
+  const shape = template.shape ?? (template.category === 'badges' ? 'circle' : undefined);
+  return shape
+    ? SHAPE_LABEL[shape]
     : template.aspectRatio === 1
       ? SHAPE_LABEL.square
       : SHAPE_LABEL.rect;
+};
 
 interface TemplateCardProps {
   template: StickerTemplate;

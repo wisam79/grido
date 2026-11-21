@@ -145,6 +145,30 @@ describe('slots barrel — previously uncovered units', () => {
     expect(moveSlotsWithinBounds(group, ['a'], 0.005, -0.005)).toBe(group);
   });
 
+  it.each(['a', 'b'])('snaps group bounds rather than the grabbed member %s', (leader) => {
+    const group = [
+      slot({ id: 'a', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }),
+      slot({ id: 'b', x: 0.5, y: 0.4, w: 0.2, h: 0.2 }),
+    ];
+    const result = moveSlots(group, [leader, leader === 'a' ? 'b' : 'a'], 0.299, 0);
+    expect(result.slots[0].x).toBeCloseTo(0.4);
+    expect(result.slots[1].x).toBeCloseTo(0.8);
+    expect(result.slots[1].x - result.slots[0].x).toBeCloseTo(0.4);
+    expect(result.snapLines).toContainEqual({ id: 'edge-right', axis: 'x', position: 1 });
+  });
+
+  it('does not advertise the lead center after the group is clamped at another member', () => {
+    const group = [
+      slot({ id: 'a', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }),
+      slot({ id: 'b', x: 0.7, y: 0.4, w: 0.2, h: 0.2 }),
+    ];
+    const result = moveSlots(group, ['a', 'b'], 0.299, 0);
+    expect(result.slots[0].x).toBeCloseTo(0.2);
+    expect(result.snapLines.some((line) => line.id === 'center-x')).toBe(false);
+    expect(result.snapLines).toContainEqual({ id: 'edge-right', axis: 'x', position: 1 });
+    expect(moveSlots(group, ['missing', 'b', 'a', 'a'], 0.299, 0)).toEqual(result);
+  });
+
   it('distributeSlots_pair_returns_unchanged_guard', () => {
     const pair = [slot({ id: 'a', x: 0 }), slot({ id: 'b', x: 0.7 })];
     expect(distributeSlots(pair, 'horizontal')).toEqual(pair);

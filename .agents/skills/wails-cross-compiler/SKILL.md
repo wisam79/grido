@@ -66,6 +66,13 @@ wails3 task package
 
 ---
 
+### قبول E2E منفصل عن الإصدار — 2026-11-20
+
+- workflow `e2e-acceptance.yml` لاpush/deploy/tag، يطلبSHA40 ويقبلtest/*المصرح فقط؛ لاinheritproductionsecrets. fullCI reusableforce_full يحافظعلىproductionbuildverification لكنartifactغيرpublishable.
+- binariesاختبار منmainالحقيقي: Ubuntu`CGO_ENABLED=1 go build -tags=e2e,server,production`، Windows`CGO_ENABLED=1 go build -tags=e2e,production`؛ assets/bindingsمنCI ولاnativeCDPأوdialogqueueفيrelease. لاbuildheavy/E2Eمحلي وفقAGENTS.
+- SupabaseCLI2.81.3 يثبتمنreleasearchive+checksum فيCI خارجfixture، وstartisolatedRUNNER_TEMP لهconfigنسخته؛ no productionURL/secret، nativeauthcontractthird-partyMOCKexplicit. NativevideoCDPقدblocked ولايحجبلتسميتهنجاحاًحياً؛ trace/screenshotsإلزاميان.
+- لاuploadfixtureprivateenv أوkeys/dbURL؛ فقطsanitizedmetadata+outputs/proofs. اختبارالطابعةوالكاميراحقيقةًيبقىقبولعتادمستقل، وPDFبدونGUIroutegapلايجريبالbindingsثميسمّىرحلةمستخدم.
+
 ## 🧰 4. تكافؤ سلسلة الأدوات مع CI (Toolchain Parity)
 
 - **Node مصدره `.nvmrc`** (22) — يقرأه `ci.yml` عبر `node-version-file`، و`frontend/package.json` يعلن `engines.node >=22`. لا تكرر رقم الإصدار في أكثر من ملف.

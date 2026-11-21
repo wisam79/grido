@@ -59,6 +59,30 @@ describe('Freeform Collage Feature Unit Tests (10x Suite)', () => {
     expect(result[0].y + result[0].h).toBe(result[1].y);
   });
 
+  it.each(['horizontal', 'vertical'] as const)(
+    'uses the shared minimum for %s splits',
+    (direction) => {
+      const slots: FreeformSlot[] = [
+        { id: 'target', x: 0.1, y: 0.2, w: MIN_SIZE * 2, h: MIN_SIZE * 2 },
+      ];
+      const result = splitSlot(slots, 'target', direction);
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('target');
+      expect(direction === 'horizontal' ? result[0].w : result[0].h).toBe(MIN_SIZE);
+      const tooSmall = [{ ...slots[0], [direction === 'horizontal' ? 'w' : 'h']: MIN_SIZE * 1.99 }];
+      expect(splitSlot(tooSmall, 'target', direction)).toBe(tooSmall);
+    },
+  );
+
+  it.each(['id-max', 'wallet-max', 'combo-standard', 'combo-family'] as const)(
+    'does not distort or overflow %s presets on an undersized paper',
+    (strategy) => {
+      expect(autoPackSlots(strategy, 20, 30, 2, 2)).toEqual([]);
+      expect(autoPackSlots(strategy, 100, 150, 2, 80)).toEqual([]);
+      expect(autoPackSlots(strategy, 100, 150, -1, 2)).toEqual([]);
+    },
+  );
+
   it('prevents removing the last remaining slot', () => {
     const result = removeSlot(initialSlots, 'slot1');
     expect(result).toHaveLength(1);
@@ -519,6 +543,41 @@ describe('rotateSlot — proportional bounds and finite paper ratios', () => {
 });
 
 describe('locked resize — single-scale constraints and active anchors', () => {
+  it.each(['se', 'nw'] as const)(
+    'expands a %s corner when only one pointer axis moves',
+    (handle) => {
+      const target: FreeformSlot = { id: 'target', x: 0.3, y: 0.3, w: 0.2, h: 0.1 };
+      const [result] = resizeSlot(
+        [target],
+        target.id,
+        handle,
+        0,
+        handle === 'nw' ? -0.05 : 0.05,
+        2,
+      );
+      expect(result.w).toBeCloseTo(0.3);
+      expect(result.h).toBeCloseTo(0.15);
+      expect(handle === 'nw' ? result.x + result.w : result.x).toBeCloseTo(
+        handle === 'nw' ? target.x + target.w : target.x,
+      );
+    },
+  );
+
+  it('stops the orthogonal expansion induced by a side-handle aspect lock', () => {
+    const target: FreeformSlot = { id: 'target', x: 0.1, y: 0.1, w: 0.2, h: 0.1 };
+    const obstacle: FreeformSlot = { id: 'below', x: 0.1, y: 0.25, w: 0.4, h: 0.2 };
+    const [result] = resizeSlot([target, obstacle], target.id, 'e', 0.3, 0, 2);
+    expect(result.w).toBeCloseTo(0.3);
+    expect(result.h).toBeCloseTo(0.15);
+    expect(result.y + result.h).toBeCloseTo(obstacle.y);
+  });
+
+  it('does not retain a snap guide invalidated by locked-axis fitting', () => {
+    const slots: FreeformSlot[] = [{ id: 'target', x: 0.1, y: 0.85, w: 0.2, h: 0.1 }];
+    const result = resizeSlotWithSnap(slots, 'target', 'e', 0.199, 0, 2, true);
+    expect(result.slots[0].w).toBeCloseTo(0.3);
+    expect(result.snapLines.some((line) => line.axis === 'x' && line.position === 0.5)).toBe(false);
+  });
   it.each([
     { handle: 'e' as const, x: 0.1, y: 0.8, w: 0.2, h: 0.1, dx: 2, dy: 0 },
     { handle: 's' as const, x: 0.8, y: 0.1, w: 0.1, h: 0.2, dx: 0, dy: 2 },

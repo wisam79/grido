@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 import { FreeformToolButton } from './freeform-top-action-bar';
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
+import { MIN_SIZE } from '../lib/slots/constants';
 import { fitLockedDimensions } from '../lib/slots/slot-resize';
 
 import type { FreeformSlot, PhotoPresetType } from '../types';
@@ -25,6 +26,9 @@ interface FreeformRightInspectorPanelProps {
   paperWidthMM: number;
   paperHeightMM: number;
   onUpdateSlot: (updated: Partial<FreeformSlot>) => void;
+  onBeginEdit?: () => void;
+  onCommitEdit?: () => void;
+  onCancelEdit?: () => void;
 }
 
 function MmField({
@@ -34,6 +38,9 @@ function MmField({
   max,
   step,
   onChange,
+  onBeginEdit,
+  onCommitEdit,
+  onCancelEdit,
 }: {
   label: string;
   value: number;
@@ -41,8 +48,19 @@ function MmField({
   max: number;
   step: number;
   onChange: (v: string) => void;
+  onBeginEdit?: () => void;
+  onCommitEdit?: () => void;
+  onCancelEdit?: () => void;
 }) {
   const inputId = React.useId();
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const skipBlurRef = React.useRef(false);
+
+  const commitDraft = (raw: string) => {
+    const trimmed = raw.trim();
+    if (trimmed === '' || !Number.isFinite(Number(trimmed))) return;
+    onChange(trimmed);
+  };
 
   return (
     <div className="min-w-0 space-y-1">
@@ -56,8 +74,48 @@ function MmField({
         step={step}
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={draft ?? value}
+        onFocus={() => {
+          skipBlurRef.current = false;
+          setDraft(String(value));
+          onBeginEdit?.();
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setDraft(raw);
+          const num = Number(raw);
+          if (raw.trim() !== '' && Number.isFinite(num)) {
+            // Preview clamps geometry, not the visible typing buffer (3 can become 35).
+            onChange(raw);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            skipBlurRef.current = true;
+            if (e.key === 'Enter') {
+              commitDraft(e.currentTarget.value);
+              onCommitEdit?.();
+            } else {
+              onCancelEdit?.();
+            }
+            setDraft(null);
+            e.currentTarget.blur();
+          }
+        }}
+        onBlur={() => {
+          if (skipBlurRef.current) {
+            skipBlurRef.current = false;
+            setDraft(null);
+            return;
+          }
+          if (draft !== null) {
+            commitDraft(draft);
+            onCommitEdit?.();
+          }
+          setDraft(null);
+        }}
         className="h-8 min-w-0 rounded-md border-border/60 bg-background px-2 text-center text-xs tabular-nums shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         dir="ltr"
         aria-label={label}
@@ -73,17 +131,21 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
     paperWidthMM,
     paperHeightMM,
     onUpdateSlot,
+    onBeginEdit,
+    onCommitEdit,
+    onCancelEdit,
   }) {
     const presetId = React.useId();
+    const editCallbacks = { onBeginEdit, onCommitEdit, onCancelEdit };
 
     if (!slot) {
       return (
-        <aside
+        <div
           className="h-full min-h-0 min-w-0 overflow-y-auto bg-card font-cairo text-xs text-muted-foreground"
           dir="rtl"
         >
           <p className="p-4 text-center">لا خلية محددة</p>
-        </aside>
+        </div>
       );
     }
 
@@ -109,6 +171,8 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
       )
         return;
       // All fitting values are millimetres; normalization happens only afterwards.
+      const minWMM = Math.max(5, MIN_SIZE * paperWidthMM);
+      const minHMM = Math.max(5, MIN_SIZE * paperHeightMM);
       const maxWMM = (1 - slot.x) * paperWidthMM;
       const maxHMM = (1 - slot.y) * paperHeightMM;
       if (slot.lockAspect) {
@@ -116,8 +180,8 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
         const fitted = fitLockedDimensions(
           axis === 'w' ? num : num * physicalRatio,
           axis === 'h' ? num : num / physicalRatio,
-          5,
-          5,
+          minWMM,
+          minHMM,
           maxWMM,
           maxHMM,
         );
@@ -129,28 +193,26 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
         }
       } else {
         const maxMM = axis === 'w' ? maxWMM : maxHMM;
-        if (maxMM < 5) return;
+        const minMM = axis === 'w' ? minWMM : minHMM;
+        if (maxMM < minMM) return;
         const next =
-          Math.min(maxMM, Math.max(5, num)) / (axis === 'w' ? paperWidthMM : paperHeightMM);
+          Math.min(maxMM, Math.max(minMM, num)) / (axis === 'w' ? paperWidthMM : paperHeightMM);
         if (Math.abs(next - slot[axis]) > 1e-12) onUpdateSlot({ [axis]: next });
       }
     };
     const handleWidthChange = (raw: string) => handleDimensionChange('w', raw);
     const handleHeightChange = (raw: string) => handleDimensionChange('h', raw);
 
-    const handleXChange = (valStr: string) => {
-      const num = parseFloat(valStr);
-      if (isNaN(num)) return;
-      const clampedMM = Math.min(paperWidthMM - wMM, Math.max(0, num));
-      onUpdateSlot({ x: clampedMM / paperWidthMM });
+    const handlePositionChange = (axis: 'x' | 'y', raw: string) => {
+      const num = Number(raw);
+      const paperMM = axis === 'x' ? paperWidthMM : paperHeightMM;
+      const size = axis === 'x' ? slot.w : slot.h;
+      if (raw.trim() === '' || ![num, paperMM, size].every(Number.isFinite) || paperMM <= 0) return;
+      const next = Math.min(Math.max(0, 1 - size), Math.max(0, num / paperMM));
+      if (Math.abs(next - slot[axis]) > 1e-12) onUpdateSlot({ [axis]: next });
     };
-
-    const handleYChange = (valStr: string) => {
-      const num = parseFloat(valStr);
-      if (isNaN(num)) return;
-      const clampedMM = Math.min(paperHeightMM - hMM, Math.max(0, num));
-      onUpdateSlot({ y: clampedMM / paperHeightMM });
-    };
+    const handleXChange = (raw: string) => handlePositionChange('x', raw);
+    const handleYChange = (raw: string) => handlePositionChange('y', raw);
 
     const handleSelectPreset = (presetKey: PhotoPresetType) => {
       const dims = PHOTO_PRESET_DIMENSIONS_MM[presetKey];
@@ -170,7 +232,7 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
     };
 
     return (
-      <aside
+      <div
         className="h-full min-h-0 min-w-0 overflow-y-auto bg-card font-cairo text-xs text-foreground"
         dir="rtl"
       >
@@ -196,7 +258,7 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-(--z-print-toolbar) font-cairo text-xs">
+                <SelectContent className="font-cairo text-xs">
                   {Object.keys(PHOTO_PRESET_DIMENSIONS_MM).map((key) => (
                     <SelectItem key={key} value={key} className="min-h-8">
                       {PHOTO_PRESET_LABELS[key as PhotoPresetType]}
@@ -236,24 +298,26 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="z-(--z-print-toolbar)">
-                  {slot.lockAspect ? 'فك قفل النسبة' : 'قفل النسبة'}
-                </TooltipContent>
+                <TooltipContent>{slot.lockAspect ? 'فك قفل النسبة' : 'قفل النسبة'}</TooltipContent>
               </Tooltip>
             </div>
             <div className="grid min-w-0 grid-cols-2 gap-2">
               <MmField
+                key={`${slot.id}:width`}
+                {...editCallbacks}
                 label="العرض"
                 value={wMM}
-                min={5}
+                min={Math.max(5, MIN_SIZE * paperWidthMM)}
                 max={paperWidthMM}
                 step={0.5}
                 onChange={handleWidthChange}
               />
               <MmField
+                key={`${slot.id}:height`}
+                {...editCallbacks}
                 label="الارتفاع"
                 value={hMM}
-                min={5}
+                min={Math.max(5, MIN_SIZE * paperHeightMM)}
                 max={paperHeightMM}
                 step={0.5}
                 onChange={handleHeightChange}
@@ -263,27 +327,31 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
 
           <section className="space-y-2 border-t border-border/40 pt-3">
             <h3 className="font-semibold">الموقع</h3>
-            <div className="grid min-w-0 grid-cols-2 gap-2" dir="ltr">
+            <div className="grid min-w-0 grid-cols-2 gap-2">
               <MmField
+                key={`${slot.id}:x`}
+                {...editCallbacks}
                 label="الموقع X"
                 value={xMM}
                 min={0}
-                max={paperWidthMM - wMM}
+                max={Math.max(0, paperWidthMM - wMM)}
                 step={0.5}
                 onChange={handleXChange}
               />
               <MmField
+                key={`${slot.id}:y`}
+                {...editCallbacks}
                 label="الموقع Y"
                 value={yMM}
                 min={0}
-                max={paperHeightMM - hMM}
+                max={Math.max(0, paperHeightMM - hMM)}
                 step={0.5}
                 onChange={handleYChange}
               />
             </div>
           </section>
         </div>
-      </aside>
+      </div>
     );
   },
 );

@@ -9,6 +9,8 @@ import { useEditorStore } from '@/lib/editor-store';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 
+import type { ImageElement } from '@/lib/editor-store';
+
 interface ImageFiltersPopoverProps {
   compact?: boolean;
 }
@@ -17,50 +19,70 @@ interface ImageFiltersPopoverProps {
 export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
   compact = false,
 }: ImageFiltersPopoverProps = {}) {
-  const { imageSrc, filter, mode, selectedId } = useEditorStore(
-    useShallow((state) => {
-      if (state.mode !== 'collage') {
-        const primaryEl = state.elements.find((e) => e.id === state.selectedId);
-        const selectedEl =
-          primaryEl?.type === 'image'
-            ? primaryEl
-            : state.elements.find((e) => state.selectedIds.includes(e.id) && e.type === 'image');
-        if (selectedEl?.type === 'image') {
-          return {
-            imageSrc: selectedEl.imageSrc,
-            filter: selectedEl.filter,
-            mode: state.mode,
-            selectedId: selectedEl.id,
-          };
-        }
-      } else {
-        const selectedSlot =
-          state.slots?.find((s) => s.id === state.selectedId && !!s.imageSrc) ??
-          state.slots?.find((s) => state.selectedIds.includes(s.id) && !!s.imageSrc) ??
-          state.slots?.find((s) => s.id === state.selectedId);
-        if (selectedSlot) {
-          return {
-            imageSrc: selectedSlot.imageSrc,
-            filter: selectedSlot.filter,
-            mode: state.mode,
-            selectedId: selectedSlot.id,
-          };
-        }
-      }
-      return {
-        imageSrc: undefined,
-        filter: undefined,
-        mode: state.mode,
-        selectedId: null,
-      };
-    }),
+  const {
+    elements,
+    slots,
+    mode,
+    selectedId: primaryId,
+    selectedIds,
+  } = useEditorStore(
+    useShallow((state) => ({
+      elements: state.elements,
+      slots: state.slots,
+      mode: state.mode,
+      selectedId: state.selectedId,
+      selectedIds: state.selectedIds,
+    })),
   );
+  const { imageSrc, filter, selectedId, targetIds } = React.useMemo(() => {
+    if (mode !== 'collage') {
+      const selectedImages = elements.filter(
+        (element): element is ImageElement =>
+          (element.id === primaryId || selectedIds.includes(element.id)) &&
+          element.type === 'image',
+      );
+      const selectedImage =
+        selectedImages.find((element) => element.id === primaryId) ?? selectedImages[0];
+      if (selectedImage?.type === 'image') {
+        return {
+          imageSrc: selectedImage.imageSrc,
+          filter: selectedImage.filter,
+          selectedId: selectedImage.id,
+          targetIds: selectedImages.map((element) => element.id),
+        };
+      }
+    } else {
+      const selectedSlots = slots.filter(
+        (slot) => (slot.id === primaryId || selectedIds.includes(slot.id)) && !!slot.imageSrc,
+      );
+      const selectedSlot = selectedSlots.find((slot) => slot.id === primaryId) ?? selectedSlots[0];
+      if (selectedSlot) {
+        return {
+          imageSrc: selectedSlot.imageSrc,
+          filter: selectedSlot.filter,
+          selectedId: selectedSlot.id,
+          targetIds: selectedSlots.map((slot) => slot.id),
+        };
+      }
+    }
+    return {
+      imageSrc: undefined,
+      filter: undefined,
+      selectedId: null,
+      targetIds: [] as string[],
+    };
+  }, [elements, slots, mode, primaryId, selectedIds]);
 
   const updateElement = useEditorStore((state) => state.updateElement);
-  const updateSlot = useEditorStore((state) => state.updateSlot);
+  const updateElements = useEditorStore((state) => state.updateElements);
+  const updateSlotsBatch = useEditorStore((state) => state.updateSlotsBatch);
   const pushHistory = useEditorStore((state) => state.pushHistory);
+  const canApply =
+    mode === 'collage'
+      ? slots.some((slot) => targetIds.includes(slot.id) && !!slot.imageSrc)
+      : elements.some((element) => targetIds.includes(element.id) && !element.locked);
 
-  if (!selectedId) return null;
+  if (!selectedId || targetIds.length === 0) return null;
 
   const hasActiveFilter = Boolean(filter && filter !== 'none');
 
@@ -72,6 +94,7 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
             variant="ghost"
             size="sm"
             aria-label="المرشحات"
+            disabled={!canApply}
             className={cn(
               compact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0',
               'coarse-touch-target hover:bg-accent data-[state=open]:bg-accent data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
@@ -98,11 +121,39 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
               <button
                 key={f.id}
                 onClick={() => {
-                  if (isActive) return;
+                  const state = useEditorStore.getState();
+                  if (state.mode !== mode) return;
+                  const selected = new Set([state.selectedId, ...state.selectedIds]);
+                  const changedIds =
+                    mode === 'collage'
+                      ? state.slots
+                          .filter(
+                            (slot) =>
+                              targetIds.includes(slot.id) &&
+                              selected.has(slot.id) &&
+                              !!slot.imageSrc &&
+                              (slot.filter ?? 'none') !== f.id,
+                          )
+                          .map((slot) => slot.id)
+                      : state.elements
+                          .filter(
+                            (element) =>
+                              targetIds.includes(element.id) &&
+                              selected.has(element.id) &&
+                              !element.locked &&
+                              element.type === 'image' &&
+                              (element.filter ?? 'none') !== f.id,
+                          )
+                          .map((element) => element.id);
+                  if (changedIds.length === 0) return;
                   if (mode !== 'collage') {
-                    updateElement(selectedId, { filter: f.id });
+                    if (changedIds.length === 1) {
+                      updateElement(changedIds[0], { filter: f.id });
+                    } else {
+                      updateElements(changedIds.map((id) => ({ id, patch: { filter: f.id } })));
+                    }
                   } else {
-                    updateSlot(selectedId, { filter: f.id });
+                    updateSlotsBatch(changedIds, { filter: f.id });
                   }
                   pushHistory();
                 }}

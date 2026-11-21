@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { clamp } from '@/lib/clamp';
@@ -42,7 +42,7 @@ interface UseFreeformSlotActionsParams {
   selectedSlotIdRef: RefObject<string | null>;
   multiSelectedIdsRef: RefObject<string[]>;
   documentValueRef: RefObject<FreeformDocument>;
-  updateSlotsWithHistory: (slots: FreeformSlot[]) => void;
+  updateSlotsWithHistory: (slots: FreeformSlot[], preview?: boolean) => void;
   pushDocumentWithHistory: (document: FreeformDocument) => void;
   setSlotSelection: (primaryId: string | null, secondaryIds?: readonly string[]) => void;
   finishNudgeBurst: () => void;
@@ -53,6 +53,7 @@ interface UseFreeformSlotActionsParams {
   showCutLines: boolean;
   enableSnapping: boolean;
   layoutName: string;
+  open: boolean;
 }
 
 /**
@@ -77,9 +78,22 @@ export function useFreeformSlotActions({
   showCutLines,
   enableSnapping,
   layoutName,
+  open,
 }: UseFreeformSlotActionsParams) {
   const clipboardRef = useRef<Clipboard>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const importSessionRef = useRef(0);
+  const importReaderRef = useRef<FileReader | null>(null);
+  const invalidateImportSession = useCallback(() => {
+    importSessionRef.current++;
+    const reader = importReaderRef.current;
+    importReaderRef.current = null;
+    if (reader?.readyState === FileReader.LOADING) reader.abort();
+  }, []);
+  useEffect(() => {
+    invalidateImportSession();
+    return invalidateImportSession;
+  }, [open, invalidateImportSession]);
 
   const handlePaperDimensionsChange = useCallback(
     (w: number, h: number) => {
@@ -119,6 +133,10 @@ export function useFreeformSlotActions({
   const handleAutoPack = useCallback(
     (strategy: AutoPackStrategy) => {
       const updated = autoPackSlots(strategy, paperWidthMM, paperHeightMM, packGapMM, packMarginMM);
+      if (updated.length === 0) {
+        toast.warning('المقاس لا يتسع داخل الورقة والهوامش — اختر ورقة أكبر أو تعبئة أخرى');
+        return;
+      }
       updateSlotsWithHistory(updated);
       setSlotSelection(updated[0]?.id ?? null);
       toast.success(`عُبئت الورقة بـ ${updated.length} صورة!`);
@@ -194,10 +212,15 @@ export function useFreeformSlotActions({
     (updated: Partial<FreeformSlot>) => {
       const selectedId = selectedSlotIdRef.current;
       if (!selectedId) return;
-      const nextSlots = slotsRef.current.map((s) =>
-        s.id === selectedId ? { ...s, ...updated } : s,
-      );
-      updateSlotsWithHistory(nextSlots);
+      const currentSlots = slotsRef.current;
+      const target = currentSlots.find((slot) => slot.id === selectedId);
+      if (
+        !target ||
+        Object.entries(updated).every(([key, value]) => target[key as keyof FreeformSlot] === value)
+      )
+        return;
+      const nextSlots = currentSlots.map((s) => (s.id === selectedId ? { ...s, ...updated } : s));
+      updateSlotsWithHistory(nextSlots, true);
     },
     [updateSlotsWithHistory, slotsRef, selectedSlotIdRef],
   );
@@ -335,9 +358,17 @@ export function useFreeformSlotActions({
       finishNudgeBurst();
       const file = e.target.files?.[0];
       e.target.value = '';
-      if (!file) return;
+      if (!file || !open) return;
+      const previousReader = importReaderRef.current;
+      if (previousReader?.readyState === FileReader.LOADING) previousReader.abort();
+      const session = importSessionRef.current;
       const reader = new FileReader();
+      importReaderRef.current = reader;
+      const ownsImport = () =>
+        importSessionRef.current === session && importReaderRef.current === reader;
       reader.onload = () => {
+        if (!ownsImport()) return;
+        importReaderRef.current = null;
         const parsed = parseLayoutFile(String(reader.result || ''));
         if (!parsed) {
           toast.error('ملف غير صالح — ليس ملف كولاج Grido');
@@ -361,10 +392,17 @@ export function useFreeformSlotActions({
         setSlotSelection(imported[0]?.id ?? null);
         toast.success(`أُستورد "${parsed.name}" بـ ${imported.length} خلية`);
       };
-      reader.onerror = () => toast.error('فشل القراءة');
+      reader.onerror = () => {
+        if (!ownsImport()) return;
+        importReaderRef.current = null;
+        toast.error('فشل القراءة');
+      };
+      reader.onabort = () => {
+        if (ownsImport()) importReaderRef.current = null;
+      };
       reader.readAsText(file);
     },
-    [finishNudgeBurst, pushDocumentWithHistory, setSlotSelection],
+    [open, finishNudgeBurst, pushDocumentWithHistory, setSlotSelection],
   );
 
   return {

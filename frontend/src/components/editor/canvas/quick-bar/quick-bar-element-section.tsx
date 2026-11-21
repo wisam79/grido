@@ -44,21 +44,30 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
       sendToBack: s.sendToBack,
     })),
   );
+  const isLocked = element.locked === true;
 
-  // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط
+  // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط أو ضغط متكرر
   // كان يُبقي صورة المعاينة دائمة بلا تراجع — الاستعادة عند التنظيف.
-  const holdRef = React.useRef<{ id: string; src: string | undefined } | null>(null);
+  const holdRef = React.useRef<{
+    id: string;
+    src: string | undefined;
+    previewSrc: string | undefined;
+  } | null>(null);
+  const holdCleanupRef = React.useRef<(() => void) | null>(null);
   const updateElementRef = React.useRef(updateElement);
   updateElementRef.current = updateElement;
   React.useEffect(
     () => () => {
-      if (holdRef.current) {
-        const { id, src } = holdRef.current;
-        holdRef.current = null;
-        updateElementRef.current(id, { imageSrc: src });
+      holdCleanupRef.current?.();
+      holdCleanupRef.current = null;
+      const hold = holdRef.current;
+      holdRef.current = null;
+      const live = useEditorStore.getState().elements.find((el) => el.id === hold?.id);
+      if (hold && live?.type === 'image' && live.imageSrc === hold.previewSrc) {
+        updateElementRef.current(hold.id, { imageSrc: hold.src });
       }
     },
-    [],
+    [element.id],
   );
 
   return (
@@ -72,6 +81,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={isLocked}
                   onClick={() => useEditorStore.getState().setEditingTextId(element.id)}
                   aria-label="تحرير النص"
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -87,6 +97,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={isLocked}
                   onClick={() => {
                     if (element.textSizing === 'auto') {
                       updateElement(element.id, { textSizing: 'fixed' });
@@ -127,6 +138,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             <Button
               variant="ghost"
               size="sm"
+              disabled={isLocked}
               onClick={() => bringToFront(element.id)}
               aria-label="إحضار للأمام"
               className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -142,6 +154,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             <Button
               variant="ghost"
               size="sm"
+              disabled={isLocked}
               onClick={() => sendToBack(element.id)}
               aria-label="إرسال للخلف"
               className="h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -160,6 +173,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             <Button
               variant="ghost"
               size="sm"
+              disabled={isLocked}
               onClick={() => {
                 const { canvasWidth, canvasHeight } = useEditorStore.getState();
                 updateElement(
@@ -182,6 +196,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             <Button
               variant="ghost"
               size="sm"
+              disabled={isLocked}
               onClick={() => {
                 updateElement(element.id, { flipX: !element.flipX });
                 useEditorStore.getState().pushHistory();
@@ -209,6 +224,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={isLocked}
                   onClick={() => {
                     updateElement(element.id, {
                       imageSrc: element.originalImageSrc,
@@ -232,21 +248,36 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 <Button
                   variant="ghost"
                   size="sm"
-                  onMouseDown={() => {
-                    const curr = element.imageSrc;
-                    holdRef.current = { id: element.id, src: curr };
-                    updateElement(element.id, { imageSrc: element.originalImageSrc });
-                    const restore = () => {
-                      holdRef.current = null;
-                      updateElement(element.id, { imageSrc: curr });
-                      cleanup();
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    holdCleanupRef.current?.();
+                    const curr = holdRef.current ? holdRef.current.src : element.imageSrc;
+                    holdRef.current = {
+                      id: element.id,
+                      src: curr,
+                      previewSrc: element.originalImageSrc,
                     };
+                    updateElement(element.id, { imageSrc: element.originalImageSrc });
                     const cleanup = () => {
                       window.removeEventListener('mouseup', restore);
                       window.removeEventListener('pointerup', restore);
                       window.removeEventListener('pointercancel', restore);
                       window.removeEventListener('blur', restore);
+                      holdCleanupRef.current = null;
                     };
+                    const restore = () => {
+                      cleanup();
+                      const hold = holdRef.current;
+                      holdRef.current = null;
+                      const live = useEditorStore
+                        .getState()
+                        .elements.find((el) => el.id === hold?.id);
+                      if (hold && live?.type === 'image' && live.imageSrc === hold.previewSrc) {
+                        updateElementRef.current(hold.id, { imageSrc: hold.src });
+                      }
+                    };
+                    holdCleanupRef.current = cleanup;
                     window.addEventListener('mouseup', restore);
                     window.addEventListener('pointerup', restore);
                     window.addEventListener('pointercancel', restore);

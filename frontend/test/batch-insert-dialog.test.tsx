@@ -1,10 +1,11 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { BatchInsertDialog } from '../src/components/editor/dialogs/batch-insert-dialog';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useEditorStore } from '../src/lib/editor-store';
+import { openImageFileDialog } from '../src/lib/io/file-dialog-utils';
 
 vi.mock('../src/lib/io/file-dialog-utils', () => ({
   openImageFileDialog: vi.fn(() =>
@@ -34,6 +35,54 @@ describe('BatchInsertDialog Component Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
+
+  it('ignores an old file picker and its finally after close/reopen', async () => {
+    let finishOld!: (sources: string[]) => void;
+    let finishNew!: (sources: string[]) => void;
+    vi.mocked(openImageFileDialog)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishOld = resolve;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishNew = resolve;
+        }),
+      );
+    const onOpenChange = vi.fn();
+    const frame = (open: boolean) => (
+      <TooltipProvider>
+        <BatchInsertDialog open={open} onOpenChange={onOpenChange} />
+      </TooltipProvider>
+    );
+    const view = render(frame(true));
+    fireEvent.click(screen.getByText('إدراج صور'));
+    view.rerender(frame(false));
+    view.rerender(frame(true));
+    fireEvent.click(screen.getByText('إدراج صور'));
+    await act(async () => finishOld(['old.png']));
+    expect(screen.queryByText('صورة 1')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إدراج صور' })).toBeDisabled();
+    await act(async () => finishNew(['new.png']));
+    expect(screen.getByText('صورة 1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إدراج صور' })).toBeEnabled();
+  });
+
+  it('hands collage overflow to the same store transaction and closes once', async () => {
+    useEditorStore.getState().setMode('collage');
+    useEditorStore.setState({ slots: [] });
+    const onOpenChange = vi.fn();
+    renderWithProviders(
+      <BatchInsertDialog open onOpenChange={onOpenChange} initialImages={['one.png', 'two.png']} />,
+    );
+    await screen.findByText('صورة 1');
+    fireEvent.click(screen.getByRole('button', { name: 'إدراج' }));
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false), {
+      timeout: 4000,
+    });
+    expect(useEditorStore.getState().collagePendingImages).toEqual(['one.png', 'two.png']);
+  });
 
   it('renders empty queue state when open with no images', () => {
     renderWithProviders(<BatchInsertDialog open={true} onOpenChange={vi.fn()} />);

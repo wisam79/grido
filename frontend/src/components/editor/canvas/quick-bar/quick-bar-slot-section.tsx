@@ -68,18 +68,26 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
 
   // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط (تبديل وضع/إغلاق)
   // كان يُبقي صورة المعاينة دائمة بلا تراجع — الاستعادة عند التنظيف.
-  const holdRef = useRef<{ id: string; src: string | undefined } | null>(null);
+  const holdRef = useRef<{
+    id: string;
+    src: string | undefined;
+    previewSrc: string | undefined;
+  } | null>(null);
+  const holdCleanupRef = useRef<(() => void) | null>(null);
   const updateSlotRef = useRef(updateSlot);
   updateSlotRef.current = updateSlot;
   useEffect(
     () => () => {
-      if (holdRef.current) {
-        const { id, src } = holdRef.current;
-        holdRef.current = null;
-        updateSlotRef.current(id, { imageSrc: src });
+      holdCleanupRef.current?.();
+      holdCleanupRef.current = null;
+      const hold = holdRef.current;
+      holdRef.current = null;
+      const live = useEditorStore.getState().slots.find((s) => s.id === hold?.id);
+      if (hold && live && live.imageSrc === hold.previewSrc) {
+        updateSlotRef.current(hold.id, { imageSrc: hold.src });
       }
     },
-    [],
+    [slot.id],
   );
 
   return (
@@ -189,20 +197,35 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onMouseDown={() => {
-                      const curr = slot.imageSrc;
-                      holdRef.current = { id: slot.id, src: curr };
-                      updateSlot(slot.id, { imageSrc: slot.originalImageSrc });
-                      const restore = () => {
-                        holdRef.current = null;
-                        updateSlot(slot.id, { imageSrc: curr });
-                        cleanup();
+                    onPointerDown={(e) => {
+                      if (e.button !== 0) return;
+                      e.preventDefault();
+                      holdCleanupRef.current?.();
+                      const curr = holdRef.current ? holdRef.current.src : slot.imageSrc;
+                      holdRef.current = {
+                        id: slot.id,
+                        src: curr,
+                        previewSrc: slot.originalImageSrc,
                       };
+                      updateSlot(slot.id, { imageSrc: slot.originalImageSrc });
                       const cleanup = () => {
+                        window.removeEventListener('mouseup', restore);
                         window.removeEventListener('pointerup', restore);
                         window.removeEventListener('pointercancel', restore);
                         window.removeEventListener('blur', restore);
+                        holdCleanupRef.current = null;
                       };
+                      const restore = () => {
+                        cleanup();
+                        const hold = holdRef.current;
+                        holdRef.current = null;
+                        const live = useEditorStore.getState().slots.find((s) => s.id === hold?.id);
+                        if (hold && live && live.imageSrc === hold.previewSrc) {
+                          updateSlotRef.current(hold.id, { imageSrc: hold.src });
+                        }
+                      };
+                      holdCleanupRef.current = cleanup;
+                      window.addEventListener('mouseup', restore);
                       window.addEventListener('pointerup', restore);
                       window.addEventListener('pointercancel', restore);
                       window.addEventListener('blur', restore);

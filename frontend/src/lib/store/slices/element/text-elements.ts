@@ -174,7 +174,7 @@ export const createTextElementsSlice: StateCreator<
 
   applyTextPreset: (id, preset) => {
     const el = get().elements.find((x) => x.id === id);
-    if (!el || el.type !== 'text') return;
+    if (!el || el.type !== 'text' || el.locked) return;
     const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
     const state = get();
 
@@ -246,7 +246,7 @@ export const createTextElementsSlice: StateCreator<
 
   fitTextToContent: (id: string) => {
     const el = get().elements.find((x) => x.id === id);
-    if (!el || el.type !== 'text') return;
+    if (!el || el.type !== 'text' || el.locked) return;
 
     const canvasW = get().canvasWidth || 2480;
     const canvasH = get().canvasHeight || 2480;

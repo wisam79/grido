@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
@@ -104,6 +104,50 @@ describe('CrashRecoveryDialog', () => {
 
     expect(screen.getByText(dummyReport.error)).toBeInTheDocument();
     expect(screen.getByText('إخفاء التفاصيل الفنية ▲')).toBeInTheDocument();
+  });
+
+  it('does not overlap recovery actions after close/reopen or report replacement', async () => {
+    let finish!: () => void;
+    const onRecover = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
+    const onDismiss = vi.fn();
+    const view = render(
+      <CrashRecoveryDialog open report={dummyReport} onRecover={onRecover} onDismiss={onDismiss} />,
+    );
+    act(() => {
+      fireEvent.click(screen.getByText('استعادة المسودة'));
+      fireEvent.click(screen.getByText('تجاهل المسودة'));
+    });
+    expect(onRecover).toHaveBeenCalledTimes(1);
+    expect(onDismiss).not.toHaveBeenCalled();
+    view.rerender(
+      <CrashRecoveryDialog
+        open={false}
+        report={dummyReport}
+        onRecover={onRecover}
+        onDismiss={onDismiss}
+      />,
+    );
+    view.rerender(
+      <CrashRecoveryDialog
+        open
+        report={{ ...dummyReport, timestamp: 'new-report' }}
+        onRecover={onRecover}
+        onDismiss={onDismiss}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'تجاهل المسودة' })).toBeDisabled();
+    await act(async () => finish());
+    expect(screen.getByRole('button', { name: 'تجاهل المسودة' })).toBeEnabled();
+  });
+
+  it('reports rejection without an unhandled promise and allows retry', async () => {
+    const onRecover = vi.fn().mockRejectedValue(new Error('clear failed'));
+    render(
+      <CrashRecoveryDialog open report={dummyReport} onRecover={onRecover} onDismiss={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByText('استعادة المسودة'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعذّر إكمال الإجراء');
+    expect(screen.getByRole('button', { name: 'استعادة المسودة' })).toBeEnabled();
   });
 
   // 🛡️ انحدار: ESC أو النقر خارج النافذة كانا يستدعيان onOpenChange(false) ⇒

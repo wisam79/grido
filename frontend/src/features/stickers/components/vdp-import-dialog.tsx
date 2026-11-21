@@ -16,6 +16,7 @@ import { UploadSimple, GridFour, Link, CaretRight, WarningCircle } from '@/compo
 import { Label } from '@/components/ui/label';
 import { computeSmartGridLayout } from '@/lib/canvas/grid-layout-math';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -75,15 +76,25 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
   const [isDragging, setIsDragging] = useState(false);
 
   // حارس الإلغاء: لا تُدرج عناصر ولا تُظهر رسالة بعد إغلاق النافذة أثناء التوليد
-  const cancelledRef = useRef(false);
+  const cancelledRef = useRef(!open);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionRef = useRef(0);
+  const fileAttemptRef = useRef(0);
+  const generationRef = useRef(0);
 
   const handleFile = useCallback(
     async (file: File) => {
+      if (!open || cancelledRef.current || abortRef.current) return;
+      const session = sessionRef.current;
+      const attempt = ++fileAttemptRef.current;
+      const isCurrent = () =>
+        !cancelledRef.current &&
+        session === sessionRef.current &&
+        attempt === fileAttemptRef.current;
       setIsLoadingFile(true);
       try {
         const parsed = await parseVdpFile(file);
-        if (cancelledRef.current) return;
+        if (!isCurrent()) return;
         setDataset(parsed);
         // ربط ذكي مبدئي: اسم العمود مطابق لاسم الحقل أو تسميته
         const auto: Record<string, string> = {};
@@ -98,28 +109,51 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
           toast.info(`سُقف الصفوف ${VDP_MAX_ROWS} — قُصّت البقية`);
         }
       } catch (err) {
-        toast.error(toErrorMessage(err, 'فشل قراءة الملف'));
+        if (isCurrent()) toast.error(toErrorMessage(err, 'فشل قراءة الملف'));
       } finally {
-        setIsLoadingFile(false);
+        if (isCurrent()) setIsLoadingFile(false);
       }
     },
-    [template.fields],
+    [open, template.fields],
   );
 
   const previewRow = dataset?.rows[0];
-  const mappedFieldCount = useMemo(() => Object.values(mapping).filter(Boolean).length, [mapping]);
+  const mappedFieldCount = useMemo(
+    () => template.fields.filter((f) => Boolean(mapping[f.id])).length,
+    [mapping, template.fields],
+  );
 
   const handleGenerate = useCallback(async () => {
-    if (!dataset || mappedFieldCount === 0) return;
+    if (!open || cancelledRef.current || abortRef.current || !dataset || mappedFieldCount === 0)
+      return;
+    const generation = ++generationRef.current;
+    const session = sessionRef.current;
+    const documentSession = getDocumentSession();
     setIsGenerating(true);
     setProgress({ done: 0, total: dataset.rows.length });
-    abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    const ownsGeneration = () =>
+      generation === generationRef.current &&
+      session === sessionRef.current &&
+      !cancelledRef.current;
+    const isActive = () => {
+      const live = useEditorStore.getState();
+      const active =
+        ownsGeneration() &&
+        !controller.signal.aborted &&
+        documentSession === getDocumentSession() &&
+        live.mode === storeState.mode &&
+        live.canvasWidth === storeState.canvasWidth &&
+        live.canvasHeight === storeState.canvasHeight;
+      if (!active) controller.abort();
+      return active;
+    };
 
     // تخطيط الشبكة يُحسب مرة واحدة لكل الصفوف (نفس محرك addImageElementsBatch
     // وبنفس قيم الافتراض) — البطاقات الناجحة تنتقي مواضعها تسلسلياً فتبقى
     // الشبكة متماسكة بلا فراغات وإن فشلت صفوف.
+    if (useEditorStore.getState().mode !== 'single') useEditorStore.getState().setMode('single');
     const storeState = useEditorStore.getState();
     const placedCells = computeSmartGridLayout(
       dataset.rows.map(() => ({ src: '', aspectRatio: template.aspectRatio || 1 })),
@@ -134,7 +168,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
     let placedCursor = 0;
     let insertedCount = 0;
     const flushBuffer = () => {
-      if (buffer.length === 0) return;
+      if (!isActive() || buffer.length === 0) return;
       useEditorStore.getState().addImageElementsBatch(buffer.splice(0, buffer.length));
     };
 
@@ -144,10 +178,13 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
         baseParams,
         dataset.rows,
         mapping,
-        setProgress,
+        (next) => {
+          if (isActive()) setProgress(next);
+        },
         {
           signal: controller.signal,
           onRendered: (src, rowIndex) => {
+            if (!isActive()) return;
             const cell = placedCells[placedCursor++];
             if (!cell) return;
             buffer.push({
@@ -172,7 +209,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
       );
       // بعد الإلغاء تبقى ما أُدرج فعلاً، وذيل المخزن يُلغى بلا إدراج —
       // التصيير المتوقف نصفه لن يُرمى عمله المكتمل معه.
-      if (aborted || cancelledRef.current) return;
+      if (aborted || !isActive()) return;
       flushBuffer();
       if (insertedCount === 0) {
         toast.error('لم تُصيَّر أي بطاقة — تحقق من ربط الأعمدة');
@@ -182,38 +219,56 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
       toast.success(`أُدرجت ${insertedCount} بطاقة${warn}`);
       onOpenChange(false);
     } catch (err) {
+      if (!isActive()) return;
       logger.error('VDP batch generation failed:', err);
       toast.error(toErrorMessage(err, 'فشل توليد البطاقات'));
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
-      setIsGenerating(false);
+      if (ownsGeneration()) setIsGenerating(false);
     }
-  }, [dataset, mappedFieldCount, template, baseParams, mapping, onOpenChange]);
+  }, [open, dataset, mappedFieldCount, template, baseParams, mapping, onOpenChange]);
 
   // تصفير حالات التحميل عند تغيير حالة فتح النافذة وفق معايير المشروع
   React.useEffect(() => {
+    sessionRef.current += 1;
+    fileAttemptRef.current += 1;
+    generationRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsLoadingFile(false);
+    setIsGenerating(false);
     if (!open) {
       cancelledRef.current = true;
-      abortRef.current?.abort();
-      abortRef.current = null;
       setIsLoadingFile(false);
       setIsGenerating(false);
       setIsDragging(false);
       setProgress({ done: 0, total: 0 });
+      setDataset(null);
+      setMapping({});
     } else {
       cancelledRef.current = false;
     }
-  }, [open]);
+  }, [open, template.id]);
 
   // إلغاء أي دفعة جارية عند إغلاق المكوّن أو إزالته
   React.useEffect(() => {
     return () => {
+      cancelledRef.current = true;
+      sessionRef.current += 1;
+      fileAttemptRef.current += 1;
+      generationRef.current += 1;
       abortRef.current?.abort();
       abortRef.current = null;
     };
   }, []);
 
   const closeAndReset = useCallback(() => {
+    cancelledRef.current = true;
+    sessionRef.current += 1;
+    fileAttemptRef.current += 1;
+    generationRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setDataset(null);
     setMapping({});
     setIsLoadingFile(false);
@@ -316,6 +371,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
                   type="button"
                   variant="ghost"
                   size="sm"
+                  disabled={isGenerating}
                   onClick={() => {
                     setDataset(null);
                     setMapping({});
@@ -346,10 +402,11 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
                       </Label>
                       <select
                         value={mapping[field.id] ?? ''}
+                        disabled={isGenerating}
                         onChange={(e) =>
                           setMapping((prev) => ({ ...prev, [field.id]: e.target.value }))
                         }
-                        className="flex-1 h-8 text-xs rounded-md bg-background border border-border/50 px-2 text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                        className="flex-1 h-8 text-xs rounded-md bg-background border border-border/50 px-2 text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label={`عمود حقل ${field.label}`}
                       >
                         <option value="">— بدون ربط (يبقى الافتراضي) —</option>

@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { test, expect, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 import { openStudioElementsCategory } from './helpers/studio-elements';
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 async function setFontSize(page: Page, size: number) {
   const input = page.getByRole('textbox', { name: 'حجم الخط' });
@@ -376,114 +376,119 @@ test.describe('Text measurement on a real canvas', () => {
     await expect(page.getByText('ملاءمة تلقائية').first()).toBeVisible();
   });
 
-  test('corner resize anchor survives a font that loads after the gesture', async ({ page }) => {
-    // وجهِ كل طلبات Oswald إلى وجه محلي يُسلَّم متأخراً 7 ثوانٍ: أثناء الإيماءة
-    // يُقاس النص بالخط البديل، ثم يصل الوجه الحقيقي فتتغيّر مقاييسه. هذا هو
-    // السيناريو الذي كان يزيح الصندوق بعد التحجيم (إعادة قياس متأخرة).
-    const lateFontBytes = fs.readFileSync(
-      path.join(process.cwd(), 'src/assets/fonts/Amiri_700_arabic.woff2'),
-    );
-    const lateFontUrl = `${new URL(page.url()).origin}/__late-oswald.woff2`;
-    await page.route('**/fonts.googleapis.com/**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/css',
-        body: `@font-face{font-family:'Oswald';font-style:normal;font-weight:100 900;src:url('${lateFontUrl}') format('woff2');}`,
+  test.describe('intentional delayed-font fixture', () => {
+    test.use({ externalMocks: ['fonts.googleapis.com/css2'] });
+    test('corner resize anchor survives a font that loads after the gesture', async ({ page }) => {
+      // وجهِ كل طلبات Oswald إلى وجه محلي يُسلَّم متأخراً 7 ثوانٍ: أثناء الإيماءة
+      // يُقاس النص بالخط البديل، ثم يصل الوجه الحقيقي فتتغيّر مقاييسه. هذا هو
+      // السيناريو الذي كان يزيح الصندوق بعد التحجيم (إعادة قياس متأخرة).
+      const lateFontBytes = fs.readFileSync(
+        path.join(process.cwd(), 'src/assets/fonts/Amiri_700_arabic.woff2'),
+      );
+      const lateFontUrl = `${new URL(page.url()).origin}/__late-oswald.woff2`;
+      await page.route('**/fonts.googleapis.com/**', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'text/css',
+          body: `@font-face{font-family:'Oswald';font-style:normal;font-weight:100 900;src:url('${lateFontUrl}') format('woff2');}`,
+        });
       });
-    });
-    await page.route('**/__late-oswald.woff2', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 7000));
-      await route.fulfill({ status: 200, contentType: 'font/woff2', body: lateFontBytes });
-    });
+      await page.route('**/__late-oswald.woff2', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 7000));
+        await route.fulfill({ status: 200, contentType: 'font/woff2', body: lateFontBytes });
+      });
 
-    await page
-      .getByTestId('mode-tab-single')
-      .or(page.getByRole('tab', { name: 'تعديل حر' }))
-      .first()
-      .click();
-    await openStudioElementsCategory(page, 'text');
-    await page.getByTestId('element-add-text-heading').click();
-    await expect(page.getByRole('tabpanel')).toBeVisible();
+      await page
+        .getByTestId('mode-tab-single')
+        .or(page.getByRole('tab', { name: 'تعديل حر' }))
+        .first()
+        .click();
+      await openStudioElementsCategory(page, 'text');
+      await page.getByTestId('element-add-text-heading').click();
+      await expect(page.getByRole('tabpanel')).toBeVisible();
 
-    // اختيار Oswald (خط سحابي) يبدأ تحميل وجهه المتأخر — قبل تحجيم الزاوية.
-    await page.getByRole('button', { name: 'الخط: كايرو', exact: true }).click();
-    await page.getByRole('combobox', { name: 'البحث في الخطوط' }).fill('Oswald');
-    await page.getByRole('button', { name: 'Oswald', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'الخط: Oswald', exact: true })).toBeVisible();
+      // اختيار Oswald (خط سحابي) يبدأ تحميل وجهه المتأخر — قبل تحجيم الزاوية.
+      await page.getByRole('button', { name: 'الخط: كايرو', exact: true }).click();
+      await page.getByRole('combobox', { name: 'البحث في الخطوط' }).fill('Oswald');
+      await page.getByRole('button', { name: 'Oswald', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'الخط: Oswald', exact: true })).toBeVisible();
 
-    await setFontSize(page, 200);
+      await setFontSize(page, 200);
 
-    const readState = () =>
-      page.evaluate(() => {
-        type AnchorNode = { getAbsolutePosition: () => { x: number; y: number } };
-        const stage = (
-          window as unknown as {
-            __gridoStage?: {
-              container: () => HTMLDivElement;
-              find: (selector: string) => Array<{
-                findOne: (selector: string) => AnchorNode | null;
-                nodes: () => Array<{
-                  width: () => number;
-                  height: () => number;
-                  find: (selector: string) => Array<{ fontSize: () => number }>;
+      const readState = () =>
+        page.evaluate(() => {
+          type AnchorNode = { getAbsolutePosition: () => { x: number; y: number } };
+          const stage = (
+            window as unknown as {
+              __gridoStage?: {
+                container: () => HTMLDivElement;
+                find: (selector: string) => Array<{
+                  findOne: (selector: string) => AnchorNode | null;
+                  nodes: () => Array<{
+                    width: () => number;
+                    height: () => number;
+                    find: (selector: string) => Array<{ fontSize: () => number }>;
+                  }>;
                 }>;
-              }>;
-            };
-          }
-        ).__gridoStage;
-        const tr = stage?.find('Transformer')?.[0];
-        const node = tr?.nodes()?.[0];
-        if (!tr || !node) return null;
-        const box = stage!.container().getBoundingClientRect();
-        const tl = tr.findOne('.top-left')?.getAbsolutePosition();
-        const br = tr.findOne('.bottom-right')?.getAbsolutePosition();
-        return {
-          anchor: tl ? { x: box.left + tl.x, y: box.top + tl.y } : null,
-          point: br ? { x: box.left + br.x, y: box.top + br.y } : null,
-          w: node.width(),
-          h: node.height(),
-          fontSize: node.find('Text')[0]?.fontSize() ?? 0,
-          fontLoaded: document.fonts.check('800 16px Oswald'),
-        };
-      });
+              };
+            }
+          ).__gridoStage;
+          const tr = stage?.find('Transformer')?.[0];
+          const node = tr?.nodes()?.[0];
+          if (!tr || !node) return null;
+          const box = stage!.container().getBoundingClientRect();
+          const tl = tr.findOne('.top-left')?.getAbsolutePosition();
+          const br = tr.findOne('.bottom-right')?.getAbsolutePosition();
+          return {
+            anchor: tl ? { x: box.left + tl.x, y: box.top + tl.y } : null,
+            point: br ? { x: box.left + br.x, y: box.top + br.y } : null,
+            w: node.width(),
+            h: node.height(),
+            fontSize: node.find('Text')[0]?.fontSize() ?? 0,
+            fontLoaded: document.fonts.check('800 16px Oswald'),
+          };
+        });
 
-    await expect.poll(async () => (await readState())?.fontSize ?? 0, { timeout: 8000 }).toBe(200);
-    const before = (await readState())!;
-    expect(before.point).not.toBeNull();
-    // الوجه الحقيقي لم يصل بعد — القياس الحالي يستخدم البديل.
-    expect(before.fontLoaded).toBe(false);
+      await expect
+        .poll(async () => (await readState())?.fontSize ?? 0, { timeout: 8000 })
+        .toBe(200);
+      const before = (await readState())!;
+      expect(before.point).not.toBeNull();
+      // الوجه الحقيقي لم يصل بعد — القياس الحالي يستخدم البديل.
+      expect(before.fontLoaded).toBe(false);
 
-    // سحب ركن سفلي أيمن: الركن المقابل (أعلى يسار) هو الارتساء.
-    await page.mouse.move(before.point!.x, before.point!.y);
-    await page.mouse.down();
-    await page.mouse.move(before.point!.x + 60, before.point!.y + 30, { steps: 10 });
-    await page.mouse.up();
-    await expect
-      .poll(async () => (await readState())?.w ?? 0, { timeout: 5000 })
-      .toBeGreaterThan(before.w + 20);
-    const postDrag = (await readState())!;
-    expect(postDrag.fontLoaded).toBe(false);
-    // الإيماءة نفسها لا تحرّك الركن المقابل.
-    expect(Math.abs(postDrag.anchor!.x - before.anchor!.x)).toBeLessThan(2);
-    expect(Math.abs(postDrag.anchor!.y - before.anchor!.y)).toBeLessThan(2);
+      // سحب ركن سفلي أيمن: الركن المقابل (أعلى يسار) هو الارتساء.
+      await page.mouse.move(before.point!.x, before.point!.y);
+      await page.mouse.down();
+      await page.mouse.move(before.point!.x + 60, before.point!.y + 30, { steps: 10 });
+      await page.mouse.up();
+      await expect
+        .poll(async () => (await readState())?.w ?? 0, { timeout: 5000 })
+        .toBeGreaterThan(before.w + 20);
+      const postDrag = (await readState())!;
+      expect(postDrag.fontLoaded).toBe(false);
+      // الإيماءة نفسها لا تحرّك الركن المقابل.
+      expect(Math.abs(postDrag.anchor!.x - before.anchor!.x)).toBeLessThan(2);
+      expect(Math.abs(postDrag.anchor!.y - before.anchor!.y)).toBeLessThan(2);
 
-    // يصل الخط المتأخر → إعادة قياس جديدة لعرض مختلف.
-    await expect
-      .poll(async () => (await readState())?.fontLoaded ?? false, { timeout: 20000 })
-      .toBe(true);
-    await expect
-      .poll(async () => {
-        const state = await readState();
-        return state ? Math.abs(state.w - postDrag.w) : 0;
-      })
-      .toBeGreaterThan(3);
+      // يصل الخط المتأخر → إعادة قياس جديدة لعرض مختلف.
+      await expect
+        .poll(async () => (await readState())?.fontLoaded ?? false, { timeout: 20000 })
+        .toBe(true);
+      await expect
+        .poll(async () => {
+          const state = await readState();
+          return state ? Math.abs(state.w - postDrag.w) : 0;
+        })
+        .toBeGreaterThan(3);
 
-    const after = (await readState())!;
-    // إعادة القياس غيّرت العرض لكن الركن المقابل بقي على موضعه تماماً.
-    expect(after.fontSize).toBe(postDrag.fontSize);
-    expect(Math.abs(after.w - postDrag.w)).toBeGreaterThan(3);
-    expect(Math.abs(after.anchor!.x - before.anchor!.x)).toBeLessThan(1.5);
-    expect(Math.abs(after.anchor!.y - before.anchor!.y)).toBeLessThan(1.5);
+      const after = (await readState())!;
+      // إعادة القياس غيّرت العرض لكن الركن المقابل بقي على موضعه تماماً.
+      expect(after.fontSize).toBe(postDrag.fontSize);
+      expect(Math.abs(after.w - postDrag.w)).toBeGreaterThan(3);
+      expect(Math.abs(after.anchor!.x - before.anchor!.x)).toBeLessThan(1.5);
+      expect(Math.abs(after.anchor!.y - before.anchor!.y)).toBeLessThan(1.5);
+    });
   });
 
   test('side handles resize text width without changing the font size', async ({ page }) => {

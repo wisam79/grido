@@ -30,7 +30,7 @@ description: معايير وأصول إمكانية الوصول والتفاع�
 
 ### مثال Portal Radix الأصلي
 
-مثال تركيبي يستخدم `z-50` المرخّص للـ overlay primitives في حارس المشروع؛ لا يُنقل هذا الترخيص إلى مكونات أخرى. في التطبيق يُفضّل غلاف Grido الذي يدير التركيز والاتجاه وPortal.
+مثال تركيبي يستخدم `z-(--z-dialog)` وفق توكن الغلاف المشترك؛ لا ترخيص لقيم `z-50` الخام. في التطبيق يُفضّل غلاف Grido الذي يدير التركيز والاتجاه وPortal.
 
 ```tsx
 import * as Dialog from '@radix-ui/react-dialog';
@@ -39,7 +39,7 @@ export function PrintPreviewModal({ open, onOpenChange }: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-background/70 z-50" />
+        <Dialog.Overlay className="fixed inset-0 bg-background/70 z-(--z-dialog)" />
         <Dialog.Content
           className="fixed inset-0 m-auto h-fit w-[95vw] sm:max-w-[700px] bg-card p-6 rounded-xl shadow-fluent-16 z-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           dir="rtl"
@@ -82,7 +82,9 @@ export function PrintPreviewModal({ open, onOpenChange }: Props) {
 
 ### الطبقات وقفل التفاعل
 
-التوكنز الفعلية من `frontend/src/index.css` والأغلفة المشتركة؛ لا توكن z أو shadow غير معرّف. يبقى ترخيص `z-50` الحالي لمكونات overlay كما يثبّته `frontend/test/ui-compliance.test.ts`، ولا يُخفّف الحارس أو يُعمم الترخيص.
+التوكنز الفعلية من `frontend/src/index.css` والأغلفة المشتركة؛ لا توكن z أو shadow غير معرّف. متابعة 2026-11-20: الحوارات وAlertDialog وSheet تستخدم `z-(--z-dialog)` (2000)، والقوائم والتلميحات المشتركة تستخدم `z-(--z-dialog-popover)` (2500). أزيل الترخيص القديم لقيم `z-50` الخام من حارس `frontend/test/ui-compliance.test.ts` لصالح التوكنز، لا لتخفيف الحارس. التنبيه يستخدم `--z-toast` (3000) في class وstyle لمقاومة CSS المكتبة؛ هذا ترتيب طبقات وليس بديلًا لملكية التركيز أو نطاق Portal.
+
+لا تفرض على `SelectContent` أو `PopoverContent` أو `DropdownMenuContent` أو `TooltipContent` المستهلكة داخل Dialog/Sheet توكن `--z-print-toolbar` أو `--z-popover` الأدنى: `cn` مع Tailwind Merge يستبدل توكن الغلاف المشترك، وRadix ينقل computed z إلى wrapper التموضع؛ فيعود السطح خلف الحوار. دع المستهلك يرث توكن الغلاف، واحتفظ بالاستثناء الأدنى فقط لمالك workspace مستقل مثبت. حارس actual callers في `frontend/test/ui-compliance.test.ts` يحمي هذا العقد (متابعة2026-11-20).
 
 Radix يدير scroll/focus/dismissable-layer بحسب primitive و`modal`، لا كل قائمة تقفل body. لا تلاعب يدوي بـ `document.body.style.overflow` أو `pointerEvents` لتجاوز إدارة الطبقات؛ وجود modal آخر مفتوح قد يبرر بقاء القفل.
 

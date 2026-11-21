@@ -16,6 +16,8 @@ const controls = vi.hoisted(() => ({
   handleTogglePreview: vi.fn(),
   handleApplyActive: vi.fn(),
   selectDocument: vi.fn(),
+  imageWidth: 200,
+  imageHeight: 100,
 }));
 
 const initialCorners: Point[] = [
@@ -60,14 +62,22 @@ vi.mock('@/components/editor/document-scanner/hooks/use-scanner-processor', () =
 }));
 vi.mock('@/components/editor/document-scanner/hooks/use-scanner-detection', () => ({
   useScannerDetection: () => {
-    const [detectedDocs, setDetectedDocs] = React.useState(makeDocs);
+    const [detectedDocs, setDetectedDocs] = React.useState(() =>
+      makeDocs().map((doc) => ({
+        ...doc,
+        corners: doc.corners.map((point) => ({
+          x: (point.x * controls.imageWidth) / 200,
+          y: (point.y * controls.imageHeight) / 100,
+        })),
+      })),
+    );
     const [activeDocIndex, setActiveDocIndex] = React.useState(0);
     const imgRef = React.useRef<HTMLImageElement | null>(null);
     if (!imgRef.current) {
       const image = new Image();
       Object.defineProperties(image, {
-        naturalWidth: { value: 200 },
-        naturalHeight: { value: 100 },
+        naturalWidth: { value: controls.imageWidth },
+        naturalHeight: { value: controls.imageHeight },
       });
       imgRef.current = image;
     }
@@ -88,7 +98,7 @@ vi.mock('@/components/editor/document-scanner/hooks/use-scanner-detection', () =
       activeDocIndex,
       imgRef,
       isDetecting: controls.isDetecting,
-      imgSize: { w: 200, h: 100 },
+      imgSize: { w: controls.imageWidth, h: controls.imageHeight },
       selectedDocIds: ['first', 'second'],
       detectionMode: 'multi',
       setDetectionMode: vi.fn(),
@@ -190,6 +200,8 @@ beforeEach(() => {
     controls.isExporting =
     controls.isPreviewMode =
       false;
+  controls.imageWidth = 200;
+  controls.imageHeight = 100;
   vi.useFakeTimers();
   const context = {
     save: vi.fn(),
@@ -378,5 +390,45 @@ describe('scanner local corner keyboard', () => {
     view.unmount();
     act(() => vi.advanceTimersByTime(40));
     expect(controls.resetProcessorState).toHaveBeenCalled();
+  });
+
+  it('uses the latest dragged point in the loupe and never delays its position', () => {
+    const view = setup();
+    const container = loupe(view).parentElement!;
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      right: 300,
+      bottom: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    const loupeCanvas = loupe(view).querySelector('canvas')!;
+    const context = loupeCanvas.getContext('2d')!;
+    const drawImage = vi.mocked(context.drawImage);
+    fireEvent.pointerDown(view.canvas, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerMove(view.canvas, { clientX: 40, clientY: 20, pointerId: 1 });
+    act(() => vi.advanceTimersByTime(40));
+    expect(docs()[0].corners[0]).toEqual({ x: 80, y: 40 });
+    const draw = drawImage.mock.calls.find((call) => call.length === 9 && call[7] === 110);
+    expect(draw).toBeDefined();
+    expect(draw![1]).toBeCloseTo(80 - 110 / 3.5 / 2);
+    expect(draw![2]).toBeCloseTo(40 - 110 / 3.5 / 2);
+    expect(loupe(view)).toHaveClass('transition-[opacity,transform]');
+    expect(loupe(view)).not.toHaveClass('transition-all');
+  });
+
+  it('grabs a corner pin using CSS pixel radius even when natural image dimensions are much larger than screen bounds', () => {
+    controls.imageWidth = 4000;
+    controls.imageHeight = 2000;
+    const view = setup();
+    fireEvent.pointerDown(view.canvas, { clientX: 12, clientY: 11, pointerId: 1 });
+    expect(screen.getByRole('button', { name: 'الركن العلوي الأيسر' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });

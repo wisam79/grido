@@ -180,6 +180,12 @@ type LicenseStateSetter = (partial: Partial<LicenseSlice>) => void;
  * الملف دون تعيين جلسة (لا مستخدم جديد في مرحلة التسجيل بعد) ودون إبطال
  * الفحص المعلق (سلوكه الأصلي المقصود).
  */
+function markWailsServerBackendConnected(): void {
+  if (typeof window === 'undefined' || typeof window.go?.main?.App !== 'undefined') return;
+  const w = window as Window & { _wails?: { backendConnected?: boolean } };
+  w._wails = { ...(w._wails ?? {}), backendConnected: true };
+}
+
 async function runProfileAuthAction(
   set: LicenseStateSetter,
   call: () => Promise<UserProfile | null>,
@@ -193,6 +199,7 @@ async function runProfileAuthAction(
   try {
     const profile = await call();
     if (!profile) throw new Error(errorContext);
+    markWailsServerBackendConnected();
     if (invalidateCheck) invalidateInFlightLicenseCheck();
     set(applyProfile ? { user: profile, licenseLoading: false } : { licenseLoading: false });
     return profile;
@@ -267,6 +274,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
           .then(() => LicenseHandler.GetLicenseStatus())
           .then(
             (profile) => {
+              markWailsServerBackendConnected();
               // Go owns offline validation; keep every resolved value unchanged.
               if (epoch === licenseCheckEpoch) set({ user: profile });
               return profile;

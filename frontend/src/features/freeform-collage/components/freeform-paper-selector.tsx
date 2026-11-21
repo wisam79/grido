@@ -52,7 +52,9 @@ export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, a
         setFocused(false);
         const v = clampPaperDim(Number(text || '0'));
         setText(String(v));
-        onCommit(v);
+        if (v !== value) {
+          onCommit(v);
+        }
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
@@ -100,7 +102,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
           >
             <SelectValue>{currentPreset?.name.replace(/\s*\(.*\)$/, '') || 'مخصص'}</SelectValue>
           </SelectTrigger>
-          <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-lg border-border/60 max-h-64">
+          <SelectContent className="font-cairo rounded-lg border-border/60 max-h-64">
             <SelectItem value="custom" className="text-mini font-bold rounded-md">
               مخصص
             </SelectItem>

@@ -1,40 +1,84 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { stageImageSources } from './helpers/konva-probes';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { getMockLedger } from './helpers/wails-v3-bridge';
 
-test.describe('Professional E2E & Visual Testing Suite', () => {
+test.describe('Project save/reload — stateful mocked integration, not real file persistence', () => {
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
   });
 
-  test('Open app, upload image, save project, and read it back in the library', async ({
+  test('Import image, save unique project, change canvas and reload that same saved project', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    const projectName = `مشروع حفظ فريد ${testInfo.project.name}-${testInfo.testId}`;
     await page.goto('/');
-
     await waitForAppReady(page);
-
-    // تبديل الوضع إلى تعديل حر
+    const ledger = getMockLedger(page)!;
+    await expect
+      .poll(() => ledger.rpc.filter((call) => call.name === 'GetStartupFile').at(-1)?.result)
+      .toBe('');
+    await expect.poll(() => stageImageSources(page)).toBe('');
     await page.getByTestId('mode-tab-single').click();
-    await expect(page.locator('#canvas-area')).toBeVisible({ timeout: 15000 });
-
-    // إدراج صورة
     await page.getByTestId('toolbar-insert').click();
-
-    // فتح نافذة مكتبة المشاريع
+    await expect
+      .poll(() => stageImageSources(page))
+      .toMatch(/\/local-image\/(?:thumb\/)?saved-b64\.png/);
+    const savedImage = await stageImageSources(page);
     await page.getByTestId('toolbar-projects').click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // التبديل إلى تبويب الحفظ
-    await page.getByRole('tab', { name: /حفظ/ }).click();
-    await page.fill('#proj-name', 'مشروع اختباري');
-
-    await page.getByRole('button', { name: /حفظ المشروع|حفظ في قاعدة البيانات/ }).click();
-
+    const library = page.getByRole('dialog');
+    await library.getByRole('tab', { name: 'حفظ', exact: true }).click();
+    await library.getByRole('textbox', { name: 'اسم المشروع', exact: true }).fill(projectName);
+    await library.getByRole('button', { name: 'حفظ المشروع', exact: true }).click();
     await expect(page.getByText('تم حفظ المشروع بنجاح في قاعدة البيانات المحلية')).toBeVisible();
+    await expect(library.getByRole('tab', { name: 'المشاريع', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    const openProject = library.getByRole('button', {
+      name: `فتح المشروع ${projectName}`,
+      exact: true,
+    });
+    await expect(openProject).toBeVisible();
+    const save = ledger.rpc.find((call) => call.name === 'SaveProject')!;
+    const saved = save.args[0] as { id: string; name: string; elements: string };
+    expect(saved.name).toBe(projectName);
+    expect(saved.id).not.toBe('mock-proj-1');
+    const savedElements = JSON.parse(saved.elements);
+    expect(savedElements).toHaveLength(1);
+    expect(savedElements[0]).toMatchObject({
+      type: 'image',
+      imageSrc: '/local-image/saved-b64.png',
+    });
+    expect(ledger.projects.find((project) => project.id === saved.id)?.elements).toBe(
+      saved.elements,
+    );
 
-    // قراءة فعلية للمكتبة: النداء الموكول GetAllProjects يرسم المشروع المرجعي
-    await page.getByRole('tab', { name: /المشاريع/ }).click();
-    await expect(page.getByText('مشروع اختباري أول')).toBeVisible();
+    // Change the real document via GUI so reload must actually restore it.
+    await page.keyboard.press('Escape');
+    await expect(library).toBeHidden();
+    // Move focus off the toolbar-projects trigger button restored by Radix Dialog;
+    // Delete shortcut intentionally ignores events whose target is a button.
+    await page.locator('.canvas-viewport .konvajs-content').click({ position: { x: 20, y: 20 } });
+    await page.keyboard.press('Control+a');
+    await page.keyboard.press('Delete');
+    await expect.poll(() => stageImageSources(page)).toBe('');
+    await page.getByTestId('toolbar-projects').click();
+    await library.getByRole('tab', { name: 'المشاريع', exact: true }).click();
+    await openProject.click();
+    const replace = page.getByRole('alertdialog', { name: 'تحميل مشروع آخر' });
+    await expect(replace).toBeVisible();
+    await replace.getByRole('button', { name: 'تحميل واستبدال', exact: true }).click();
+    await expect(library).toBeHidden();
+    await expect(page.getByText(`تم تحميل المشروع: ${projectName}`, { exact: true })).toBeVisible();
+    await expect.poll(() => stageImageSources(page)).toBe(savedImage);
+    const load = ledger.rpc.filter((call) => call.name === 'GetProject').at(-1)!;
+    expect(load.args).toEqual([saved.id]);
+    expect(load.result).toMatchObject({
+      id: saved.id,
+      name: projectName,
+      elements: saved.elements,
+    });
   });
 });

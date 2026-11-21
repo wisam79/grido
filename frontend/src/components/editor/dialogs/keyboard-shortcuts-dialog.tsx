@@ -170,7 +170,10 @@ export function KeyboardShortcutsDialog() {
         <div className="px-5 py-3 border-t border-border/40 bg-muted/20 text-center shrink-0">
           <p className="text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
             <span>افتح النافذة بالضغط على</span>
-            <kbd className="px-2 py-0.5 bg-background rounded-md border border-border text-xs font-mono font-bold text-foreground shadow-2xs">
+            <kbd
+              dir="ltr"
+              className="px-2 py-0.5 bg-background rounded-md border border-border text-xs font-mono font-bold text-foreground shadow-2xs"
+            >
               Ctrl + /
             </kbd>
           </p>

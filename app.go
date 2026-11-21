@@ -171,11 +171,9 @@ func (a *App) ExportSupportLogs() (string, error) {
 	appDir := utils.GetAppDir()
 	logDir := filepath.Join(appDir, "logs")
 
-	d := application.Get().Dialog.SaveFile()
-	d.SetMessage("تصدير سجلات الأخطاء")
-	d.SetFilename("grido_support_logs.zip")
-	d.AddFilter("Zip Files (*.zip)", "*.zip")
-	savePath, err := d.PromptForSingleSelection()
+	savePath, err := service.NewWailsRuntimeBridge().SaveFileDialog("تصدير سجلات الأخطاء", "grido_support_logs.zip", []domain.FileFilter{
+		{DisplayName: "Zip Files (*.zip)", Pattern: "*.zip"},
+	})
 	if err != nil || savePath == "" {
 		return "", nil // user cancelled
 	}
@@ -199,10 +197,9 @@ func (a *App) SaveAiUsageLogs(jsonData string) error {
 }
 
 func (a *App) OpenFile() (string, error) {
-	d := application.Get().Dialog.OpenFile()
-	d.SetTitle("Select an Image")
-	d.AddFilter("Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp")
-	filePath, err := d.PromptForSingleSelection()
+	filePath, err := service.NewWailsRuntimeBridge().OpenFileDialog("Select an Image", []domain.FileFilter{
+		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
+	})
 	if err != nil {
 		return "", fmt.Errorf("open dialog: %w", err)
 	}
@@ -213,10 +210,9 @@ func (a *App) OpenFile() (string, error) {
 }
 
 func (a *App) OpenMultipleFiles() ([]string, error) {
-	d := application.Get().Dialog.OpenFile()
-	d.SetTitle("Select Images")
-	d.AddFilter("Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp")
-	filePaths, err := d.PromptForMultipleSelection()
+	filePaths, err := service.NewWailsRuntimeBridge().OpenFilesDialog("Select Images", []domain.FileFilter{
+		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("open multiple dialog: %w", err)
 	}
@@ -227,11 +223,7 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 }
 
 func (a *App) OpenDirectoryDialog() ([]string, error) {
-	d := application.Get().Dialog.OpenFile()
-	d.SetTitle("Select Folder Containing Images")
-	d.CanChooseDirectories(true)
-	d.CanChooseFiles(false)
-	dirPath, err := d.PromptForSingleSelection()
+	dirPath, err := service.NewWailsRuntimeBridge().OpenDirectoryDialog("Select Folder Containing Images")
 	if err != nil {
 		return nil, fmt.Errorf("open directory dialog: %w", err)
 	}
@@ -296,13 +288,11 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", fmt.Errorf("file size too large: %d bytes (max %d)", len(decoded), service.MaxFileSize)
 	}
 
-	d := application.Get().Dialog.SaveFile()
-	d.SetMessage("Save File")
-	d.SetFilename(defaultFilename)
+	var filters []domain.FileFilter
 	if displayName != "" && pattern != "" {
-		d.AddFilter(displayName, pattern)
+		filters = append(filters, domain.FileFilter{DisplayName: displayName, Pattern: pattern})
 	}
-	filePath, err := d.PromptForSingleSelection()
+	filePath, err := service.NewWailsRuntimeBridge().SaveFileDialog("Save File", defaultFilename, filters)
 	if err != nil {
 		return "", fmt.Errorf("save dialog: %w", err)
 	}
@@ -402,11 +392,7 @@ func (a *App) DownloadAndInstallUpdate(url string, sha256 string, signature stri
 }
 
 func (a *App) SelectExportDirectory() (string, error) {
-	d := application.Get().Dialog.OpenFile()
-	d.SetTitle("اختر مجلد تصدير الصور")
-	d.CanChooseDirectories(true)
-	d.CanChooseFiles(false)
-	dirPath, err := d.PromptForSingleSelection()
+	dirPath, err := service.NewWailsRuntimeBridge().OpenDirectoryDialog("اختر مجلد تصدير الصور")
 	if err != nil {
 		return "", fmt.Errorf("select export directory: %w", err)
 	}

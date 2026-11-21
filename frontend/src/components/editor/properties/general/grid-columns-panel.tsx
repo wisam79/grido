@@ -18,9 +18,130 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { cn } from '@/lib/utils';
 
 import { ColorField, ColorPanel } from '../color-panel';
+
+function DraftNumberField({
+  id,
+  value,
+  min,
+  max,
+  step,
+  isFloat = false,
+  ariaLabel,
+  onCommit,
+  getValue,
+  useInputPrimitive = false,
+  className,
+}: {
+  id?: string;
+  value: number;
+  min: number;
+  max?: number;
+  step?: number;
+  isFloat?: boolean;
+  ariaLabel: string;
+  onCommit: (next: number) => void;
+  getValue: () => number;
+  useInputPrimitive?: boolean;
+  className?: string;
+}) {
+  const [draft, setDraft] = React.useState(String(value));
+  const focusedRef = React.useRef(false);
+  const gestureRef = React.useRef<{
+    session: number;
+    source: number;
+    owned: number;
+    dirty: boolean;
+  } | null>(null);
+  const skipBlurRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!focusedRef.current) setDraft(String(value));
+  }, [value]);
+
+  const clampVal = (num: number) => {
+    const floored = Math.max(min, isFloat ? num : Math.round(num));
+    return max !== undefined ? Math.min(max, floored) : floored;
+  };
+  const applyValue = (next: number) => {
+    const gesture = gestureRef.current;
+    const current = getValue();
+    if (!gesture || gesture.session !== getDocumentSession() || !Object.is(current, gesture.owned))
+      return;
+    if (Object.is(next, current)) return;
+    onCommit(next);
+    gesture.owned = getValue();
+  };
+  const commitValue = (raw: string) => {
+    const gesture = gestureRef.current;
+    const parsed = raw.trim() ? Number(raw) : NaN;
+    if (gesture?.dirty && Number.isFinite(parsed)) applyValue(clampVal(parsed));
+    setDraft(String(getValue()));
+    gestureRef.current = null;
+  };
+
+  const props = {
+    id,
+    type: 'number' as const,
+    dir: 'ltr' as const,
+    'aria-label': ariaLabel,
+    value: draft,
+    min,
+    max,
+    step,
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      focusedRef.current = true;
+      skipBlurRef.current = false;
+      const current = getValue();
+      gestureRef.current = {
+        session: getDocumentSession(),
+        source: current,
+        owned: current,
+        dirty: false,
+      };
+      setDraft(String(current));
+      e.currentTarget.select();
+    },
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const next = e.target.value;
+      setDraft(next);
+      const gesture = gestureRef.current;
+      if (!gesture) return;
+      gesture.dirty = true;
+      const parsed = next.trim() ? Number(next) : NaN;
+      if (Number.isFinite(parsed) && clampVal(parsed) === parsed) applyValue(parsed);
+    },
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== 'Enter' && e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      skipBlurRef.current = true;
+      focusedRef.current = false;
+      if (e.key === 'Enter') commitValue(draft);
+      else {
+        const gesture = gestureRef.current;
+        if (gesture?.dirty) applyValue(gesture.source);
+        gestureRef.current = null;
+        setDraft(String(getValue()));
+      }
+      e.currentTarget.blur();
+    },
+    onBlur: () => {
+      focusedRef.current = false;
+      if (skipBlurRef.current) {
+        skipBlurRef.current = false;
+        return;
+      }
+      commitValue(draft);
+    },
+    className,
+  };
+
+  return useInputPrimitive ? <Input {...props} /> : <input {...props} />;
+}
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -140,19 +261,21 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-100">
                 {/* صف حجم المربع والتقسيم */}
                 <div className="grid grid-cols-2 gap-2" dir="rtl">
-                  <label className="flex min-w-0 flex-col gap-1.5" title="حجم المربع">
+                  <label
+                    htmlFor={`${fieldId}-grid-size`}
+                    className="flex min-w-0 flex-col gap-1.5"
+                    title="حجم المربع"
+                  >
                     <span className="text-control font-medium text-muted-foreground">المربع</span>
                     <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                      <input
-                        type="number"
-                        dir="ltr"
-                        aria-label="حجم مربع الشبكة"
+                      <DraftNumberField
+                        id={`${fieldId}-grid-size`}
+                        ariaLabel="حجم مربع الشبكة"
                         value={gridSize}
+                        getValue={() => useEditorStore.getState().gridSize}
                         min={5}
                         max={200}
-                        onChange={(e) =>
-                          setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))
-                        }
+                        onCommit={setGridSize}
                         className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-mini text-muted-foreground shrink-0 font-mono">px</span>
@@ -259,17 +382,15 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     title="عدد الأعمدة"
                   >
                     <span className="text-control font-medium text-muted-foreground">الأعمدة</span>
-                    <Input
+                    <DraftNumberField
                       id={`${fieldId}-count`}
-                      type="number"
-                      dir="ltr"
-                      aria-label="عدد الأعمدة"
+                      useInputPrimitive
+                      ariaLabel="عدد الأعمدة"
                       value={columnsCount}
+                      getValue={() => useEditorStore.getState().columnsCount}
                       min={1}
                       max={24}
-                      onChange={(e) =>
-                        setColumnsCount(Math.max(1, Math.min(24, parseInt(e.target.value) || 1)))
-                      }
+                      onCommit={(val) => setColumnsCount(val)}
                       className="px-1.5 text-center font-mono tabular-nums font-medium"
                     />
                   </label>
@@ -280,14 +401,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     title="الهامش"
                   >
                     <span className="text-control font-medium text-muted-foreground">الهامش</span>
-                    <Input
+                    <DraftNumberField
                       id={`${fieldId}-margin`}
-                      type="number"
-                      dir="ltr"
-                      aria-label="هامش الأعمدة"
+                      useInputPrimitive
+                      ariaLabel="هامش الأعمدة"
                       value={columnsMargin}
+                      getValue={() => useEditorStore.getState().columnsMargin}
                       min={0}
-                      onChange={(e) => setColumnsMargin(Math.max(0, parseInt(e.target.value) || 0))}
+                      onCommit={(val) => setColumnsMargin(val)}
                       className="px-1.5 text-center font-mono tabular-nums font-medium"
                     />
                   </label>
@@ -298,14 +419,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     title="التباعد"
                   >
                     <span className="text-control font-medium text-muted-foreground">التباعد</span>
-                    <Input
+                    <DraftNumberField
                       id={`${fieldId}-gutter`}
-                      type="number"
-                      dir="ltr"
-                      aria-label="تباعد الأعمدة"
+                      useInputPrimitive
+                      ariaLabel="تباعد الأعمدة"
                       value={columnsGutter}
+                      getValue={() => useEditorStore.getState().columnsGutter}
                       min={0}
-                      onChange={(e) => setColumnsGutter(Math.max(0, parseInt(e.target.value) || 0))}
+                      onCommit={(val) => setColumnsGutter(val)}
                       className="px-1.5 text-center font-mono tabular-nums font-medium"
                     />
                   </label>
@@ -389,50 +510,52 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* مقاس النزيف ومقاس الأمان */}
                 <div className="grid grid-cols-2 gap-2" dir="rtl">
-                  <label className="flex min-w-0 flex-col gap-1.5" title="النزيف الخارجي">
+                  <label
+                    htmlFor={`${fieldId}-bleed`}
+                    className="flex min-w-0 flex-col gap-1.5"
+                    title="النزيف الخارجي"
+                  >
                     <span className="flex items-center gap-1.5 text-control font-medium text-muted-foreground">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
                       النزيف
                     </span>
                     <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                      <input
-                        type="number"
-                        dir="ltr"
-                        aria-label="النزيف الخارجي"
+                      <DraftNumberField
+                        id={`${fieldId}-bleed`}
+                        isFloat
+                        ariaLabel="النزيف الخارجي"
                         value={bleedMarginMM}
+                        getValue={() => useEditorStore.getState().bleedMarginMM}
                         min={0}
                         max={20}
                         step={0.5}
-                        onChange={(e) =>
-                          setBleedMarginMM(
-                            Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
-                          )
-                        }
+                        onCommit={(val) => setBleedMarginMM(val)}
                         className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-mini text-muted-foreground shrink-0">مم</span>
                     </div>
                   </label>
 
-                  <label className="flex min-w-0 flex-col gap-1.5" title="منطقة الأمان">
+                  <label
+                    htmlFor={`${fieldId}-safe`}
+                    className="flex min-w-0 flex-col gap-1.5"
+                    title="منطقة الأمان"
+                  >
                     <span className="flex items-center gap-1.5 text-control font-medium text-muted-foreground">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                       الأمان
                     </span>
                     <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                      <input
-                        type="number"
-                        dir="ltr"
-                        aria-label="منطقة الأمان"
+                      <DraftNumberField
+                        id={`${fieldId}-safe`}
+                        isFloat
+                        ariaLabel="منطقة الأمان"
                         value={safeMarginMM}
+                        getValue={() => useEditorStore.getState().safeMarginMM}
                         min={0}
                         max={20}
                         step={0.5}
-                        onChange={(e) =>
-                          setSafeMarginMM(
-                            Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
-                          )
-                        }
+                        onCommit={(val) => setSafeMarginMM(val)}
                         className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-mini text-muted-foreground shrink-0">مم</span>

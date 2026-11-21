@@ -85,18 +85,21 @@ export function useUserGuides(
   // بدء سحب خط إرشادي جديد من المسطرة الأفقية أو الرأسية
   const startGuideDrag = useCallback(
     (e: ReactPointerEvent<SVGSVGElement>, type: 'h' | 'v') => {
-      const displayDim = type === 'h' ? displayH : displayW;
-      if (printMode || !innerRef.current || displayDim <= 0 || lockUserGuides) return;
-      e.preventDefault();
+      if (printMode || !innerRef.current || lockUserGuides) return;
       const paperRect = innerRef.current.getBoundingClientRect();
+      const pixelDim = type === 'h' ? paperRect.height || displayH : paperRect.width || displayW;
+      if (pixelDim <= 0) return;
+      e.preventDefault();
+      if (!useEditorStore.getState().showUserGuides) {
+        useEditorStore.getState().setShowUserGuides(true);
+      }
       const relPos =
         type === 'h'
-          ? (e.clientY - paperRect.top) / displayH
-          : (e.clientX - paperRect.left) / displayW;
-      const pixelDim = type === 'h' ? paperRect.height : paperRect.width;
+          ? (e.clientY - paperRect.top) / pixelDim
+          : (e.clientX - paperRect.left) / pixelDim;
       setDragGuideState({
         type,
-        pos: snapGuidePos(snapGuidePosToPixel(relPos, pixelDim), type, displayDim),
+        pos: snapGuidePos(snapGuidePosToPixel(relPos, pixelDim), type, pixelDim),
       });
     },
     [printMode, displayW, displayH, lockUserGuides, snapGuidePos, innerRef],
@@ -137,23 +140,26 @@ export function useUserGuides(
     const flushMove = () => {
       moveRafId = null;
       const e = pendingEvent;
+      pendingEvent = null;
       if (!e) return;
       const current = dragGuideStateRef.current;
       if (!current || !innerRef.current) return;
       const paperRect = innerRef.current.getBoundingClientRect();
+      let pos = current.pos;
       if (current.type === 'h') {
         const h = paperRect.height || 1;
         const rawPos = (e.clientY - paperRect.top) / h;
         // تثبيت على بكسل مادي ثم مغناطيسية — بهذا الترتيب يبقى الخط 1px حاداً
         // حتى عند عدم التقاط أي هدف مغناطيسي
-        const pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, h), 'h', h);
-        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
+        pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, h), 'h', h);
       } else {
         const w = paperRect.width || 1;
         const rawPos = (e.clientX - paperRect.left) / w;
-        const pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, w), 'v', w);
-        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
+        pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, w), 'v', w);
       }
+      const nextState = { ...current, pos };
+      dragGuideStateRef.current = nextState;
+      setDragGuideState(nextState);
     };
 
     const handlePointerMove = (e: DomPointerEvent) => {
@@ -167,6 +173,9 @@ export function useUserGuides(
       if (moveRafId !== null) {
         cancelAnimationFrame(moveRafId);
         moveRafId = null;
+      }
+      if (pendingEvent) {
+        flushMove();
       }
       const current = dragGuideStateRef.current;
       if (current) {

@@ -1,0 +1,42 @@
+---
+type: fix
+scope: build
+related_files:
+  - .github/workflows/ci.yml:1
+  - .github/workflows/e2e-acceptance.yml:1
+  - frontend/playwright.acceptance.config.ts:1
+  - frontend/vitest.config.ts:28
+  - frontend/e2e-acceptance/helpers/real-app.ts:127
+  - admin-web/e2e-acceptance/phone-real.spec.ts:20
+  - frontend/e2e/helpers/wails-mock.ts:1
+  - frontend/e2e/helpers/wails-v3-bridge.ts:593
+  - frontend/src/lib/canvas/text-stroke-filter.ts:1
+  - frontend/src/lib/canvas/curved-text-utils.ts:667
+  - runtime_harness_e2e.go:1
+  - internal/service/runtime_dialog_e2e.go:1
+  - scripts/e2e/report-run.mjs:1
+  - scripts/e2e/report-playwright.cjs:51
+  - scripts/e2e/report-infrastructure.mjs:1
+  - scripts/e2e/supabase-fixture.mjs:1
+  - frontend/src/hooks/use-filter-cache.ts:1
+  - frontend/src/components/editor/system/update-notifier.tsx:81
+  - frontend/src/App.tsx:204
+  - frontend/src/components/editor/workspace/app-dialogs-host.tsx:94
+  - frontend/src/lib/wails-env.ts:17
+  - frontend/src/lib/store/slices/license-slice.ts:183
+  - frontend/src/lib/store/slices/collage-slice.ts:169
+  - frontend/e2e-acceptance/helpers/canvas-readonly.ts:48
+  - frontend/e2e-acceptance/helpers/gui.ts:62
+  - frontend/e2e-acceptance/collage-journeys.spec.ts:66
+  - frontend/e2e-acceptance/stickers-vdp.spec.ts:52
+  - frontend/e2e-acceptance/settings-journey.spec.ts:5
+  - frontend/e2e/ux-keyboard.spec.ts:326
+  - scripts/e2e/runtime-auth-contract.mjs:33
+  - frontend/e2e/app.spec.ts:63
+  - frontend/e2e/transformer-box-follows-geometry.spec.ts:65
+  - admin-web/vite.config.ts:25
+  - admin-web/src/pages/admin/components/admin-ui-components.test.tsx:294
+---
+بوابة قبول سحابية شاملة على فرع اختبار معزول: حزمة المتصفح المطابق Chromium على Ubuntu (4 شاردات بعد تقليص المصفوفة بقرار المالك 2026-11-21)، ورحلات GUI مع Go/SQLite والمخرجات الفعلية، وWebView2 أصلي ومصادقة/Storage/Realtime محلية مؤقتة؛ شهادات المسارات والقدرات المحجوبة منفصلة دون نشر إنتاج.
+GitHub workflow registration/job-env blockers عولجت عبرCIالمسجلعلىtestrefوإعدادمسارbinaryداخلstepدونsecrets؛ R1errorsمحفوظةبالتقريروليستقبولاًنهائياً.
+تقوية fixtures والنتائج لمنع نجاح IPC غير معروف أو حفظ مشروع مختلف، وإصلاح تداخل مؤقت الكاش الذي كشفه CI، وتأجيل فتح `UpdateNotifier` التلقائي أثناء فتح نافذة المصادقة `accountModalOpen` ما لم يُطلب يدوياً مع حقن `AppVersion` via `-ldflags` في ثنائيات القبول لمطابقة إصدار الإنتاج، وتوحيد تركيب `AccountLicenseModal` و`UpdateNotifier` و`QuitSaveFailedDialog` و`SonnerToaster` في الغلاف المشترك داخل `App.tsx` لمنع بقاء نافذة الحساب مفتوحة بعد الانتقال من شاشة القفل، ودعم رصد Wails v3 في وضع الخادم عبر `_wails.backendConnected` في `wailsIsDesktop()` مع رفع الملفات المخفية بالأدلة وتوحيد أبعاد عرض القبول ومحاولاته؛ نتائج التنفيذ التفصيلية وSHA والعيوب/القدرات في docs/reviews/28-real-e2e-acceptance-2026-11-20.md (مُغلق بنجاح في نطاقه ضمن تشغيل R11 رقم `44925271124` على SHA `f50aaeeca176828f7822509ca8e5183499c81937`؛ والقدرات المادية/السحابية غير المغطاة مسجّلة مستقلاً دون ادعاء شهادة شاملة خارج النطاق).

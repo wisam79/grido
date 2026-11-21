@@ -1,8 +1,10 @@
 import { gradientStart, gradientEnd, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
+import { resolveElementFill, type AffineMatrix } from '@/lib/canvas/fill-paint';
 import { computeShapePattern, toLocalPattern } from '@/lib/canvas/shape-pattern';
 import { resolveTextDecorationColor } from '@/lib/canvas/text-helpers';
 
 import type { CanvasElement } from '@/lib/editor-store';
+import type Konva from 'konva';
 
 /**
  * نقطة حل التعبئة الوحيدة لكل عناصر الكانفاس (شكل/نص).
@@ -10,13 +12,54 @@ import type { CanvasElement } from '@/lib/editor-store';
  * الأصلي (fillPatternImage)؛ قبل تحميل الصورة يبقى اللون المصمت ظاهراً بدل
  * شفافية — فيرى المستخدم عنصره فوراً ثم تُطبَّق الصورة عند جاهزيتها.
  */
+/**
+ * Native fill props cannot express inverse-affine radial gradients or rotated
+ * patterns under nonuniform path scaling. Keep Konva's geometry/hit/stroke
+ * implementation, but paint its already-traced path in element coordinates.
+ * Canvas paths retain their device coordinates when the CTM changes.
+ */
+export function createElementSpaceSceneFunc(
+  element: CanvasElement,
+  w: number,
+  h: number,
+  image: HTMLImageElement | null,
+  elementToLocal: AffineMatrix,
+) {
+  return (context: Konva.Context, shape: Konva.Shape) => {
+    const originalFill = shape._fillFunc;
+    shape._fillFunc = (fillContext) => {
+      const ctx = fillContext._context;
+      ctx.save();
+      try {
+        ctx.transform(...elementToLocal);
+        ctx.fillStyle = resolveElementFill(ctx, element, w, h, image);
+        ctx.fill();
+      } finally {
+        ctx.restore();
+      }
+    };
+    try {
+      // Use the native path/arc/wedge tracer, including Konva's hit geometry
+      // and scaled strokes. Do not replace the shape or its export semantics.
+      (shape as Konva.Shape & { _sceneFunc: (ctx: Konva.Context) => void })._sceneFunc(context);
+    } finally {
+      shape._fillFunc = originalFill;
+    }
+  };
+}
+
 export function getFillProps(
   element: CanvasElement,
   w: number,
   h: number,
   patternImage?: HTMLImageElement | null,
-  patternSpace?: { scaleX: number; scaleY: number },
+  patternSpace?: { scaleX?: number; scaleY?: number; originX?: number; originY?: number },
 ) {
+  const sX = patternSpace?.scaleX && patternSpace.scaleX !== 0 ? patternSpace.scaleX : 1;
+  const sY = patternSpace?.scaleY && patternSpace.scaleY !== 0 ? patternSpace.scaleY : 1;
+  const ox = patternSpace?.originX ?? 0;
+  const oy = patternSpace?.originY ?? 0;
+
   const textDecorationFill =
     element.type === 'text'
       ? { fill: resolveTextDecorationColor(element) ?? element.color ?? TEXT_COLOR_DEFAULT }
@@ -34,10 +77,12 @@ export function getFillProps(
         offsetX: element.fillImageOffsetX,
         offsetY: element.fillImageOffsetY,
       });
-      // أشكال المسار ترسم بمقياس داخلي (viewBox) — تعويضه يبقي النقش بمقاس العنصر
-      const t = patternSpace
-        ? toLocalPattern(computed, patternSpace.scaleX, patternSpace.scaleY)
-        : computed;
+      // أشكال المسار والمراكز ترسم بمقياس وإزاحة أصل مختلفة — نعوّضهما ليتطابق النقش مع التصدير
+      const scaled = patternSpace ? toLocalPattern(computed, sX, sY) : computed;
+      const t =
+        ox !== 0 || oy !== 0
+          ? { ...scaled, patternX: scaled.patternX + ox, patternY: scaled.patternY + oy }
+          : scaled;
       return {
         ...textDecorationFill,
         fillPriority: 'pattern',
@@ -67,8 +112,8 @@ export function getFillProps(
     const end = element.fillLinearGradientEndPoint || { x: 1, y: 1 };
     return {
       fillPriority: 'linear-gradient',
-      fillLinearGradientStartPoint: { x: start.x * w, y: start.y * h },
-      fillLinearGradientEndPoint: { x: end.x * w, y: end.y * h },
+      fillLinearGradientStartPoint: { x: ox + (start.x * w) / sX, y: oy + (start.y * h) / sY },
+      fillLinearGradientEndPoint: { x: ox + (end.x * w) / sX, y: oy + (end.y * h) / sY },
       fillLinearGradientColorStops: element.fillLinearGradientColorStops || [
         0,
         gradientStart(),
@@ -86,13 +131,14 @@ export function getFillProps(
         : 0;
     const rEnd =
       element.fillRadialGradientEndRadius !== undefined ? element.fillRadialGradientEndRadius : 0.5;
+    const radialScale = Math.max(Math.abs(sX), Math.abs(sY)) || 1;
     return {
       ...textDecorationFill,
       fillPriority: 'radial-gradient',
-      fillRadialGradientStartPoint: { x: start.x * w, y: start.y * h },
-      fillRadialGradientStartRadius: rStart * Math.max(w, h),
-      fillRadialGradientEndPoint: { x: end.x * w, y: end.y * h },
-      fillRadialGradientEndRadius: rEnd * Math.max(w, h),
+      fillRadialGradientStartPoint: { x: ox + (start.x * w) / sX, y: oy + (start.y * h) / sY },
+      fillRadialGradientStartRadius: (rStart * Math.max(w, h)) / radialScale,
+      fillRadialGradientEndPoint: { x: ox + (end.x * w) / sX, y: oy + (end.y * h) / sY },
+      fillRadialGradientEndRadius: (rEnd * Math.max(w, h)) / radialScale,
       fillRadialGradientColorStops: element.fillRadialGradientColorStops || [
         0,
         gradientStart(),

@@ -16,7 +16,9 @@ export function CanvasMenuSection({
   handleAction: (action: () => void) => void;
 }) {
   const clipboardCount = useEditorStore((s) => s.clipboardElements?.length ?? 0);
-  const hasElements = useEditorStore((s) => s.mode === 'single' && s.elements.length > 0);
+  const canSelectAll = useEditorStore((s) =>
+    s.mode === 'collage' ? s.slots.length > 0 : s.elements.length > 0,
+  );
 
   return (
     <div className="space-y-1">
@@ -31,8 +33,19 @@ export function CanvasMenuSection({
               const [b64] = await openImageFileDialog(false);
               if (b64) {
                 const srcToUse = await persistPickedImage(b64);
-                const aspect = await resolveImageAspectRatio(srcToUse);
-                useEditorStore.getState().addImageElement(srcToUse, aspect);
+                const state = useEditorStore.getState();
+                if (state.mode === 'collage') {
+                  const targetSlot =
+                    state.slots.find((s) => s.id === state.selectedId) ??
+                    state.slots.find((s) => !s.imageSrc) ??
+                    state.slots[0];
+                  if (targetSlot) {
+                    await state.setSlotImage(targetSlot.id, srcToUse);
+                  }
+                } else {
+                  const aspect = await resolveImageAspectRatio(srcToUse);
+                  state.addImageElement(srcToUse, aspect);
+                }
               }
             })
           }
@@ -61,14 +74,19 @@ export function CanvasMenuSection({
           <span className="truncate">لصق {clipboardCount > 0 ? `(${clipboardCount})` : ''}</span>
         </button>
 
-        {hasElements && (
+        {canSelectAll && (
           <button
             role="menuitem"
             tabIndex={-1}
             className={menuItemClassName}
             onClick={() =>
               handleAction(() => {
-                useEditorStore.getState().selectAllElements();
+                const state = useEditorStore.getState();
+                if (state.mode === 'collage') {
+                  state.setSelectedIds(state.slots.map((s) => s.id));
+                } else {
+                  state.selectAllElements();
+                }
               })
             }
           >

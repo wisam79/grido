@@ -44,7 +44,8 @@ export function StickerSheetTab({
                   key={idx}
                   className={cn(
                     'w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-colors duration-150 shadow-2xs',
-                    template.shape === 'circle'
+                    (template.shape ?? (template.category === 'badges' ? 'circle' : undefined)) ===
+                      'circle'
                       ? 'rounded-full'
                       : template.shape === 'rect'
                         ? 'rounded-sm'

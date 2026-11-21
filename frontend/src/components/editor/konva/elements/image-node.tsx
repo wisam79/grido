@@ -7,6 +7,7 @@ import { useDisplayImage } from '@/hooks/use-display-image';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { useStickerDisplayRaster } from '@/hooks/use-sticker-display-raster';
+import { isStageCaptureActive } from '@/lib/canvas/konva-export-utils';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
@@ -18,6 +19,62 @@ import type { CacheableKonvaNode } from '@/hooks/use-filter-cache';
 import type { ImageElement } from '@/lib/editor-store';
 import '@/lib/filters/custom-filters';
 
+function traceMaskClipPath(
+  ctx: Pick<
+    CanvasRenderingContext2D,
+    'beginPath' | 'moveTo' | 'lineTo' | 'bezierCurveTo' | 'arc' | 'closePath'
+  >,
+  maskShape: string | undefined,
+  w: number,
+  h: number,
+) {
+  if (maskShape === 'circle') {
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+    ctx.closePath();
+  } else if (maskShape === 'star') {
+    const cx = w / 2;
+    const cy = h / 2;
+    const spikes = 5;
+    const outerRadius = Math.min(w, h) / 2;
+    const innerRadius = outerRadius / 2;
+    let rot = (Math.PI / 2) * 3;
+    const step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      let x = cx + Math.cos(rot) * outerRadius;
+      let y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+  } else if (maskShape === 'heart') {
+    const topCurveHeight = h * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(w / 2, topCurveHeight);
+    ctx.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
+    ctx.bezierCurveTo(0, (h + topCurveHeight) / 2, w / 2, (h + topCurveHeight) / 2, w / 2, h);
+    ctx.bezierCurveTo(
+      w / 2,
+      (h + topCurveHeight) / 2,
+      w,
+      (h + topCurveHeight) / 2,
+      w,
+      topCurveHeight,
+    );
+    ctx.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
+    ctx.closePath();
+  }
+}
+
 export const URLImage = React.memo(function URLImage({
   element: _element,
   isSelected,
@@ -25,6 +82,7 @@ export const URLImage = React.memo(function URLImage({
   onTouchStart,
   onClick,
   onTap,
+  onDblClick,
   onChange: _onChange,
   canvasWidth,
   canvasHeight,
@@ -174,53 +232,7 @@ export const URLImage = React.memo(function URLImage({
     if (!element.maskShape || element.maskShape === 'none') return undefined;
 
     return (ctx: Konva.Context) => {
-      const w = nodeW;
-      const h = nodeH;
-      if (element.maskShape === 'circle') {
-        ctx.beginPath();
-        ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
-        ctx.closePath();
-      } else if (element.maskShape === 'star') {
-        const cx = w / 2;
-        const cy = h / 2;
-        const spikes = 5;
-        const outerRadius = Math.min(w, h) / 2;
-        const innerRadius = outerRadius / 2;
-        let rot = (Math.PI / 2) * 3;
-        const step = Math.PI / spikes;
-
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - outerRadius);
-        for (let i = 0; i < spikes; i++) {
-          let x = cx + Math.cos(rot) * outerRadius;
-          let y = cy + Math.sin(rot) * outerRadius;
-          ctx.lineTo(x, y);
-          rot += step;
-
-          x = cx + Math.cos(rot) * innerRadius;
-          y = cy + Math.sin(rot) * innerRadius;
-          ctx.lineTo(x, y);
-          rot += step;
-        }
-        ctx.lineTo(cx, cy - outerRadius);
-        ctx.closePath();
-      } else if (element.maskShape === 'heart') {
-        const topCurveHeight = h * 0.3;
-        ctx.beginPath();
-        ctx.moveTo(w / 2, topCurveHeight);
-        ctx.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
-        ctx.bezierCurveTo(0, (h + topCurveHeight) / 2, w / 2, (h + topCurveHeight) / 2, w / 2, h);
-        ctx.bezierCurveTo(
-          w / 2,
-          (h + topCurveHeight) / 2,
-          w,
-          (h + topCurveHeight) / 2,
-          w,
-          topCurveHeight,
-        );
-        ctx.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
-        ctx.closePath();
-      }
+      traceMaskClipPath(ctx, element.maskShape, nodeW, nodeH);
     };
   }, [element.maskShape, nodeW, nodeH]);
 
@@ -247,12 +259,91 @@ export const URLImage = React.memo(function URLImage({
   const hasBgColor = Boolean(element.bgColor && element.bgColor !== 'transparent');
   // في Konva لا تدعم عقدة Group خصائص الظل مطلقاً (تُطبَّق على Shape فقط)، وعند
   // تفعيل الفلاتر (node.cache) أو قناع القصّ (clipFunc) يُحجب ظل KonvaImage.
-  // لذا نرسم الظل مباشرة على KonvaImage في الحالة العادية، أو على Rect/Shape غير
-  // مخزّن خلف حاوية القصّ عند وجود فلاتر أو قناع أو خلفية.
+  // لذا نرسم الظل مباشرة على KonvaImage في الحالة العادية، أو على Shape غير
+  // مقصوص يعرض صورة مخبأة مقصوصة في كانفاس خارجي ليظهر الظل حول الشكل المقصوص.
   const useDirectImageShadow = hasShadow && !hasFilters && !clipFunc && !hasBgColor;
   const useRectShadow = hasShadow && hasBgColor && !clipFunc;
   const useShapeShadowCaster =
     hasShadow && !useDirectImageShadow && !useRectShadow && Boolean(shown);
+
+  // Reuse only the editor bitmap. Capture swaps the Image node inside its
+  // serialized transaction, so the caster must read that node at draw time.
+  // No effect cleanup: StrictMode replays cleanup while this bitmap is still live.
+  const shadowCasterRef = React.useRef<{
+    source: CanvasImageSource;
+    crop: string;
+    canvas: HTMLCanvasElement;
+  } | null>(null);
+  const drawShadowCaster = (context: Konva.Context) => {
+    const node = imageNodeRef.current as unknown as Konva.Image | null;
+    const source = node?.image() ?? shown;
+    if (!source || nodeW <= 0 || nodeH <= 0) return;
+    const crop =
+      node?.crop() ??
+      (coverCrop
+        ? {
+            x: coverCrop.cropX,
+            y: coverCrop.cropY,
+            width: coverCrop.cropWidth,
+            height: coverCrop.cropHeight,
+          }
+        : { x: 0, y: 0, width: 0, height: 0 });
+    // The capture canvas carries its own DPI. Never enlarge the fixed 1024px
+    // editor caster for print, and never retain a leased full-resolution source.
+    const pixelRatio = context.getCanvas().getPixelRatio();
+    const capturing = isStageCaptureActive(node?.getStage());
+    const scale = capturing ? pixelRatio : Math.min(1, 1024 / Math.max(nodeW, nodeH));
+    const cw = Math.max(1, Math.ceil(nodeW * scale));
+    const ch = Math.max(1, Math.ceil(nodeH * scale));
+    const key = `${crop.x},${crop.y},${crop.width},${crop.height},${nodeW},${nodeH},${cw},${ch},${element.maskShape},${element.cornerRadius},${element.bgColor}`;
+    const cached = shadowCasterRef.current;
+    let off = cached?.source === source && cached.crop === key ? cached.canvas : null;
+    if (!off) {
+      off = document.createElement('canvas');
+      off.width = cw;
+      off.height = ch;
+      const ctx = off.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(cw / nodeW, ch / nodeH);
+      if (element.maskShape && element.maskShape !== 'none') {
+        traceMaskClipPath(ctx, element.maskShape, nodeW, nodeH);
+        ctx.clip();
+      } else if (element.cornerRadius && element.cornerRadius > 0) {
+        const r = Math.min(element.cornerRadius, nodeW / 2, nodeH / 2);
+        ctx.beginPath();
+        ctx.moveTo(r, 0);
+        ctx.arcTo(nodeW, 0, nodeW, nodeH, r);
+        ctx.arcTo(nodeW, nodeH, 0, nodeH, r);
+        ctx.arcTo(0, nodeH, 0, 0, r);
+        ctx.arcTo(0, 0, nodeW, 0, r);
+        ctx.closePath();
+        ctx.clip();
+      }
+      if (hasBgColor && element.bgColor) {
+        ctx.fillStyle = element.bgColor;
+        ctx.fillRect(0, 0, nodeW, nodeH);
+      }
+      if (crop.width > 0 && crop.height > 0) {
+        ctx.drawImage(
+          source as CanvasImageSource,
+          crop.x,
+          crop.y,
+          crop.width,
+          crop.height,
+          0,
+          0,
+          nodeW,
+          nodeH,
+        );
+      } else {
+        ctx.drawImage(source as CanvasImageSource, 0, 0, nodeW, nodeH);
+      }
+      if (!capturing && source === shown) {
+        shadowCasterRef.current = { source: source as CanvasImageSource, crop: key, canvas: off };
+      }
+    }
+    context._context.drawImage(off, 0, 0, nodeW, nodeH);
+  };
 
   return (
     <Group
@@ -276,6 +367,8 @@ export const URLImage = React.memo(function URLImage({
       onTouchStart={onTouchStart}
       onClick={onClick}
       onTap={onTap}
+      onDblClick={onDblClick}
+      onDblTap={onDblClick as unknown as (e: Konva.KonvaEventObject<TouchEvent>) => void}
     >
       <Group
         x={nodeW / 2}
@@ -296,46 +389,7 @@ export const URLImage = React.memo(function URLImage({
             listening={false}
             perfectDrawEnabled={false}
             {...shadowProps}
-            sceneFunc={(ctx) => {
-              const nativeCtx = ctx._context;
-              ctx.save();
-              if (clipFunc) {
-                clipFunc(ctx);
-                ctx.clip();
-              } else if (element.cornerRadius && element.cornerRadius > 0) {
-                const r = Math.min(element.cornerRadius, nodeW / 2, nodeH / 2);
-                ctx.beginPath();
-                ctx.moveTo(r, 0);
-                ctx.arcTo(nodeW, 0, nodeW, nodeH, r);
-                ctx.arcTo(nodeW, nodeH, 0, nodeH, r);
-                ctx.arcTo(0, nodeH, 0, 0, r);
-                ctx.arcTo(0, 0, nodeW, 0, r);
-                ctx.closePath();
-                ctx.clip();
-              }
-              if (hasBgColor && element.bgColor) {
-                nativeCtx.fillStyle = element.bgColor;
-                nativeCtx.fillRect(0, 0, nodeW, nodeH);
-              }
-              if (shown) {
-                if (coverCrop) {
-                  nativeCtx.drawImage(
-                    shown as CanvasImageSource,
-                    coverCrop.cropX,
-                    coverCrop.cropY,
-                    coverCrop.cropWidth,
-                    coverCrop.cropHeight,
-                    0,
-                    0,
-                    nodeW,
-                    nodeH,
-                  );
-                } else {
-                  nativeCtx.drawImage(shown as CanvasImageSource, 0, 0, nodeW, nodeH);
-                }
-              }
-              ctx.restore();
-            }}
+            sceneFunc={drawShadowCaster}
           />
         )}
         <Group width={nodeW} height={nodeH} clipFunc={clipFunc}>

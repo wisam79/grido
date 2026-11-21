@@ -194,7 +194,7 @@ export const FontSelector = React.memo(function FontSelector({
         aria-label="اختيار الخط"
         align="start"
         sideOffset={4}
-        className="z-(--z-popover) flex w-72 max-w-[calc(100vw-24px)] flex-col overflow-hidden p-0 font-cairo"
+        className="flex w-72 max-w-[calc(100vw-24px)] flex-col overflow-hidden p-0 font-cairo"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           searchRef.current?.focus();
@@ -307,7 +307,7 @@ export const FontSelector = React.memo(function FontSelector({
                         </span>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="z-(--z-popover)">
+                    <TooltipContent side="left">
                       {font.englishName} · {font.isOffline ? 'مدمج' : 'سحابي — يتطلب اتصالاً'}
                     </TooltipContent>
                   </Tooltip>
@@ -338,7 +338,7 @@ export const FontSelector = React.memo(function FontSelector({
                         />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent className="z-(--z-popover)">
+                    <TooltipContent>
                       {isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                     </TooltipContent>
                   </Tooltip>

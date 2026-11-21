@@ -2,6 +2,35 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## بوابة E2E مع خلفية فعلية — 2026-11-20 (تنفيذ مكتوب، قبول التشغيل قيد العمل)
+
+مسارات الاختبار مفصولة: `frontend/e2e/` واجهة مع fixtures Wails معلنة، و`frontend/e2e-acceptance/` واجهة إنتاج مضمّنة مع Go/SQLite فعليين، و`admin-web/e2e-acceptance/` Auth/REST/Storage/Realtime حقيقية في Supabase محلية مؤقتة. مسار native يستخدم WebView2 الحقيقي مع contract-auth loopback **محاكاة third-party معلنة**؛ لا يُسمّى Supabase حيّاً. dialog adapter تحت build tag `e2e` يختار الملفات فقط ولا يستبدل media/persistence/export، ولا يثبت نوافذ OS.
+
+**الأمر السحابي المعتمد (لا تشغيل E2E محلي):** بعد دفع فرع `test/*` المصرح ومعرفة SHA40 بالضبط: `gh workflow run e2e-acceptance.yml --repo wisam79/grido --ref <test-branch> -f expected_sha=<SHA>`. workflow يرفض main/tag أوSHA مختلف؛ يستدعي CI force_full ثم Ubuntu sandbox/server/admin/phone وWindows native. تقرير strict manifest يطابق discovery للمتوقع/المنفذ، ويرفض skipped/flaky/retries ومخرجات الأدلة الناقصة؛ physical/OAuth/AI/PDF GUI وغيرها blocked منفصلة، wholeApplicationAcceptance لا يصبح true تلقائياً.
+
+R0 على0acc51e6/run44802717734 فشل في phone-bridge وcollage-image-crop، وبقية نتائج الوظائف في [تقرير28](reviews/28-real-e2e-acceptance-2026-11-20.md). إصلاح crop timer مع red→green منفرد23/23 وcache7/7 مثبت، وإعادة شاملة علىSHA الجديد معلّقة. جرد docs-gate الآن186Vitest/32legacyE2E/69internalGo/docs6؛ ستةspecs real frontend وثلاثةcases admin موزعة ملفين خارج جردlegacy المقصود، وrootGo test خارجinternal أيضاً؛ لا نخلط الجرد بعدد الحالات الناجحة.
+
+الفحوص الخفيفة المنفردة للمحللات فقط: `node --test scripts/e2e/report-selftest.test.mjs` **5/5 PASS**، و`node --test scripts/e2e/journey-verifier.test.mjs` **6/6 PASS**. هذه تحمي schema/inventory/hash ومحللاتPNG/TIFF/JPEG/PDF، لا تثبت GUI exports. JPEG في الرحلة يفك عبر browserImage/canvas، ولا يكتفي بفاحصheader. نوعية القبول من artifacts التشغيل الفعلي لا من كتابة هذه المواصفات.
+
+للأنواع الجديدة: `node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.acceptance.json`؛ إعدادfrontend القديم لا يشملe2e-acceptance، لذلك هذه بوابة مستقلة. المشروع يحظر local fullsuite/Playwright/build، ولا تستخدم متغيرCI مزيفاً للتحايل على wrapper.
+
+## اختبارات مراجعة حملة التعديلات — 2026-11-20
+
+نتائج **44 ملفاً مستهدفاً منفرداً**، لا full suite أو coverage أو E2E أو build محلي. الجدول الكامل لكل مسار وآخر نتيجة في [التقرير 27](reviews/27-change-campaign-audit-2026-11-20.md#التحقق-التنفيذي-المستهدف). كل أمر يستخدم ملفاً واحداً وعاملاً واحداً؛ حلقات التسلسل لا تمرر القائمة إلى تشغيل Vitest واحد.
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+node C:/projects/grido/admin-web/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/admin-web --config C:/projects/grido/admin-web/vite.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+```
+
+أُضيفت ثمانية ملفات frontend مستقلة: `clipboard-utils`، `error-boundary`، `image-node`، `sticker-inline-editor`، `sticker-insert-actions`، `toolbar-image-filters`، `use-filter-cache`، `vdp-import-dialog` تحت `frontend/test/`. باقي الاختبارات توسعات ملفات قائمة، وadmin خارج عدّاد frontend. جرد `docs-gate` الفعلي أصبح **186 Vitest / 32 E2E / 68 Go / 6 مستندات جذرية**؛ هذا جرد لا عدد حالات ناجحة.
+
+الإخفاقات قبل الإصلاح وتلك الناتجة من fixtures/نوع mock محفوظة في التقرير. لا إسقاط لتوقعات geometry/locks/history: shared minima بقيت كما هي بعد إعادة raw typing مع clamped preview؛ Canvas constructor mock أضاف getImageData قبل capture؛ file inputs تستهدف Portal الحقيقي؛ App fixture توكن صريح وخانتان صحيحتان. تحذيرات `act` وغياب Canvas jsdom وبعض سجلات failure mocks لا تثبت native/UI acceptance. لا حسابات/كاميرا/طابعة فعلية، ولا CI جديد دون push مأذون.
+
+### متابعة اختبار طبقات القوائم — 2026-11-20
+
+أُعيدت ملفات منفردة بالقالب أعلاه بعد إزالة z overrides في مستهلكي القوائم: `test/ui-compliance.test.ts` **57/57** (يحرس الستة actual callers)، `test/font-selector.test.tsx` **17/17**، `test/freeform-editor.test.tsx` **53/53**، `test/print-dialog-backstage.test.tsx` **18/18**، `test/element-properties-tabs.test.tsx` **54/54**. لم يُضف ملف اختبار جديد فلا يتغير جرد186. قياس متصفح محدود في harness معزول أكد computed z/hit-testing لقائمة Select؛ لا E2E محلي أو قبول visual، والنقر الآلي timeouts لا يُحسب نجاحاً. التفاصيل المؤرخة في التقرير27.
+
 ## إصلاحات دورة حياة Wails والإغلاق الآمن (`RV-LIFE-01…06`) — 2026-11-15
 
 اختبارات مستهدفة بعامل واحد ودون تغطية، واختبارات Go مع `-race` للتحقق من إغلاق الملاحظات `RV-LIFE-01…06` (لا تمثل تشغيل نافذة Wails أصلية حيّة أو حزمة E2E محلياً):

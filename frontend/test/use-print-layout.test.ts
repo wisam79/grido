@@ -20,6 +20,39 @@ describe('usePrintLayout', () => {
     backgroundHint: 'White',
   };
 
+  it.each(['single', 'collage'] as const)(
+    'honors explicit margins on canvas-sized paper in %s mode without changing original physical size',
+    (mode) => {
+      const settings = createMockPrintSettings({
+        paperId: 'canvas',
+        marginMM: 5,
+        dpi: 300,
+        orientation: 'portrait',
+        fitToPage: false,
+      });
+      const { result } = renderHook(() =>
+        usePrintLayout({
+          template: mode === 'single' ? passportTemplate : null,
+          printSettings: settings,
+          canvasWidth: 1200,
+          canvasHeight: 1800,
+          mode,
+        }),
+      );
+      const expectedW = mode === 'single' ? 35 : 101.6;
+      const expectedH = mode === 'single' ? 45 : 152.4;
+      expect(result.current.originalImageWidthMM).toBeCloseTo(expectedW);
+      expect(result.current.originalImageHeightMM).toBeCloseTo(expectedH);
+      expect(result.current.paperWidth).toBeCloseTo(expectedW);
+      expect(result.current.paperHeight).toBeCloseTo(expectedH);
+      expect(result.current.effectiveMarginMM).toBe(5);
+      expect(result.current.imageWidthMM).toBeCloseTo(expectedW - 10);
+      expect(result.current.imageWidthMM / result.current.imageHeightMM).toBeCloseTo(
+        expectedW / expectedH,
+      );
+    },
+  );
+
   it('preserves exact 1:1 physical dimensions for passport photos on A4 when fitToPage is false', () => {
     const printSettings = createMockPrintSettings({
       paperWidthMM: 210,

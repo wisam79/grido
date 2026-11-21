@@ -1,14 +1,115 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { CanvasDimensionsPanel } from '../src/components/editor/properties/general/canvas-dimensions-panel';
+import { GridColumnsPanel } from '../src/components/editor/properties/general/grid-columns-panel';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useEditorStore } from '../src/lib/editor-store';
 
 describe('CanvasDimensionsPanel Component Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
+  });
+
+  it.each(['العرض', 'الارتفاع'])('Escape skips the following native blur for %s', (label) => {
+    useEditorStore.setState({ rulerUnit: 'px' });
+    render(
+      <TooltipProvider>
+        <CanvasDimensionsPanel />
+      </TooltipProvider>,
+    );
+    const before = useEditorStore.getState();
+    const input = screen.getByLabelText(label);
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '1234' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().canvasWidth).toBe(before.canvasWidth);
+    expect(useEditorStore.getState().canvasHeight).toBe(before.canvasHeight);
+    expect(useEditorStore.getState().history).toBe(before.history);
+  });
+
+  it.each(['blur', 'Escape', 'Enter'])(
+    'untouched column drafts preserve an external update on %s',
+    (finish) => {
+      useEditorStore.setState({ mode: 'single', showColumns: true, columnsCount: 3 });
+      render(
+        <TooltipProvider>
+          <GridColumnsPanel />
+        </TooltipProvider>,
+      );
+      fireEvent.click(screen.getByRole('tab', { name: 'الأعمدة' }));
+      const input = screen.getByRole('spinbutton', { name: 'عدد الأعمدة' });
+      act(() => input.focus());
+      act(() => useEditorStore.getState().setColumnsCount(8));
+      if (finish === 'blur') act(() => input.blur());
+      else fireEvent.keyDown(input, { key: finish });
+      expect(useEditorStore.getState().columnsCount).toBe(8);
+      expect(input).toHaveValue(8);
+    },
+  );
+
+  it('live column drafts revert on Escape but never overwrite an external writer', () => {
+    useEditorStore.setState({ mode: 'single', showColumns: true, columnsCount: 3 });
+    render(
+      <TooltipProvider>
+        <GridColumnsPanel />
+      </TooltipProvider>,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'الأعمدة' }));
+    const input = screen.getByRole('spinbutton', { name: 'عدد الأعمدة' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '6' } });
+    expect(useEditorStore.getState().columnsCount).toBe(6);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().columnsCount).toBe(3);
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '6' } });
+    act(() => useEditorStore.getState().setColumnsCount(9));
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().columnsCount).toBe(9);
+  });
+
+  it('rejects recycled grid drafts across document sessions', () => {
+    useEditorStore.setState({ mode: 'single', showColumns: true, columnsCount: 3 });
+    render(
+      <TooltipProvider>
+        <GridColumnsPanel />
+      </TooltipProvider>,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'الأعمدة' }));
+    const input = screen.getByRole('spinbutton', { name: 'عدد الأعمدة' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '6' } });
+    act(() => {
+      useEditorStore.getState().reset();
+      useEditorStore.setState({ mode: 'single', showColumns: true, columnsCount: 6 });
+    });
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().columnsCount).toBe(6);
+  });
+
+  it('supports clearing and retyping the grid size without snapping to a default', () => {
+    useEditorStore.setState({ mode: 'single', showGrid: true, gridSize: 20 });
+    render(
+      <TooltipProvider>
+        <GridColumnsPanel />
+      </TooltipProvider>,
+    );
+    const input = screen.getByRole('spinbutton', { name: 'حجم مربع الشبكة' });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveValue(null);
+    expect(useEditorStore.getState().gridSize).toBe(20);
+    fireEvent.change(input, { target: { value: '1' } });
+    expect(input).toHaveValue(1);
+    expect(useEditorStore.getState().gridSize).toBe(20);
+    fireEvent.change(input, { target: { value: '15' } });
+    expect(useEditorStore.getState().gridSize).toBe(15);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(useEditorStore.getState().gridSize).toBe(20);
   });
 
   it('renders the paper controls without a redundant workspace header', () => {

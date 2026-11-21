@@ -52,11 +52,7 @@ export function usePrintLayout({
     // تالفة) كان يجعل المساحة المتاحة صفراً أو سالبة — فينقلب كل مقياس إلى
     // NaN/Infinity وتخرج نسبة امتلاء الورقة (availableW*availableH كمقامم) NaN.
     // نحدّ الهامش بنصف الضلع الأقصر ونمنح الورقة حداً أدنى 1mm من المساحة.
-    const rawMarginMM = isCanvasPaper
-      ? 0
-      : isFullPage && marginUntouched
-        ? 0
-        : printSettings.marginMM;
+    const rawMarginMM = isFullPage && marginUntouched ? 0 : printSettings.marginMM;
     const maxMarginMM = Math.max(0, Math.min(paperWidth, paperHeight) / 2 - 0.5);
     const effectiveMarginMM = Math.min(Math.max(0, rawMarginMM || 0), maxMarginMM);
 

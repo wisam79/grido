@@ -54,6 +54,11 @@ import {
 } from '@/components/ui/icons';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useEditorStore } from '@/lib/editor-store';
+import {
+  buildElementLayerMovePatches,
+  canArrangeSelection,
+  getElementLayerIds,
+} from '@/lib/selection-properties';
 import { cn } from '@/lib/utils';
 
 import type { CanvasElement } from '@/lib/editor-store';
@@ -77,6 +82,7 @@ interface SortableLayerItemProps {
   isSelected: boolean;
   isRenaming: boolean;
   density: LayerDensity;
+  reorderDisabled: boolean;
   toggleVisibility: (el: CanvasElement, e: React.MouseEvent) => void;
   toggleLock: (el: CanvasElement, e: React.MouseEvent) => void;
   deleteLayer: (id: string, e: React.MouseEvent) => void;
@@ -164,6 +170,7 @@ const SortableLayerItem = React.memo(
     isSelected,
     isRenaming,
     density,
+    reorderDisabled,
     toggleVisibility,
     toggleLock,
     deleteLayer,
@@ -180,11 +187,14 @@ const SortableLayerItem = React.memo(
   }: SortableLayerItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: el.id,
+      disabled: reorderDisabled,
     });
 
     const inputRef = useRef<HTMLInputElement>(null);
     // Escape يعني «تجاهل ما كُتب»: blur التالي بعد الإلغاء لا يجب أن يحفظ
     const cancelledRef = useRef(false);
+    // منع القائمة المنسدلة من سحب التركيز نحو زر (...) بعد تفعيل إعادة التسمية
+    const renameTriggeredRef = useRef(false);
 
     // الـ input يُركَّب مع كل جلسة تسمية فيبدأ من الاسم المحفوظ لا من التسمية
     // التلقائية (defaultValue)، والتحديد يختصر الكتابة فوق الاسم القديم
@@ -320,7 +330,8 @@ const SortableLayerItem = React.memo(
           {...attributes}
           {...listeners}
           role="button"
-          tabIndex={0}
+          tabIndex={reorderDisabled ? -1 : 0}
+          aria-disabled={reorderDisabled}
           aria-label="اسحب لإعادة الترتيب"
           className={cn(
             'flex items-center justify-center w-5 h-7 rounded shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-[opacity,color,background-color]',
@@ -371,7 +382,7 @@ const SortableLayerItem = React.memo(
             }}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              onStartRename(el.id);
+              if (!isLocked) onStartRename(el.id);
             }}
             className="flex flex-1 min-w-0 items-center gap-1.5 rounded-sm text-start cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
           >
@@ -407,9 +418,26 @@ const SortableLayerItem = React.memo(
                 <DotsThreeVertical className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 font-cairo">
+            <DropdownMenuContent
+              align="end"
+              sideOffset={6}
+              className="min-w-44 font-cairo"
+              onCloseAutoFocus={(e) => {
+                if (renameTriggeredRef.current) {
+                  e.preventDefault();
+                  renameTriggeredRef.current = false;
+                }
+              }}
+            >
               <DropdownMenuLabel className="text-mini">إجراءات الطبقة</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onStartRename(el.id)}>
+              <DropdownMenuItem
+                disabled={isLocked}
+                onClick={() => {
+                  if (isLocked) return;
+                  renameTriggeredRef.current = true;
+                  onStartRename(el.id);
+                }}
+              >
                 <RenameA className="w-3.5 h-3.5" /> إعادة تسمية
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -422,16 +450,16 @@ const SortableLayerItem = React.memo(
                 <Copy className="w-3.5 h-3.5" /> تكرار
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onBringToFront(el.id)}>
+              <DropdownMenuItem disabled={reorderDisabled} onClick={() => onBringToFront(el.id)}>
                 <ChevronDoubleUp className="w-3.5 h-3.5" /> إحضار للأمام
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onBringForward(el.id)}>
+              <DropdownMenuItem disabled={reorderDisabled} onClick={() => onBringForward(el.id)}>
                 <ArrowUp className="w-3.5 h-3.5" /> تقديم طبقة واحدة
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSendBackward(el.id)}>
+              <DropdownMenuItem disabled={reorderDisabled} onClick={() => onSendBackward(el.id)}>
                 <ArrowDown className="w-3.5 h-3.5" /> تأخير طبقة واحدة
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSendToBack(el.id)}>
+              <DropdownMenuItem disabled={reorderDisabled} onClick={() => onSendToBack(el.id)}>
                 <ChevronDoubleDown className="w-3.5 h-3.5" /> إرسال للخلف
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -515,17 +543,30 @@ const SortableLayerItem = React.memo(
     prev.isRenaming === next.isRenaming &&
     prev.layerNumber === next.layerNumber &&
     prev.density === next.density &&
+    prev.reorderDisabled === next.reorderDisabled &&
     prev.el.id === next.el.id &&
     prev.el.type === next.el.type &&
     prev.el.name === next.el.name &&
     prev.el.visible === next.el.visible &&
     prev.el.locked === next.el.locked &&
+    prev.el.width === next.el.width &&
+    prev.el.height === next.el.height &&
     (prev.el as ImageElement).imageSrc === (next.el as ImageElement).imageSrc &&
+    (prev.el as ImageElement).stickerSource === (next.el as ImageElement).stickerSource &&
     (prev.el as TextElement).text === (next.el as TextElement).text &&
+    (prev.el as TextElement).fontFamily === (next.el as TextElement).fontFamily &&
+    (prev.el as TextElement).fontSize === (next.el as TextElement).fontSize &&
     (prev.el as ShapeElement).shape === (next.el as ShapeElement).shape &&
     prev.el.zIndex === next.el.zIndex &&
     prev.el.groupId === next.el.groupId,
 );
+
+const FILTER_LABELS: Record<LayerFilter, string> = {
+  all: 'الكل',
+  text: 'نصوص',
+  image: 'صور',
+  shape: 'أشكال',
+};
 
 export interface LayersListProps {
   standalone?: boolean;
@@ -551,6 +592,8 @@ export function LayersList({
     duplicateElement,
     bringForward,
     sendBackward,
+    bringToFront,
+    sendToBack,
     renameElement,
     pushHistory,
     toggleElementSelection,
@@ -566,6 +609,8 @@ export function LayersList({
       duplicateElement: state.duplicateElement,
       bringForward: state.bringForward,
       sendBackward: state.sendBackward,
+      bringToFront: state.bringToFront,
+      sendToBack: state.sendToBack,
       renameElement: state.renameElement,
       pushHistory: state.pushHistory,
       toggleElementSelection: state.toggleElementSelection,
@@ -632,22 +677,28 @@ export function LayersList({
 
   const handleBringToFront = useCallback(
     (id: string) => {
-      const maxZ = elements.reduce((m, el) => Math.max(m, el.zIndex), 0);
-      updateElement(id, { zIndex: maxZ + 10 });
-      pushHistory();
+      const state = useEditorStore.getState();
+      if (!buildElementLayerMovePatches(state.elements, id, 'front').length) {
+        toast.info('لا تغيير — الطبقة عند الحافة أو الترتيب محمي');
+        return;
+      }
+      bringToFront(id);
       toast.success('أُحضرت الطبقة للأمام');
     },
-    [elements, updateElement, pushHistory],
+    [bringToFront],
   );
 
   const handleSendToBack = useCallback(
     (id: string) => {
-      const minZ = elements.reduce((m, el) => Math.min(m, el.zIndex), Infinity);
-      updateElement(id, { zIndex: minZ - 10 });
-      pushHistory();
+      const state = useEditorStore.getState();
+      if (!buildElementLayerMovePatches(state.elements, id, 'back').length) {
+        toast.info('لا تغيير — الطبقة عند الحافة أو الترتيب محمي');
+        return;
+      }
+      sendToBack(id);
       toast.success('أُرسلت الطبقة للخلف');
     },
-    [elements, updateElement, pushHistory],
+    [sendToBack],
   );
 
   const handleSelectElement = useCallback((id: string) => selectElement(id), [selectElement]);
@@ -660,6 +711,7 @@ export function LayersList({
   const handleBringForward = useCallback(
     (id: string) => {
       if (bringForward(id)) toast.success('قُدّمت الطبقة طبقة واحدة');
+      else toast.info('لا تغيير — الطبقة عند الحافة أو الترتيب محمي');
     },
     [bringForward],
   );
@@ -667,6 +719,7 @@ export function LayersList({
   const handleSendBackward = useCallback(
     (id: string) => {
       if (sendBackward(id)) toast.success('أُؤخّرت الطبقة طبقة واحدة');
+      else toast.info('لا تغيير — الطبقة عند الحافة أو الترتيب محمي');
     },
     [sendBackward],
   );
@@ -708,7 +761,9 @@ export function LayersList({
           <p className="text-mini text-muted-foreground">لا توجد طبقات مطابقة لـ “{searchQuery}”</p>
         </div>
         {typeFilter !== 'all' && (
-          <p className="text-mini text-muted-foreground">الفلتر الحالي: {typeFilter}</p>
+          <p className="text-mini text-muted-foreground">
+            الفلتر الحالي: {FILTER_LABELS[typeFilter]}
+          </p>
         )}
       </div>
     );
@@ -717,27 +772,27 @@ export function LayersList({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    const state = useEditorStore.getState();
+    const current = state.elements.find((item) => item.id === String(active.id));
+    if (!current || current.locked) return;
+    if (
+      current.groupId &&
+      state.elements.some((item) => item.id === String(over.id) && item.groupId === current.groupId)
+    )
+      return;
     if (isFiltered) {
       toast.info('السحب معطّل أثناء التصفية — امسح الفلتر لإعادة الترتيب');
       return;
     }
-    const oldIndex = sortedIndexById.get(String(active.id)) ?? -1;
-    const newIndex = sortedIndexById.get(String(over.id)) ?? -1;
-    if (oldIndex === -1 || newIndex === -1) return;
-    const newSorted = [...sorted];
-    const [moved] = newSorted.splice(oldIndex, 1);
-    newSorted.splice(newIndex, 0, moved);
-    const baseZ = 10;
-    const len = newSorted.length;
-    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
-    newSorted.forEach((el, index) => {
-      const targetZ = (len - index) * baseZ;
-      if (el.zIndex !== targetZ) patches.push({ id: el.id, patch: { zIndex: targetZ } });
+    const patches = buildElementLayerMovePatches(state.elements, String(active.id), {
+      overId: String(over.id),
     });
-    if (patches.length) {
-      updateElements(patches);
-      pushHistory();
+    if (!patches.length) {
+      toast.info('تعذّر الترتيب — حافظ على المجموعات وفك قفل الطبقات المتداخلة أولاً');
+      return;
     }
+    updateElements(patches);
+    pushHistory();
   };
 
   const listContent = (
@@ -759,6 +814,9 @@ export function LayersList({
               isSelected={selectedIdSet.has(el.id)}
               isRenaming={renamingId === el.id}
               density={density}
+              reorderDisabled={
+                isFiltered || !canArrangeSelection(elements, getElementLayerIds(elements, el.id))
+              }
               toggleVisibility={toggleVisibility}
               toggleLock={toggleLock}
               deleteLayer={deleteLayer}

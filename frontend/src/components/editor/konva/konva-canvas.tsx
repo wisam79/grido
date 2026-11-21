@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { useShallow } from 'zustand/react/shallow';
 
-import { checkerColor } from '@/lib/canvas/canvas-colors';
+import { checkerColor, useCanvasColors } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import { useStageRef } from '@/lib/canvas/stage-context';
@@ -101,6 +101,7 @@ export const KonvaCanvas = React.memo(
     const selectedId = useEditorStore((s) => s.selectedId);
     const selectedIds = useEditorStore(useShallow((s) => s.selectedIds));
     const snapToGrid = useEditorStore((s) => s.snapToGrid);
+    const colorVersion = useCanvasColors();
 
     const selectElement = useEditorStore((s) => s.selectElement);
     const toggleElementSelection = useEditorStore((s) => s.toggleElementSelection);
@@ -113,6 +114,8 @@ export const KonvaCanvas = React.memo(
       (slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => {
         // إيماءة Ctrl+عجلة مخصصة لتكبير الكانفس — لا نكبّر الصورة والكانفس معاً
         if (e.evt.ctrlKey || e.evt.metaKey) return;
+        // التمرير الأفقي بلوحة اللمس يمرّر الكانفس ولا يزوّم الخلية
+        if (Math.abs(e.evt.deltaX) > Math.abs(e.evt.deltaY) || e.evt.deltaY === 0) return;
         if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
 
         e.evt.preventDefault();
@@ -238,6 +241,7 @@ export const KonvaCanvas = React.memo(
     });
 
     const checkerPattern = useMemo(() => {
+      void colorVersion;
       if (typeof document === 'undefined') return undefined;
       const canvas = document.createElement('canvas');
       canvas.width = 20;
@@ -251,7 +255,7 @@ export const KonvaCanvas = React.memo(
         ctx.fillRect(10, 10, 10, 10);
       }
       return canvas;
-    }, []);
+    }, [colorVersion]);
 
     const getLogicalPointerPos = React.useCallback(
       (stage: Konva.Stage): { x: number; y: number } | null => {

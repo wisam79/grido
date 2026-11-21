@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useEditorStore } from '@/lib/editor-store';
 
 import { CanvasMenuSection } from './context-menu/canvas-menu-section';
@@ -36,6 +37,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const focusIndexRef = React.useRef(-1);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
+  const { zoomScale } = useUiZoom();
+  const safeZoom = zoomScale > 0 ? zoomScale : 1;
 
   const { updateSlot, updateElement, pushHistory } = useEditorStore(
     useShallow((state) => ({
@@ -91,6 +94,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
   // Handle keyboard navigation
   useEffect(() => {
+    const MENUITEM_SELECTOR = "[role='menuitem']:not([disabled]):not([aria-disabled='true'])";
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -98,7 +102,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       }
       const menu = menuRef.current;
       if (!menu) return;
-      const items = menu.querySelectorAll<HTMLElement>("[role='menuitem']");
+      const items = menu.querySelectorAll<HTMLElement>(MENUITEM_SELECTOR);
       if (items.length === 0) return;
 
       if (e.key === 'ArrowDown') {
@@ -145,7 +149,9 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         w: menuRef.current.offsetWidth,
         h: menuRef.current.offsetHeight,
       });
-      const firstItem = menuRef.current.querySelector<HTMLElement>("[role='menuitem']");
+      const firstItem = menuRef.current.querySelector<HTMLElement>(
+        "[role='menuitem']:not([disabled]):not([aria-disabled='true'])",
+      );
       focusIndexRef.current = firstItem ? 0 : -1;
       requestAnimationFrame(() => firstItem?.focus({ preventScroll: true }));
     } else {
@@ -157,27 +163,31 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const size = menuSize || { w: 190, h: 280 };
 
   const SAFETY_MARGIN = 12;
-  const maxRight = window.innerWidth - SAFETY_MARGIN;
-  const maxBottom = window.innerHeight - SAFETY_MARGIN;
+  const maxRight = window.innerWidth / safeZoom - SAFETY_MARGIN;
+  const maxBottom = window.innerHeight / safeZoom - SAFETY_MARGIN;
   const minLeft = SAFETY_MARGIN;
   const minTop = SAFETY_MARGIN;
+  const maxMenuHeight = Math.max(120, maxBottom - minTop);
+  const clampedH = Math.min(size.h, maxMenuHeight);
 
-  let left = position.x;
-  let top = position.y;
+  const scaledX = position.x / safeZoom;
+  const scaledY = position.y / safeZoom;
+  let left = scaledX;
+  let top = scaledY;
   let originX = 'left';
   let originY = 'top';
 
   if (left + size.w > maxRight) {
-    left = position.x - size.w;
+    left = scaledX - size.w;
     originX = 'right';
   }
-  if (top + size.h > maxBottom) {
-    top = position.y - size.h;
+  if (top + clampedH > maxBottom) {
+    top = scaledY - clampedH;
     originY = 'bottom';
   }
 
-  left = Math.max(minLeft, Math.min(left, maxRight - size.w));
-  top = Math.max(minTop, Math.min(top, maxBottom - size.h));
+  left = Math.max(minLeft, Math.min(left, Math.max(minLeft, maxRight - size.w)));
+  top = Math.max(minTop, Math.min(top, Math.max(minTop, maxBottom - clampedH)));
 
   const portal = createPortal(
     <div
@@ -186,10 +196,11 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       tabIndex={-1}
       dir="rtl"
       aria-label="قائمة السياق"
-      className="fixed z-(--z-menu) w-[200px] bg-popover backdrop-blur-2xl border border-border rounded-lg p-1 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-16 fluent-specular"
+      className="fixed z-(--z-menu) w-[200px] bg-popover backdrop-blur-2xl border border-border rounded-lg p-1 text-xs font-cairo overflow-y-auto select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-16 fluent-specular"
       style={{
         left: `${left}px`,
         top: `${top}px`,
+        maxHeight: `${maxMenuHeight}px`,
         transformOrigin: `${originY} ${originX}`,
         visibility: menuSize === null ? 'hidden' : 'visible',
       }}

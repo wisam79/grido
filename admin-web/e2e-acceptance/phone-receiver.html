@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Disposable phone transport receiver</title></head>
+<body>
+<main>
+  <h1>Test transport receiver — not Grido desktop</h1>
+  <p>This fixture uses actual local Auth, Storage and Realtime. Desktop canvas import and physical camera acceptance are not claimed.</p>
+  <form id="login">
+    <label>Email <input id="email" type="email" required autocomplete="off"></label>
+    <label>Password <input id="password" type="password" required autocomplete="off"></label>
+    <button type="submit">Sign in receiver</button>
+  </form>
+  <p role="status" id="status">Signed out</p>
+  <label>Session capability <input id="session" readonly></label>
+  <p id="paired">No pairing event</p>
+  <p id="photo-status">No photo event</p>
+  <img id="photo" alt="Received synthetic photo" hidden>
+  <button id="purge" disabled>Delete consumed photo</button>
+  <p id="purged"></p>
+</main>
+<script type="module" src="./phone-receiver.ts"></script>
+</body>
+</html>

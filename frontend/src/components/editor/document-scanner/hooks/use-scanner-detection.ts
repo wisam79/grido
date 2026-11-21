@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { createLogger } from '@/lib/logger';
 import { formatSolvableError } from '@/lib/ui/ui-compliance';
 
 import {
@@ -14,7 +15,15 @@ import {
   terminateMlWorker,
 } from '../core';
 
-import type { Point, DetectedDocument, DetectionMode, DocumentAspectType } from '../core';
+import type {
+  Point,
+  DetectedDocument,
+  DetectionMode,
+  DocumentAspectType,
+  ScannerFilterMode,
+} from '../core';
+
+const log = createLogger('ScannerDetection');
 
 export interface ScannerDetectionApi {
   detectedDocs: DetectedDocument[];
@@ -37,6 +46,7 @@ export interface ScannerDetectionApi {
     aspectSetter: (a: DocumentAspectType) => void,
     rotationSetter: (r: number) => void,
     previewResetter: () => void,
+    filterSetter?: (f: ScannerFilterMode) => void,
   ) => void;
   toggleDocSelection: (id: string) => void;
   selectAllDocs: () => void;
@@ -44,18 +54,24 @@ export interface ScannerDetectionApi {
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
     previewResetter: () => void,
+    rotationSetter?: (r: number) => void,
+    filterSetter?: (f: ScannerFilterMode) => void,
   ) => void;
   handleDeleteDocument: (
     id: string,
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
     previewResetter: () => void,
+    rotationSetter?: (r: number) => void,
+    filterSetter?: (f: ScannerFilterMode) => void,
   ) => void;
   handleSplitIdCards: (
     corners: Point[],
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
     previewResetter: () => void,
+    rotationSetter?: (r: number) => void,
+    filterSetter?: (f: ScannerFilterMode) => void,
   ) => void;
   handleAutoDetect: (mode?: DetectionMode) => void;
   setDetectionCallbacks: (cbs: DetectionCallbacks) => void;
@@ -64,6 +80,7 @@ export interface ScannerDetectionApi {
 export interface DetectionCallbacks {
   onCorners: (corners: Point[]) => void;
   onAspect: (aspect: DocumentAspectType) => void;
+  onResetDocMeta?: () => void;
 }
 
 /**
@@ -138,9 +155,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
         setActiveDocIndex(0);
         const first = result.documents[0];
         cbsRef.current.onCorners(first.corners);
-        if (first.aspectType !== 'free') {
-          cbsRef.current.onAspect(first.aspectType);
-        }
+        cbsRef.current.onAspect(first.aspectType || 'free');
+        cbsRef.current.onResetDocMeta?.();
 
         if (notify) {
           if (result.documents.length > 1) {
@@ -158,15 +174,15 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       } else if (result.corners) {
         cbsRef.current.onCorners(result.corners);
         const inferred = inferSmartDocumentAspect(result.corners);
-        if (inferred !== 'free') {
-          cbsRef.current.onAspect(inferred);
-        }
+        cbsRef.current.onAspect(inferred);
+        cbsRef.current.onResetDocMeta?.();
         if (notify) toast.success('تم كشف المستند');
       } else {
         if (notify) toast.warning('لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي');
       }
     } catch (error) {
       if (controller.signal.aborted) return;
+      if (reqId === activeReqIdRef.current) log.error('Document detection failed', error);
       if (reqId === activeReqIdRef.current && notify) {
         toast.error(
           formatSolvableError({
@@ -191,6 +207,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       aspectSetter: (a: DocumentAspectType) => void,
       rotationSetter: (r: number) => void,
       previewResetter: () => void,
+      filterSetter?: (f: ScannerFilterMode) => void,
     ) => {
       if (index < 0 || index >= detectedDocs.length) return;
       setActiveDocIndex(index);
@@ -198,6 +215,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       cornersSetter(doc.corners);
       aspectSetter(doc.aspectType || 'free');
       rotationSetter(doc.rotation || 0);
+      filterSetter?.(doc.filterMode || 'original');
       previewResetter();
     },
     [detectedDocs],
@@ -205,11 +223,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
 
   const toggleDocSelection = useCallback((id: string) => {
     setSelectedDocIds((prev) =>
-      prev.includes(id)
-        ? prev.length > 1
-          ? prev.filter((d) => d !== id)
-          : [...prev, id]
-        : [...prev, id],
+      prev.includes(id) ? (prev.length > 1 ? prev.filter((d) => d !== id) : prev) : [...prev, id],
     );
   }, []);
 
@@ -228,6 +242,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
       previewResetter: () => void,
+      rotationSetter?: (r: number) => void,
+      filterSetter?: (f: ScannerFilterMode) => void,
     ) => {
       if (!imgSize.w || !imgSize.h) return;
       setDetectionMode('multi');
@@ -238,6 +254,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setActiveDocIndex(nextDocs.length - 1);
       cornersSetter(newDoc.corners);
       aspectSetter(newDoc.aspectType);
+      rotationSetter?.(newDoc.rotation || 0);
+      filterSetter?.(newDoc.filterMode || 'original');
       previewResetter();
       toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم`);
     },
@@ -250,6 +268,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
       previewResetter: () => void,
+      rotationSetter?: (r: number) => void,
+      filterSetter?: (f: ScannerFilterMode) => void,
     ) => {
       if (detectedDocs.length <= 1) {
         toast.warning('يجب الإبقاء على مستند واحد على الأقل');
@@ -289,6 +309,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setActiveDocIndex(newActiveIdx);
       cornersSetter(nextDocs[newActiveIdx].corners);
       aspectSetter(nextDocs[newActiveIdx].aspectType || 'free');
+      rotationSetter?.(nextDocs[newActiveIdx].rotation || 0);
+      filterSetter?.(nextDocs[newActiveIdx].filterMode || 'original');
       previewResetter();
       toast.info('تم حذف المستند');
     },
@@ -301,6 +323,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
       previewResetter: () => void,
+      rotationSetter?: (r: number) => void,
+      filterSetter?: (f: ScannerFilterMode) => void,
     ) => {
       if (corners.length !== 4) {
         toast.warning(
@@ -315,19 +339,25 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setDetectionMode('multi');
       const cards = splitQuadIntoIdCards(corners, 'vertical');
       if (cards.length === 2) {
-        // دمج البطاقتين في القائمة الموجودة بدل استبدال المستندات كلها،
-        // والنشط ينتقل لأول بطاقة جديدة (index = طول البقية).
-        const others = detectedDocs.filter((d) => !cards.some((c) => c.id === d.id));
-        setDetectedDocs([...others, ...cards]);
-        setSelectedDocIds(cards.map((c) => c.id));
+        const activeDoc = detectedDocs[activeDocIndex];
+        const inheritedCards = cards.map((card) => ({
+          ...card,
+          rotation: activeDoc?.rotation ?? 0,
+          filterMode: activeDoc?.filterMode ?? 'original',
+        }));
+        const others = detectedDocs.filter((_, idx) => idx !== activeDocIndex);
+        setDetectedDocs([...others, ...inheritedCards]);
+        setSelectedDocIds(inheritedCards.map((c) => c.id));
         setActiveDocIndex(others.length);
-        cornersSetter(cards[0].corners);
+        cornersSetter(inheritedCards[0].corners);
         aspectSetter('id_card');
+        rotationSetter?.(inheritedCards[0].rotation || 0);
+        filterSetter?.(inheritedCards[0].filterMode || 'original');
         previewResetter();
         toast.success('تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)');
       }
     },
-    [detectedDocs],
+    [detectedDocs, activeDocIndex],
   );
 
   const handleAutoDetect = useCallback(
@@ -353,6 +383,7 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setSelectedDocIds([]);
       setActiveDocIndex(0);
       setDetectionMode('single');
+      setImgSize({ w: 0, h: 0 });
       imgRef.current = null;
       // 🧹 إنهاء عامل ML وتحرير كومة WASM مع إغلاق النافذة
       terminateMlWorker();
@@ -361,7 +392,17 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
 
   // 🔒 تحميل الصورة عند الفتح + تسخين نموذج الذكاء الاصطناعي (قابل للإلغاء)
   useEffect(() => {
-    if (!open || !imageSrc) return;
+    if (!open) return;
+    // Clear all source-owned state before decoding the replacement image.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initialize a new image session
+    setDetectedDocs([]);
+    setSelectedDocIds([]);
+    setActiveDocIndex(0);
+    setImgSize({ w: 0, h: 0 });
+    cbsRef.current.onCorners([]);
+    cbsRef.current.onAspect('free');
+    cbsRef.current.onResetDocMeta?.();
+    if (!imageSrc) return;
     const session = ++sessionRef.current;
 
     // 🧹 مُلغي التسخين المجدول: idle المجدول أو المؤقت يُلغى عند التنظيف أو الـunmount

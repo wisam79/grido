@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * @smoke — دخان محرك العرض (Engine Smoke)
@@ -84,8 +84,10 @@ test.describe('@smoke إقلاع المحرك والمسارات الحرجة', 
       'false',
     );
 
-    // اختيار أداة أخرى من الشريط يفعّلها ويبقي اللوحة مفتوحة
-    const secondTool = page.locator(railToolButtons).nth(1);
+    // Select a panel destination, not the stickers action (which opens a dialog).
+    const secondTool = page
+      .getByTestId('rail-collage-freeform')
+      .or(page.getByTestId('rail-studio-shapes'));
     await secondTool.click();
     await expect(secondTool).toHaveAttribute('aria-pressed', 'true');
     await expect(firstTool).toHaveAttribute('aria-pressed', 'false');

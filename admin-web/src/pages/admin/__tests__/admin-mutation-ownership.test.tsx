@@ -150,6 +150,58 @@ async function prepareMutation(kind: MutationKind, hooks: Awaited<ReturnType<typ
 }
 
 describe('actual admin hook mutation ownership', () => {
+  it.each(['single', 'batch'] as const)('%s generation serializes same-tick submissions across both forms', async (kind) => {
+    const mock = createMockSupabase();
+    sdk.createClient.mockReturnValue(mock.client);
+    const hooks = await mountHooks();
+    act(() => hooks.current.keys.setGenCount('1'));
+    const pending = deferred<Result>();
+    mock.rpc.mockReturnValueOnce(pending.promise);
+    const callsBefore = mock.rpc.mock.calls.length;
+    const start = await prepareMutation(kind, hooks);
+    let operation!: Promise<void>;
+    await act(async () => {
+      operation = start();
+      void hooks.current.keys.handleGenerateKey(form());
+      void hooks.current.keys.handleGenerateBatchKeys(form());
+    });
+    expect(mock.rpc).toHaveBeenCalledTimes(callsBefore + 1);
+    expect(hooks.current.keys.generatingBatch).toBe(true);
+    await settle(pending, ok({ key: 'ONE-KEY' }), operation);
+    expect(hooks.current.keys.generatingBatch).toBe(false);
+    expect(feedback.notify).toHaveBeenCalledTimes(1);
+    await act(async () => { await hooks.current.keys.handleGenerateKey(form()); });
+    expect(mock.rpc).toHaveBeenCalledTimes(callsBefore + 2);
+  });
+
+  it.each(['single', 'batch'] as const)('%s finally cannot release a new opposite-form attempt after reset', async (kind) => {
+    const mock = createMockSupabase();
+    sdk.createClient.mockReturnValue(mock.client);
+    const hooks = await mountHooks();
+    act(() => hooks.current.keys.setGenCount('1'));
+    const oldPending = deferred<Result>();
+    const newPending = deferred<Result>();
+    mock.rpc.mockReturnValueOnce(oldPending.promise).mockReturnValueOnce(newPending.promise);
+    const start = await prepareMutation(kind, hooks);
+    let oldOperation!: Promise<void>;
+    let newOperation!: Promise<void>;
+    await act(async () => { oldOperation = start(); });
+    act(() => hooks.current.keys.resetKeysData());
+    await act(async () => {
+      newOperation = kind === 'single' ? hooks.current.keys.handleGenerateBatchKeys(form())
+        : hooks.current.keys.handleGenerateKey(form());
+    });
+    const callsBefore = mock.rpc.mock.calls.length;
+    await settle(oldPending, failure, oldOperation);
+    expect(hooks.current.keys.generatingBatch).toBe(true);
+    expect(feedback.notify).not.toHaveBeenCalled();
+    await act(async () => { void hooks.current.keys.handleGenerateKey(form()); });
+    expect(mock.rpc).toHaveBeenCalledTimes(callsBefore);
+    await settle(newPending, ok({ key: 'NEW-KEY' }), newOperation);
+    expect(hooks.current.keys.generatingBatch).toBe(false);
+    expect(feedback.notify).toHaveBeenCalledTimes(1);
+  });
+
   it.each(mutationKinds)('%s: synchronous session clear suppresses success before reset effects', async (kind) => {
     const mock = createMockSupabase();
     sdk.createClient.mockReturnValue(mock.client);

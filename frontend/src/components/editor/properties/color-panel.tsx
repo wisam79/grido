@@ -5,6 +5,7 @@ import { Check, Copy, Eyedropper, Palette } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { checkerColor, previewWhite } from '@/lib/canvas/canvas-colors';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { cn } from '@/lib/utils';
 
 import { ColorWheel } from './color-wheel';
@@ -290,19 +291,43 @@ export function ColorWheelPicker({
   const [isDropping, setIsDropping] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
   const dropperTimerRef = useRef<number | null>(null);
+  const hexInputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
   const hexDirtyRef = useRef(false);
   const latestHexRef = useRef(color);
   const onCommitRef = useRef(onCommit);
+  const onDropperActiveRef = useRef(onDropperActiveChange);
+  const samplerCleanupRef = useRef<(() => void) | null>(null);
+  const nativeAbortRef = useRef<AbortController | null>(null);
+  const dropperAttemptRef = useRef(0);
+  const hexSessionRef = useRef(getDocumentSession());
+  const hexSourceRef = useRef(color);
+  const propColorRef = useRef(color);
+  const documentSession = getDocumentSession();
 
   useEffect(() => {
     onCommitRef.current = onCommit;
-  }, [onCommit]);
+    onDropperActiveRef.current = onDropperActiveChange;
+  }, [onCommit, onDropperActiveChange]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
+      dropperAttemptRef.current += 1;
+      nativeAbortRef.current?.abort();
+      nativeAbortRef.current = null;
+      samplerCleanupRef.current?.();
+      samplerCleanupRef.current = null;
+      onDropperActiveRef.current?.(false);
       if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
       if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
-      if (hexDirtyRef.current) {
+      if (
+        hexDirtyRef.current &&
+        hexSessionRef.current === getDocumentSession() &&
+        (propColorRef.current === latestHexRef.current ||
+          propColorRef.current === hexSourceRef.current)
+      ) {
         hexDirtyRef.current = false;
         onCommitRef.current?.(latestHexRef.current);
       }
@@ -310,21 +335,50 @@ export function ColorWheelPicker({
   }, []);
 
   useEffect(() => {
-    latestHexRef.current = color;
+    return () => {
+      dropperAttemptRef.current += 1;
+      nativeAbortRef.current?.abort();
+      nativeAbortRef.current = null;
+      samplerCleanupRef.current?.();
+      samplerCleanupRef.current = null;
+      if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+      if (isMountedRef.current) setIsDropping(false);
+      onDropperActiveRef.current?.(false);
+    };
+  }, [documentSession]);
+
+  useEffect(() => {
+    propColorRef.current = color;
+    if (!hexDirtyRef.current) latestHexRef.current = color;
+    if (hexInputRef.current && document.activeElement === hexInputRef.current) return;
     const rafId = requestAnimationFrame(() => {
+      if (hexInputRef.current && document.activeElement === hexInputRef.current) return;
       setInputValue(color);
     });
     return () => cancelAnimationFrame(rafId);
   }, [color]);
 
   const flushHexCommit = () => {
-    if (!hexDirtyRef.current) return;
-    hexDirtyRef.current = false;
-    onCommit?.(latestHexRef.current);
+    const ownsPreview =
+      hexSessionRef.current === getDocumentSession() &&
+      (propColorRef.current === latestHexRef.current ||
+        propColorRef.current === hexSourceRef.current);
+    if (hexDirtyRef.current) {
+      hexDirtyRef.current = false;
+      if (ownsPreview) onCommit?.(latestHexRef.current);
+    }
+    setInputValue(ownsPreview ? latestHexRef.current : color);
   };
 
   const handleHexInput = (value: string) => {
     setInputValue(value);
+    if (
+      hexSessionRef.current !== getDocumentSession() ||
+      (hexDirtyRef.current &&
+        propColorRef.current !== latestHexRef.current &&
+        propColorRef.current !== hexSourceRef.current)
+    )
+      return;
 
     const cleanValue = value.trim();
     if (cleanValue === 'transparent') {
@@ -348,6 +402,9 @@ export function ColorWheelPicker({
   };
 
   const activateInAppSampler = () => {
+    samplerCleanupRef.current?.();
+    const session = getDocumentSession();
+    const previousCursor = document.body.style.cursor;
     setIsDropping(true);
     onDropperActiveChange?.(true);
     document.body.style.cursor = 'crosshair';
@@ -357,25 +414,33 @@ export function ColorWheelPicker({
     });
 
     const cleanup = () => {
-      setIsDropping(false);
-      document.body.style.cursor = '';
+      samplerCleanupRef.current = null;
+      if (isMountedRef.current) setIsDropping(false);
+      if (document.body.style.cursor === 'crosshair') document.body.style.cursor = previousCursor;
       toast.dismiss('eyedropper-active-hint');
       window.removeEventListener('pointerdown', handlePointerDown, true);
       window.removeEventListener('keydown', handleKeyDown, true);
       if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+      if (!isMountedRef.current) return;
       dropperTimerRef.current = window.setTimeout(() => {
         dropperTimerRef.current = null;
-        onDropperActiveChange?.(false);
+        if (isMountedRef.current) onDropperActiveRef.current?.(false);
       }, 300);
     };
 
     const handlePointerDown = (evt: PointerEvent) => {
+      if (!isMountedRef.current || session !== getDocumentSession()) {
+        cleanup();
+        return;
+      }
       evt.preventDefault();
-      evt.stopPropagation();
+      evt.stopImmediatePropagation();
 
       const hex = sampleColorFromPoint(evt.clientX, evt.clientY);
       if (hex) {
         setInputValue(hex);
+        latestHexRef.current = hex;
+        hexDirtyRef.current = false;
         onChange(hex);
         onCommit?.(hex);
         toast.success(`تم اختيار اللون: ${hex}`);
@@ -385,10 +450,13 @@ export function ColorWheelPicker({
 
     const handleKeyDown = (evt: KeyboardEvent) => {
       if (evt.key === 'Escape') {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
         cleanup();
       }
     };
 
+    samplerCleanupRef.current = cleanup;
     window.addEventListener('pointerdown', handlePointerDown, true);
     window.addEventListener('keydown', handleKeyDown, true);
   };
@@ -397,7 +465,14 @@ export function ColorWheelPicker({
     e.preventDefault();
     e.stopPropagation();
 
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isDropping) return;
+    const attempt = ++dropperAttemptRef.current;
+    const session = getDocumentSession();
+    const isCurrent = () =>
+      isMountedRef.current &&
+      attempt === dropperAttemptRef.current &&
+      session === getDocumentSession();
+    if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
 
     if ('EyeDropper' in window) {
       setIsDropping(true);
@@ -407,14 +482,22 @@ export function ColorWheelPicker({
       try {
         const eyeDropper = new (
           window as unknown as {
-            EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> };
+            EyeDropper: new () => {
+              open: (options?: { signal: AbortSignal }) => Promise<{ sRGBHex: string }>;
+            };
           }
         ).EyeDropper();
 
-        const result = await eyeDropper.open();
+        const abort = new AbortController();
+        nativeAbortRef.current = abort;
+        const result = await eyeDropper.open({ signal: abort.signal });
+        if (!isCurrent()) return;
+        nativeAbortRef.current = null;
         if (result?.sRGBHex) {
           const upper = result.sRGBHex.toUpperCase();
           setInputValue(upper);
+          latestHexRef.current = upper;
+          hexDirtyRef.current = false;
           onChange(upper);
           onCommit?.(upper);
           toast.success(`تم اختيار اللون: ${upper}`);
@@ -422,11 +505,15 @@ export function ColorWheelPicker({
           if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
           dropperTimerRef.current = window.setTimeout(() => {
             dropperTimerRef.current = null;
-            onDropperActiveChange?.(false);
+            if (isMountedRef.current) {
+              onDropperActiveChange?.(false);
+            }
           }, 300);
           return;
         }
       } catch (err: unknown) {
+        if (!isCurrent()) return;
+        nativeAbortRef.current = null;
         const elapsed = Date.now() - startTime;
         const isAbort = (err as { name?: string })?.name === 'AbortError';
 
@@ -436,13 +523,16 @@ export function ColorWheelPicker({
           if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
           dropperTimerRef.current = window.setTimeout(() => {
             dropperTimerRef.current = null;
-            onDropperActiveChange?.(false);
+            if (isMountedRef.current) {
+              onDropperActiveChange?.(false);
+            }
           }, 300);
           return;
         }
       }
     }
 
+    if (!isCurrent()) return;
     // الانتقال التلقائي للقطارة التفاعلية الداخلية في حال تعذر أو رفض المتصفح
     activateInAppSampler();
   };
@@ -465,12 +555,14 @@ export function ColorWheelPicker({
   return (
     <div className="flex w-full select-none flex-col gap-2.5" dir="rtl" data-color-panel-wheel="">
       <ColorWheel
-        color={displayColor}
+        color={color}
         onChange={(newColor) => {
           setInputValue(newColor);
+          latestHexRef.current = newColor;
           onChange(newColor);
         }}
         onCommit={(newColor) => {
+          hexDirtyRef.current = false;
           onCommit?.(newColor);
         }}
       />
@@ -480,6 +572,8 @@ export function ColorWheelPicker({
           type="button"
           onClick={() => {
             setInputValue('transparent');
+            latestHexRef.current = 'transparent';
+            hexDirtyRef.current = false;
             onChange('transparent');
             onCommit?.('transparent');
           }}
@@ -520,13 +614,20 @@ export function ColorWheelPicker({
         <div className="flex-1 flex items-center gap-1.5 bg-input/90 border border-border/80 rounded-lg px-2.5 h-8 shadow-2xs focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-colors">
           <span className="text-xs font-bold text-muted-foreground/60 select-none">#</span>
           <input
+            ref={hexInputRef}
             type="text"
             dir="ltr"
             value={inputValue.startsWith('#') ? inputValue.slice(1) : inputValue}
+            onFocus={() => {
+              hexSessionRef.current = getDocumentSession();
+              hexSourceRef.current = color;
+              latestHexRef.current = color;
+            }}
             onChange={(event) => handleHexInput(event.target.value)}
             onBlur={flushHexCommit}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
+                event.preventDefault();
                 flushHexCommit();
               }
             }}

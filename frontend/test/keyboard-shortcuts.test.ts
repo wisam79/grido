@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -345,5 +345,167 @@ describe('useKeyboardShortcuts - Keyboard Shortcuts Hook Tests', () => {
     expect(calledPatch.height).toBeGreaterThan(element.height);
 
     updateElementSpy.mockRestore();
+  });
+
+  it.each([
+    { key: '+', code: 'Equal', shiftKey: true, eventName: 'grido:ui-zoom-in' },
+    { key: '-', code: 'Minus', altKey: true, eventName: 'grido:ui-zoom-out' },
+    { key: 'Backspace', code: 'Backspace', shiftKey: true, eventName: 'grido:ui-zoom-reset' },
+  ])('guards native UI zoom $code with readiness, editable and modal context', (keys) => {
+    const listener = vi.fn();
+    window.addEventListener(keys.eventName, listener);
+    const hook = renderHook(({ enabled }) => useKeyboardShortcuts(enabled), {
+      initialProps: { enabled: false },
+    });
+    const send = (target: HTMLElement) => {
+      const event = new KeyboardEvent('keydown', {
+        ...keys,
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      return event;
+    };
+    expect(send(document.body).defaultPrevented).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    hook.rerender({ enabled: true });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    expect(send(input).defaultPrevented).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    input.remove();
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.appendChild(dialog);
+    expect(send(document.body).defaultPrevented).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    dialog.remove();
+    expect(send(document.body).defaultPrevented).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+    hook.rerender({ enabled: false });
+    expect(send(document.body).defaultPrevented).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+    hook.unmount();
+    window.removeEventListener(keys.eventName, listener);
+  });
+
+  it.each([
+    { key: '/', code: 'Slash', eventName: 'grido:open-shortcuts' },
+    { key: '?', code: 'Slash', shiftKey: true, eventName: 'grido:open-shortcuts' },
+  ])('registers the real $key alias against event.code', (keys) => {
+    const listener = vi.fn();
+    window.addEventListener(keys.eventName, listener);
+    const hook = renderHook(() => useKeyboardShortcuts());
+    for (const type of ['keydown', 'keyup'])
+      document.body.dispatchEvent(
+        new KeyboardEvent(type, {
+          ...keys,
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    expect(listener).toHaveBeenCalledTimes(1);
+    hook.unmount();
+    window.removeEventListener(keys.eventName, listener);
+  });
+
+  it.each([
+    { key: "'", code: 'Quote', field: 'showGrid' as const },
+    { key: ';', code: 'Semicolon', field: 'showUserGuides' as const },
+  ])('toggles $field with its real punctuation code', (keys) => {
+    const before = useEditorStore.getState()[keys.field];
+    const hook = renderHook(() => useKeyboardShortcuts());
+    for (const type of ['keydown', 'keyup'])
+      document.body.dispatchEvent(
+        new KeyboardEvent(type, {
+          key: keys.key,
+          code: keys.code,
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    expect(useEditorStore.getState()[keys.field]).toBe(!before);
+    hook.unmount();
+  });
+
+  it.each([
+    { key: '=', code: 'Equal', delta: 0.1 },
+    { key: '+', code: 'NumpadAdd', delta: 0.1 },
+    { key: '-', code: 'Minus', delta: -0.1 },
+    { key: '-', code: 'NumpadSubtract', delta: -0.1 },
+  ])('zooms the canvas with the installed hotkey alias for $code', (keys) => {
+    useEditorStore.setState({ canvasZoom: 1 });
+    const hook = renderHook(() => useKeyboardShortcuts());
+    for (const type of ['keydown', 'keyup'])
+      document.body.dispatchEvent(
+        new KeyboardEvent(type, {
+          key: keys.key,
+          code: keys.code,
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    expect(useEditorStore.getState().canvasZoom).toBeCloseTo(1 + keys.delta);
+    hook.unmount();
+  });
+
+  it('does not flush pending nudge history into a new document on readiness teardown', () => {
+    useEditorStore.getState().addTextElement('Nudge');
+    const hook = renderHook(({ enabled }) => useKeyboardShortcuts(enabled), {
+      initialProps: { enabled: true },
+    });
+    act(() =>
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          code: 'ArrowRight',
+          bubbles: true,
+          cancelable: true,
+        }),
+      ),
+    );
+    act(() => useEditorStore.getState().reset());
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    hook.rerender({ enabled: false });
+    expect(history).not.toHaveBeenCalled();
+    history.mockRestore();
+  });
+
+  it('ignores the shortcuts-dialog alias when another modal is already active', () => {
+    const listener = vi.fn();
+    window.addEventListener('grido:open-shortcuts', listener);
+    const hook = renderHook(() => useKeyboardShortcuts());
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.appendChild(dialog);
+    for (const type of ['keydown', 'keyup'])
+      document.body.dispatchEvent(
+        new KeyboardEvent(type, {
+          key: '/',
+          code: 'Slash',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    expect(listener).not.toHaveBeenCalled();
+    dialog.remove();
+    hook.unmount();
+    window.removeEventListener('grido:open-shortcuts', listener);
+  });
+
+  it('does not trigger shortcuts when enabled is false', async () => {
+    const undoSpy = vi.spyOn(useEditorStore.getState(), 'undo');
+    renderHook(() => useKeyboardShortcuts(false));
+
+    await user.keyboard('{Control>}z{/Control}');
+    expect(undoSpy).not.toHaveBeenCalled();
+
+    undoSpy.mockRestore();
   });
 });

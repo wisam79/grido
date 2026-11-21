@@ -424,6 +424,7 @@ export const KonvaCollageImage = React.memo(
       prev.flipX === next.flipX &&
       prev.flipY === next.flipY &&
       prev.rotation === next.rotation &&
+      prev.cropMode === next.cropMode &&
       prev.draggable === next.draggable &&
       prev.cornerRadius === next.cornerRadius
     );

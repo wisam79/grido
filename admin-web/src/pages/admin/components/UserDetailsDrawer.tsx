@@ -67,12 +67,10 @@ export function UserDetailsDrawer({
     };
   }, [userLogs]);
 
-  if (!user) return null;
-
-  const accountState = getUserAccountState(user);
-  const daysRemaining = getUserDaysRemaining(user.expires_at);
-  const isBanned = user.status === 'banned';
-  const initials = (user.name || user.email || 'U').trim().slice(0, 2).toUpperCase();
+  const accountState = user ? getUserAccountState(user) : 'active';
+  const daysRemaining = user ? getUserDaysRemaining(user.expires_at) : null;
+  const isBanned = user?.status === 'banned';
+  const initials = (user?.name || user?.email || 'U').trim().slice(0, 2).toUpperCase();
 
   return (
     <AccessibleDialog
@@ -92,10 +90,10 @@ export function UserDetailsDrawer({
           </div>
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-[#f5f5f5] truncate">
-              {user.name || 'بدون اسم'}
+              {user?.name || 'بدون اسم'}
             </h2>
             <p className="text-[11px] font-mono text-[#a9afaf] truncate" dir="ltr">
-              {user.email || '—'}
+              {user?.email || '—'}
             </p>
           </div>
         </div>
@@ -112,6 +110,7 @@ export function UserDetailsDrawer({
         </button>
       }
     >
+      {user && (
       <div className="p-5 space-y-5 flex-1">
         {/* Status & Plan Strip */}
         <div className="admin-card-inset p-3.5 flex items-center justify-between gap-2 flex-wrap">
@@ -313,6 +312,7 @@ export function UserDetailsDrawer({
           )}
         </section>
       </div>
+      )}
     </AccessibleDialog>
   );
 }

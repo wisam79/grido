@@ -126,6 +126,7 @@ export interface CanvasScrollbarsBottomBarProps {
   stagePosX: number;
   onScrollX: (newStagePosX: number) => void;
   onResetPan: () => void;
+  showRuler?: boolean;
   className?: string;
 }
 
@@ -225,7 +226,7 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       <div
         ref={trackRef}
         onPointerDown={handleTrackPointerDown}
-        className="w-full h-full relative flex items-center cursor-pointer px-1.5"
+        className="w-full h-full relative flex items-center cursor-pointer"
       >
         {/* المقبض بنمط Fluent 2 Pill الهادئ والمتناسق (خافت في السكون ويتفاعل بهدوء عند التحويم) */}
         <div
@@ -342,7 +343,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       <div
         ref={trackRef}
         onPointerDown={handleTrackPointerDown}
-        className="h-full w-full relative flex justify-center cursor-pointer py-1.5"
+        className="h-full w-full relative flex justify-center cursor-pointer"
       >
         {/* المقبض بنمط Fluent 2 Pill الهادئ والمتناسق (خافت في السكون ويتفاعل بهدوء عند التحويم) */}
         <div
@@ -409,6 +410,7 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
   stagePosX,
   onScrollX,
   onResetPan,
+  showRuler = true,
   className = '',
 }: CanvasScrollbarsBottomBarProps) {
   // ltr-island: الشريط السفلي يجمع شريط التمرير الأفقي وزوايا التقاطع بمحاذاة LTR لمطابقة Konva
@@ -417,11 +419,13 @@ export const CanvasScrollbarsBottomBar = React.memo(function CanvasScrollbarsBot
       className={`flex h-[20px] w-full bg-ruler-surface border-t border-ruler-border z-20 shrink-0 select-none shadow-2xs ${className}`}
       dir="ltr"
     >
-      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية مباشرة (20x20px) — ltr-island */}
-      <div
-        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none /* ltr-island */"
-        aria-hidden="true"
-      />
+      {/* 🧭 الزاوية السفلية اليسرى أسفل المسطرة الرأسية فقط عند إظهار المساطر — ltr-island */}
+      {showRuler && (
+        <div
+          className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-r border-ruler-border select-none /* ltr-island */"
+          aria-hidden="true"
+        />
+      )}
 
       {/* 🧭 مسطرة/شريط التمرير الأفقي */}
       <div className="flex-1 overflow-hidden relative">

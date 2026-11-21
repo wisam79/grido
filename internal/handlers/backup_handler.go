@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wailsapp/wails/v3/pkg/application"
-
+	"grido/internal/core/domain"
 	"grido/internal/service"
 )
 
@@ -38,11 +37,9 @@ func (h *BackupHandler) ExportBackupToFile(filePath string) error {
 // المكتبة كاملة تُسلسل كسلسلة وتُرسل إلى الواجهة ثم تعود بbase64 عبر
 // SaveFileDialog). السلسلة الفارغة = ألغى المستخدم الحوار (عقد IPC جديد).
 func (h *BackupHandler) ExportBackupToPath(defaultFilename string) (string, error) {
-	d := application.Get().Dialog.SaveFile()
-	d.SetMessage("Export Backup")
-	d.SetFilename(defaultFilename)
-	d.AddFilter("Grido Backup (*.json)", "*.json")
-	filePath, err := d.PromptForSingleSelection()
+	filePath, err := service.NewWailsRuntimeBridge().SaveFileDialog("Export Backup", defaultFilename, []domain.FileFilter{
+		{DisplayName: "Grido Backup (*.json)", Pattern: "*.json"},
+	})
 	if err != nil {
 		return "", fmt.Errorf("save dialog: %w", err)
 	}

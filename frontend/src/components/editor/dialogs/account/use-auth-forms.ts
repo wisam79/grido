@@ -31,7 +31,7 @@ export function useAuthForms(onAuthenticated: () => void) {
     verifyRecoveryOTP,
   } = useEditorStore.getState();
 
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, updateAuthMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -112,11 +112,12 @@ export function useAuthForms(onAuthenticated: () => void) {
     return clearResendTimer;
   }, [resendCooldown, isUiOpen, isRequestCurrent, clearResendTimer]);
 
-  // Reset errors when auth mode toggles
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Clear errors synchronously with an explicit mode change. A passive effect
+  // can erase a registration error queued before React commits the new mode.
+  const setAuthMode = useCallback((mode: 'login' | 'register') => {
+    updateAuthMode(mode);
     setError(null);
-  }, [authMode]);
+  }, []);
 
   const handleGoogleLogin = useCallback(async () => {
     if (!isUiOpen()) return;
@@ -214,8 +215,9 @@ export function useAuthForms(onAuthenticated: () => void) {
           toast.info('البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك.');
         } else if (errMsg.includes('مسجل بالفعل') || errMsg.includes('already registered')) {
           setAuthMode('login');
-          setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
-          toast.info('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
+          const msg = 'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.';
+          setError(msg);
+          toast.info(msg);
         } else if (errMsg.includes('تم إنشاء الحساب بنجاح')) {
           toast.success(errMsg);
           setAuthMode('login');
@@ -237,6 +239,7 @@ export function useAuthForms(onAuthenticated: () => void) {
       password,
       showOtp,
       authMode,
+      setAuthMode,
       loginAccount,
       registerAccount,
       verifyOTP,

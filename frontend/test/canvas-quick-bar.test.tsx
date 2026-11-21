@@ -1,9 +1,11 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { CanvasOverlayHost } from '../src/components/editor/canvas/canvas-overlay-host';
 import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
+import { QuickBarElementSection } from '../src/components/editor/canvas/quick-bar/quick-bar-element-section';
+import { QuickBarSlotSection } from '../src/components/editor/canvas/quick-bar/quick-bar-slot-section';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import {
   useCanvasInteraction,
@@ -16,6 +18,110 @@ describe('CanvasQuickBar Component Tests', () => {
     useEditorStore.getState().reset();
     resetCanvasInteraction();
   });
+
+  it.each(['element', 'slot'] as const)(
+    'restores %s preview on target change and does not overwrite a concurrent replacement',
+    (kind) => {
+      const first = { id: 'first', imageSrc: 'edited.png', originalImageSrc: 'original.png' };
+      const second = {
+        id: 'second',
+        imageSrc: 'second.png',
+        originalImageSrc: 'second-original.png',
+      };
+      useEditorStore.setState({
+        elements: [first, second].map((el) => ({
+          ...el,
+          type: 'image' as const,
+          x: 0,
+          y: 0,
+          width: 0.2,
+          height: 0.2,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+        })),
+        slots: [first, second].map((slot, cellIndex) => ({
+          ...slot,
+          cellIndex,
+          x: 0,
+          y: 0,
+          w: 0.5,
+          h: 1,
+        })),
+      });
+      const section = (id: string) => (
+        <TooltipProvider>
+          {kind === 'element' ? (
+            <QuickBarElementSection
+              element={useEditorStore.getState().elements.find((el) => el.id === id)!}
+            />
+          ) : (
+            <QuickBarSlotSection
+              slot={useEditorStore.getState().slots.find((slot) => slot.id === id)!}
+              onOpenFileForSlot={() => {}}
+            />
+          )}
+        </TooltipProvider>
+      );
+      const source = (id: string) => {
+        if (kind === 'slot')
+          return useEditorStore.getState().slots.find((slot) => slot.id === id)?.imageSrc;
+        const element = useEditorStore.getState().elements.find((el) => el.id === id);
+        return element?.type === 'image' ? element.imageSrc : undefined;
+      };
+      const pointerDown = (button = 0) => {
+        const event = new Event('pointerdown', { bubbles: true });
+        Object.defineProperty(event, 'button', { value: button });
+        fireEvent(screen.getByLabelText('معاينة الصورة الأصلية'), event);
+      };
+      const view = render(section(first.id));
+      pointerDown(2);
+      expect(source(first.id)).toBe('edited.png');
+      pointerDown();
+      expect(source(first.id)).toBe('original.png');
+      view.rerender(section(second.id));
+      expect(source(first.id)).toBe('edited.png');
+      pointerDown();
+      expect(source(second.id)).toBe('second-original.png');
+      act(() => {
+        if (kind === 'element')
+          useEditorStore.getState().updateElement(second.id, { imageSrc: 'replacement.png' });
+        else useEditorStore.getState().updateSlot(second.id, { imageSrc: 'replacement.png' });
+      });
+      fireEvent(window, new Event('blur'));
+      expect(source(second.id)).toBe('replacement.png');
+      view.unmount();
+      expect(source(second.id)).toBe('replacement.png');
+    },
+  );
+
+  it.each(['pointerup', 'pointercancel', 'blur'] as const)(
+    'restores original-image comparison on %s without history mutation',
+    (event) => {
+      selectSingleImage();
+      act(() =>
+        useEditorStore.getState().updateElement('el-1', { originalImageSrc: 'original.png' }),
+      );
+      const history = useEditorStore.getState().history;
+      const view = render(
+        <TooltipProvider>
+          <CanvasQuickBar />
+        </TooltipProvider>,
+      );
+      const down = new Event('pointerdown', { bubbles: true });
+      Object.defineProperty(down, 'button', { value: 0 });
+      fireEvent(screen.getByLabelText('معاينة الصورة الأصلية'), down);
+      const currentImageSrc = () => {
+        const element = useEditorStore.getState().elements[0];
+        return element?.type === 'image' ? element.imageSrc : undefined;
+      };
+      expect(currentImageSrc()).toBe('original.png');
+      fireEvent(window, new Event(event));
+      expect(currentImageSrc()).toBe('test.jpg');
+      expect(useEditorStore.getState().history).toBe(history);
+      view.unmount();
+    },
+  );
 
   it('renders nothing when no element or slot is selected', () => {
     const { container } = render(

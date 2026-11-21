@@ -6,6 +6,17 @@ import { PrintDialog } from '../src/components/editor/dialogs/print-dialog';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useEditorStore } from '../src/lib/editor-store';
 
+const capture = vi.hoisted(() => ({ stage: null as unknown, blob: vi.fn() }));
+vi.mock('@/lib/canvas/stage-context', () => ({ useStageRef: () => stageRef }));
+const stageRef = {
+  get current() {
+    return capture.stage;
+  },
+};
+vi.mock('@/lib/canvas/konva-export-utils', () => ({
+  captureStageBlob: (...args: unknown[]) => capture.blob(...args),
+}));
+
 vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
   ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
@@ -48,6 +59,22 @@ vi.mock('@bindings/grido/app', () => ({
 describe('PrintDialog Backstage View Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capture.stage = null;
+    capture.blob.mockResolvedValue(new Blob(['preview']));
+    if (typeof URL.createObjectURL !== 'function') {
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: vi.fn(),
+      });
+    }
+    if (typeof URL.revokeObjectURL !== 'function') {
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: vi.fn(),
+      });
+    }
     act(() => {
       useEditorStore.getState().reset();
       useEditorStore.getState().setMode('single');
@@ -57,6 +84,124 @@ describe('PrintDialog Backstage View Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
+
+  it.each(['single', 'collage'] as const)(
+    'restores %s selection on close after StrictMode effect replay',
+    (mode) => {
+      act(() =>
+        useEditorStore.setState({
+          mode,
+          selectedId: 'selected',
+          selectedIds: ['selected'],
+          elements: [
+            {
+              id: 'selected',
+              type: 'image',
+              imageSrc: 'photo.png',
+              x: 0,
+              y: 0,
+              width: 1,
+              height: 1,
+              rotation: 0,
+              opacity: 1,
+              zIndex: 1,
+            },
+          ],
+          slots: [{ id: 'selected', cellIndex: 0, x: 0, y: 0, w: 1, h: 1 }],
+        }),
+      );
+      const view = renderWithProviders(
+        <React.StrictMode>
+          <PrintDialog open={true} onOpenChange={() => {}} />
+        </React.StrictMode>,
+      );
+      expect(useEditorStore.getState().selectedIds).toEqual([]);
+      view.rerender(
+        <TooltipProvider>
+          <React.StrictMode>
+            <PrintDialog open={false} onOpenChange={() => {}} />
+          </React.StrictMode>
+        </TooltipProvider>,
+      );
+      expect(useEditorStore.getState().selectedIds).toEqual(['selected']);
+      view.unmount();
+    },
+  );
+
+  it('keeps the captured preview URL stable through StrictMode and releases only owned URLs on mode change', async () => {
+    capture.stage = { width: () => 1000 };
+    const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:owned-preview');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    act(() =>
+      useEditorStore.setState({
+        elements: [
+          {
+            id: 'photo',
+            type: 'image',
+            imageSrc: 'blob:document-image',
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+          },
+        ],
+      }),
+    );
+    const view = renderWithProviders(
+      <React.StrictMode>
+        <PrintDialog open={true} onOpenChange={() => {}} />
+      </React.StrictMode>,
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('print-preview-paper').querySelector('img')?.getAttribute('src'),
+      ).toBe('blob:owned-preview'),
+    );
+    expect(revoke).not.toHaveBeenCalled();
+    act(() => useEditorStore.getState().setMode('collage'));
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith('blob:owned-preview'));
+    expect(revoke).not.toHaveBeenCalledWith('blob:document-image');
+    view.unmount();
+    expect(revoke.mock.calls.filter(([url]) => url === 'blob:owned-preview')).toHaveLength(1);
+    create.mockRestore();
+    revoke.mockRestore();
+  });
+
+  it('does not revoke a document-owned blob URL used as preview fallback', async () => {
+    capture.stage = { width: () => 1000 };
+    capture.blob.mockRejectedValue(new Error('capture unavailable'));
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    act(() =>
+      useEditorStore.setState({
+        elements: [
+          {
+            id: 'photo',
+            type: 'image',
+            imageSrc: 'blob:document-image',
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+          },
+        ],
+      }),
+    );
+    const view = renderWithProviders(<PrintDialog open={true} onOpenChange={() => {}} />);
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('print-preview-paper').querySelector('img')?.getAttribute('src'),
+      ).toBe('blob:document-image'),
+    );
+    view.unmount();
+    expect(revoke).not.toHaveBeenCalledWith('blob:document-image');
+    revoke.mockRestore();
+  });
 
   it('renders print preparation dialog and layout controls when open', () => {
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
@@ -306,5 +451,18 @@ describe('PrintDialog Backstage View Tests', () => {
     });
 
     expect(OpenPrinterPreferences).toHaveBeenCalledWith('EPSON L805 Series');
+  });
+
+  it('hides JPEG/PNG output format toggle when CMYK color space is selected', async () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'صيغة JPEG' })).toBeInTheDocument();
+
+    await act(async () => {
+      useEditorStore.getState().setPrintSettings({ colorSpace: 'CMYK' });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'صيغة JPEG' })).not.toBeInTheDocument();
+    });
   });
 });

@@ -69,22 +69,24 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
   }, [open]);
 
   // Start or fetch bridge status when modal opens
-  const initBridge = useCallback(async () => {
-    if (!isMountedRef.current) return;
+  const initBridge = useCallback(async (): Promise<boolean> => {
+    if (!isMountedRef.current) return false;
     setIsLoading(true);
     setError(null);
     try {
       const info = await StartPhoneBridge();
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) return false;
+      if (!info?.isRunning) throw new Error('تعذر تشغيل جسر الهاتف');
       setBridgeInfo(info);
-      usePhoneBridgeStore.getState().setIsRunning(true);
+      usePhoneBridgeStore.getState().setIsRunning(info.isRunning);
       // إذا لم يكن الرابط السحابي متاحاً (المستخدم غير مسجل)، نحوّل تلقائياً للشبكة المحلية
       if (!info?.cloudUrl) {
         setBridgeMode('local');
       }
 
       const status = await GetPhoneBridgeStatus();
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) return false;
+      if (!status?.isRunning) throw new Error('جسر الهاتف متوقف');
       if (status) {
         setReceivedCount(status.receivedCount);
         usePhoneBridgeStore.getState().updateStatus({
@@ -94,11 +96,13 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           lastReceived: status.lastReceived,
         });
       }
+      return true;
     } catch (err) {
       phoneLog.error('[PhoneBridgeDialog] Failed to start phone bridge:', err);
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) return false;
       const msg = toErrorMessage(err, 'تعذر تشغيل جسر الهاتف');
       setError(msg);
+      return false;
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);
@@ -163,8 +167,8 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     try {
       setIsLoading(true);
       await StopPhoneBridge();
-      await initBridge();
-      if (isMountedRef.current) toast.success('تمت إعادة تشغيل الجسر');
+      const ok = await initBridge();
+      if (ok && isMountedRef.current) toast.success('تمت إعادة تشغيل الجسر');
     } catch (err) {
       phoneLog.error('Restart error:', err);
       if (isMountedRef.current) toast.error('تعذر إعادة التشغيل');
@@ -325,22 +329,22 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               ) : null}
 
               {/* Status and Received Photos Row */}
-              <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-md bg-muted/40 border border-border/60 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
+              <div className="w-full flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-md bg-muted/40 border border-border/60 text-xs">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="relative flex h-2 w-2 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                   </span>
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-foreground truncate">
                     {pairedDevice ? `متصل: ${pairedDevice}` : 'الجسر متصل ويعمل'}
                   </span>
                   {bridgeInfo.ip && bridgeInfo.port && (
-                    <span className="text-muted-foreground font-mono text-micro">
+                    <span dir="ltr" className="text-muted-foreground font-mono text-micro shrink-0">
                       {bridgeInfo.ip}:{bridgeInfo.port}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-xs">
+                <div className="flex items-center gap-1.5 font-mono text-xs shrink-0">
                   <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                   <span className="text-muted-foreground text-xs">الصور المستلمة:</span>
                   <span className="font-bold text-foreground bg-background px-2 py-0.5 rounded-md border border-border/40">
@@ -355,6 +359,8 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   <input
                     type="text"
                     readOnly
+                    dir="ltr"
+                    aria-label="رابط جسر الكاميرا"
                     value={activeUrl}
                     className="w-full bg-transparent px-2.5 text-xs font-mono text-muted-foreground outline-none select-all truncate"
                   />
@@ -384,7 +390,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-between gap-2">
+        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-between sm:justify-between gap-2">
           <div className="flex items-center gap-2">
             {bridgeInfo && bridgeInfo.isRunning && (
               <>

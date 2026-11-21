@@ -241,7 +241,8 @@ export function KeysTable({
 
             <button
               type="submit"
-              className="admin-btn-primary h-7 px-3.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+              disabled={generatingBatch}
+              className="admin-btn-primary h-7 px-3.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
               <span>توليد المفتاح</span>

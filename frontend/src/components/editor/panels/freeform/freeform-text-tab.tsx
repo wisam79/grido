@@ -117,7 +117,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
   const selectedTextElement = useEditorStore((state) => {
     if (state.selectedIds.length !== 1) return null;
     const element = state.elements.find((item) => item.id === state.selectedIds[0]);
-    return element?.type === 'text' ? element : null;
+    return element?.type === 'text' && !element.locked ? element : null;
   });
 
   // معاينة التسميات بخطوطها تتطلب تحميل الوجه الدقيق (عائلة + وزن) مرة واحدة

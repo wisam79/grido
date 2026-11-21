@@ -107,14 +107,14 @@ export function LoginForm({
                   value={sbKey}
                   onChange={(e) => onSbKeyChange(e.target.value)}
                   placeholder="eyJhbGciOi..."
-                  className="admin-input w-full h-9 ps-10 pe-3 text-xs font-mono"
+                  className="admin-input w-full h-9 pl-3 pr-10 text-xs font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowSbKey((prev) => !prev)}
                   aria-pressed={showSbKey}
                   aria-label={showSbKey ? 'إخفاء مفتاح الواجهة' : 'إظهار مفتاح الواجهة'}
-                  className="absolute inset-y-1 start-1 w-7 rounded-sm text-[#a9afaf] hover:text-[#f5f5f5] hover:bg-white/[0.06] flex items-center justify-center cursor-pointer"
+                  className="absolute inset-y-1 right-1 w-7 rounded-sm text-[#a9afaf] hover:text-[#f5f5f5] hover:bg-white/[0.06] flex items-center justify-center cursor-pointer"
                 >
                   {showSbKey ? (
                     <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
@@ -164,14 +164,14 @@ export function LoginForm({
                   value={password}
                   onChange={(e) => onPasswordChange(e.target.value)}
                   placeholder="••••••••"
-                  className="admin-input w-full h-9 ps-10 pe-3 text-xs"
+                  className="admin-input w-full h-9 pl-3 pr-10 text-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   aria-pressed={showPassword}
                   aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                  className="absolute inset-y-1 start-1 w-7 rounded-sm text-[#a9afaf] hover:text-[#f5f5f5] hover:bg-white/[0.06] flex items-center justify-center cursor-pointer"
+                  className="absolute inset-y-1 right-1 w-7 rounded-sm text-[#a9afaf] hover:text-[#f5f5f5] hover:bg-white/[0.06] flex items-center justify-center cursor-pointer"
                 >
                   {showPassword ? (
                     <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />

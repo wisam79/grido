@@ -445,10 +445,21 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
       await vi.advanceTimersByTimeAsync(1500);
     });
     expect(useCanvasInteraction.getState().isDragging).toBe(true);
+    expect(node.isCached()).toBe(false);
     expect(cache).not.toHaveBeenCalled();
     await act(async () => {
       node.fire('dragend', { target: node });
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(499);
+    });
+    expect(useCanvasInteraction.getState().isDragging).toBe(false);
+    expect(cache).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(cache).toHaveBeenCalledTimes(1);
+    expect(node.isCached()).toBe(true);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
     });
     expect(cache).toHaveBeenCalledTimes(1);
 

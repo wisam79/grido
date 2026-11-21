@@ -28,7 +28,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-100 fixed inset-0 z-50 fluent-smoke-backdrop',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-100 fixed inset-0 z-(--z-dialog) fluent-smoke-backdrop',
         className,
       )}
       {...props}
@@ -49,7 +49,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         className={cn(
           // توحيد مع Dialog: حشو 20px، فراغ 12px، ظل 16 — لا نافذة ويب ثقيلة.
-          'bg-card text-card-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-3 rounded-xl border border-border/80 dark:border-white/10 p-5 shadow-fluent-16 duration-100 sm:max-w-lg fluent-specular',
+          'bg-card text-card-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-(--z-dialog) grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-3 rounded-xl border border-border/80 dark:border-white/10 p-5 shadow-fluent-16 duration-100 sm:max-w-lg fluent-specular',
           className,
         )}
         {...props}

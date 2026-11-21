@@ -13,6 +13,17 @@ describe('Element Slice Text & Typography Tests', () => {
     });
   });
 
+  it('preserves locked text geometry, typography and history for preset/fit/rename actions', () => {
+    const id = useEditorStore.getState().addTextElement('Locked text');
+    useEditorStore.getState().updateElement(id, { locked: true, textResizeAnchor: 'bottom-right' });
+    const before = useEditorStore.getState();
+    useEditorStore.getState().applyTextPreset(id, 'heading');
+    useEditorStore.getState().fitTextToContent(id);
+    useEditorStore.getState().renameElement(id, 'Forbidden');
+    expect(useEditorStore.getState().elements).toBe(before.elements);
+    expect(useEditorStore.getState().history).toBe(before.history);
+  });
+
   it('returns the inserted text id and selects it for immediate editing', () => {
     const id = useEditorStore.getState().addTextElement('نص مخصص');
 

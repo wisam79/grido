@@ -306,7 +306,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           /* View 2: Focused 2-Column Customizer */
           <div className="flex flex-row flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
             {/* Right Side (RTL Start): Live Vector Preview */}
-            <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden border-e border-border/40">
+            <div className="flex-1 min-w-[340px] h-full flex flex-col overflow-hidden border-e border-border/40">
               <StickerPreview
                 template={selectedTemplate}
                 params={previewParams}

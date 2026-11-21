@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useRef } from 'react';
 
 import { Image, SquaresFour } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
@@ -15,12 +16,36 @@ import { cn } from '@/lib/utils';
 export function ModeSwitcher({ className }: { className?: string }) {
   const mode = useEditorStore((s) => s.mode);
   const setMode = useEditorStore((s) => s.setMode);
+  const collageBtnRef = useRef<HTMLButtonElement>(null);
+  const singleBtnRef = useRef<HTMLButtonElement>(null);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    let nextMode: 'collage' | 'single' | null = null;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      nextMode = mode === 'collage' ? 'single' : 'collage';
+    } else if (e.key === 'Home') {
+      nextMode = 'collage';
+    } else if (e.key === 'End') {
+      nextMode = 'single';
+    }
+    if (!nextMode) return;
+    e.preventDefault();
+    setMode(nextMode);
+    if (nextMode === 'collage') {
+      collageBtnRef.current?.focus();
+    } else {
+      singleBtnRef.current?.focus();
+    }
+  };
 
   return (
     <div
       role="tablist"
       aria-label="وضع العمل"
       dir="rtl"
+      tabIndex={-1}
+      onKeyDown={handleTabKeyDown}
       className={cn(
         'relative inline-flex items-center gap-1 p-1 rounded-lg bg-muted border border-border/70 select-none',
         className,
@@ -28,10 +53,12 @@ export function ModeSwitcher({ className }: { className?: string }) {
     >
       {/* خيار 1: كولاج */}
       <button
+        ref={collageBtnRef}
         type="button"
         role="tab"
         id="mode-tab-collage"
         aria-selected={mode === 'collage'}
+        tabIndex={mode === 'collage' ? 0 : -1}
         data-testid="mode-tab-collage"
         title="وضع الكولاج (Ctrl+Alt+1)"
         onClick={() => setMode('collage')}
@@ -63,10 +90,12 @@ export function ModeSwitcher({ className }: { className?: string }) {
 
       {/* خيار 2: تعديل حر */}
       <button
+        ref={singleBtnRef}
         type="button"
         role="tab"
         id="mode-tab-single"
         aria-selected={mode === 'single'}
+        tabIndex={mode === 'single' ? 0 : -1}
         data-testid="mode-tab-single"
         title="وضع التعديل الحر (Ctrl+Alt+2)"
         onClick={() => setMode('single')}

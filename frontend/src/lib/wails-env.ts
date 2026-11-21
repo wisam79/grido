@@ -23,8 +23,14 @@ export function wailsIsDesktop(): boolean {
   //    ولا تحقن window.go إطلاقاً — الكشف يعتمد على كائن زمن التشغيل أو ناقل WebView.
   const w = window as Window & {
     wails?: unknown;
+    _wails?: { backendConnected?: boolean };
     chrome?: { webview?: { postMessage?: unknown } };
     webkit?: { messageHandlers?: Record<string, unknown> };
   };
-  return !!w.wails || !!w.chrome?.webview?.postMessage || !!w.webkit?.messageHandlers;
+  return (
+    !!w.wails ||
+    !!w._wails?.backendConnected ||
+    !!w.chrome?.webview?.postMessage ||
+    !!w.webkit?.messageHandlers
+  );
 }

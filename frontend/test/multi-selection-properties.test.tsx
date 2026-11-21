@@ -113,6 +113,20 @@ describe('selection property source matrix', () => {
     ]);
   });
 
+  it('rounds opacity for display but compares exact persisted opacity when applying it', () => {
+    const elements = [
+      { ...text, opacity: 0.604 },
+      { ...image, opacity: 0.6 },
+    ];
+    expect(deriveSelectionProperties(elements).fields[0]).toMatchObject({
+      key: 'opacity',
+      state: { kind: 'value', value: 60 },
+    });
+    expect(buildSelectionPropertyPatches(elements, { key: 'opacity', value: 60 })).toEqual([
+      { id: text.id, patch: { opacity: 0.6 } },
+    ]);
+  });
+
   it('offers only the finite type-supported fields, not a primary element broadcast', () => {
     const keys = (elements: CanvasElement[]) =>
       deriveSelectionProperties(elements).fields.map((field) => field.key);

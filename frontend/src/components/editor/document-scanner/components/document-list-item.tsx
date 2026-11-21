@@ -12,6 +12,7 @@ interface DocumentListItemProps {
   isActive: boolean;
   isSelected: boolean;
   canDelete?: boolean;
+  disabled?: boolean;
   onSelect: (index: number) => void;
   onToggleCheck: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -25,6 +26,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
   isActive,
   isSelected,
   canDelete = false,
+  disabled = false,
   onSelect,
   onToggleCheck,
   onDelete,
@@ -42,6 +44,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onToggleCheck(doc.id)}
           aria-pressed={isSelected}
           className={cn(
@@ -56,6 +59,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
         </button>
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onSelect(index)}
           aria-current={isActive ? 'true' : undefined}
           title={`تحديد ${doc.label}`}
@@ -78,6 +82,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
             <TooltipTrigger asChild>
               <button
                 type="button"
+                disabled={disabled}
                 aria-label={`حذف ${doc.label}`}
                 onClick={() => onDelete(doc.id)}
                 className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"

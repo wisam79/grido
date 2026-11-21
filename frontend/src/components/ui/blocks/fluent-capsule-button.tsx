@@ -11,6 +11,7 @@ export interface FluentCapsuleButtonProps {
   tooltip: React.ReactNode;
   shortcut?: string;
   active?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
   testId?: string;
   className?: string;
@@ -27,6 +28,7 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
   tooltip,
   shortcut,
   active,
+  disabled = false,
   onClick,
   testId,
   className,
@@ -37,6 +39,7 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
       <TooltipTrigger asChild>
         <button
           type="button"
+          disabled={disabled}
           onClick={onClick}
           data-testid={testId}
           aria-label={label}
@@ -44,6 +47,7 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           className={cn(
             'coarse-touch-target relative w-6 h-6 flex items-center justify-center rounded-sm transition-colors duration-150 cursor-pointer [&_svg]:w-3.5 [&_svg]:h-3.5',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+            'disabled:opacity-45 disabled:cursor-not-allowed',
             active
               ? 'bg-card text-foreground border border-border/80 dark:border-white/10 shadow-2xs hover:bg-accent'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 border border-transparent',

@@ -101,6 +101,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     collageMargin,
     collageGap,
     collageTemplate,
+    showRuler,
     setSlotImage,
     fillAllSlots,
     selectElement,
@@ -116,6 +117,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       collageMargin: state.collageMargin,
       collageGap: state.collageGap,
       collageTemplate: state.collageTemplate,
+      showRuler: state.showRuler,
       setSlotImage: state.setSlotImage,
       fillAllSlots: state.fillAllSlots,
       selectElement: state.selectElement,
@@ -133,6 +135,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const transformRef = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
     committedBoxRef.current = canvasBox;
+    if (barRef.current) {
+      barRef.current.style.transform = '';
+      barRef.current.style.transformOrigin = '';
+    }
     transformRef.current?.();
   }, [canvasBox]);
   // 📏 مقاس الشريط الفعلي بعد الرسم (يتغير بين الأقسام: خلية/عنصر/تحديد متعدد)
@@ -178,6 +184,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       const top = Number.parseFloat(bar.style.top) || 0;
       const dx = next.left + (left - base.left) * ratio - left;
       const dy = next.top + (top - base.top) * ratio - top;
+      if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05 && Math.abs(ratio - 1) < 0.001) {
+        bar.style.transform = '';
+        return;
+      }
       bar.style.transformOrigin = '0 0';
       bar.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${ratio})`;
     };
@@ -198,8 +208,14 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       });
     };
     const onTransform = (event: Event) => {
-      if ((event as CustomEvent<{ settled: boolean }>).detail.settled) measure();
-      else transform();
+      if ((event as CustomEvent<{ settled: boolean }>).detail.settled) {
+        if (barRef.current) {
+          barRef.current.style.transform = '';
+        }
+        measure();
+      } else {
+        transform();
+      }
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -247,7 +263,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const selectedSlot = mode === 'collage' ? slots?.find((s) => s.id === selectedId) : undefined;
   const selectedElement = mode === 'single' ? elements.find((e) => e.id === selectedId) : undefined;
 
-  const hasSlotSection = Boolean(selectedSlot);
+  const hasSlotSection = Boolean(selectedSlot) && selectedIds.length <= 1;
   const hasElementSection = Boolean(selectedElement) && selectedIds.length <= 1;
   const hasMultiSection = selectedIds.length >= 2;
 
@@ -343,9 +359,9 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   let anchor: AnchorBox | null = null;
   let topClearancePx = GAP_PX;
   let bottomClearancePx = GAP_PX;
-  if (mode === 'collage' && selectedSlot) {
+  if (mode === 'collage' && canvasWidth > 0 && canvasHeight > 0) {
     // 📐 نفس هندسة المرسم بالضبط (collage-geometry) لكن بالبكسل الكانفسي،
-    // ثم تُقاس إلى بكسل العرض — فلا ينحرف الشريط عن الخلية المرسومة فعلاً.
+    // ثم تُقاس إلى بكسل العرض — ويدعم الصندوق الاتحاد عند تحديد عدة خانات.
     const hasPhysicalLayout = isBakedCollageLayout(collageTemplate);
     const geo = getCollageGeometry(
       canvasWidth,
@@ -354,25 +370,41 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       collageGap,
       hasPhysicalLayout,
     );
-    const rect = getSlotRect(selectedSlot, geo);
-    const sx = canvasWidth > 0 ? canvasBox.width / canvasWidth : 1;
-    const sy = canvasHeight > 0 ? canvasBox.height / canvasHeight : 1;
-    anchor = {
-      left: rect.left * sx,
-      top: rect.top * sy,
-      width: Math.max(1, rect.width * sx),
-      height: Math.max(1, rect.height * sy),
-    };
-    if (selectedIds.length <= 1) {
-      const availableDirs = getAvailableAdjacentSlotDirections(
-        selectedSlot,
-        slots,
-        geo,
-        collageGap,
-        hasPhysicalLayout,
-      );
-      if (availableDirs.includes('top')) topClearancePx = GAP_PX + 24;
-      if (availableDirs.includes('bottom')) bottomClearancePx = GAP_PX + 24;
+    const ids = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
+    const chosenSlots = slots.filter((s) => ids.includes(s.id));
+    const targetSlots = chosenSlots.length > 0 ? chosenSlots : selectedSlot ? [selectedSlot] : [];
+    if (targetSlots.length > 0) {
+      const sx = canvasBox.width / canvasWidth;
+      const sy = canvasBox.height / canvasHeight;
+      anchor = targetSlots.reduce<AnchorBox | null>((acc, slot) => {
+        const rect = getSlotRect(slot, geo);
+        const box: AnchorBox = {
+          left: rect.left * sx,
+          top: rect.top * sy,
+          width: Math.max(1, rect.width * sx),
+          height: Math.max(1, rect.height * sy),
+        };
+        if (!acc) return box;
+        const minX = Math.min(acc.left, box.left);
+        const minY = Math.min(acc.top, box.top);
+        return {
+          left: minX,
+          top: minY,
+          width: Math.max(acc.left + acc.width, box.left + box.width) - minX,
+          height: Math.max(acc.top + acc.height, box.top + box.height) - minY,
+        };
+      }, null);
+      if (selectedSlot && selectedIds.length <= 1) {
+        const availableDirs = getAvailableAdjacentSlotDirections(
+          selectedSlot,
+          slots,
+          geo,
+          collageGap,
+          hasPhysicalLayout,
+        );
+        if (availableDirs.includes('top')) topClearancePx = GAP_PX + 24;
+        if (availableDirs.includes('bottom')) bottomClearancePx = GAP_PX + 24;
+      }
     }
   } else if (mode === 'single') {
     const ids = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
@@ -443,6 +475,20 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // إزاحة الورقة داخل حاوية العناصر العائمة (مساطر + هوامش مساحة العمل)
   barLeft += canvasBox.left;
   barTop += canvasBox.top;
+
+  // تثبيت الشريط داخل المنطقة المرئية للحاوية (بعيداً عن المساطر 20px وأشرطة التمرير 20px)
+  const hostW = overlayHost?.clientWidth ?? 0;
+  const hostH = overlayHost?.clientHeight ?? 0;
+  if (hostW > 48 && hostH > 48) {
+    const rulerInset = showRuler ? 20 : 0;
+    const scrollbarInset = !printMode ? 20 : 0;
+    const minHostLeft = rulerInset + EDGE_PX;
+    const maxHostRight = hostW - scrollbarInset - EDGE_PX;
+    const minHostTop = rulerInset + EDGE_PX;
+    const maxHostBottom = hostH - scrollbarInset - EDGE_PX;
+    barLeft = Math.max(minHostLeft, Math.min(barLeft, Math.max(minHostLeft, maxHostRight - effW)));
+    barTop = Math.max(minHostTop, Math.min(barTop, Math.max(minHostTop, maxHostBottom - barH)));
+  }
 
   const bar = (
     <div

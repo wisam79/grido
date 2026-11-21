@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import { runWorkspaceCommand } from './helpers/studio-elements';
+
+import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * لوحة الأدوات (Ctrl+K) — مصدر واحد ومدخل واحد.
@@ -37,7 +39,7 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'));
     const before = await isDark();
 
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:toggle-theme')));
+    await runWorkspaceCommand(page, 'toggle-theme');
 
     await expect.poll(isDark, { timeout: 5000 }).toBe(!before);
   });
@@ -46,7 +48,7 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     // البيئة حتمية: لا حوار مفتوحاً عند الإقلاع — إثبات بلا تسامح صامت
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:open-account')));
+    await runWorkspaceCommand(page, 'account');
 
     const dialog = page.getByRole('dialog').first();
     await expect(dialog).toBeVisible();
@@ -73,6 +75,27 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     await page.getByTestId('command-insert-text').click();
 
     await expect(page.getByTestId('command-palette')).toBeHidden();
+    // The real insert command starts inline editing. Commit through the GUI
+    // before checking the rendered text, not an unrelated transformer label.
+    const editor = page.getByTestId('text-editing-textarea');
+    await expect(editor).toBeVisible();
+    await expect(editor).toHaveValue('نص جديد');
+    const insertedText = 'نص من لوحة الأدوات';
+    await editor.fill(insertedText);
+    await editor.press('Enter');
+    await expect(editor).toBeHidden();
     await expect.poll(konvaTexts, { timeout: 5000 }).toBeGreaterThan(before);
+    await expect
+      .poll(() =>
+        page.evaluate((text) => {
+          const stage = (
+            window as unknown as {
+              __gridoStage?: { find: (selector: string) => Array<{ text: () => string }> };
+            }
+          ).__gridoStage;
+          return stage?.find('Text').filter((node) => node.text() === text).length ?? 0;
+        }, insertedText),
+      )
+      .toBe(1);
   });
 });

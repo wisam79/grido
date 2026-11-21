@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
+import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useEditorStore } from '@/lib/editor-store';
 import {
   getDefaultStudioTab,
@@ -58,9 +59,14 @@ function getBreakpoint(width: number): WorkspaceBreakpoint {
 
 export function useWorkspacePanels() {
   const workflow = useEditorStore((state) => state.workflow);
-  const [windowWidth, setWindowWidth] = useState<number>(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1280,
+  const { zoomScale } = useUiZoom();
+  const getEffectiveWidth = useCallback(
+    (scale: number) =>
+      typeof window !== 'undefined' ? Math.round(window.innerWidth / (scale || 1)) : 1280,
+    [],
   );
+
+  const [windowWidth, setWindowWidth] = useState<number>(() => getEffectiveWidth(zoomScale));
 
   const breakpoint = useMemo(() => getBreakpoint(windowWidth), [windowWidth]);
 
@@ -84,6 +90,7 @@ export function useWorkspacePanels() {
   // Explicit close-all/Zen takes precedence over selection-driven auto-reveal.
   // Ordinary unpinning still follows selection, even with the templates drawer closed.
   const [isInspectorSuppressed, setIsInspectorSuppressed] = useState(false);
+  const [isZenActive, setIsZenActive] = useState(false);
   const hasSelection = useEditorStore((s) => !!s.selectedId || s.selectedIds.length > 0);
   const isInspectorOpen = !isInspectorSuppressed && (isInspectorPinned || hasSelection);
 
@@ -120,11 +127,9 @@ export function useWorkspacePanels() {
   // مفتوحة افتراضياً عند الإقلاع بطلب المالك: التبويب الأول ظاهر بمحتواه بدل
   // أن يبدأ الشريط بلا لوحة (كانت مغلقة دائماً لأن حالتها غير محفوظة أصلاً).
   // تُحفظ الآن في localStorage مثل باقي التفضيلات حتى لا تُفقد عند الإقلاع.
-  // ملاحظة React: الحفظ أثر جانبي — الكتابة المباشرة داخل مُحدِّث setState
-  // تُنفَّذ مرتين في StrictMode (يُستدعى المُحدِّث مرتين للتحقق من النقاء) لكن
-  // saveStoredPreferences مدمجة (setItem بنفس القيمة) فلا ضرر فعلي.
-  const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpenState] = useState(() => {
-    const initialWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  // The saved preference survives responsive folding and temporary Zen mode.
+  const [isTemplatesDrawerOpen, setTemplatesDrawerOpenState] = useState(() => {
+    const initialWidth = getEffectiveWidth(zoomScale);
     if (initialWidth < DUAL_PANEL_MIN_WIDTH) {
       return false;
     }
@@ -132,32 +137,58 @@ export function useWorkspacePanels() {
     return saved !== undefined ? saved : true;
   });
 
-  // مغلّف موحّد: يقبل قيمة أو دالة تحديث، ويحفظ الناتج دائماً.
-  const setIsTemplatesDrawerOpen = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
-    setIsTemplatesDrawerOpenState((prev) => {
-      const next = typeof value === 'function' ? value(prev) : value;
-      saveStoredPreferences({ isTemplatesDrawerOpen: next });
-      return next;
-    });
+  const drawerOpenRef = useRef(isTemplatesDrawerOpen);
+  const setIsTemplatesDrawerOpenState = useCallback((next: boolean) => {
+    drawerOpenRef.current = next;
+    setTemplatesDrawerOpenState(next);
   }, []);
 
-  // Resize listener using window resize
+  // Resolve functional updates once, outside React's replayed state updaters.
+  const setIsTemplatesDrawerOpen = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof value === 'function' ? value(drawerOpenRef.current) : value;
+      setIsTemplatesDrawerOpenState(next);
+      saveStoredPreferences({ isTemplatesDrawerOpen: next });
+      if (next) {
+        setIsZenActive(false);
+        setIsInspectorSuppressed(false);
+      }
+    },
+    [setIsTemplatesDrawerOpenState],
+  );
+
+  const prevWidthRef = useRef<number>(windowWidth);
+
+  // Resize listener + UI zoom recalculation (خارج محدّث setState لضمان نقاء التحديث)
   useEffect(() => {
+    const syncWidth = () => {
+      const nextWidth = getEffectiveWidth(zoomScale);
+      const prevWidth = prevWidthRef.current;
+      if (prevWidth === nextWidth) return;
+      prevWidthRef.current = nextWidth;
+      setWindowWidth(nextWidth);
+
+      if (prevWidth < 1024 && nextWidth >= 1024) {
+        setIsMobileSheetOpen(false);
+      }
+      if (prevWidth >= DUAL_PANEL_MIN_WIDTH && nextWidth < DUAL_PANEL_MIN_WIDTH) {
+        setIsTemplatesDrawerOpenState(false);
+      } else if (
+        prevWidth < DUAL_PANEL_MIN_WIDTH &&
+        nextWidth >= DUAL_PANEL_MIN_WIDTH &&
+        !isZenActive
+      ) {
+        const saved = getStoredPreferences().isTemplatesDrawerOpen;
+        setIsTemplatesDrawerOpenState(saved !== undefined ? saved : true);
+      }
+    };
+
+    syncWidth();
+
     let rAFId: number | null = null;
     const handleResize = () => {
       if (rAFId !== null) cancelAnimationFrame(rAFId);
-      rAFId = requestAnimationFrame(() => {
-        const nextWidth = window.innerWidth;
-        setWindowWidth((prevWidth) => {
-          if (prevWidth >= DUAL_PANEL_MIN_WIDTH && nextWidth < DUAL_PANEL_MIN_WIDTH) {
-            setIsTemplatesDrawerOpenState(false);
-          } else if (prevWidth < DUAL_PANEL_MIN_WIDTH && nextWidth >= DUAL_PANEL_MIN_WIDTH) {
-            const saved = getStoredPreferences().isTemplatesDrawerOpen;
-            setIsTemplatesDrawerOpenState(saved !== undefined ? saved : true);
-          }
-          return nextWidth;
-        });
-      });
+      rAFId = requestAnimationFrame(syncWidth);
     };
 
     window.addEventListener('resize', handleResize, { passive: true });
@@ -165,7 +196,7 @@ export function useWorkspacePanels() {
       window.removeEventListener('resize', handleResize);
       if (rAFId !== null) cancelAnimationFrame(rAFId);
     };
-  }, []);
+  }, [zoomScale, getEffectiveWidth, isZenActive, setIsTemplatesDrawerOpenState]);
 
   const setActivePanel = useCallback((panel: WorkspacePanel) => {
     setActivePanelState(panel);
@@ -174,6 +205,7 @@ export function useWorkspacePanels() {
 
   const setIsInspectorPinned = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
     setIsInspectorSuppressed(false);
+    setIsZenActive(false);
     setIsInspectorPinnedState((prev) => {
       const next = typeof value === 'function' ? value(prev) : value;
       saveStoredPreferences({ isInspectorPinned: next });
@@ -192,6 +224,8 @@ export function useWorkspacePanels() {
   }, []);
 
   const ensureTemplatesDrawerOpen = useCallback(() => {
+    setIsZenActive(false);
+    setIsInspectorSuppressed(false);
     if (breakpoint === 'compact') {
       setMobileActiveTab('templates');
       setIsMobileSheetOpen(true);
@@ -227,16 +261,35 @@ export function useWorkspacePanels() {
       }
 
       if (panel === 'templates') {
-        setIsTemplatesDrawerOpen((prev) => !prev);
+        if (isTemplatesDrawerOpen) {
+          setIsTemplatesDrawerOpen(false);
+        } else {
+          setIsZenActive(false);
+          setIsInspectorSuppressed(false);
+          setIsTemplatesDrawerOpen(true);
+        }
+      } else if (isInspectorOpen) {
+        setIsInspectorPinnedState(false);
+        saveStoredPreferences({ isInspectorPinned: false });
+        setIsInspectorSuppressed(true);
       } else {
-        setIsInspectorPinned((prev) => !prev);
+        setIsZenActive(false);
+        setIsInspectorPinned(true);
       }
     },
-    [breakpoint, setIsInspectorPinned, setIsTemplatesDrawerOpen],
+    [
+      breakpoint,
+      isInspectorOpen,
+      isTemplatesDrawerOpen,
+      setIsInspectorPinned,
+      setIsTemplatesDrawerOpen,
+    ],
   );
 
   const openPanel = useCallback(
     (panel: 'templates' | 'properties') => {
+      setIsZenActive(false);
+      setIsInspectorSuppressed(false);
       if (breakpoint === 'compact') {
         setMobileActiveTab(panel);
         setIsMobileSheetOpen(true);
@@ -260,45 +313,61 @@ export function useWorkspacePanels() {
     setActivePanel(null);
   }, [setActivePanel, setIsInspectorPinned, setIsTemplatesDrawerOpen]);
 
-  // Zen is an explicit close-all, not the incidental absence of pinned panels.
-  const isZenMode = breakpoint !== 'compact' && isInspectorSuppressed && !isTemplatesDrawerOpen;
+  // Zen mode is an explicit toggle on non-compact screens (never mutates localStorage prefs).
+  const isZenMode = breakpoint !== 'compact' && isZenActive;
 
   const savedZenStateRef = useRef<{
     wasDrawerOpen: boolean;
     wasInspectorPinned: boolean;
+    wasInspectorSuppressed: boolean;
     lastActivePanel: WorkspacePanel;
   }>({
     wasDrawerOpen: true,
     wasInspectorPinned: true,
+    wasInspectorSuppressed: false,
     lastActivePanel: null,
   });
 
   const toggleZenMode = useCallback(() => {
-    if (isZenMode) {
-      // استعادة الحالة السابقة للألواح بدقة
-      setIsTemplatesDrawerOpen(savedZenStateRef.current.wasDrawerOpen);
-      setIsInspectorPinned(savedZenStateRef.current.wasInspectorPinned);
-      if (savedZenStateRef.current.lastActivePanel) {
-        setActivePanel(savedZenStateRef.current.lastActivePanel);
-      }
+    if (breakpoint === 'compact' && !isZenActive) {
+      setIsMobileSheetOpen(false);
+      return;
+    }
+
+    if (isZenActive) {
+      // استعادة الحالة السابقة للألواح بدقة دون الكتابة فوق التفضيلات
+      setIsZenActive(false);
+      setIsInspectorSuppressed(savedZenStateRef.current.wasInspectorSuppressed);
+      setIsTemplatesDrawerOpenState(
+        windowWidth >= DUAL_PANEL_MIN_WIDTH && savedZenStateRef.current.wasDrawerOpen,
+      );
+      setIsInspectorPinnedState(savedZenStateRef.current.wasInspectorPinned);
+      setActivePanelState(savedZenStateRef.current.lastActivePanel);
+      setIsMobileSheetOpen(false);
     } else {
-      // حفظ الحالة الحالية قبل طي جميع الألواح
+      // حفظ الحالة الحالية قبل طي جميع الألواح مؤقتاً
       savedZenStateRef.current = {
         wasDrawerOpen: isTemplatesDrawerOpen,
         wasInspectorPinned: isInspectorPinned,
+        wasInspectorSuppressed: isInspectorSuppressed,
         lastActivePanel: activePanel,
       };
-      closeActivePanel();
+      setIsZenActive(true);
+      setIsTemplatesDrawerOpenState(false);
+      setIsInspectorPinnedState(false);
+      setIsInspectorSuppressed(true);
+      setActivePanelState(null);
+      setIsMobileSheetOpen(false);
     }
   }, [
-    isZenMode,
+    breakpoint,
+    isZenActive,
+    windowWidth,
+    setIsTemplatesDrawerOpenState,
     isTemplatesDrawerOpen,
     isInspectorPinned,
+    isInspectorSuppressed,
     activePanel,
-    setIsTemplatesDrawerOpen,
-    setIsInspectorPinned,
-    setActivePanel,
-    closeActivePanel,
   ]);
 
   return {

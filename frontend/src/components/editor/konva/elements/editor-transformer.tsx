@@ -109,17 +109,32 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           textContent = `${wMM} × ${hMM} mm${rotStr}`;
         }
       } else {
-        // تحديد متعدد: حساب الصندوق الإجمالي للمجموعة المحددة بالكامل
-        const rect = transformer.getClientRect();
+        // تحديد متعدد: حساب الصندوق الإجمالي بالإحداثيات المنطقية المستقلة عن زوم المسرح
+        const parent = transformer.getParent() ?? undefined;
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        for (const n of nodes) {
+          const r = n.getClientRect({ relativeTo: parent });
+          if (r.x < minX) minX = r.x;
+          if (r.y < minY) minY = r.y;
+          if (r.x + r.width > maxX) maxX = r.x + r.width;
+          if (r.y + r.height > maxY) maxY = r.y + r.height;
+        }
+        const rectW = Math.max(0, maxX - minX);
+        const rectH = Math.max(0, maxY - minY);
+        const safeMinX = Number.isFinite(minX) ? minX : 0;
+        const safeMinY = Number.isFinite(minY) ? minY : 0;
         vBox = {
-          minX: rect.x,
-          minY: rect.y,
-          maxX: rect.x + rect.width,
-          maxY: rect.y + rect.height,
-          centerX: rect.x + rect.width / 2,
+          minX: safeMinX,
+          minY: safeMinY,
+          maxX: safeMinX + rectW,
+          maxY: safeMinY + rectH,
+          centerX: safeMinX + rectW / 2,
         };
-        const wMM = Math.round(pxToMm(rect.width, dpi));
-        const hMM = Math.round(pxToMm(rect.height, dpi));
+        const wMM = Math.round(pxToMm(rectW, dpi));
+        const hMM = Math.round(pxToMm(rectH, dpi));
         textContent = `${wMM} × ${hMM} mm (${nodes.length})`;
       }
 

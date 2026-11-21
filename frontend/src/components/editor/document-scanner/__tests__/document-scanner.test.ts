@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import React from 'react';
+import { toast } from 'sonner';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { ScannerSidebar } from '../components/scanner-sidebar';
 
 import {
   approxPolyDP,
@@ -9,9 +14,371 @@ import {
   addManualDocumentQuad,
   computePerspectiveTransform,
 } from '../core';
+import { detectDocumentAuto, terminateMlWorker } from '../core/ml-orchestrator';
+import { warpDocumentViaGo } from '../core/warp-client';
+import { useScannerDetection } from '../hooks/use-scanner-detection';
+import { useScannerProcessor } from '../hooks/use-scanner-processor';
+
+vi.mock('../core/warp-client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../core/warp-client')>()),
+  warpDocumentViaGo: vi.fn(),
+}));
+vi.mock('../core/ml-orchestrator', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../core/ml-orchestrator')>()),
+  detectDocumentAuto: vi.fn(),
+  warmupMlDetector: vi.fn(),
+  terminateMlWorker: vi.fn(),
+}));
 
 import type { Point } from '../core';
 import type { DetectedDocument } from '../core/types';
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+const ownedCorners: Point[] = [
+  { x: 10, y: 10 },
+  { x: 190, y: 10 },
+  { x: 190, y: 90 },
+  { x: 10, y: 90 },
+];
+
+function ownedImage() {
+  const img = new Image();
+  Object.defineProperties(img, {
+    naturalWidth: { value: 200 },
+    naturalHeight: { value: 100 },
+  });
+  return img;
+}
+
+function warpResult(url: string) {
+  return { url, width: 200, height: 100 };
+}
+
+describe('scanner operation ownership regressions', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('cancels a preview reset before React renders, with a stable reset callback', async () => {
+    const pending = deferred<ReturnType<typeof warpResult>>();
+    vi.mocked(warpDocumentViaGo).mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(() =>
+      useScannerProcessor({ current: ownedImage() }, 'original', 0, true),
+    );
+    const reset = result.current.resetPreview;
+    let attempt!: Promise<void>;
+    act(() => {
+      attempt = result.current.handleTogglePreview(ownedCorners, 'free');
+      reset();
+    });
+    expect(vi.mocked(warpDocumentViaGo).mock.calls[0][6]?.aborted).toBe(true);
+    await act(async () => {
+      pending.resolve(warpResult('/old.png'));
+      await attempt;
+    });
+    expect(result.current.resetPreview).toBe(reset);
+    expect(result.current.isPreviewMode).toBe(false);
+    expect(result.current.isPreviewing).toBe(false);
+    expect(result.current.previewSrc).toBeNull();
+  });
+
+  it('aborts close/unmount and an old finally cannot clear a reopened preview', async () => {
+    const old = deferred<ReturnType<typeof warpResult>>();
+    const fresh = deferred<ReturnType<typeof warpResult>>();
+    vi.mocked(warpDocumentViaGo)
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(fresh.promise);
+    const imgRef = { current: ownedImage() };
+    const view = renderHook(({ open }) => useScannerProcessor(imgRef, 'original', 0, open), {
+      initialProps: { open: true },
+    });
+    let first!: Promise<void>;
+    act(() => {
+      first = view.result.current.handleTogglePreview(ownedCorners, 'free');
+    });
+    view.rerender({ open: false });
+    expect(vi.mocked(warpDocumentViaGo).mock.calls[0][6]?.aborted).toBe(true);
+    view.rerender({ open: true });
+    let second!: Promise<void>;
+    act(() => {
+      second = view.result.current.handleTogglePreview(ownedCorners, 'free');
+    });
+    await act(async () => {
+      old.resolve(warpResult('/old.png'));
+      await first;
+    });
+    expect(view.result.current.isPreviewing).toBe(true);
+    expect(view.result.current.previewSrc).toBeNull();
+    view.unmount();
+    expect(vi.mocked(warpDocumentViaGo).mock.calls[1][6]?.aborted).toBe(true);
+    await act(async () => {
+      fresh.resolve(warpResult('/fresh.png'));
+      await second;
+    });
+  });
+
+  it('keeps export owned across preview reset and rejects a concurrent preview attempt', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<ReturnType<typeof warpResult>>();
+    vi.mocked(warpDocumentViaGo).mockReturnValueOnce(pending.promise);
+    const { result } = renderHook(() =>
+      useScannerProcessor({ current: ownedImage() }, 'original', 0, true),
+    );
+    const save = vi.fn();
+    const done = vi.fn();
+    let attempt!: Promise<void>;
+    act(() => {
+      attempt = result.current.handleApplyActive(ownedCorners, 'free', save, done);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    act(() => {
+      result.current.resetPreview();
+    });
+    await act(async () => {
+      await result.current.handleTogglePreview(ownedCorners, 'free');
+    });
+    expect(warpDocumentViaGo).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(warpDocumentViaGo).mock.calls[0][6]?.aborted).toBe(false);
+    expect(result.current.isExporting).toBe(true);
+    await act(async () => {
+      pending.resolve(warpResult('/export.png'));
+      await attempt;
+    });
+    expect(save).toHaveBeenCalledWith('/export.png');
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(result.current.isExporting).toBe(false);
+  });
+
+  it('suppresses a cancelled export result and error after reopening', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<ReturnType<typeof warpResult>>();
+    vi.mocked(warpDocumentViaGo).mockReturnValueOnce(pending.promise);
+    const errorToast = vi.spyOn(toast, 'error');
+    const { result } = renderHook(() =>
+      useScannerProcessor({ current: ownedImage() }, 'original', 0, true),
+    );
+    const save = vi.fn();
+    const done = vi.fn();
+    let attempt!: Promise<void>;
+    act(() => {
+      attempt = result.current.handleApplyActive(ownedCorners, 'free', save, done);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    act(() => {
+      result.current.resetProcessorState();
+    });
+    await act(async () => {
+      pending.reject(new Error('late failure'));
+      await attempt;
+    });
+    expect(save).not.toHaveBeenCalled();
+    expect(done).not.toHaveBeenCalled();
+    expect(errorToast).not.toHaveBeenCalled();
+  });
+
+  it('locks document-list, selection and add/delete actions while processing', () => {
+    const docs: DetectedDocument[] = [
+      { id: 'a', corners: ownedCorners, confidence: 1, label: 'A', aspectType: 'free' },
+      { id: 'b', corners: ownedCorners, confidence: 1, label: 'B', aspectType: 'free' },
+    ];
+    const onSelect = vi.fn();
+    const onToggle = vi.fn();
+    const onDelete = vi.fn();
+    const onAdd = vi.fn();
+    render(
+      React.createElement(
+        TooltipProvider,
+        null,
+        React.createElement(ScannerSidebar, {
+          detectionMode: 'multi',
+          detectedDocs: docs,
+          activeDocIndex: 0,
+          selectedDocIds: ['a', 'b'],
+          isDetecting: true,
+          onSelectDoc: onSelect,
+          onToggleCheckDoc: onToggle,
+          onDeleteDoc: onDelete,
+          onAddDocument: onAdd,
+          onSelectAllDocs: vi.fn(),
+          onAutoDetect: vi.fn(),
+          onReset: vi.fn(),
+          filterMode: 'original',
+          onFilterChange: vi.fn(),
+          aspectType: 'free',
+          onAspectChange: vi.fn(),
+        }),
+      ),
+    );
+    const select = screen.getByTitle('تحديد A');
+    const remove = screen.getByRole('button', { name: 'حذف A' });
+    const add = screen.getByRole('button', { name: 'إضافة' });
+    const check = screen.getAllByRole('button', { name: 'إلغاء التضمين' })[0];
+    for (const button of [select, remove, add, check]) {
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+    }
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onAdd).not.toHaveBeenCalled();
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('restores per-document metadata, replaces only the split parent and keeps selection unique', () => {
+    const { result } = renderHook(() => useScannerDetection(false, ''));
+    const docs: DetectedDocument[] = [
+      {
+        id: 'a',
+        corners: ownedCorners,
+        confidence: 1,
+        label: 'A',
+        aspectType: 'free',
+        rotation: 90,
+        filterMode: 'bw',
+      },
+      {
+        id: 'b',
+        corners: ownedCorners,
+        confidence: 1,
+        label: 'B',
+        aspectType: 'id_card',
+        rotation: 270,
+        filterMode: 'magic',
+      },
+    ];
+    act(() => {
+      result.current.setDetectedDocs(docs);
+      result.current.setSelectedDocIds(['a']);
+    });
+    const corners = vi.fn();
+    const aspect = vi.fn();
+    const rotation = vi.fn();
+    const reset = vi.fn();
+    const filter = vi.fn();
+    act(() => {
+      result.current.selectDocument(1, corners, aspect, rotation, reset, filter);
+    });
+    expect(rotation).toHaveBeenLastCalledWith(270);
+    expect(filter).toHaveBeenLastCalledWith('magic');
+    act(() => {
+      result.current.toggleDocSelection('a');
+    });
+    expect(result.current.selectedDocIds).toEqual(['a']);
+    act(() => {
+      result.current.handleSplitIdCards(ownedCorners, corners, aspect, reset, rotation, filter);
+    });
+    expect(result.current.detectedDocs).toHaveLength(3);
+    expect(result.current.detectedDocs[0]).toBe(docs[0]);
+    expect(result.current.detectedDocs.some((doc) => doc.id === 'b')).toBe(false);
+    expect(
+      result.current.detectedDocs
+        .slice(1)
+        .every((doc) => doc.rotation === 270 && doc.filterMode === 'magic'),
+    ).toBe(true);
+    expect(new Set(result.current.selectedDocIds).size).toBe(2);
+    expect(result.current.activeDocIndex).toBe(1);
+    act(() => {
+      result.current.handleDeleteDocument(
+        result.current.detectedDocs[1].id,
+        corners,
+        aspect,
+        reset,
+        rotation,
+        filter,
+      );
+    });
+    expect(rotation).toHaveBeenLastCalledWith(90);
+    expect(filter).toHaveBeenLastCalledWith('bw');
+  });
+
+  it('clears old image documents during decoding and ignores late detection completion', async () => {
+    const images: HTMLImageElement[] = [];
+    const OriginalImage = globalThis.Image;
+    vi.stubGlobal(
+      'Image',
+      class {
+        constructor() {
+          const img = new OriginalImage();
+          Object.defineProperties(img, {
+            naturalWidth: { value: 200 },
+            naturalHeight: { value: 100 },
+          });
+          images.push(img);
+          return img;
+        }
+      },
+    );
+    const load = (img: HTMLImageElement) => img.onload?.call(img, new Event('load'));
+    const old = deferred<Awaited<ReturnType<typeof detectDocumentAuto>>>();
+    const fresh = deferred<Awaited<ReturnType<typeof detectDocumentAuto>>>();
+    vi.mocked(detectDocumentAuto)
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(fresh.promise);
+    const view = renderHook(({ src }) => useScannerDetection(true, src), {
+      initialProps: { src: '/a.png' },
+    });
+    const onCorners = vi.fn();
+    const onAspect = vi.fn();
+    const onResetDocMeta = vi.fn();
+    act(() => {
+      view.result.current.setDetectionCallbacks({ onCorners, onAspect, onResetDocMeta });
+      load(images[0]);
+    });
+    const oldDoc: DetectedDocument = {
+      id: 'old',
+      corners: ownedCorners,
+      confidence: 1,
+      label: 'Old',
+      aspectType: 'id_card',
+    };
+    act(() => {
+      view.result.current.setDetectedDocs([oldDoc]);
+    });
+    view.rerender({ src: '/b.png' });
+    expect(vi.mocked(detectDocumentAuto).mock.calls[0][4]?.aborted).toBe(true);
+    expect(view.result.current.detectedDocs).toEqual([]);
+    expect(view.result.current.imgSize).toEqual({ w: 0, h: 0 });
+    act(() => {
+      load(images[1]);
+    });
+    await act(async () => {
+      old.resolve({ corners: ownedCorners, documents: [oldDoc], confidence: 1, method: 'scanic' });
+      await old.promise;
+    });
+    expect(view.result.current.isDetecting).toBe(true);
+    expect(view.result.current.detectedDocs).toEqual([]);
+    const newDoc = { ...oldDoc, id: 'new', aspectType: 'free' as const };
+    await act(async () => {
+      fresh.resolve({
+        corners: ownedCorners,
+        documents: [newDoc],
+        confidence: 1,
+        method: 'scanic',
+      });
+      await fresh.promise;
+    });
+    expect(view.result.current.detectedDocs).toEqual([newDoc]);
+    expect(onAspect).toHaveBeenLastCalledWith('free');
+    expect(onResetDocMeta).toHaveBeenCalled();
+    view.unmount();
+    expect(terminateMlWorker).toHaveBeenCalled();
+  });
+});
 
 describe('Document Scanner - Core Geometry & Vision', () => {
   beforeAll(() => {

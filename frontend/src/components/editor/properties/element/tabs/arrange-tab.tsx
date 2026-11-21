@@ -33,14 +33,92 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   onUpdate,
 }: ElementArrangeTabProps) {
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
-  // X/Y retain their existing commit behavior; size gestures are field-local.
-  const coordDirtySessionRef = useRef<number | null>(null);
-  const pushCoordHistory = useCallback(() => {
-    const dirtySession = coordDirtySessionRef.current;
-    coordDirtySessionRef.current = null;
-    if (dirtySession === null || dirtySession !== getDocumentSession()) return;
-    useEditorStore.getState().pushHistory();
-  }, []);
+  type Coordinate = 'x' | 'y';
+  type CoordGesture = {
+    elementId: string;
+    documentSession: number;
+    type: CanvasElement['type'];
+    axis: Coordinate;
+    source: number;
+    owned: number | null;
+    raw: string;
+  };
+  const coordGestureRef = useRef<CoordGesture | null>(null);
+  const [coordDraft, setCoordDraft] = useState<CoordGesture | null>(null);
+
+  const beginCoordGesture = (axis: Coordinate) => {
+    const current = useEditorStore.getState().elements.find((item) => item.id === element.id);
+    if (!current || current.locked) return;
+    const gesture: CoordGesture = {
+      elementId: current.id,
+      documentSession: getDocumentSession(),
+      type: current.type,
+      axis,
+      source: current[axis],
+      owned: null,
+      raw: String(Math.round(current[axis] * 100)),
+    };
+    coordGestureRef.current = gesture;
+    setCoordDraft({ ...gesture });
+  };
+
+  const changeCoordinate = (axis: Coordinate, raw: string) => {
+    const gesture = coordGestureRef.current;
+    if (
+      !gesture ||
+      gesture.axis !== axis ||
+      gesture.elementId !== element.id ||
+      gesture.documentSession !== getDocumentSession()
+    )
+      return;
+    gesture.raw = raw;
+    setCoordDraft({ ...gesture });
+    const value = raw.trim() ? Number(raw) : NaN;
+    const current = useEditorStore
+      .getState()
+      .elements.find((item) => item.id === gesture.elementId);
+    if (
+      !current ||
+      current.locked ||
+      current.type !== gesture.type ||
+      !Number.isFinite(value) ||
+      !Object.is(current[axis], gesture.owned ?? gesture.source)
+    )
+      return;
+    const next = Math.max(-1, Math.min(2, value / 100));
+    if (Object.is(current[axis], next)) return;
+    onUpdate(current.id, { [axis]: next });
+    gesture.owned = next;
+  };
+
+  const finishCoordinate = (axis: Coordinate, cancel: boolean) => {
+    const gesture = coordGestureRef.current;
+    coordGestureRef.current = null; // Enter/Escape followed by blur is not another commit.
+    setCoordDraft(null);
+    if (
+      !gesture ||
+      gesture.axis !== axis ||
+      gesture.elementId !== element.id ||
+      gesture.documentSession !== getDocumentSession()
+    )
+      return;
+    const current = useEditorStore
+      .getState()
+      .elements.find((item) => item.id === gesture.elementId);
+    if (
+      !current ||
+      current.type !== gesture.type ||
+      gesture.owned === null ||
+      !Object.is(current[axis], gesture.owned) ||
+      Object.is(gesture.owned, gesture.source)
+    )
+      return;
+    if (cancel || !gesture.raw.trim() || !Number.isFinite(Number(gesture.raw))) {
+      onUpdate(current.id, { [axis]: gesture.source });
+    } else {
+      useEditorStore.getState().pushHistory();
+    }
+  };
 
   type Axis = 'width' | 'height';
   type SizeGesture = {
@@ -73,7 +151,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
     (axis: Axis) => {
       if (axis === 'height' && element.type === 'text') return null;
       const current = useEditorStore.getState().elements.find((item) => item.id === element.id);
-      if (!current) return null;
+      if (!current || current.locked) return null;
       const values = current as unknown as Record<string, unknown>;
       // Only the edited dimension and the decorations this gesture can scale.
       const keys = [axis, 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY', 'cornerRadius'];
@@ -106,7 +184,12 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
       const current = useEditorStore
         .getState()
         .elements.find((item) => item.id === gesture.elementId);
-      if (!current || current.type !== gesture.type || !Number.isFinite(current[gesture.axis]))
+      if (
+        !current ||
+        current.locked ||
+        current.type !== gesture.type ||
+        !Number.isFinite(current[gesture.axis])
+      )
         return;
       const values = current as unknown as Record<string, unknown>;
       if (
@@ -240,8 +323,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
     return () => {
       const gesture = sizeGestureRef.current;
       sizeGestureRef.current = null;
-      const dirtyCoordSession = coordDirtySessionRef.current;
-      coordDirtySessionRef.current = null;
+      const coord = coordGestureRef.current;
+      coordGestureRef.current = null;
       const activeSession = getDocumentSession();
 
       if (gesture && gesture.documentSession === activeSession) {
@@ -263,11 +346,20 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
         }
       }
 
-      if (dirtyCoordSession !== null && dirtyCoordSession === activeSession) {
-        useEditorStore.getState().pushHistory();
+      if (coord && coord.documentSession === activeSession && coord.owned !== null) {
+        const current = useEditorStore
+          .getState()
+          .elements.find((item) => item.id === coord.elementId);
+        if (
+          current &&
+          current.type === coord.type &&
+          Object.is(current[coord.axis], coord.owned) &&
+          !Object.is(coord.owned, coord.source)
+        )
+          useEditorStore.getState().pushHistory();
       }
     };
-  }, []);
+  }, [element.id, element.type]);
 
   const handleSizeKeyDown = useCallback(
     (axis: Axis, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -416,15 +508,23 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               type="number"
               dir="ltr"
               aria-label="X"
-              value={Math.round(element.x * 100)}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (e.target.value !== '' && Number.isFinite(v)) {
-                  coordDirtySessionRef.current = getDocumentSession();
-                  onUpdate(element.id, { x: Math.max(-1, Math.min(2, v / 100)) });
-                }
+              value={
+                coordDraft?.axis === 'x' &&
+                coordDraft.elementId === element.id &&
+                coordDraft.documentSession === documentSession
+                  ? coordDraft.raw
+                  : Math.round(element.x * 100)
+              }
+              onFocus={() => beginCoordGesture('x')}
+              onChange={(e) => changeCoordinate('x', e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== 'Escape') return;
+                e.preventDefault();
+                e.stopPropagation();
+                finishCoordinate('x', e.key === 'Escape');
+                e.currentTarget.blur();
               }}
-              onBlur={pushCoordHistory}
+              onBlur={() => finishCoordinate('x', false)}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
@@ -437,15 +537,23 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               type="number"
               dir="ltr"
               aria-label="Y"
-              value={Math.round(element.y * 100)}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (e.target.value !== '' && Number.isFinite(v)) {
-                  coordDirtySessionRef.current = getDocumentSession();
-                  onUpdate(element.id, { y: Math.max(-1, Math.min(2, v / 100)) });
-                }
+              value={
+                coordDraft?.axis === 'y' &&
+                coordDraft.elementId === element.id &&
+                coordDraft.documentSession === documentSession
+                  ? coordDraft.raw
+                  : Math.round(element.y * 100)
+              }
+              onFocus={() => beginCoordGesture('y')}
+              onChange={(e) => changeCoordinate('y', e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== 'Escape') return;
+                e.preventDefault();
+                e.stopPropagation();
+                finishCoordinate('y', e.key === 'Escape');
+                e.currentTarget.blur();
               }}
-              onBlur={pushCoordHistory}
+              onBlur={() => finishCoordinate('y', false)}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
@@ -497,7 +605,14 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
       <FluentSection title="التدوير والقلب" collapsible defaultOpen={true}>
         <FluentSliderField
           label="الزاوية"
-          value={(((element.rotation % 360) + 540) % 360) - 180}
+          value={(() => {
+            const normRot = ((element.rotation % 360) + 360) % 360;
+            return normRot === 180 && element.rotation > 0
+              ? 180
+              : normRot > 180
+                ? normRot - 360
+                : normRot;
+          })()}
           min={-180}
           max={180}
           step={1}

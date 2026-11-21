@@ -264,9 +264,17 @@ export function CollageArrangeTab() {
   };
 
   const resetAllAdjustments = () => {
+    if (imageCount === 0) return;
     updateSlotsBatch(
       slots.map((slot) => slot.id),
-      { zoom: 1, dragX: 0, dragY: 0, flipX: false, flipY: false, rotation: 0 },
+      {
+        zoom: 1,
+        dragX: 0,
+        dragY: 0,
+        flipX: false,
+        flipY: false,
+        rotation: 0,
+      },
     );
     // updateSlotsBatch لا يسجّل تراجعاً (يُستدعى من مسارات معاينة كثيرة)
     pushHistory();

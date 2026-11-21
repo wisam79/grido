@@ -524,11 +524,15 @@ export const EditorCanvas = React.memo(
                       // ltr-island موثقة (عقد الاتجاه): مقابض الأدلة داخل إحداثيات
                       // الكانفس LTR فالفيزيائي -ml-2 صحيح ولا يُحوَّل لمنطقي.
                       className={`absolute z-(--z-canvas-overlay) pointer-events-auto group transition-colors select-none ${
+                        isH
+                          ? 'left-0 right-0 h-4 -mt-2 flex items-center'
+                          : 'top-0 bottom-0 w-4 -ml-2 flex justify-center'
+                      } ${
                         lockUserGuides
                           ? 'cursor-default'
                           : isH
-                            ? 'left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center'
-                            : 'top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center'
+                            ? 'cursor-ns-resize'
+                            : 'cursor-ew-resize'
                       }`}
                       style={{
                         [isH ? 'top' : 'left']:
@@ -620,8 +624,8 @@ export const EditorCanvas = React.memo(
             </div>
           </div>
 
-          {/* 🧭 شريط التمرير الرأسي في الجهة اليمنى المقابل للمسطرة اليسرى */}
-          {!printMode && showRuler && (
+          {/* 🧭 شريط التمرير الرأسي مستقل عن إظهار المساطر */}
+          {!printMode && (
             <CanvasVerticalScrollbar
               viewportHeight={viewportSize.h}
               viewportWidth={viewportSize.w}
@@ -633,8 +637,8 @@ export const EditorCanvas = React.memo(
           )}
         </div>
 
-        {/* 🧭 شريط التمرير الأفقي والزاويتان في الجهة السفلية المقابل للمسطرة العلوية */}
-        {!printMode && showRuler && (
+        {/* 🧭 شريط التمرير الأفقي والزاويتان مستقل عن إظهار المساطر */}
+        {!printMode && (
           <CanvasScrollbarsBottomBar
             viewportWidth={viewportSize.w}
             viewportHeight={viewportSize.h}
@@ -643,6 +647,7 @@ export const EditorCanvas = React.memo(
             stagePosX={stagePos.x}
             onScrollX={handleScrollX}
             onResetPan={handleResetPan}
+            showRuler={showRuler}
           />
         )}
       </div>

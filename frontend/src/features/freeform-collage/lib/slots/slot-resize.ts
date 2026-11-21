@@ -279,22 +279,41 @@ export function resizeSlotWithSnap(
   if (locked) {
     const horizontal = handle.includes('e') || handle.includes('w');
     const vertical = handle.includes('n') || handle.includes('s');
-    const maxW = Math.min(
-      handle.includes('w') ? right : 1 - left,
-      horizontal ? Math.max(slot.w, w) : Infinity,
-    );
-    const maxH = Math.min(
-      handle.includes('n') ? bottom : 1 - top,
-      vertical ? Math.max(slot.h, h) : Infinity,
-    );
-    const fitted = fitLockedDimensions(
-      horizontal ? w : h * aspectRatio,
-      horizontal ? w / aspectRatio : h,
-      MIN_SIZE,
-      MIN_SIZE,
-      maxW,
-      maxH,
-    );
+    const useHorizontalPrimary =
+      horizontal && !vertical
+        ? true
+        : !horizontal && vertical
+          ? false
+          : Math.abs(w - slot.w) >= Math.abs(h - slot.h) * aspectRatio;
+    const requestedW = useHorizontalPrimary ? w : h * aspectRatio;
+    const requestedH = useHorizontalPrimary ? w / aspectRatio : h;
+    const anchorX = handle.includes('w') ? origR : origL;
+    const anchorY = handle.includes('n') ? origB : origT;
+    let maxW = handle.includes('w') ? anchorX : 1 - anchorX;
+    let maxH = handle.includes('n') ? anchorY : 1 - anchorY;
+    // The aspect lock can expand the other axis too. Limit those moving edges,
+    // not an unchanged corner delta; shrinking never consults obstacles.
+    const proposedL = handle.includes('w') ? anchorX - requestedW : anchorX;
+    const proposedT = handle.includes('n') ? anchorY - requestedH : anchorY;
+    for (const other of others) {
+      if (requestedW > slot.w) {
+        const yOverlap =
+          Math.max(proposedT, other.y) < Math.min(proposedT + requestedH, other.y + other.h) - 1e-4;
+        if (yOverlap && handle.includes('w') && other.x + other.w <= origL + 1e-4)
+          maxW = Math.min(maxW, anchorX - other.x - other.w);
+        if (yOverlap && !handle.includes('w') && other.x >= origR - 1e-4)
+          maxW = Math.min(maxW, other.x - anchorX);
+      }
+      if (requestedH > slot.h) {
+        const xOverlap =
+          Math.max(proposedL, other.x) < Math.min(proposedL + requestedW, other.x + other.w) - 1e-4;
+        if (xOverlap && handle.includes('n') && other.y + other.h <= origT + 1e-4)
+          maxH = Math.min(maxH, anchorY - other.y - other.h);
+        if (xOverlap && !handle.includes('n') && other.y >= origB - 1e-4)
+          maxH = Math.min(maxH, other.y - anchorY);
+      }
+    }
+    const fitted = fitLockedDimensions(requestedW, requestedH, MIN_SIZE, MIN_SIZE, maxW, maxH);
     if (!fitted) return { slots, snapLines: [] };
     w = fitted.w;
     h = fitted.h;
@@ -311,7 +330,16 @@ export function resizeSlotWithSnap(
 
   const uniqueSnapLinesMap = new Map<string, SnapLine>();
   for (const line of snapLines) {
-    uniqueSnapLinesMap.set(`${line.axis}:${line.position.toFixed(4)}`, line);
+    const edge =
+      line.axis === 'x'
+        ? handle.includes('w')
+          ? finalX
+          : finalX + finalW
+        : handle.includes('n')
+          ? finalY
+          : finalY + finalH;
+    if (Math.abs(edge - line.position) < 1e-4)
+      uniqueSnapLinesMap.set(`${line.axis}:${line.position.toFixed(4)}`, line);
   }
 
   const updatedSlots = slots.map((s, i) =>

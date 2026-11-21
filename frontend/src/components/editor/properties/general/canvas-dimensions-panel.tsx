@@ -96,6 +96,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [lockAspect, setLockAspect] = useState(false);
+  const skipBlurCommitRef = React.useRef(false);
 
   const currentDpi = activeTemplate?.dpi || printSettings?.dpi || 300;
 
@@ -160,6 +161,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleWidthCommit = () => {
+    if (skipBlurCommitRef.current) {
+      skipBlurCommitRef.current = false;
+      return;
+    }
     const num = parseFloat(widthVal);
     if (isNaN(num) || num <= 0) {
       setWidthVal(toDisplay(canvasWidth));
@@ -182,6 +187,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleHeightCommit = () => {
+    if (skipBlurCommitRef.current) {
+      skipBlurCommitRef.current = false;
+      return;
+    }
     const num = parseFloat(heightVal);
     if (isNaN(num) || num <= 0) {
       setHeightVal(toDisplay(canvasHeight));
@@ -201,6 +210,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const revertOnEscape = (e: React.KeyboardEvent<HTMLInputElement>, revert: () => void) => {
     if (e.key !== 'Escape') return;
     e.preventDefault();
+    skipBlurCommitRef.current = true;
     revert();
     e.currentTarget.blur();
   };

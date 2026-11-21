@@ -52,6 +52,7 @@ export const Z = {
   menu: 1000,
   popover: 1500,
   dialog: 2000,
+  dialogPopover: 2500,
   toast: 3000,
 } as const;
 export const Z_CLASS = {
@@ -62,6 +63,8 @@ export const Z_CLASS = {
   quickBar: 'z-(--z-quick-bar)',
   menu: 'z-(--z-menu)',
   popover: 'z-(--z-popover)',
+  dialog: 'z-(--z-dialog)',
+  dialogPopover: 'z-(--z-dialog-popover)',
 } as const;
 
 export function assertNoArbitraryZ(className: string, where: string): void {

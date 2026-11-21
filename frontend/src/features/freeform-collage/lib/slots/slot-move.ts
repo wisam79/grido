@@ -152,37 +152,36 @@ export function moveSlotsWithinBounds(
   );
 }
 
-/**
- * نقل مجموعة خلايا معاً (سحب جماعي) — الخلية القائدة تلتقط المغناطيس والباقي يتبعها
- */
+/** Move and snap the selection's composite bounds, excluding its own members. */
 export function moveSlots(
   slots: FreeformSlot[],
   targetIds: string[],
   dx: number,
   dy: number,
 ): { slots: FreeformSlot[]; snapLines: SnapLine[] } {
-  if (targetIds.length === 0) return { slots, snapLines: [] };
-  if (targetIds.length === 1) return moveSlot(slots, targetIds[0], dx, dy);
-
-  // نحرك القائدة عبر moveSlot للحصول على المغناطيس ثم نطبق نفس الإزاحة على البقية
-  const leadId = targetIds[0];
-  const before = slots.find((s) => s.id === leadId);
-  const res = moveSlot(slots, leadId, dx, dy);
-  const after = res.slots.find((s) => s.id === leadId);
-  if (!before || !after) return { slots, snapLines: [] };
-
-  const shiftX = after.x - before.x;
-  const shiftY = after.y - before.y;
-
   const movedSet = new Set(targetIds);
-  const nextSlots = res.slots.map((s) => {
-    if (s.id === leadId || !movedSet.has(s.id)) return s;
-    return {
-      ...s,
-      x: clamp(s.x + shiftX, 0, 1 - s.w),
-      y: clamp(s.y + shiftY, 0, 1 - s.h),
-    };
-  });
+  const targets = slots.filter((s) => movedSet.has(s.id));
+  if (targets.length === 0) return { slots, snapLines: [] };
+  if (targets.length === 1) return moveSlot(slots, targets[0].id, dx, dy);
 
+  const minX = Math.min(...targets.map((s) => s.x));
+  const minY = Math.min(...targets.map((s) => s.y));
+  const maxX = Math.max(...targets.map((s) => s.x + s.w));
+  const maxY = Math.max(...targets.map((s) => s.y + s.h));
+  const bounds: FreeformSlot = {
+    id: targets[0].id,
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY,
+  };
+  const res = moveSlot([bounds, ...slots.filter((s) => !movedSet.has(s.id))], bounds.id, dx, dy);
+  const movedBounds = res.slots[0];
+  const nextSlots = moveSlotsWithinBounds(
+    slots,
+    targetIds,
+    movedBounds.x - minX,
+    movedBounds.y - minY,
+  );
   return { slots: nextSlots, snapLines: res.snapLines };
 }

@@ -89,27 +89,27 @@ export function useFilterCache({
   }, []);
 
   const recache = useCallback(
-    (force = false) => {
+    function recache(force = false): void {
       const node = nodeRef.current;
       if (!node || !hasFilters) return;
       const stage = node.getStage?.();
-      if (observeCropChanges) {
-        const interaction = useCanvasInteraction.getState();
-        if (
-          cropPendingRef.current ||
-          node.isDragging?.() ||
-          interaction.isDragging ||
-          interaction.isTransforming ||
-          isStageCaptureActive(stage)
-        ) {
-          cropPendingRef.current = true;
-          // #16 — كان هذا المسار يعود دون برمجة أي موعد تسوية: لو استُدعي
-          // recache أثناء التقاط المسرح (تصدير) بقي العلم عالقاً true للأبد
-          // فتُتجاهل كل تغييرات الفلاتر لاحقاً ويبقى الـ bitmap مجمّداً. نفس
-          // آلية settle/إعادة المحاولة تضمن إعادة الخبز فور انتهاء الالتقاط.
-          scheduleSettleRef.current?.();
-          return;
-        }
+      const interaction = useCanvasInteraction.getState();
+      if (
+        isStageCaptureActive(stage) ||
+        node.isDragging?.() ||
+        interaction.isDragging ||
+        interaction.isTransforming
+      ) {
+        // All image types share the capture/gesture barrier, not just collage
+        // crop observers. Retry after settlement without changing a live cache.
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => recache(force), ZOOM_DEBOUNCE_MS);
+        return;
+      }
+      if (observeCropChanges && cropPendingRef.current) {
+        // A gesture retry must not postpone the crop deadline set by dragend.
+        if (cropTimerRef.current === null) scheduleSettleRef.current?.();
+        return;
       }
       const stageScaleX = stage && typeof stage.scaleX === 'function' ? stage.scaleX() : 0;
       const stageW = stage && typeof stage.width === 'function' ? stage.width() : 0;
@@ -272,7 +272,14 @@ export function useFilterCache({
     if (!hasFilters) return;
 
     const unsubscribe = useEditorStore.subscribe((state, prevState) => {
-      if (state.canvasZoom === prevState.canvasZoom) return;
+      if (
+        state.canvasZoom === prevState.canvasZoom &&
+        state.canvasFitMode === prevState.canvasFitMode &&
+        state.canvasWidth === prevState.canvasWidth &&
+        state.canvasHeight === prevState.canvasHeight
+      ) {
+        return;
+      }
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(recache, ZOOM_DEBOUNCE_MS);
     });

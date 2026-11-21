@@ -106,7 +106,7 @@ export const FreeformLeftToolsPanel: React.FC<FreeformLeftToolsPanelProps> = Rea
     const strategyGroupName = React.useId();
 
     return (
-      <aside
+      <div
         className="h-full min-h-0 min-w-0 overflow-y-auto bg-card font-cairo text-xs text-foreground"
         dir="rtl"
       >
@@ -212,7 +212,7 @@ export const FreeformLeftToolsPanel: React.FC<FreeformLeftToolsPanelProps> = Rea
             </>
           )}
         </div>
-      </aside>
+      </div>
     );
   },
 );

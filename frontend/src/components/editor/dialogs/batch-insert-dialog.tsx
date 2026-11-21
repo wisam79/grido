@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
 
 import { FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,7 @@ import {
 } from '@/lib/canvas/image-dimensions';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,28 @@ export function BatchInsertDialog({
   const [images, setImages] = useState<QueuedImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const sessionRef = useRef(0);
+  const loadAttemptRef = useRef(0);
+  const processingRef = useRef(false);
+  const beginLoad = () => {
+    if (!open || processingRef.current) return null;
+    const attempt = ++loadAttemptRef.current;
+    const session = sessionRef.current;
+    const documentSession = getDocumentSession();
+    setLoading(true);
+    return () =>
+      attempt === loadAttemptRef.current &&
+      session === sessionRef.current &&
+      documentSession === getDocumentSession();
+  };
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      sessionRef.current += 1;
+      loadAttemptRef.current += 1;
+      processingRef.current = false;
+    }
+    onOpenChange(next);
+  };
 
   // Layout settings
   const [layoutMode, setLayoutMode] = useState<'grid' | 'cascade' | 'collage'>('grid');
@@ -70,25 +92,24 @@ export function BatchInsertDialog({
   const [marginPx, setMarginPx] = useState<number>(40);
   const [centerLastRow, setCenterLastRow] = useState<boolean>(true);
 
-  const { mode, slots, setSlotImagesBatch, appendPendingCollageImages, addImageElementsBatch } =
-    useEditorStore(
-      useShallow((state) => ({
-        mode: state.mode,
-        slots: state.slots,
-        setSlotImagesBatch: state.setSlotImagesBatch,
-        appendPendingCollageImages: state.appendPendingCollageImages,
-        addImageElementsBatch: state.addImageElementsBatch,
-      })),
-    );
+  const mode = useEditorStore((state) => state.mode);
 
   // Reset states when dialog opens / closes (Wait UX Invariant)
   useEffect(() => {
+    sessionRef.current += 1;
+    loadAttemptRef.current += 1;
+    processingRef.current = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsProcessing(false);
     setLoading(false);
     if (!open) {
       setImages([]);
     }
+    return () => {
+      sessionRef.current += 1;
+      loadAttemptRef.current += 1;
+      processingRef.current = false;
+    };
   }, [open]);
 
   // Load initial images if provided
@@ -96,6 +117,14 @@ export function BatchInsertDialog({
     if (!open) return;
     if (initialImages && initialImages.length > 0) {
       let isMounted = true;
+      const session = sessionRef.current;
+      const attempt = ++loadAttemptRef.current;
+      const documentSession = getDocumentSession();
+      const isCurrent = () =>
+        isMounted &&
+        session === sessionRef.current &&
+        attempt === loadAttemptRef.current &&
+        documentSession === getDocumentSession();
       (async () => {
         setLoading(true);
         try {
@@ -103,18 +132,24 @@ export function BatchInsertDialog({
           for (let i = 0; i < initialImages.length; i++) {
             const src = initialImages[i];
             const aspect = await resolveImageAspectRatio(src);
+            if (!isCurrent()) return;
             loaded.push({
-              id: `init-${i}-${Date.now()}`,
+              id: crypto.randomUUID(),
               src,
               aspectRatio: aspect,
               copies: 1,
             });
           }
-          if (isMounted) {
+          if (isCurrent()) {
             setImages(loaded);
           }
+        } catch (err) {
+          if (isCurrent()) {
+            logger.error('Initial images error:', err);
+            toast.error('فشل استيراد الصور');
+          }
         } finally {
-          setLoading(false);
+          if (isCurrent()) setLoading(false);
         }
       })();
       return () => {
@@ -130,10 +165,11 @@ export function BatchInsertDialog({
 
   // Add individual files
   const handleAddFiles = async () => {
+    const isCurrent = beginLoad();
+    if (!isCurrent) return;
     try {
-      setLoading(true);
       const fileSrcs = await openImageFileDialog(true);
-      if (!fileSrcs || fileSrcs.length === 0) return;
+      if (!isCurrent() || !fileSrcs || fileSrcs.length === 0) return;
 
       const isDesktop = wailsIsDesktop();
       const normalizedSrcs: string[] = [];
@@ -148,13 +184,15 @@ export function BatchInsertDialog({
             logger.error('SaveImageFromBase64 failed:', e);
           }
         }
+        if (!isCurrent()) return;
         normalizedSrcs.push(src);
       }
 
       const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
+      if (!isCurrent()) return;
 
-      const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
-        id: `img-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+      const newItems: QueuedImage[] = normalizedSrcs.map((src) => ({
+        id: crypto.randomUUID(),
         src,
         aspectRatio: aspectMap.get(src) || 1,
         copies: 1,
@@ -163,19 +201,21 @@ export function BatchInsertDialog({
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تمت إضافة ${newItems.length} صورة للقائمة`);
     } catch (err) {
+      if (!isCurrent()) return;
       logger.error('Add files error:', err);
       toast.error('فشل استيراد الصور');
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   };
 
   // Add entire directory
   const handleAddDirectory = async () => {
+    const isCurrent = beginLoad();
+    if (!isCurrent) return;
     try {
-      setLoading(true);
       const fileSrcs = await openDirectoryImageDialog();
-      if (!fileSrcs || fileSrcs.length === 0) return;
+      if (!isCurrent() || !fileSrcs || fileSrcs.length === 0) return;
 
       const isDesktop = wailsIsDesktop();
       const normalizedSrcs: string[] = [];
@@ -190,13 +230,15 @@ export function BatchInsertDialog({
             logger.error('SaveImageFromBase64 directory failed:', e);
           }
         }
+        if (!isCurrent()) return;
         normalizedSrcs.push(src);
       }
 
       const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
+      if (!isCurrent()) return;
 
-      const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
-        id: `dir-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+      const newItems: QueuedImage[] = normalizedSrcs.map((src) => ({
+        id: crypto.randomUUID(),
         src,
         aspectRatio: aspectMap.get(src) || 1,
         copies: 1,
@@ -205,10 +247,11 @@ export function BatchInsertDialog({
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تم استيراد ${newItems.length} صورة`);
     } catch (err) {
+      if (!isCurrent()) return;
       logger.error('Add directory error:', err);
       toast.error('فشل استيراد صور المجلد');
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   };
 
@@ -238,12 +281,19 @@ export function BatchInsertDialog({
 
   // Execute Batch Insertion
   const handleExecute = async () => {
-    if (isProcessing) return;
+    if (!open || processingRef.current) return;
     if (images.length === 0) {
       toast.error('اختر صورة واحدة على الأقل');
       return;
     }
 
+    const session = sessionRef.current;
+    const documentSession = getDocumentSession();
+    const isCurrent = () =>
+      session === sessionRef.current && documentSession === getDocumentSession();
+    processingRef.current = true;
+    loadAttemptRef.current += 1;
+    setLoading(false);
     try {
       setIsProcessing(true);
 
@@ -259,17 +309,16 @@ export function BatchInsertDialog({
         }
       }
 
-      let keepQueueOpen = false;
-      if (layoutMode === 'collage' || mode === 'collage') {
+      const live = useEditorStore.getState();
+      if (layoutMode === 'collage' || live.mode === 'collage') {
         const expandedSources = expandedItems.map((item) => item.src);
-        const plan = buildCollageInsertPlan(slots, expandedSources, { scope: 'empty' });
-        if (plan.assignments.length > 0) {
-          await setSlotImagesBatch(plan.assignments, plan.assignments[0]?.src || null);
-        }
-        if (plan.remaining.length > 0) {
-          appendPendingCollageImages(plan.remaining);
-          keepQueueOpen = true;
-        }
+        const plan = buildCollageInsertPlan(live.slots, expandedSources, { scope: 'empty' });
+        await live.setSlotImagesBatch(
+          plan.assignments,
+          plan.assignments[0]?.src || null,
+          plan.remaining,
+        );
+        if (!isCurrent()) return;
         if (plan.assignments.length === 0) {
           toast.info('لا توجد خانات فارغة — حُفظت الصور في قائمة التعبئة');
         } else {
@@ -281,7 +330,7 @@ export function BatchInsertDialog({
         }
       } else {
         // Canvas freeform / grid insertion
-        addImageElementsBatch(expandedItems, {
+        live.addImageElementsBatch(expandedItems, {
           layoutMode: layoutMode === 'cascade' ? 'cascade' : 'grid',
           columns: columns > 0 ? columns : undefined,
           gapPx,
@@ -293,19 +342,21 @@ export function BatchInsertDialog({
 
       // تفريغ الطابور بعد ترحيل العناصر (سواء أُدرجت أو أُضيفت لقائمة التعبئة) منعاً لتكرار الإرسال
       setImages([]);
-      if (!keepQueueOpen) {
-        onOpenChange(false);
-      }
+      handleOpenChange(false);
     } catch (err) {
+      if (!isCurrent()) return;
       logger.error('Execute batch insert error:', err);
       toast.error('فشل تنفيذ الإدراج المتعدد');
     } finally {
-      setIsProcessing(false);
+      if (session === sessionRef.current) {
+        processingRef.current = false;
+        setIsProcessing(false);
+      }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular fluent-acrylic transition-colors duration-150 gap-0"
@@ -645,7 +696,7 @@ export function BatchInsertDialog({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-3.5 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
+        <DialogFooter className="px-6 py-3.5 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between sm:justify-between gap-3 shrink-0">
           <div className="text-xs text-muted-foreground">
             {images.length > 0 ? (
               <span>

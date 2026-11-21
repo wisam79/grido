@@ -117,6 +117,22 @@ afterEach(() => {
 });
 
 describe('AccountLicenseModal Component Tests', () => {
+  it('keeps the already-registered explanation after switching back to login', async () => {
+    const view = renderHook(() => useAuthForms(vi.fn()));
+    act(() => view.result.current.setAuthMode('register'));
+    fillForms(view.result.current);
+    vi.mocked(LicenseHandler.RegisterAccount).mockRejectedValueOnce(
+      new Error('already registered'),
+    );
+    await act(async () => view.result.current.handleAuth(formEvent()));
+    expect(view.result.current.authMode).toBe('login');
+    expect(view.result.current.error).toBe('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
+    await act(async () => Promise.resolve());
+    expect(view.result.current.error).toBe('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
+    act(() => view.result.current.setAuthMode('register'));
+    expect(view.result.current.error).toBeNull();
+  });
+
   it('renders modal title and auth tab by default when user is null', () => {
     render(<AccountLicenseModal />);
     expect(screen.getByText('الحساب والترخيص')).toBeInTheDocument();

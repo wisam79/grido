@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { toast } from 'sonner';
 
@@ -19,7 +19,9 @@ import {
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
+import { canArrangeSelection } from '@/lib/selection-properties';
 import { getSectionsForWorkflow } from '@/lib/workspace-tools';
 
 import type { CanvasElement } from '@/lib/editor-store';
@@ -47,14 +49,23 @@ function shouldIgnoreCanvasAction(e: KeyboardEvent): boolean {
   );
 }
 
-export function useKeyboardShortcuts() {
+export function useKeyboardShortcuts(enabled = true) {
+  const enabledRef = useRef(enabled);
+  const readinessGenerationRef = useRef(0);
+  useEffect(() => {
+    enabledRef.current = enabled;
+    return () => {
+      enabledRef.current = false;
+      readinessGenerationRef.current += 1;
+    };
+  }, [enabled]);
   // --- Shortcuts via react-hotkeys-hook ---
 
   // 🛡️ H15 من تدقيق 2026-10-08: اختصار لوحة الاختصارات (Ctrl+/) كان مسجّلاً
   // بمستمع keydown خام داخل `keyboard-shortcuts-dialog.tsx` — مالك ثانٍ لمفاتيح
   // عامة بلا حرّاس الحقول النصية ولا تسجيل وفق قاعدة المصدر الواحد. انتقل هنا.
   useHotkeys(
-    'mod+/, mod+shift+/',
+    'mod+slash, mod+shift+slash',
     (e) => {
       const target = e.target as HTMLElement | null;
       if (
@@ -66,7 +77,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:open-shortcuts'));
     },
-    { enableOnFormTags: false },
+    { enableOnFormTags: false, ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Undo: Ctrl+Z or Cmd+Z
@@ -76,7 +87,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       useEditorStore.getState().undo();
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Redo: Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z or Cmd+Y
@@ -86,7 +97,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       useEditorStore.getState().redo();
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Delete / Backspace — العناصر المقفلة لا تُحذف بصمت، ونُعلم المستخدم إن تبقى شيء محذوف.
@@ -138,6 +149,7 @@ export function useKeyboardShortcuts() {
         const t = e.target as HTMLElement | null;
         return !!t?.closest?.('button, [role="menu"], [role="menuitem"]');
       },
+      enabled,
     },
   );
 
@@ -157,54 +169,74 @@ export function useKeyboardShortcuts() {
         state.duplicateElements(selectedElementIds);
       }
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Select All: Ctrl+A or Cmd+A (Canvas elements only when outside text inputs and modals)
-  useHotkeys('mod+a', (e) => {
-    if (shouldIgnoreCanvasAction(e)) return;
-    const { mode, elements, slots, selectAllElements, setSelectedIds } = useEditorStore.getState();
-    if (mode === 'collage' && slots.length > 0) {
-      e.preventDefault();
-      setSelectedIds(slots.map((slot) => slot.id));
-    } else if (mode === 'single' && elements.length > 0) {
-      e.preventDefault();
-      selectAllElements();
-    }
-  });
+  useHotkeys(
+    'mod+a',
+    (e) => {
+      if (shouldIgnoreCanvasAction(e)) return;
+      const { mode, elements, slots, selectAllElements, setSelectedIds } =
+        useEditorStore.getState();
+      if (mode === 'collage' && slots.length > 0) {
+        e.preventDefault();
+        setSelectedIds(slots.map((slot) => slot.id));
+      } else if (mode === 'single' && elements.length > 0) {
+        e.preventDefault();
+        selectAllElements();
+      }
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Copy: Ctrl+C or Cmd+C
-  useHotkeys('mod+c', (e) => {
-    if (shouldIgnoreCanvasAction(e)) return;
-    const state = useEditorStore.getState();
-    const selectedElementIds = state.selectedIds.filter((id) =>
-      state.elements.some((element) => element.id === id),
-    );
-    if (selectedElementIds.length > 0) {
-      e.preventDefault();
-      state.copySelectedElements(selectedElementIds);
-    }
-  });
+  useHotkeys(
+    'mod+c',
+    (e) => {
+      if (shouldIgnoreCanvasAction(e)) return;
+      const state = useEditorStore.getState();
+      const selectedElementIds = state.selectedIds.filter((id) =>
+        state.elements.some((element) => element.id === id),
+      );
+      if (selectedElementIds.length > 0) {
+        e.preventDefault();
+        state.copySelectedElements(selectedElementIds);
+      }
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Cut: Ctrl+X or Cmd+X
-  useHotkeys('mod+x', (e) => {
-    if (shouldIgnoreCanvasAction(e)) return;
-    const state = useEditorStore.getState();
-    const selectedElementIds = state.selectedIds.filter((id) =>
-      state.elements.some((element) => element.id === id),
-    );
-    if (selectedElementIds.length > 0) {
-      e.preventDefault();
-      state.cutSelectedElements(selectedElementIds);
-    }
-  });
+  useHotkeys(
+    'mod+x',
+    (e) => {
+      if (shouldIgnoreCanvasAction(e)) return;
+      const state = useEditorStore.getState();
+      const selectedElementIds = state.selectedIds.filter((id) =>
+        state.elements.some((element) => element.id === id),
+      );
+      if (selectedElementIds.length > 0) {
+        e.preventDefault();
+        state.cutSelectedElements(selectedElementIds);
+      }
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Paste: Ctrl+V or Cmd+V
-  useHotkeys('mod+v', async (e) => {
-    if (shouldIgnoreCanvasAction(e)) return;
-    e.preventDefault();
-    await pasteFromClipboardOrStore();
-  });
+  useHotkeys(
+    'mod+v',
+    async (e) => {
+      if (shouldIgnoreCanvasAction(e)) return;
+      e.preventDefault();
+      const generation = readinessGenerationRef.current;
+      await pasteFromClipboardOrStore({
+        canCommit: () => enabledRef.current && generation === readinessGenerationRef.current,
+      });
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Group: Ctrl+G or Cmd+G
   useHotkeys(
@@ -217,7 +249,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       state.groupSelectedElements();
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Ungroup: Ctrl+Shift+G or Cmd+Shift+G
@@ -231,7 +263,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       state.ungroupSelectedElements();
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // 🛡️ تكديس المودالات: مفاتيح فتح الحوارات تتجاهل الحالة أثناء مودال مفتوح
@@ -245,7 +277,7 @@ export function useKeyboardShortcuts() {
         new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
       );
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Export: Ctrl+E or Cmd+E — كانت معلنة في الحوار وشريط الأدوات بلا مستمع (إصلاح Bug#7)
@@ -255,7 +287,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:open-export-dialog'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Print: Ctrl+P or Cmd+P — تمنع أيضاً طباعة المتصفح الافتراضية (إصلاح Bug#7)
@@ -265,7 +297,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:open-print-dialog'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Insert Image: Ctrl+O or Cmd+O — تمنع فتح ملف المتصفح الافتراضي (إصلاح Bug#7)
@@ -275,7 +307,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:open-file-dialog'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Batch / Multi Insert: Ctrl+Shift+O or Cmd+Shift+O
@@ -285,7 +317,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Toggle Right Sidebar (Templates / Layers): Ctrl+B or Cmd+B
@@ -295,7 +327,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Toggle Left Sidebar (Properties / Workspace): Ctrl+Shift+B or Cmd+Shift+B
@@ -305,7 +337,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
     },
-    { ignoreEventWhen: shouldIgnoreCanvasAction },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
 
   // Switch workspace sections: Alt+1 … Alt+9 — مفهرسة من سجل الوجهات الموحّد
@@ -313,7 +345,7 @@ export function useKeyboardShortcuts() {
   // 🛡️ نفس حارس تكديس المودالات أعلاه — تبديل الوجهات/الوضع خلف مودال مفتوح ممنوع.
   // ملاحظة: الفهرس يُحل من قائمة وجهات مسار العمل — في مسار quick تنطوي وجهة
   // العناصر إلى «الطبقات» فيبقى Alt+1 هو الوجهة الأولى كما تظهر في الشريط.
-  const tabGuard = { ignoreEventWhen: shouldIgnoreCanvasAction };
+  const tabGuard = { ignoreEventWhen: shouldIgnoreCanvasAction, enabled };
   const selectVisibleSectionByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
     const { mode, workflow } = useEditorStore.getState();
@@ -382,69 +414,107 @@ export function useKeyboardShortcuts() {
   );
 
   // Toggle Rulers: Ctrl+R or Cmd+R
-  useHotkeys('mod+r', (e) => {
-    e.preventDefault();
-    const { showRuler, setShowRuler } = useEditorStore.getState();
-    setShowRuler(!showRuler);
-  });
+  useHotkeys(
+    'mod+r',
+    (e) => {
+      e.preventDefault();
+      const { showRuler, setShowRuler } = useEditorStore.getState();
+      setShowRuler(!showRuler);
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
-  // Toggle Grid: Ctrl+' or Cmd+'
-  useHotkeys("mod+'", (e) => {
-    e.preventDefault();
-    const { showGrid, setShowGrid } = useEditorStore.getState();
-    setShowGrid(!showGrid);
-  });
+  // Toggle Grid: Ctrl+' or Cmd+' (استخدام quote يتطابق مع event.code بغض النظر عن لوحة المفاتيح)
+  useHotkeys(
+    'mod+quote',
+    (e) => {
+      e.preventDefault();
+      const { showGrid, setShowGrid } = useEditorStore.getState();
+      setShowGrid(!showGrid);
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Toggle User Guides: Ctrl+; or Cmd+; — كان معلناً في شريط العرض بلا تسجيل فعلي
-  useHotkeys('mod+;', (e) => {
-    e.preventDefault();
-    const { showUserGuides, setShowUserGuides } = useEditorStore.getState();
-    setShowUserGuides(!showUserGuides);
-  });
+  useHotkeys(
+    'mod+semicolon',
+    (e) => {
+      e.preventDefault();
+      const { showUserGuides, setShowUserGuides } = useEditorStore.getState();
+      setShowUserGuides(!showUserGuides);
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++ (بدون Shift لمنع التداخل مع زوم الواجهة)
-  useHotkeys('mod+=, mod+plus, mod+numpad_add', (e) => {
-    if (e.shiftKey) return;
-    e.preventDefault();
-    zoomInStore();
-  });
+  useHotkeys(
+    'mod+equal, mod+add',
+    (e) => {
+      if (e.shiftKey) return;
+      e.preventDefault();
+      zoomInStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Zoom Out: Ctrl+- or Cmd+- (بدون Shift لمنع التداخل مع زوم الواجهة)
-  useHotkeys('mod+-, mod+numpad_subtract', (e) => {
-    if (e.shiftKey) return;
-    e.preventDefault();
-    zoomOutStore();
-  });
+  useHotkeys(
+    'mod+minus, mod+subtract',
+    (e) => {
+      if (e.shiftKey) return;
+      e.preventDefault();
+      zoomOutStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Fit all: Ctrl+0 — الورقة كاملة على الشاشة (منفصل عن 100% الحقيقي)
-  useHotkeys('mod+0, mod+numpad_0', (e) => {
-    e.preventDefault();
-    fitZoomStore();
-  });
+  useHotkeys(
+    'mod+0',
+    (e) => {
+      e.preventDefault();
+      fitZoomStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Fit width: Ctrl+Shift+0 — تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً
-  useHotkeys('shift+mod+0, shift+mod+numpad_0', (e) => {
-    e.preventDefault();
-    fitWidthZoomStore();
-  });
+  useHotkeys(
+    'shift+mod+0',
+    (e) => {
+      e.preventDefault();
+      fitWidthZoomStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // Fit auto: Ctrl+Alt+0 — يختار الوضع الأنسب لهندسة النافذة
-  useHotkeys('alt+mod+0, alt+mod+numpad_0', (e) => {
-    e.preventDefault();
-    autoFitZoomStore();
-  });
+  useHotkeys(
+    'alt+mod+0',
+    (e) => {
+      e.preventDefault();
+      autoFitZoomStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // True 100%: Ctrl+1 or Cmd+1
-  useHotkeys('mod+1, mod+numpad_1', (e) => {
-    e.preventDefault();
-    resetZoomStore();
-  });
+  useHotkeys(
+    'mod+1',
+    (e) => {
+      e.preventDefault();
+      resetZoomStore();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
+  );
 
   // 🧭 تكبير وتصغير واجهة التطبيق العامة (UI Scaling):
   // يُلتقط في طور الـ Capture لضمان الأسبقية التامة وتفادي تداخل مفاتيح الكيبورد بمختلف اللغات
   // يدعم كلاً من Ctrl+Shift أو Ctrl+Alt (لتفادي تداخل تبديل لغات ويندوز)، ولوحات الأرقام Numpad
   useEffect(() => {
+    if (!enabled) return;
     const handleUiZoomKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || shouldIgnoreCanvasAction(e)) return;
       const isMod = e.ctrlKey || e.metaKey;
       const isShift = e.shiftKey;
       const isAlt = e.altKey;
@@ -485,9 +555,17 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // استعادة الواجهة 100%: Ctrl + Shift/Alt + Backspace فقط
+      // استعادة الواجهة 100%: Ctrl + Shift/Alt + Backspace فقط خارج حقول النص
       // (Alt+0 بدون Mod أو Ctrl+Alt+0 لا يُعترضان هنا كي لا يُحجب autoFitZoomStore).
-      const isResetKey = e.key === 'Backspace' || e.code === 'Backspace';
+      const target = e.target as HTMLElement | null;
+      const isEditable = Boolean(
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.closest?.('input, textarea, [contenteditable="true"]')),
+      );
+      const isResetKey = !isEditable && (e.key === 'Backspace' || e.code === 'Backspace');
 
       if (isResetKey) {
         e.preventDefault();
@@ -500,21 +578,33 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener('keydown', handleUiZoomKeyDown, { capture: true });
     };
-  }, []);
+  }, [enabled]);
 
   // --- Arrows (Nudging) & Paste via native events ---
   useEffect(() => {
-    let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;
+    if (!enabled) return;
 
-    // عناصر تحكم تفاعلية: تركيز إبهام السلايدر (span[role="slider"]) أو مفتاح
-    // تبديل لا يجب أن يُحرّك العناصر بالأسهم أو يمسح التحديد بـ Escape (إصلاح Bug#5)
+    let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;
+    let nudgeSession: number | null = null;
+    const flushNudgeHistory = () => {
+      if (nudgeTimeout) clearTimeout(nudgeTimeout);
+      nudgeTimeout = null;
+      const session = nudgeSession;
+      nudgeSession = null;
+      if (session !== null && session === getDocumentSession())
+        useEditorStore.getState().pushHistory();
+    };
+
+    // عناصر تحكم تفاعلية: تركيز إبهام السلايدر أو القائمة أو التبويب لا يجب أن يحرّك
+    // العناصر بالأسهم أو يمسح التحديد بـ Escape
     const isInteractiveTarget = (t: HTMLElement | null) =>
       !!t &&
       !!t.closest(
-        'input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select',
+        'input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="option"], [role="menu"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="tab"], select',
       );
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       if (isModalActive()) return;
       const target = e.target as HTMLElement;
       if (isInteractiveTarget(target)) return;
@@ -522,8 +612,9 @@ export function useKeyboardShortcuts() {
       const { selectedIds, mode, elements } = useEditorStore.getState();
       const selectedElementCount = elements.filter((x) => selectedIds.includes(x.id)).length;
 
-      // Escape = Clear selection and stop editing
+      // Escape = Clear selection and stop editing (بلا مسح التحديد أثناء فتح قائمة/منبثقة)
       if (e.key === 'Escape') {
+        if (document.querySelector('[role="menu"], [role="listbox"]')) return;
         const { setEditingTextId, setSelectedIds } = useEditorStore.getState();
         setEditingTextId(null);
         setSelectedIds([]);
@@ -566,6 +657,12 @@ export function useKeyboardShortcuts() {
         state.applySlotMoves(moves);
         return;
       }
+
+      if (
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
+        !canArrangeSelection(elements, selectedIds)
+      )
+        return;
 
       // Alt + ArrowUp / ArrowDown = Smooth scaling of selected element (توسيع / تقليص ناعم للعنصر)
       if (selectedIds.length > 0 && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -616,10 +713,8 @@ export function useKeyboardShortcuts() {
           }
 
           if (nudgeTimeout) clearTimeout(nudgeTimeout);
-          nudgeTimeout = setTimeout(() => {
-            useEditorStore.getState().pushHistory();
-            nudgeTimeout = null;
-          }, 400);
+          nudgeSession = getDocumentSession();
+          nudgeTimeout = setTimeout(flushNudgeHistory, 400);
         }
         return;
       }
@@ -668,10 +763,8 @@ export function useKeyboardShortcuts() {
 
           // تجميع سجل التراجع أثناء الضغط المستمر (Debouncing pushHistory)
           if (nudgeTimeout) clearTimeout(nudgeTimeout);
-          nudgeTimeout = setTimeout(() => {
-            useEditorStore.getState().pushHistory();
-            nudgeTimeout = null;
-          }, 400);
+          nudgeSession = getDocumentSession();
+          nudgeTimeout = setTimeout(flushNudgeHistory, 400);
         }
       }
     };
@@ -680,20 +773,19 @@ export function useKeyboardShortcuts() {
       const target = e.target as HTMLElement;
       if (isInteractiveTarget(target)) return;
 
-      const { selectedIds, pushHistory } = useEditorStore.getState();
-      if (
-        selectedIds.length > 0 &&
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
-      ) {
-        if (nudgeTimeout) {
-          clearTimeout(nudgeTimeout);
-          nudgeTimeout = null;
-          pushHistory();
-        }
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && nudgeTimeout) {
+        flushNudgeHistory();
       }
     };
 
     const handlePaste = async (e: ClipboardEvent) => {
+      if (e.defaultPrevented) return;
+      const session = getDocumentSession();
+      const generation = readinessGenerationRef.current;
+      const isCurrent = () =>
+        enabledRef.current &&
+        generation === readinessGenerationRef.current &&
+        session === getDocumentSession();
       const target = e.target as HTMLElement;
       // 🛡️ M1 من تدقيق 2026-10-08: الحرس كان يفحص الحقول النصية فقط، فلصق
       // صورة وحوار مفتوح (التركيز على محتوى غير قابل للكتابة) كان يُدرجها في
@@ -720,11 +812,11 @@ export function useKeyboardShortcuts() {
               hasPastedImage = true;
               const reader = new FileReader();
               reader.onload = async (event) => {
-                if (event.target?.result) {
+                if (event.target?.result && isCurrent()) {
                   const b64 = event.target.result as string;
                   try {
                     const localPath = await SaveImageFromBase64(b64);
-                    if (!localPath) return;
+                    if (!localPath || !isCurrent()) return;
 
                     const state = useEditorStore.getState();
                     if (state.mode === 'collage') {
@@ -737,7 +829,8 @@ export function useKeyboardShortcuts() {
                       if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
                     } else {
                       const aspect = await resolveImageAspectRatio(localPath);
-                      state.addImageElement(localPath, aspect);
+                      if (!isCurrent()) return;
+                      useEditorStore.getState().addImageElement(localPath, aspect);
                     }
                   } catch (err) {
                     logger.error('Failed to save pasted image:', err);
@@ -753,7 +846,7 @@ export function useKeyboardShortcuts() {
 
       if (!hasPastedImage) {
         e.preventDefault();
-        await pasteFromClipboardOrStore();
+        await pasteFromClipboardOrStore({ canCommit: isCurrent });
       }
     };
 
@@ -766,11 +859,7 @@ export function useKeyboardShortcuts() {
       window.removeEventListener('paste', handlePaste);
       // تفريغ خطوة التراجع المعلقة قبل إلغاء المؤقت وإلا ضاعت إزاحة/تحجيم
       // الأسهم الأخير من سجل التراجع عند فك التركيب (audit-14).
-      if (nudgeTimeout) {
-        clearTimeout(nudgeTimeout);
-        nudgeTimeout = null;
-        useEditorStore.getState().pushHistory();
-      }
+      if (nudgeTimeout) flushNudgeHistory();
     };
-  }, []);
+  }, [enabled]);
 }

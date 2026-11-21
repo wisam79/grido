@@ -20,12 +20,27 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_full:
+        description: Run every gated check and full Chromium/Firefox/WebKit suites on Linux and Windows
+        type: boolean
+        default: true
+      expected_sha:
+        description: Exact published test-ref SHA required for full manual acceptance
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      force_full:
+        description: Force complete isolated CI acceptance checks
+        type: boolean
+        default: true
   schedule:
     # فحص سباقات وتغطية الخلفية أسبوعياً خارج المسار السريع لكل push.
     - cron: "17 3 * * 1"
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -50,11 +65,11 @@ jobs:
       pull-requests: read
     timeout-minutes: 5
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend: ${{ steps.filter.outputs.backend }}
-      admin: ${{ steps.filter.outputs.admin }}
-      modal_ai: ${{ steps.filter.outputs.modal_ai }}
-      workflows: ${{ steps.filter.outputs.workflows }}
+      frontend: ${{ inputs.force_full && 'true' || steps.filter.outputs.frontend }}
+      backend: ${{ inputs.force_full && 'true' || steps.filter.outputs.backend }}
+      admin: ${{ inputs.force_full && 'true' || steps.filter.outputs.admin }}
+      modal_ai: ${{ inputs.force_full && 'true' || steps.filter.outputs.modal_ai }}
+      workflows: ${{ inputs.force_full && 'true' || steps.filter.outputs.workflows }}
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -112,6 +127,9 @@ jobs:
       - name: Run Documentation Sync Gate
         run: node scripts/docs-gate.mjs --push --ci
 
+      - name: Verify acceptance evidence gate (targeted synthetic reporter tests)
+        run: node --test scripts/e2e/report-selftest.test.mjs
+
       # 2026-09-26: ثلاث هجرات كانت غير قابلة للتطبيق بصمت (OLD داخل RLS + GRANT لتوقيع غير موجود)
       # فبقيت ثغرات مفتوحة؛ هذه البوابة تمنع تكرار الصنف نفسه.
       - name: Lint Database Migrations
@@ -131,7 +149,7 @@ jobs:
     name: Modal AI Unit Tests (Python 3.10)
     runs-on: ubuntu-latest
     needs: [changes]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.modal_ai == 'true' || needs.changes.outputs.workflows == 'true'
+    if: inputs.force_full || github.event_name == 'workflow_dispatch' || needs.changes.outputs.modal_ai == 'true' || needs.changes.outputs.workflows == 'true'
     timeout-minutes: 10
     steps:
       - name: Checkout code
@@ -234,6 +252,15 @@ jobs:
         id: typecheck
         working-directory: ./frontend
         run: npm run typecheck
+
+      - name: Typecheck Actual Acceptance Specs and Config
+        if: inputs.force_full
+        run: node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.acceptance.json
+
+      - name: Lint Actual Acceptance Specs and Config
+        if: inputs.force_full
+        working-directory: frontend
+        run: npx --no-install eslint e2e-acceptance playwright.acceptance.config.ts --report-unused-disable-directives --max-warnings 0
 
       - name: Lint Frontend (src + test + e2e)
         id: lint
@@ -380,7 +407,7 @@ jobs:
 
   backend-race-coverage:
     name: Backend Race & Coverage (Scheduled)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: inputs.force_full || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -419,7 +446,7 @@ jobs:
 
   print-performance-report:
     name: Print Performance & RSS Report (Windows)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: inputs.force_full || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -624,7 +651,7 @@ jobs:
     needs: [changes]
     # E2E runs against the mocked Wails bridge, so Go-only changes cannot
     # affect it — frontend or workflow changes re-run it.
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    if: ${{ !inputs.force_full && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -803,8 +830,10 @@ jobs:
         env:
           CGO_ENABLED: "1"
           APP_VERSION: "v0.0.0-ci"
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Inert loopback build values, not repository secrets. This smoke binary
+          # is sandbox-only, unsigned and never uploaded as a release asset.
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_ANON_KEY: ci-sandbox-nonpublishable
         run: wails3 task build
 
       # قراءة الميتاداتا هنا تمر بنفس مسار Windows/.NET: الترجمة (lang+codepage) ثم
@@ -863,7 +892,7 @@ jobs:
     name: WebKit Smoke (Shipping Engine)
     runs-on: ubuntu-24.04
     needs: [changes]
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    if: ${{ !inputs.force_full && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') }}
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -972,3 +1001,460 @@ jobs:
             --note "WebKit أقرب محرك إلى WebKitGTK/WebView2 الذي يُشحن به التطبيق. الفحص مُلزم: فشله يفشل البناء." \
             --row "Playwright @smoke on WebKit=${{ steps.webkit.outcome }}" \
             --row "WebKit Browser Installation=${{ steps.install_browsers.outcome }}"
+
+  # Full browser acceptance is opt-in on normal CI, mandatory for force_full.
+  # Existing mocked Wails suite only: this must never be called actual backend acceptance.
+  e2e-full:
+    name: Full E2E ${{ matrix.os }} ${{ matrix.project }} ${{ matrix.shard }}/4
+    if: inputs.force_full
+    needs: [changes]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        os: [ubuntu-24.04]
+        project: [chromium]
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout exact run SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Install pinned Wails bindings generator
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+          printf '%s/bin\n' "$(go env GOPATH)" >> "$GITHUB_PATH"
+          mkdir -p frontend/dist
+          printf '<html></html>\n' > frontend/dist/index.html
+      - name: Generate exact source bindings
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: wails3 generate bindings -ts -clean=true
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Cache browser binaries
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/AppData/Local/ms-playwright
+          key: ${{ runner.os }}-full-playwright-${{ matrix.project }}-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Install selected browser and OS dependencies
+        working-directory: frontend
+        run: npx --no-install playwright install --with-deps ${{ matrix.project }}
+      - name: Execute exact full-project shard with strict evidence
+        shell: bash
+        run: |
+          node scripts/e2e/report-run.mjs \
+            --root frontend --config playwright.config.ts \
+            --lane legacy-${{ runner.os == 'Windows' && 'windows' || 'linux' }} \
+            --project ${{ matrix.project }} --shard ${{ matrix.shard }}/4 \
+            --fixture-kind mocked-wails \
+            --fixture-input frontend/e2e/helpers/wails-mock.ts \
+            --fixture-input frontend/e2e/helpers/wails-v3-bridge.ts \
+            --output "$RUNNER_TEMP/evidence"
+      - name: Upload complete shard evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-legacy-${{ runner.os }}-${{ matrix.project }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  full-gate:
+    name: Full CI gate (zero skipped required jobs)
+    if: always() && inputs.force_full
+    needs: [changes, docs-gate, validate-modal-ai, validate-frontend, validate-backend, backend-race-coverage, print-performance-report, admin-web-quality, windows-build, e2e-full]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact run SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Free runner disk space for multi-lane evidence verification
+        shell: bash
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - name: Download all full-suite shard evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: acceptance-legacy-*
+          path: downloaded-evidence
+          merge-multiple: false
+      - name: Verify case sets, shard union, hashes and required job results
+        if: always()
+        run: |
+          node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
+            --expected legacy-linux/chromium:4 \
+            --job changes=${{ needs.changes.result }} --job docs=${{ needs.docs-gate.result }} \
+            --job modal-unit=${{ needs.validate-modal-ai.result }} --job frontend=${{ needs.validate-frontend.result }} \
+            --job backend=${{ needs.validate-backend.result }} --job race=${{ needs.backend-race-coverage.result }} \
+            --job print-report=${{ needs.print-performance-report.result }} --job admin=${{ needs.admin-web-quality.result }} \
+            --job windows-build=${{ needs.windows-build.result }} --job full-e2e=${{ needs.e2e-full.result }}
+      - name: Reclaim raw download space after manifest and SHA-256 verification
+        if: always()
+        shell: bash
+        run: rm -rf downloaded-evidence
+      - name: Install report merger dependencies
+        if: always()
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Merge all browser blobs into HTML, JSON and JUnit
+        if: always()
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ../merged-evidence/html
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ../merged-evidence/results.json
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ../merged-evidence/results.xml
+        run: npx --no-install playwright merge-reports --config=../scripts/e2e/report-merge.config.mjs --reporter=html,json,junit ../merged-evidence/blob
+      - name: Upload full CI summary and merged reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-full-summary
+          path: merged-evidence/
+          if-no-files-found: error
+          retention-days: 7
+
+  # Registered ci.yml can dispatch the approved branch before a new workflow
+  # exists on the default branch. These jobs never call a reusable workflow.
+  acceptance-preflight:
+    name: Enforce published test-ref and acceptance source SHA
+    if: github.event_name == 'workflow_dispatch' && inputs.force_full && inputs.expected_sha != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate immutable dispatch contract
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/test/* ]] || { printf '%s\n' 'Acceptance requires an approved published test/* branch, never main/tags.'; exit 1; }
+          [[ "$EXPECTED_SHA" =~ ^[a-fA-F0-9]{40}$ ]] || { printf '%s\n' 'expected_sha must be an exact commit SHA.'; exit 1; }
+          [[ "${EXPECTED_SHA,,}" == "${GITHUB_SHA,,}" ]] || { printf '%s\n' 'Dispatch ref changed or SHA mismatch; no actual acceptance builds started.'; exit 1; }
+      - name: Checkout exact dispatch SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check acceptance source contracts exist
+        shell: bash
+        run: |
+          for file in scripts/e2e/report-run.mjs scripts/e2e/report-merge.mjs scripts/e2e/acceptance-manifest.schema.json scripts/e2e/runtime-process.mjs scripts/e2e/supabase-fixture.mjs frontend/playwright.acceptance.config.ts frontend/tsconfig.acceptance.json admin-web/playwright.acceptance.config.ts; do
+            test -f "$file" || { printf 'Missing owner contract: %s\n' "$file"; exit 1; }
+          done
+
+  acceptance-linux:
+    name: Real local Supabase + embedded Go server + actual admin/phone
+    if: github.event_name == 'workflow_dispatch' && inputs.force_full && inputs.expected_sha != ''
+    needs: [acceptance-preflight]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: "true"
+      CGO_ENABLED: "1"
+      GRIDO_ACCEPTANCE_LANE: server
+    steps:
+      - name: Set isolated server binary path (not a credential)
+        shell: bash
+        run: printf 'GRIDO_E2E_BINARY=%s/GridoStudio-acceptance-server\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Checkout exact dispatch SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            admin-web/package-lock.json
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Install same-main CGO build dependencies and local fixture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev postgresql-client
+          docker info >/dev/null
+      - name: Install pinned Supabase CLI outside fixture directory
+        shell: bash
+        run: |
+          download="$RUNNER_TEMP/supabase-cli-download"
+          unpack="$RUNNER_TEMP/supabase-cli-extracted"
+          mkdir "$download" "$unpack"
+          curl --fail --silent --show-error --location https://github.com/supabase/cli/releases/download/v2.81.3/supabase_linux_amd64.tar.gz --output "$download/supabase_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location https://github.com/supabase/cli/releases/download/v2.81.3/supabase_2.81.3_checksums.txt --output "$download/checksums.txt"
+          node scripts/e2e/report-toolcheck.mjs --archive "$download/supabase_linux_amd64.tar.gz" --checksums "$download/checksums.txt" --name supabase_linux_amd64.tar.gz
+          tar -xzf "$download/supabase_linux_amd64.tar.gz" -C "$unpack" supabase
+          chmod +x "$unpack/supabase"
+          printf '%s\n' "$unpack" >> "$GITHUB_PATH"
+      - name: Install pinned Wails bindings generator
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+          printf '%s/bin\n' "$(go env GOPATH)" >> "$GITHUB_PATH"
+          mkdir -p frontend/dist
+          printf '<html></html>\n' > frontend/dist/index.html
+      - name: Generate production bindings from exact sources
+        env:
+          CGO_ENABLED: "0"
+        run: wails3 generate bindings -ts -clean=true
+      - name: Install frontend and independent admin dependencies
+        run: |
+          npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+          npm --prefix admin-web ci --prefer-offline --no-audit --no-fund
+      - name: Typecheck actual acceptance specs and config
+        run: node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.acceptance.json
+      - name: Lint actual acceptance specs and config
+        working-directory: frontend
+        run: npx --no-install eslint e2e-acceptance playwright.acceptance.config.ts --report-unused-disable-directives --max-warnings 0
+      - name: Build production frontend and same-main server (test-tagged; nonpublishable)
+        run: |
+          npm --prefix frontend run build
+          APP_VERSION="v$(node -e "process.stdout.write(require('./frontend/package.json').version.trim())")"
+          go build -trimpath -tags=e2e,server,production -ldflags="-X grido/internal/service.AppVersion=${APP_VERSION}" -o "$GRIDO_E2E_BINARY" .
+          go test -tags=e2e,server,production ./internal/service -run '^TestE2EDialogAdapter$' -count=1
+          go test -tags=e2e,server,production . -run '^TestE2EHarness(Options|EndpointBoundary)$' -count=1
+      - name: Install Chromium and OS dependencies
+        working-directory: frontend
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Provision isolated disposable local Supabase on this runner
+        id: provision
+        run: node -- scripts/e2e/supabase-fixture.mjs start --root "$RUNNER_TEMP/grido-supabase" --env-file "$RUNNER_TEMP/grido-supabase.env"
+      - name: Execute actual embedded frontend/server journeys
+        id: server
+        shell: bash
+        run: |
+          set +x
+          source "$RUNNER_TEMP/grido-supabase.env"
+          node scripts/e2e/report-run.mjs --root frontend --config playwright.acceptance.config.ts \
+            --lane actual-linux --project real-server-chromium --shard 1/1 --fixture-kind actual-local-supabase \
+            --required-case '[J01]' --required-case '[J02]' --required-case '[J03]' --required-case '[J04]' \
+            --required-case '[J05]' --required-case '[J06]' --required-case '[J07]' \
+            --fixture-input scripts/e2e/journey-fixtures.mjs --fixture-input scripts/e2e/runtime-process.mjs \
+            --fixture-input scripts/e2e/supabase-fixture/config.toml \
+            --output "$RUNNER_TEMP/evidence/server"
+      - name: Build production admin against local sandbox only
+        if: always() && steps.provision.outcome == 'success'
+        id: admin_build
+        shell: bash
+        run: |
+          set +x
+          source "$RUNNER_TEMP/grido-supabase.env"
+          npm --prefix admin-web run build
+      - name: Execute actual independent admin auth and mutation journeys
+        if: always() && steps.admin_build.outcome == 'success'
+        id: admin
+        shell: bash
+        run: |
+          set +x
+          source "$RUNNER_TEMP/grido-supabase.env"
+          node scripts/e2e/report-run.mjs --root admin-web --config playwright.acceptance.config.ts \
+            --lane actual-admin --project admin-chromium --shard 1/1 --fixture-kind actual-local-supabase \
+            --required-case '[A01]' --required-case '[A02]' \
+            --fixture-input admin-web/e2e-acceptance/local-fixture.ts --fixture-input scripts/e2e/supabase-fixture/config.toml \
+            --output "$RUNNER_TEMP/evidence/admin"
+      - name: Execute actual phone storage/realtime sandbox journeys
+        if: always() && steps.admin_build.outcome == 'success'
+        id: phone
+        shell: bash
+        run: |
+          set +x
+          source "$RUNNER_TEMP/grido-supabase.env"
+          node scripts/e2e/report-run.mjs --root admin-web --config playwright.acceptance.config.ts \
+            --lane actual-phone --project phone-chromium --shard 1/1 --fixture-kind actual-local-supabase \
+            --required-case '[P01]' \
+            --fixture-input admin-web/e2e-acceptance/local-fixture.ts --fixture-input scripts/e2e/supabase-fixture/config.toml \
+            --output "$RUNNER_TEMP/evidence/phone"
+      - name: Stop disposable Supabase and remove private fixture credentials
+        if: always()
+        run: node -- scripts/e2e/supabase-fixture.mjs stop --root "$RUNNER_TEMP/grido-supabase" --env-file "$RUNNER_TEMP/grido-supabase.env"
+      - name: Record sanitized actual infrastructure blocker
+        if: always() && steps.provision.outcome != 'success'
+        run: node scripts/e2e/report-infrastructure.mjs --stage local-supabase-provision --outcome "${{ steps.provision.outcome || 'skipped' }}" --output "$RUNNER_TEMP/evidence/infrastructure-failure.json"
+      - name: Upload actual lane evidence only (never fixture root or env)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-actual-linux
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+      - name: Upload sanitized disposable provision report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-sandbox-provision
+          path: ${{ runner.temp }}/grido-supabase/provision-report.json
+          if-no-files-found: error
+          retention-days: 7
+
+  acceptance-native:
+    name: Windows real native WebView2 + SQLite (third-party contract auth)
+    if: github.event_name == 'workflow_dispatch' && inputs.force_full && inputs.expected_sha != ''
+    needs: [acceptance-preflight]
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      CI: "true"
+      CGO_ENABLED: "1"
+      GRIDO_ACCEPTANCE_LANE: native
+    steps:
+      - name: Set isolated native binary path (not a credential)
+        shell: bash
+        run: printf 'GRIDO_E2E_BINARY=%s/GridoStudio-acceptance-native.exe\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Checkout exact dispatch SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Install pinned Wails CLI
+        shell: bash
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+          printf '%s/bin\n' "$(go env GOPATH)" >> "$GITHUB_PATH"
+          mkdir -p frontend/dist
+          printf '<html></html>\n' > frontend/dist/index.html
+      - name: Generate production bindings from exact sources
+        run: wails3 generate bindings -ts -clean=true
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Typecheck actual acceptance specs and config
+        run: node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.acceptance.json
+      - name: Lint actual acceptance specs and config
+        working-directory: frontend
+        run: npx --no-install eslint e2e-acceptance playwright.acceptance.config.ts --report-unused-disable-directives --max-warnings 0
+      - name: Build embedded production frontend and test-tagged native executable
+        shell: bash
+        run: |
+          npm --prefix frontend run build
+          APP_VERSION="v$(node -e "process.stdout.write(require('./frontend/package.json').version.trim())")"
+          go build -trimpath -tags=e2e,production -ldflags="-X grido/internal/service.AppVersion=${APP_VERSION}" -o "$GRIDO_E2E_BINARY" .
+      - name: Install Chromium driver for native CDP
+        working-directory: frontend
+        run: npx --no-install playwright install chromium
+      - name: Run actual native GUI journeys with loopback contract-auth fixture
+        shell: bash
+        run: |
+          node scripts/e2e/report-run.mjs --root frontend --config playwright.acceptance.config.ts \
+            --lane native-windows --project real-native-webview2 --shard 1/1 --fixture-kind native-third-party-contract \
+            --required-case '[J01]' --required-case '[J02]' --required-case '[J03]' --required-case '[J04]' \
+            --required-case '[J05]' --required-case '[J06]' --required-case '[J07]' \
+            --fixture-input scripts/e2e/journey-fixtures.mjs --fixture-input scripts/e2e/runtime-process.mjs \
+            --fixture-input scripts/e2e/runtime-auth-contract.mjs \
+            --output "$RUNNER_TEMP/evidence"
+      - name: Upload native evidence (video capability explicitly blocked; no release binary)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-native-windows
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  acceptance-gate:
+    name: Final scoped acceptance summary (never whole-application done)
+    if: always() && github.event_name == 'workflow_dispatch' && inputs.force_full && inputs.expected_sha != ''
+    needs: [acceptance-preflight, full-gate, acceptance-linux, acceptance-native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact dispatch SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Free runner disk space for multi-lane evidence verification
+        shell: bash
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - name: Download lane evidence without combining shard directories
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: acceptance-*
+          path: downloaded-evidence
+          merge-multiple: false
+      - name: Gate every expected lane, project, shard, case and upstream result
+        if: always()
+        run: |
+          node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
+            --expected legacy-linux/chromium:4 \
+            --expected actual-linux/real-server-chromium:1 --expected actual-admin/admin-chromium:1 \
+            --expected actual-phone/phone-chromium:1 --expected native-windows/real-native-webview2:1 \
+            --job preflight=${{ needs.acceptance-preflight.result }} --job full-ci=${{ needs.full-gate.result }} \
+            --job linux-actual=${{ needs.acceptance-linux.result }} --job windows-native=${{ needs.acceptance-native.result }}
+      - name: Reclaim raw download space after manifest and SHA-256 verification
+        if: always()
+        shell: bash
+        run: rm -rf downloaded-evidence
+      - name: Install report merger dependencies
+        if: always()
+        run: npm --prefix frontend ci --prefer-offline --no-audit --no-fund
+      - name: Merge all Playwright blobs into HTML, JSON and JUnit
+        if: always()
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ../merged-evidence/html
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ../merged-evidence/results.json
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ../merged-evidence/results.xml
+        run: npx --no-install playwright merge-reports --config=../scripts/e2e/report-merge.config.mjs --reporter=html,json,junit ../merged-evidence/blob
+      - name: Upload final summary, blocked capability report and merged evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: acceptance-final-summary
+          path: merged-evidence/
+          if-no-files-found: error
+          retention-days: 7

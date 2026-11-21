@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["e2e-acceptance", "playwright.acceptance.config.ts"],
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}

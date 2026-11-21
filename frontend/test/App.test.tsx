@@ -166,6 +166,7 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
       expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
       hardwareId: 'test-hw-id',
       role: 'user',
+      token: 'test-token',
     }),
   ),
   LoginAccount: vi.fn(() =>
@@ -293,6 +294,112 @@ describe('Component Testing: UI Rendering', () => {
     expect(compactSingleTab).toHaveClass('coarse-touch-target');
     expect(compactCollageTab.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     expect(compactSingleTab.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(compactCollageTab.tabIndex).toBe(0);
+    expect(compactSingleTab.tabIndex).toBe(-1);
+    act(() => compactCollageTab.focus());
+    fireEvent.keyDown(compactCollageTab, { key: 'End' });
+    expect(compactSingleTab).toHaveFocus();
+    expect(compactSingleTab.tabIndex).toBe(0);
+    expect(useEditorStore.getState().mode).toBe('single');
+    fireEvent.keyDown(compactSingleTab, { key: 'Home' });
+    expect(compactCollageTab).toHaveFocus();
+    fireEvent.keyDown(compactCollageTab, { key: 'ArrowLeft', ctrlKey: true });
+    expect(useEditorStore.getState().mode).toBe('collage');
+    // The live region is mounted even when Sonner has no toast/list yet.
+    expect(
+      document.querySelectorAll('section[aria-live="polite"][aria-relevant="additions text"]'),
+    ).toHaveLength(1);
+  }, 15000);
+
+  it('duplicates complete collage image content without changing destination layout and records one undo', async () => {
+    render(<App />);
+    const edit = await screen.findByRole('button', { name: 'تحرير' });
+    // Default physical layout may contain only one slot; duplication needs two
+    // explicit valid cells rather than spreading an absent slots[1].
+    const source = {
+      id: 'duplicate-source',
+      cellIndex: 0,
+      x: 0.05,
+      y: 0.1,
+      w: 0.4,
+      h: 0.35,
+      imageSrc: 'data:image/png;base64,source',
+      originalImageSrc: 'data:image/png;base64,original',
+      filter: 'grayscale',
+      brightness: 123,
+      contrast: 87,
+      saturation: 45,
+      zoom: 2,
+      dragX: 0.15,
+      dragY: -0.2,
+      flipX: true,
+      flipY: true,
+      rotation: 90,
+      cropMode: 'centered' as const,
+    };
+    const destination = {
+      id: 'duplicate-destination',
+      cellIndex: 1,
+      x: 0.55,
+      y: 0.5,
+      w: 0.3,
+      h: 0.4,
+      imageSrc: undefined,
+      bgColor: '#abcdef',
+      zoom: 3,
+      brightness: 15,
+    };
+    act(() => {
+      useEditorStore.setState({
+        slots: [source, destination],
+        selectedId: source.id,
+        selectedIds: [source.id],
+      });
+      useEditorStore.getState().pushHistory();
+    });
+    const capturedDestination = useEditorStore
+      .getState()
+      .slots.find((slot) => slot.id === destination.id);
+    expect(useEditorStore.getState().slots).toHaveLength(2);
+    expect(capturedDestination).toEqual(destination);
+    expect(capturedDestination).toMatchObject({
+      id: 'duplicate-destination',
+      x: 0.55,
+      y: 0.5,
+      w: 0.3,
+      h: 0.4,
+    });
+    const before = useEditorStore.getState().historyIndex;
+    fireEvent.keyDown(edit, { key: 'ArrowDown' });
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'تكرار' }));
+    const copied = useEditorStore.getState().slots.find((slot) => slot.id === destination.id);
+    expect(copied).toMatchObject({
+      id: destination.id,
+      x: destination.x,
+      y: destination.y,
+      w: destination.w,
+      h: destination.h,
+      bgColor: '#abcdef',
+      imageSrc: source.imageSrc,
+      originalImageSrc: source.originalImageSrc,
+      filter: source.filter,
+      brightness: 123,
+      contrast: 87,
+      saturation: 45,
+      zoom: 2,
+      dragX: 0.15,
+      dragY: -0.2,
+      flipX: true,
+      flipY: true,
+      rotation: 90,
+      cropMode: 'centered',
+    });
+    expect(useEditorStore.getState().slots[0]).toEqual(source);
+    expect(useEditorStore.getState().historyIndex).toBe(before + 1);
+    act(() => useEditorStore.getState().undo());
+    expect(useEditorStore.getState().slots.find((slot) => slot.id === destination.id)).toEqual(
+      capturedDestination,
+    );
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {
@@ -507,9 +614,21 @@ describe('App workspace selection integration', () => {
 
     act(() => useEditorStore.getState().selectElement(firstSlot.id));
     expect(inspector).toHaveAttribute('data-collapsed', 'false');
+    act(() =>
+      within(inspector)
+        .getByRole('button', {
+          name: 'اللوحة مثبتة دائماً (انقر للإخفاء التلقائي عند عدم التحديد)',
+        })
+        .focus(),
+    );
     fireEvent.click(zen);
+    expect(screen.getByTestId('workspace-canvas-shell')).toHaveFocus();
     expect(templates).toHaveAttribute('data-collapsed', 'true');
     expect(inspector).toHaveAttribute('data-collapsed', 'true');
+    expect(templates).toHaveAttribute('inert');
+    expect(inspector).toHaveAttribute('inert');
+    expect(templates).toHaveAttribute('aria-hidden', 'true');
+    expect(inspector).toHaveAttribute('aria-hidden', 'true');
 
     act(() => useEditorStore.getState().selectElement(null));
     act(() => useEditorStore.getState().selectElement(firstSlot.id));
@@ -519,6 +638,8 @@ describe('App workspace selection integration', () => {
     fireEvent.click(zen);
     expect(templates).toHaveAttribute('data-collapsed', 'false');
     expect(inspector).toHaveAttribute('data-collapsed', 'false');
+    expect(templates).not.toHaveAttribute('inert');
+    expect(inspector).not.toHaveAttribute('inert');
     expect(useEditorStore.getState().selectedId).toBe(firstSlot.id);
   }, 15000);
 
@@ -557,6 +678,18 @@ describe('App workspace selection integration', () => {
       'true',
     );
     expect(screen.queryByTestId('workspace-panel-properties')).not.toBeInTheDocument();
+    act(() => {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: 1280,
+      });
+      window.dispatchEvent(new Event('resize'));
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'لوحات العمل' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('workspace-panel-properties')).toBeInTheDocument();
   }, 15000);
 });
 
@@ -801,6 +934,10 @@ describe('Startup splash regressions', () => {
 
     expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'النسخة مقفلة', hidden: true })).toBeInTheDocument();
+    // The live region is mounted even when Sonner has no toast/list yet.
+    expect(
+      document.querySelectorAll('section[aria-live="polite"][aria-relevant="additions text"]'),
+    ).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument();
     expect(useEditorStore.getState().user).toBeNull();
   }, 15000);

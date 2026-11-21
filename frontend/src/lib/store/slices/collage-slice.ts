@@ -168,7 +168,15 @@ const initialCollage = COLLAGE_TEMPLATES[0];
  */
 export function remapSlotsToCells(
   existing: CanvasSlot[],
-  cells: Array<{ x: number; y: number; w: number; h: number }>,
+  cells: Array<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    presetType?: string;
+    label?: string;
+    rotation?: number;
+  }>,
   sourceSlotIds?: Array<string | undefined>,
 ): CanvasSlot[] {
   const pool = existing.map((slot) => ({
@@ -193,6 +201,9 @@ export function remapSlotsToCells(
       }
     }
     const matched = bestIndex >= 0 ? pool.splice(bestIndex, 1)[0].slot : undefined;
+    const presetType = cell.presetType ?? matched?.presetType;
+    const label = cell.label ?? matched?.label;
+    const rotation = cell.rotation ?? matched?.rotation;
 
     return {
       ...(matched ?? {}),
@@ -202,6 +213,9 @@ export function remapSlotsToCells(
       y: cell.y,
       w: cell.w,
       h: cell.h,
+      ...(presetType !== undefined ? { presetType } : {}),
+      ...(label !== undefined ? { label } : {}),
+      ...(rotation !== undefined ? { rotation } : {}),
       filter: matched?.filter ?? 'none',
       brightness: matched?.brightness ?? 100,
       contrast: matched?.contrast ?? 100,

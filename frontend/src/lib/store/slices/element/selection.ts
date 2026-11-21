@@ -1,26 +1,21 @@
-import { maxZIndex, minZIndex, normalizeSelection } from './types';
+import { buildElementLayerMovePatches, canArrangeSelection } from '@/lib/selection-properties';
+
+import { normalizeSelection } from './types';
 import { uid } from '../../../utils';
 
 import type { ElementCross, ElementSlice } from './types';
 import type { CanvasElement } from '../../types';
 import type { StateCreator } from 'zustand';
 
-/**
- * تبادل zIndex مع الجار المباشر في ترتيب الطبقات — خطوة واحدة لا إلى الحافة.
- * يُبلَّغ caller بعدم الحركة عند الحواف أو عند تعادل القيم حتى لا يُسجَّل
- * تاريخ فارغ (pushHistory) لعملية لم تغيّر شيئاً.
- */
+/** A one-step reorder swaps complete unlocked layer units, not individual group members. */
 function stepPastNeighbour(get: () => ElementCross, id: string, direction: 1 | -1): boolean {
-  const sorted = [...get().elements].sort((a, b) => a.zIndex - b.zIndex);
-  const index = sorted.findIndex((el) => el.id === id);
-  if (index === -1) return false;
-  const self = sorted[index];
-  const neighbour = sorted[index + direction];
-  if (!neighbour || self.zIndex === neighbour.zIndex) return false;
-  get().updateElements([
-    { id: self.id, patch: { zIndex: neighbour.zIndex } },
-    { id: neighbour.id, patch: { zIndex: self.zIndex } },
-  ]);
+  const patches = buildElementLayerMovePatches(
+    get().elements,
+    id,
+    direction === 1 ? 'forward' : 'backward',
+  );
+  if (!patches.length) return false;
+  get().updateElements(patches);
   return true;
 }
 
@@ -44,18 +39,16 @@ export const createElementSelectionSlice: StateCreator<
   >
 > = (set, get) => ({
   bringToFront: (id) => {
-    const el = get().elements.find((e) => e.id === id);
-    if (!el || el.locked) return;
-    const maxZ = maxZIndex(get().elements);
-    get().updateElement(id, { zIndex: maxZ + 10 });
+    const patches = buildElementLayerMovePatches(get().elements, id, 'front');
+    if (!patches.length) return;
+    get().updateElements(patches);
     get().pushHistory();
   },
 
   sendToBack: (id) => {
-    const el = get().elements.find((e) => e.id === id);
-    if (!el || el.locked) return;
-    const minZ = minZIndex(get().elements);
-    get().updateElement(id, { zIndex: minZ - 10 });
+    const patches = buildElementLayerMovePatches(get().elements, id, 'back');
+    if (!patches.length) return;
+    get().updateElements(patches);
     get().pushHistory();
   },
 
@@ -96,7 +89,7 @@ export const createElementSelectionSlice: StateCreator<
   },
 
   setSelectedIds: (ids: string[]) => {
-    set(normalizeSelection(ids));
+    set(normalizeSelection([...new Set(ids)]));
   },
 
   toggleElementSelection: (id) => {
@@ -125,22 +118,36 @@ export const createElementSelectionSlice: StateCreator<
         }
       }
 
-      return normalizeSelection(nextSelected, id);
+      return normalizeSelection([...new Set(nextSelected)], id);
     });
   },
 
   groupSelectedElements: () => {
-    const { selectedIds } = get();
-    if (selectedIds.length < 2) return;
+    const { selectedIds, selectedId, elements } = get();
+    if (!canArrangeSelection(elements, selectedIds)) return;
+    const targets = new Set(selectedIds);
+    const unlockedIds = elements
+      .filter((el) => targets.has(el.id) && !el.locked)
+      .map((el) => el.id);
+    if (unlockedIds.length < 2) return;
+    const selectedElements = elements.filter((el) => unlockedIds.includes(el.id));
+    if (
+      selectedElements[0].groupId &&
+      selectedElements.every((el) => el.groupId === selectedElements[0].groupId)
+    ) {
+      return;
+    }
 
     // uid() بدل `group-${Date.now()}`: معرّفان تاريخيان يتصادمان في نفس
     // المللي ثانية فتندمج مجموعتان مستقلتان في مجموعة واحدة (E-8)
     const newGroupId = uid();
+    const unlockedSet = new Set(unlockedIds);
 
     set((s) => ({
       elements: s.elements.map((el: CanvasElement) =>
-        selectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el,
+        unlockedSet.has(el.id) ? { ...el, groupId: newGroupId } : el,
       ),
+      ...normalizeSelection(unlockedIds, selectedId),
     }));
     get().pushHistory();
   },
@@ -149,8 +156,16 @@ export const createElementSelectionSlice: StateCreator<
     const { selectedIds, elements } = get();
     if (selectedIds.length === 0) return;
 
+    const lockedGroups = new Set(
+      elements
+        .filter((el: CanvasElement) => el.groupId && el.locked)
+        .map((el: CanvasElement) => el.groupId as string),
+    );
     const groupIdsToUngroup = elements
-      .filter((el: CanvasElement) => selectedIds.includes(el.id) && el.groupId)
+      .filter(
+        (el: CanvasElement) =>
+          selectedIds.includes(el.id) && el.groupId && !lockedGroups.has(el.groupId),
+      )
       .map((el: CanvasElement) => el.groupId as string);
 
     if (groupIdsToUngroup.length === 0) return;

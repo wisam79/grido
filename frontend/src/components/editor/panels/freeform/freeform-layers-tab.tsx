@@ -38,6 +38,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
+import { canArrangeSelection } from '@/lib/selection-properties';
 import { cn } from '@/lib/utils';
 
 import { LayersList } from '../../properties/layers-list';
@@ -158,8 +159,28 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
     [selectedElements],
   );
   const selectionLocked = selectedElements.some((el) => el.locked);
+  const unlockedSelected = useMemo(
+    () => selectedElements.filter((el) => !el.locked),
+    [selectedElements],
+  );
+  const hasUnlockedSelection = canArrangeSelection(elements, selectedIds);
+  const canGroup =
+    hasUnlockedSelection &&
+    unlockedSelected.length >= 2 &&
+    (!unlockedSelected[0].groupId ||
+      unlockedSelected.some((el) => el.groupId !== unlockedSelected[0].groupId));
+  const canUngroup = useMemo(
+    () =>
+      selectedElements.some((el) => {
+        if (!el.groupId || el.locked) return false;
+        return !elements.some((member) => member.groupId === el.groupId && member.locked);
+      }),
+    [elements, selectedElements],
+  );
   const canMerge =
-    visibleSelected.length >= 2 && visibleSelected.every((el) => el.type === 'shape');
+    visibleSelected.length >= 2 &&
+    visibleSelected.every((el) => el.type === 'shape') &&
+    !selectionLocked;
   const canRasterize = visibleSelected.length >= 1 && !selectionLocked;
 
   const runMerge = (op: BooleanOp) => {
@@ -268,7 +289,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           <QuickActionBtn
             content="تجميع المحدد (Ctrl+G)"
             onClick={groupSelectedElements}
-            disabled={!hasMultipleSelected}
+            disabled={!canGroup}
           >
             <Group className="w-3.5 h-3.5" />
           </QuickActionBtn>
@@ -276,7 +297,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           <QuickActionBtn
             content="فك التجميع (Ctrl+Shift+G)"
             onClick={ungroupSelectedElements}
-            disabled={!hasSelection}
+            disabled={!canUngroup}
           >
             <GroupDismiss className="w-3.5 h-3.5" />
           </QuickActionBtn>
@@ -378,12 +399,14 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               content={
                 hasMultipleSelected ? 'محاذاة العناصر لليمين' : 'محاذاة لليمين في لوحة العمل'
               }
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('right')}
             >
               <AlignRight className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={hasMultipleSelected ? 'توسيط العناصر أفقياً' : 'توسيط أفقي في لوحة العمل'}
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('center')}
             >
               <AlignCenterHorizontal className="w-3.5 h-3.5" />
@@ -392,6 +415,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               content={
                 hasMultipleSelected ? 'محاذاة العناصر لليسار' : 'محاذاة لليسار في لوحة العمل'
               }
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('left')}
             >
               <AlignLeft className="w-3.5 h-3.5" />
@@ -405,12 +429,14 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               content={
                 hasMultipleSelected ? 'محاذاة العناصر للأعلى' : 'محاذاة للأعلى في لوحة العمل'
               }
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('top')}
             >
               <AlignTop className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={hasMultipleSelected ? 'توسيط العناصر عمودياً' : 'توسيط عمودي في لوحة العمل'}
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('middle')}
             >
               <AlignCenterVertical className="w-3.5 h-3.5" />
@@ -419,6 +445,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               content={
                 hasMultipleSelected ? 'محاذاة العناصر للأسفل' : 'محاذاة للأسفل في لوحة العمل'
               }
+              disabled={!hasUnlockedSelection}
               onClick={() => alignSelectedElements('bottom')}
             >
               <AlignBottom className="w-3.5 h-3.5" />
@@ -431,12 +458,14 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               <div className="flex items-center gap-0.5">
                 <QuickActionBtn
                   content="توزيع أفقي"
+                  disabled={!hasUnlockedSelection || unlockedSelected.length < 3}
                   onClick={() => distributeSelectedElements('horizontal')}
                 >
                   <ArrowsHorizontal className="w-3.5 h-3.5" />
                 </QuickActionBtn>
                 <QuickActionBtn
                   content="توزيع عمودي"
+                  disabled={!hasUnlockedSelection || unlockedSelected.length < 3}
                   onClick={() => distributeSelectedElements('vertical')}
                 >
                   <ArrowsVertical className="w-3.5 h-3.5" />

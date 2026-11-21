@@ -83,10 +83,10 @@ export function SlotMenuSection({
           tabIndex={-1}
           className={menuItemClassName}
           onClick={async () => {
+            onClose();
             const [b64] = await openImageFileDialog(false);
             if (b64) {
               useEditorStore.getState().setSlotImage(targetId, await persistPickedImage(b64));
-              onClose();
             }
           }}
         >
@@ -187,22 +187,22 @@ export function SlotMenuSection({
               )}
               <span className="truncate">{isEnhancing ? 'جاري الترميم ...' : 'ترميم الوجه'}</span>
             </button>
+
+            <button
+              role="menuitem"
+              tabIndex={-1}
+              className={menuItemDangerClassName}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }),
+                )
+              }
+            >
+              <Broom className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
+              <span className="truncate">إزالة الصورة</span>
+            </button>
           </>
         )}
-
-        <button
-          role="menuitem"
-          tabIndex={-1}
-          className={menuItemDangerClassName}
-          onClick={() =>
-            handleActionWithHistory(() =>
-              updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }),
-            )
-          }
-        >
-          <Broom className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
-          <span className="truncate">إزالة الصورة</span>
-        </button>
       </div>
 
       {/* قسم التحويل والمحاذاة */}

@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
@@ -85,13 +86,24 @@ export function DocumentScannerDialog({
   const processor = useScannerProcessor(imgRef, filter, rotation, open);
   const { isPreviewMode, resetProcessorState, resetPreview: resetProcessorPreview } = processor;
 
+  // A new image owns a new editing/processing session, even while the dialog stays open.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the source-owned scanner session
+    setCorners([]);
+    cornersRef.current = [];
+    setAspect('free');
+    setRotation(0);
+    setFilter('original');
+    resetProcessorState();
+  }, [imageSrc, resetProcessorState]);
+
   const resetPreview = useCallback(() => {
     resetProcessorPreview();
   }, [resetProcessorPreview]);
 
   const selectDocument = useCallback(
     (index: number) => {
-      detection.selectDocument(index, setCorners, setAspect, setRotation, resetPreview);
+      detection.selectDocument(index, setCorners, setAspect, setRotation, resetPreview, setFilter);
     },
     [detection, resetPreview],
   );
@@ -170,8 +182,13 @@ export function DocumentScannerDialog({
     setDetectionCallbacks({
       onCorners: setCorners,
       onAspect: setAspect,
+      onResetDocMeta: () => {
+        setRotation(0);
+        setFilter('original');
+        resetProcessorPreview();
+      },
     });
-  }, [setDetectionCallbacks]);
+  }, [setDetectionCallbacks, resetProcessorPreview]);
 
   // مراجع حية للبيانات المستخدمة في إيماءات متتابعة.
   const activeDocIndexRef = useRef(detection.activeDocIndex);
@@ -331,9 +348,9 @@ export function DocumentScannerDialog({
                   </span>
                 )}
               </div>
-              <span className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
+              <DialogDescription className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
                 استعدال المنظور وتبييض الورقة تلقائياً
-              </span>
+              </DialogDescription>
             </div>
           </div>
           <DialogCloseButton />
@@ -424,7 +441,7 @@ export function DocumentScannerDialog({
               {/* Loupe Glass Magnifier */}
               <div
                 className={cn(
-                  'absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20',
+                  'absolute pointer-events-none transition-[opacity,transform] duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20',
                   Z_CLASS.popover,
                   loupePos && activeCorner !== null
                     ? 'opacity-100 scale-100'
@@ -491,10 +508,23 @@ export function DocumentScannerDialog({
             onSelectDoc={stableSelectDocument}
             onToggleCheckDoc={toggleDocSelection}
             onSelectAllDocs={selectAllDocs}
-            onAddDocument={() => handleAddManualDocument(setCorners, setAspect, resetPreview)}
-            onDeleteDoc={(id) => handleDeleteDocument(id, setCorners, setAspect, resetPreview)}
-            onSplitIdCards={() => handleSplitIdCards(corners, setCorners, setAspect, resetPreview)}
-            isDetecting={isDetecting}
+            onAddDocument={() =>
+              handleAddManualDocument(setCorners, setAspect, resetPreview, setRotation, setFilter)
+            }
+            onDeleteDoc={(id) =>
+              handleDeleteDocument(id, setCorners, setAspect, resetPreview, setRotation, setFilter)
+            }
+            onSplitIdCards={() =>
+              handleSplitIdCards(
+                corners,
+                setCorners,
+                setAspect,
+                resetPreview,
+                setRotation,
+                setFilter,
+              )
+            }
+            isDetecting={isDetecting || processor.isPreviewing || processor.isExporting}
             onAutoDetect={handleAutoDetect}
             onReset={handleResetCorners}
             filterMode={filter}
@@ -508,14 +538,19 @@ export function DocumentScannerDialog({
         </div>
 
         {/* Footer Bar */}
-        <DialogFooter className="gap-2 border-t border-border/40 pt-3 flex items-center justify-between w-full shrink-0">
+        <DialogFooter className="gap-2 border-t border-border/40 pt-3 flex items-center justify-between sm:justify-between w-full shrink-0">
           <div>
             <Button
               variant="outline"
               onClick={() => {
                 void processor.handleTogglePreview(corners, aspect);
               }}
-              disabled={(!cornersReady && !isPreviewMode) || processor.isPreviewing}
+              disabled={
+                (!cornersReady && !isPreviewMode) ||
+                isDetecting ||
+                processor.isPreviewing ||
+                processor.isExporting
+              }
               title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
               className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer gap-1.5 border border-border/60 shadow-2xs hover:bg-accent flex items-center disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
@@ -583,7 +618,7 @@ export function DocumentScannerDialog({
                     () => onOpenChange(false),
                   )
                 }
-                disabled={processor.isExporting}
+                disabled={isDetecting || processor.isPreviewing || processor.isExporting}
               >
                 {processor.isExporting ? (
                   <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
@@ -600,7 +635,9 @@ export function DocumentScannerDialog({
               onClick={() =>
                 processor.handleApplyActive(corners, aspect, onSave, () => onOpenChange(false))
               }
-              disabled={!cornersReady || processor.isExporting}
+              disabled={
+                !cornersReady || isDetecting || processor.isPreviewing || processor.isExporting
+              }
               title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
               className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary-action hover:bg-primary-action-hover text-primary-foreground shadow-xs transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
