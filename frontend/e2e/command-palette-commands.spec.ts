@@ -75,6 +75,27 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
     await page.getByTestId('command-insert-text').click();
 
     await expect(page.getByTestId('command-palette')).toBeHidden();
+    // The real insert command starts inline editing. Commit through the GUI
+    // before checking the rendered text, not an unrelated transformer label.
+    const editor = page.getByTestId('text-editing-textarea');
+    await expect(editor).toBeVisible();
+    await expect(editor).toHaveValue('نص جديد');
+    const insertedText = 'نص من لوحة الأدوات';
+    await editor.fill(insertedText);
+    await editor.press('Enter');
+    await expect(editor).toBeHidden();
     await expect.poll(konvaTexts, { timeout: 5000 }).toBeGreaterThan(before);
+    await expect
+      .poll(() =>
+        page.evaluate((text) => {
+          const stage = (
+            window as unknown as {
+              __gridoStage?: { find: (selector: string) => Array<{ text: () => string }> };
+            }
+          ).__gridoStage;
+          return stage?.find('Text').filter((node) => node.text() === text).length ?? 0;
+        }, insertedText),
+      )
+      .toBe(1);
   });
 });

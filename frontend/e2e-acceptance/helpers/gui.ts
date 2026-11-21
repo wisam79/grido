@@ -2,7 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { expect } from '@playwright/test';
 import { canvasSnapshot, clickCanvasNode } from './canvas-readonly';
 // @ts-expect-error Independent Node artifact reader has no generated declarations.
-import { verifyOutput } from '../../../../scripts/e2e/verify-output.mjs';
+import { verifyOutput } from '../../../scripts/e2e/verify-output.mjs';
 import type { Journey } from './real-app';
 import type { Locator, Page } from '@playwright/test';
 

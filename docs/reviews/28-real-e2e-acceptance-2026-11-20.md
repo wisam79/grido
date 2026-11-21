@@ -69,6 +69,30 @@ run [44807851024](https://github.com/wisam79/grido/actions/runs/44807851024) ع�
 
 **F-R1-01:** adminunitdiscovery التقط Playwrightspecsالجديدةe2e-acceptance داخلVitest (معSUPABASE_URLغيرموجود)، فتوقفت2filesمع190unitspass. إصلاحإعدادVitest يستبعدe2e-acceptanceمنunitrunnerويُبقيهاتنفذفيacceptancelaneالصحيحة؛ ليسtest.skipأوحذفGUIاختبار. تفاصيلسجلjob136536551271فيscratch/e2e-r1-admin.log. قبولR1لاينسبإلىالاختباراتغيرالمنفذة.
 
+## R2 — تشغيل قبول actual بدأ فعلياً
+
+run [44809194193](https://github.com/wisam79/grido/actions/runs/44809194193) علىSHA`44d7cdc7781343f52485a357c0485c32c8a95d07` عبرciالمسجلمعforce_full/expected_sha. preflightمقارنةSHAوفرعtestنجح، ووظيفتاLinuxactualSupabase/server/admin/phone وWindowsnativeWebView2/SQLite بدآعلىGitHub، إضافةإلىكاملالمتصفحاتquality. هذايثبتبدءالوظائفلااجتيازها.
+
+R1run44807851024 أُلغيعمداًبعدثبوتfailureوتقادمSHAلتوفيرمواردالنسخةالحالية؛ نتائجهالجزئيةوالفشللاتُمسحولاتُسمىPASS. يتضمنF-R1-02حارسالشبكةرفضPOST/api/trim-memoryالمشروعوليسunexpectedserviceعشوائي، وF-R1-03mockstartupserializedemptyخلقimageSrc`\"\"` وصورةزائدة؛ التشخيصالاختباريفيإطارlegacyfixtureقيدالإصلاح. لايوسَّعالallowlistلجميعAPIولايسقطتوقعexactproject.
+
+### نتيجة R2 النهائية — FAILURE (`44809194193`) وتصحيحات جولة R3
+
+اكتمل التشغيل [44809194193](https://github.com/wisam79/grido/actions/runs/44809194193) على `44d7cdc7781343f52485a357c0485c32c8a95d07` بنتيجة عامة **FAILURE**: نجحت وظائف `Enforce published test-ref and acceptance source SHA` و`Detect Changed Areas` و`Documentation Gate` و`Admin Web Quality` و`Backend Quality & Tests` و`Backend Race & Coverage (Scheduled)` و`Modal AI Unit Tests (Python 3.10)` و`Windows Build Verification` و`Print Performance & RSS Report (Windows)`، بينما أخفقت المسارات التالية وعولجت لرفع جولة R3:
+
+- **`F-R2-01` (`Frontend Quality & Tests`, job `136541178436`):** اجتازت ملفات Vitest الـ 186 (`2540 passed / 1 skipped`)، لكن `frontend/vitest.config.ts` استثنى `**/e2e/**` فقط فالتقط مواصفات `e2e-acceptance/`؛ أُضيف `'**/e2e-acceptance/**'` إلى `test.exclude` و`coverage.exclude`.
+- **`F-R2-02` (`Windows real native WebView2 + SQLite`, job `136541155928`):** فشل `--list` قبل بدء أي رحلة بسبب زيادة `../` واحدة في 5 استيرادات `scripts/e2e/` ضمن `frontend/e2e-acceptance/stickers-vdp.spec.ts` و`frontend/e2e-acceptance/helpers/gui.ts` و`frontend/e2e-acceptance/helpers/real-app.ts`، مع ابتلاع `onError()` للخطأ في `scripts/e2e/report-playwright.cjs`؛ صُحّحت المسارات وأُضيفت طباعة `error.message` إلى `stderr`.
+- **`F-R2-03` (`Real local Supabase + embedded Go server + actual admin/phone`, job `136541155936`):** خرج `supabase-fixture.mjs` برمز `9` لأن Node 24 يقرأ `--env-file` خياراً للمشغّل قبل تمريره للسكربت؛ أُضيف فاصل `--` في `ci.yml` و`e2e-acceptance.yml`، وحُصّن التوقف دون marker مع إضافة `scripts/e2e/report-infrastructure.mjs` لتسجيل تعثّر البنية كحالة فشل صريحة دون تمرير البوابة.
+- **`F-R2-04` (إخفاقات حزمة المتصفحات الـ 24 شارد):**
+  - `frontend/e2e/helpers/wails-v3-bridge.ts`: فرض `contentType: 'application/json'` لمنع تحويل `''` إلى `'""'` في `GetStartupFile`/`LoadAutoSave`، وتوحيد `StartPhoneBridge` (`93234400`) كعملية idempotent مثل Go مع تحديث `frontend/e2e/phone-bridge.spec.ts` لاحتمال الاستدعاء المزدوج في StrictMode.
+  - `frontend/e2e/helpers/wails-mock.ts` و`ai-tools.spec.ts` و`bg-removal.spec.ts` و`document-scanner.spec.ts`: محاكاة `POST /api/trim-memory` المصرّح بالتوكن وحارس نفس المضيف والتحقق من استدعائه، وتحديث `app.spec.ts` و`command-palette-commands.spec.ts` و`engine-smoke.spec.ts` و`frontend/e2e-acceptance/settings-journey.spec.ts` (`html` `--grido-ui-zoom`).
+  - `frontend/e2e/perf-canvas-drag.spec.ts`: بدء `last: null` لتجنب عينة `<= 0` عندما يسبق طابع `rAF` وقت `performance.now()`.
+  - `frontend/e2e/transformer-box-follows-geometry.spec.ts`: استطلاع الصندوق بعد كل ضغطة `Alt+ArrowUp` على حدة لإزالة السباق في WebKit.
+  - `frontend/e2e/export-transform.spec.ts`: انتظار استقرار أنيميشن ظهور `URLImage` (`280ms` `BackEaseOut`) واكتمال الصورة قبل الالتقاط في WebKit.
+  - `frontend/src/lib/canvas/text-stroke-filter.ts` و`frontend/src/lib/canvas/curved-text-utils.ts`: إضافة مجس `supportsScaledCanvasSvgStrokeFilter()` وتنفيذ بديل موحّد للحد على الكتلة بأكملها لـ WebKit (تجاهل `url(#...)`) وFirefox (تمدد ببكسل الجهاز عند CTM `2×`) دون رسم حد لكل حرف.
+- **`F-R2-05` (`Final scoped acceptance summary`, job `136562362339`):** نفاد مساحة القرص (`No space left on device`) أثناء تجميع الأدلة؛ أُعيدت تسمية مخرج `full-gate` في `ci.yml` إلى `ci-full-summary` لمنع إعادة تنزيله في `acceptance-gate`، وأُضيف تفريغ أدوات الـ runner وحذف `downloaded-evidence` بعد تحقق `report-merge.mjs` في `ci.yml` و`e2e-acceptance.yml`.
+- **تنظيف الفروع الموازية:** حُذفا فرعا الريموت المدموجان مسبقاً `fix/print-export-parity-closure` و`fix/ui-audit-followup` وأُزيل الـ worktree اليتيم `well-mollusk` قبل إطلاق جولة R3.
+- **حالة R3:** قيد التجهيز والتشغيل السحابي على الـ SHA الجديد — لا إعلان نجاح أو دمج إلى `main` قبل وصول نتائج R3 الكاملة.
+
 ## شروط الإغلاق
 
 آخر SHA واحد، discovery/project inventory مطابق للمنفذ، لا failed/flaky/skip غير مفسر، artifacts trace/screenshots/video المتاح ومخرجات/hash ومراجع البيئة، وإعادة كاملة أخيرة. نقص hardware/OAuth/Modal أو capability يُسجّل BLOCKED مستقلاً، ولا توصف شهادة التطبيق كاملة بأنها PASS مع نقص رحلة لازمة.

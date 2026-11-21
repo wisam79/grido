@@ -39,9 +39,11 @@ test.describe('Canvas actual pointer drag — report-only performance', () => {
       description: 'report-only: no approved FPS floor',
     });
     await page.evaluate(() => {
-      const report = { samples: [] as number[], last: performance.now(), frame: 0 };
+      const report = { samples: [] as number[], last: null as number | null, frame: 0 };
       const collect = (time: number) => {
-        report.samples.push(time - report.last);
+        if (report.last !== null) {
+          report.samples.push(time - report.last);
+        }
         report.last = time;
         report.frame = requestAnimationFrame(collect);
       };

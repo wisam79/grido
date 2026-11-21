@@ -3,7 +3,7 @@ import { canvasSnapshot, expectElementCount } from './helpers/canvas-readonly';
 import { ensureSingle, exportCanvasFile, saveProject } from './helpers/gui';
 import { test, expect } from './helpers/real-app';
 // @ts-expect-error Independent verifier is an ESM Node helper.
-import { verifyOutput } from '../../../scripts/e2e/verify-output.mjs';
+import { verifyOutput } from '../../scripts/e2e/verify-output.mjs';
 
 // Sticker catalog, fields, row mapping and insertion all use real GUI input.
 test('[J05] Sticker QR customization VDP rows real PNG and decode', async ({

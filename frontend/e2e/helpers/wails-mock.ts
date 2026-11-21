@@ -6,6 +6,13 @@ import type { Page } from '@playwright/test';
 
 export { setupWailsV3Bridge, waitForAppReady };
 
+const memoryTrimCounts = new WeakMap<Page, number>();
+
+/** Successful authorized mock cleanup calls; not native memory-release proof. */
+export function getMockMemoryTrimCount(page: Page): number {
+  return memoryTrimCounts.get(page) ?? 0;
+}
+
 /** Browser integration only: UI is real, native IPC/files/services are mocked. */
 export async function setupWailsMock(page: Page) {
   return setupWailsV3Bridge(page);
@@ -33,6 +40,7 @@ export const test = base.extend<{ externalMocks: string[]; integrationGuard: voi
       const origin = new URL(baseURL!).origin;
       const traffic: Array<{ method: string; url: string; policy: string }> = [];
       const errors: string[] = [];
+      memoryTrimCounts.set(page, 0);
       const isolated = ISOLATED.has(testInfo.file.replace(/\\/g, '/').split('/').pop()!);
       testInfo.annotations.push({ type: 'fixture-kind', description: 'mocked-wails' });
       testInfo.annotations.push({
@@ -80,6 +88,41 @@ export const test = base.extend<{ externalMocks: string[]; integrationGuard: voi
             policy: 'offline-fixture-model-warmup-disabled',
           });
           await route.abort('blockedbyclient');
+          return;
+        }
+        if (url.pathname === '/api/trim-memory') {
+          // Mirror AssetServer + LocalApiGuard, not an /api/* allowlist.
+          const request = route.request();
+          const headers = request.headers();
+          const token = getMockLedger(page)
+            ?.rpc.filter((call) => call.name === 'GetLocalApiToken')
+            .at(-1)?.result;
+          let sameHost = true;
+          try {
+            if (headers.origin) sameHost = new URL(headers.origin).host === url.host;
+          } catch {
+            sameHost = false;
+          }
+          if (
+            !sameHost ||
+            typeof token !== 'string' ||
+            !token ||
+            headers['x-grido-session'] !== token
+          ) {
+            errors.push('Mock trim-memory requires same-host origin and valid IPC session token');
+            await route.fulfill({ status: 403, json: { status: 'error' } });
+          } else if (request.method() !== 'POST') {
+            errors.push(`Mock trim-memory requires POST, received ${request.method()}`);
+            await route.fulfill({ status: 405, json: { status: 'error' } });
+          } else {
+            memoryTrimCounts.set(page, getMockMemoryTrimCount(page) + 1);
+            traffic.push({
+              method: 'POST',
+              url: url.href,
+              policy: 'mock-memory-trim:authorized',
+            });
+            await route.fulfill({ status: 200, json: { status: 'ok' } });
+          }
           return;
         }
         if (url.pathname === '/api/upload-media' || url.pathname === '/api/upload-print-image') {
@@ -166,6 +209,7 @@ export const test = base.extend<{ externalMocks: string[]; integrationGuard: voi
                 coverageKind: isolated ? 'isolated-regression' : 'gui-integration',
                 externalMocks,
                 traffic,
+                memoryTrimCount: getMockMemoryTrimCount(page),
                 networkErrors: errors,
                 runtime: rpc ?? null,
               },

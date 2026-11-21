@@ -1,7 +1,12 @@
 import { expect } from '@playwright/test';
 
 import { stageImageSources } from './helpers/konva-probes';
-import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import {
+  test,
+  setupWailsMock,
+  waitForAppReady,
+  getMockMemoryTrimCount,
+} from './helpers/wails-mock';
 
 test.describe('Background Removal Smoke Test', () => {
   test.beforeEach(async ({ page }) => {
@@ -17,12 +22,14 @@ test.describe('Background Removal Smoke Test', () => {
 
     const bgButton = page.getByRole('button', { name: 'عزل الخلفية' }).first();
     await expect(bgButton).toBeVisible();
+    const trimsBefore = getMockMemoryTrimCount(page);
     await bgButton.click();
 
     // سلوك فعلي لا مجرد ظهور: النتيجة الموكولة تُطبَّق على عقدة الصورة في الكانفس
     await expect
       .poll(() => stageImageSources(page), { timeout: 20000 })
       .toContain('mock_bg_removed');
+    await expect.poll(() => getMockMemoryTrimCount(page)).toBeGreaterThan(trimsBefore);
 
     // والزر يعود لحالته بعد اكتمال العملية (دورة المعالجة اكتملت)
     await expect(bgButton).toHaveAttribute('title', 'عزل الخلفية', { timeout: 15000 });

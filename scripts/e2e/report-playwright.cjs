@@ -48,8 +48,10 @@ class AcceptanceReporter {
     this.results.set(test.id, attempts);
   }
 
-  onError() {
+  onError(error) {
     this.errors += 1;
+    const detail = error?.message || (typeof error === 'string' ? error : 'Unknown Playwright error');
+    process.stderr.write(`[acceptance-reporter] ${detail}\n`);
   }
 
   onEnd(result) {

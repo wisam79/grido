@@ -27,12 +27,18 @@ test.describe('Phone bridge GUI — stateful mocked integration, no real phone/s
     expect(
       ledger.rpc.filter((call) => call.name === 'GetPhoneBridgeStatus').at(-1)?.result,
     ).toMatchObject({ isRunning: true });
+    const startCallsBeforeRestart = ledger.rpc.filter(
+      (call) => call.name === 'StartPhoneBridge',
+    ).length;
+    expect(startCallsBeforeRestart).toBeGreaterThanOrEqual(1);
 
     await dialog.getByRole('button', { name: 'إعادة تعيين الجلسة', exact: true }).click();
     await expect(address).toHaveValue('http://127.0.0.1:8741/cam?token=mock-token-2');
     await expect(dialog.getByText('الجسر متصل ويعمل', { exact: true })).toBeVisible();
     await expect(page.getByText('تمت إعادة تشغيل الجسر', { exact: true })).toBeVisible();
-    expect(ledger.rpc.filter((call) => call.name === 'StartPhoneBridge')).toHaveLength(2);
+    expect(ledger.rpc.filter((call) => call.name === 'StartPhoneBridge')).toHaveLength(
+      startCallsBeforeRestart + 1,
+    );
     expect(ledger.rpc.filter((call) => call.name === 'StopPhoneBridge')).toHaveLength(1);
 
     await dialog.getByRole('button', { name: 'إيقاف الجسر', exact: true }).click();

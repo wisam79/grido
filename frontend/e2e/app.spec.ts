@@ -15,9 +15,14 @@ test.describe('Project save/reload — stateful mocked integration, not real fil
     const projectName = `مشروع حفظ فريد ${testInfo.project.name}-${testInfo.testId}`;
     await page.goto('/');
     await waitForAppReady(page);
+    const ledger = getMockLedger(page)!;
+    await expect
+      .poll(() => ledger.rpc.filter((call) => call.name === 'GetStartupFile').at(-1)?.result)
+      .toBe('');
+    await expect.poll(() => stageImageSources(page)).toBe('');
     await page.getByTestId('mode-tab-single').click();
     await page.getByTestId('toolbar-insert').click();
-    await expect.poll(() => stageImageSources(page)).not.toBe('');
+    await expect.poll(() => stageImageSources(page)).toContain('/local-image/saved-b64.png');
     const savedImage = await stageImageSources(page);
     await page.getByTestId('toolbar-projects').click();
     const library = page.getByRole('dialog');
@@ -34,12 +39,16 @@ test.describe('Project save/reload — stateful mocked integration, not real fil
       exact: true,
     });
     await expect(openProject).toBeVisible();
-    const ledger = getMockLedger(page)!;
     const save = ledger.rpc.find((call) => call.name === 'SaveProject')!;
     const saved = save.args[0] as { id: string; name: string; elements: string };
     expect(saved.name).toBe(projectName);
     expect(saved.id).not.toBe('mock-proj-1');
-    expect(JSON.parse(saved.elements)).toHaveLength(1);
+    const savedElements = JSON.parse(saved.elements);
+    expect(savedElements).toHaveLength(1);
+    expect(savedElements[0]).toMatchObject({
+      type: 'image',
+      imageSrc: '/local-image/saved-b64.png',
+    });
     expect(ledger.projects.find((project) => project.id === saved.id)?.elements).toBe(
       saved.elements,
     );

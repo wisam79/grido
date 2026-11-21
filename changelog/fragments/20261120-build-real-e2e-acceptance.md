@@ -5,10 +5,16 @@ related_files:
   - .github/workflows/ci.yml:1
   - .github/workflows/e2e-acceptance.yml:1
   - frontend/playwright.acceptance.config.ts:1
+  - frontend/vitest.config.ts:28
   - frontend/e2e/helpers/wails-mock.ts:1
+  - frontend/e2e/helpers/wails-v3-bridge.ts:593
+  - frontend/src/lib/canvas/text-stroke-filter.ts:1
+  - frontend/src/lib/canvas/curved-text-utils.ts:667
   - runtime_harness_e2e.go:1
   - internal/service/runtime_dialog_e2e.go:1
   - scripts/e2e/report-run.mjs:1
+  - scripts/e2e/report-playwright.cjs:51
+  - scripts/e2e/report-infrastructure.mjs:1
   - scripts/e2e/supabase-fixture.mjs:1
   - frontend/src/hooks/use-filter-cache.ts:1
   - admin-web/vite.config.ts:25

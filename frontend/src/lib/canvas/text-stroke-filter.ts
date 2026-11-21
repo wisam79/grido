@@ -20,6 +20,58 @@ interface BuiltFilter {
 /** 🛡️ M18: الفلاتر المبنية فعلياً — المفتاح `${radius}|${color}` */
 const builtFilters = new Map<string, BuiltFilter>();
 
+let svgStrokeFilterSupport: boolean | null = null;
+
+/**
+ * Probes whether Canvas 2D both honors SVG `url(#...)` filters and scales
+ * `feMorphology` dilation radius by the current CTM scale.
+ * - Chromium/WebView2: scales dilation with CTM → returns `true`.
+ * - Firefox: honors `url(#...)` but applies `feMorphology` in device pixels → returns `false`.
+ * - WebKit: ignores SVG `url(#...)` filters on Canvas 2D → returns `false`.
+ * - Non-rasterizing environments (jsdom/SSR): returns `true` without caching `false`.
+ */
+export function supportsScaledCanvasSvgStrokeFilter(): boolean {
+  if (svgStrokeFilterSupport !== null) return svgStrokeFilterSupport;
+  if (typeof document === 'undefined') return true;
+
+  const probe = document.createElement('canvas');
+  probe.width = 32;
+  probe.height = 32;
+  try {
+    const ctx = probe.getContext('2d');
+    if (!ctx || typeof ctx.getImageData !== 'function' || typeof ctx.fillRect !== 'function') {
+      return true;
+    }
+    const probeFilterId = ensureTextStrokeFilter(2, '#0000ff');
+    if (!probeFilterId) return true;
+
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.filter = `url(#${probeFilterId})`;
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(6, 6, 4, 4);
+    ctx.filter = 'none';
+
+    const { data } = ctx.getImageData(0, 0, 32, 32);
+    const centerIdx = (16 * 32 + 16) * 4;
+    if (data[centerIdx + 3] < 150 || data[centerIdx] < 150) {
+      return true;
+    }
+
+    // 3 device px outside [12..20): dilated blue only if radius=2 was scaled by 2x to 4px.
+    const haloIdx = (16 * 32 + 9) * 4;
+    const br = data[haloIdx];
+    const bg = data[haloIdx + 1];
+    const bb = data[haloIdx + 2];
+    const ba = data[haloIdx + 3];
+    const supported = ba > 150 && bb > 150 && br < 80 && bg < 80;
+    svgStrokeFilterSupport = supported;
+    return supported;
+  } finally {
+    probe.width = 0;
+    probe.height = 0;
+  }
+}
+
 export function getTextStrokeFilterId(radius: number, color: string): string {
   const cleanColor = color.toLowerCase().replace(/[^a-z0-9]/g, '');
   const cleanRadius = Math.round(radius * 10) / 10;

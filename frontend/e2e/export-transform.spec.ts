@@ -97,18 +97,37 @@ async function compareRotatedPreviewWithExport(page: Page, kind: 'text' | 'image
       window as unknown as {
         __gridoStage?: {
           find: (selector: string) => Array<{ image?: () => { width?: number } | undefined }>;
+          findOne?: (selector: string) => {
+            opacity?: () => number;
+            scaleX?: () => number;
+            scaleY?: () => number;
+          } | null;
         };
       }
     ).__gridoStage;
     if (!stage) throw new Error('stage missing');
 
-    // اترك تأثيرات مزامنة الهندسة/تحميل الصورة تكتمل قبل أخذ المقاييس
-    for (let i = 0; i < 40; i++) {
+    const elementId = store.getState().elements[0]?.id as string | undefined;
+    // اترك تأثيرات مزامنة الهندسة/تحميل الصورة ورسوم الظهور تكتمل قبل أخذ المقاييس
+    let settledTicks = 0;
+    for (let i = 0; i < 120; i++) {
       await new Promise((resolve) => setTimeout(resolve, 25));
       if (elementKind !== 'image') continue;
       const image = stage.find('Image')[0]?.image?.();
-      if (image && (image.width ?? 0) > 0) break;
+      const node = elementId ? stage.findOne?.(`#${elementId}`) : null;
+      const nodeReady =
+        !node ||
+        ((node.opacity?.() ?? 1) >= 0.99 &&
+          Math.abs((node.scaleX?.() ?? 1) - 1) < 0.005 &&
+          Math.abs((node.scaleY?.() ?? 1) - 1) < 0.005);
+      if (image && (image.width ?? 0) > 0 && nodeReady) {
+        settledTicks++;
+        if (settledTicks >= 2) break;
+      } else {
+        settledTicks = 0;
+      }
     }
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     await new Promise((resolve) => setTimeout(resolve, 250));
 
     const finalState = store.getState();

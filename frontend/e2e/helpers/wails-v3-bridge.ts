@@ -224,8 +224,10 @@ function statefulHandlers(projects: MockProject[]) {
     },
     345087440: async () => clipboard,
     93234400: async () => {
-      phoneRunning = true;
-      phoneSession++;
+      if (!phoneRunning) {
+        phoneRunning = true;
+        phoneSession++;
+      }
       return {
         ip: '127.0.0.1',
         port: 8741,
@@ -587,7 +589,10 @@ export async function setupWailsV3Bridge(
         result = control.value;
       }
       entry.result = structuredClone(result ?? null);
-      await route.fulfill({ json: result ?? null });
+      // Playwright infers JSON Content-Type only for truthy `json` values.
+      // Wails chooses response.json()/text() by that header: without it an
+      // empty Go string becomes literal '""' and null/false become strings.
+      await route.fulfill({ contentType: 'application/json', json: result ?? null });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (entry) entry.error = message;

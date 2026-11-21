@@ -26,9 +26,9 @@ test('[J07] Settings theme canvas zoom menu outcomes survive restart', async ({ 
   expect(dark).not.toBe(initiallyDark);
   const uiScale = () =>
     page
-      .locator('#root')
-      .evaluate((root) =>
-        Number((root as HTMLElement).style.getPropertyValue('--grido-ui-zoom') || '1'),
+      .locator('html')
+      .evaluate((html) =>
+        Number((html as HTMLElement).style.getPropertyValue('--grido-ui-zoom') || '1'),
       );
   const originalUiScale = await uiScale();
   await settingsAction(page, 'تكبير حجم الواجهة');

@@ -1,7 +1,12 @@
 import { expect } from '@playwright/test';
 
 import { stageImageSources } from './helpers/konva-probes';
-import { test, setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+import {
+  test,
+  setupWailsMock,
+  waitForAppReady,
+  getMockMemoryTrimCount,
+} from './helpers/wails-mock';
 
 test.describe('AI Tools Workflow E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,6 +23,7 @@ test.describe('AI Tools Workflow E2E', () => {
     // Trigger AI background removal — الزر حتمي الظهور بعد إدراج صورة
     const bgRemovalBtn = page.getByRole('button', { name: /عزل الخلفية|عزل/ }).first();
     await expect(bgRemovalBtn).toBeVisible();
+    const trimsBefore = getMockMemoryTrimCount(page);
     await bgRemovalBtn.click();
 
     // أثر فعلي: رابط الصورة الموكول (/local-image/mock_bg_removed.png) وصل
@@ -25,6 +31,7 @@ test.describe('AI Tools Workflow E2E', () => {
     await expect
       .poll(() => stageImageSources(page), { timeout: 20000 })
       .toContain('mock_bg_removed');
+    await expect.poll(() => getMockMemoryTrimCount(page)).toBeGreaterThan(trimsBefore);
 
     // Canvas stays stable and no crash occurs
     await expect(page.locator('#canvas-area')).toBeVisible();

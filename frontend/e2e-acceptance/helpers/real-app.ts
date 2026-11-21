@@ -3,11 +3,11 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { test as base, expect, chromium } from '@playwright/test';
 // @ts-expect-error Node-owned fixture generator intentionally stays outside frontend compilation.
-import { generateJourneyFixtures } from '../../../../scripts/e2e/journey-fixtures.mjs';
+import { generateJourneyFixtures } from '../../../scripts/e2e/journey-fixtures.mjs';
 // @ts-expect-error Backend-owned transparent native third-party auth contract fixture.
-import { startRuntimeAuthContract } from '../../../../scripts/e2e/runtime-auth-contract.mjs';
+import { startRuntimeAuthContract } from '../../../scripts/e2e/runtime-auth-contract.mjs';
 // @ts-expect-error Node-owned process runner intentionally stays outside frontend compilation.
-import { launchRuntime } from '../../../../scripts/e2e/runtime-process.mjs';
+import { launchRuntime } from '../../../scripts/e2e/runtime-process.mjs';
 import type { Browser, BrowserContext, Page, TestInfo } from '@playwright/test';
 
 export type RuntimeHandle = {

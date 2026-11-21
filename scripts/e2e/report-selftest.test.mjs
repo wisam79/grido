@@ -79,3 +79,18 @@ test('run wrapper refuses local E2E before any browser/process launch', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /restricted to GitHub Actions/);
 });
+
+test('infrastructure blocker is truthful non-execution evidence, not an acceptance manifest', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'grido-infrastructure-selftest-'));
+  try {
+    const output = path.join(root, 'infrastructure-failure.json');
+    const result = spawnSync(process.execPath, [path.join(here, 'report-infrastructure.mjs'), '--stage', 'local-supabase-provision', '--outcome', 'failure', '--output', output], { encoding: 'utf8' });
+    assert.equal(result.status, 0);
+    const report = readJson(output);
+    assert.equal(report.executed, false);
+    assert.equal(report.wholeApplicationAcceptance, false);
+    assert.equal(report.scopedGate, 'failed');
+    assert.ok(validateSchema(report, schema).length);
+    assert.ok(report.blockedCapabilities.length);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

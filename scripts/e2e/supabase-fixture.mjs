@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 // CI-only, real local Supabase. No linked/cloud commands, no repository .env,
 // no route mocks, no production config/migration writes. Node built-ins only.
+// Invoke as `node -- scripts/e2e/supabase-fixture.mjs start|stop ...`.
+// The explicit Node option terminator is required: Node 24 pre-parses an
+// application's --env-file even after its script path unless `--` precedes it.
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -137,14 +140,28 @@ async function request(api, key, token, endpoint, method = 'GET', body) {
 }
 function requireResult(condition, message) { if (!condition) throw new Error(message); }
 async function stop() {
-  const marker = JSON.parse(await fs.readFile(path.join(root, 'fixture-marker.json'), 'utf8'));
+  let markerText;
+  try { markerText = await fs.readFile(path.join(root, 'fixture-marker.json'), 'utf8'); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    // Provisioning may fail before the script or before stack initialization.
+    // This is a cleanup no-op, not evidence of successful provisioning. Never
+    // target arbitrary Docker projects or delete unowned paths without marker.
+    process.stdout.write('No disposable fixture ownership marker; no stack was initialized by this provisioner.\n');
+    return;
+  }
+  const marker = JSON.parse(markerText);
   requireResult(/^grido-e2e-[a-f0-9]{16}$/.test(marker.projectId), 'Invalid fixture ownership marker');
   stage = 'stop';
-  run('supabase', ['stop', '--workdir', root, '--project-id', marker.projectId, '--no-backup']);
-  // Preserve sanitized reports only. Never upload the root, env or CLI temp data.
-  await fs.rm(path.join(root, 'private'), { recursive: true, force: true });
-  await fs.rm(path.join(root, 'supabase', '.temp'), { recursive: true, force: true });
-  await fs.rm(envFile, { force: true });
+  try {
+    run('supabase', ['stop', '--workdir', root, '--project-id', marker.projectId, '--no-backup']);
+  } finally {
+    // Remove credentials even when Docker stop fails; still return nonzero for
+    // failed teardown. Preserve only sanitized reports, never upload the root.
+    await fs.rm(path.join(root, 'private'), { recursive: true, force: true });
+    await fs.rm(path.join(root, 'supabase', '.temp'), { recursive: true, force: true });
+    await fs.rm(envFile, { force: true });
+  }
   process.stdout.write('Disposable Supabase fixture stopped; private state removed.\n');
 }
 async function start() {

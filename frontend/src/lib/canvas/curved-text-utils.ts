@@ -6,7 +6,7 @@
 import { TEXT_COLOR_DEFAULT } from './canvas-colors';
 import { getCurvedTextMetrics } from './curved-text-metrics';
 import { normalizeCurvedText } from './text-helpers';
-import { warmTextStrokeFilter } from './text-stroke-filter';
+import { supportsScaledCanvasSvgStrokeFilter, warmTextStrokeFilter } from './text-stroke-filter';
 import { MAX_EXPORT_PIXELS } from '../export/export-limits';
 
 import type { CanvasFillStyle, GlyphTransform } from './fill-paint';
@@ -660,10 +660,51 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
       offCtx.textBaseline = 'middle';
       const offFill = options.createFill ? options.createFill(offCtx) : fillStyle;
       paintGlyphs(offCtx, offFill);
-      ctx.save();
-      ctx.filter = `url(#${filterId})`;
-      ctx.drawImage(scratchEl, 0, 0, offW, offH, originX, originY, boxW, boxH);
-      ctx.restore();
+      if (supportsScaledCanvasSvgStrokeFilter()) {
+        ctx.save();
+        ctx.filter = `url(#${filterId})`;
+        ctx.drawImage(scratchEl, 0, 0, offW, offH, originX, originY, boxW, boxH);
+        ctx.restore();
+      } else if (stroke) {
+        // مسار بديل موحَّد للمتصفحات التي تتجاهل فلتر SVG على Canvas 2D (WebKit)
+        // أو تطبّق التمدد بوحدة بكسل الجهاز بدل فضاء المستخدم المُحجَّم (Firefox).
+        const tintCanvas = document.createElement('canvas');
+        tintCanvas.width = offW;
+        tintCanvas.height = offH;
+        try {
+          const tintCtx = tintCanvas.getContext('2d');
+          if (tintCtx) {
+            tintCtx.drawImage(scratchEl, 0, 0, offW, offH, 0, 0, offW, offH);
+            tintCtx.globalCompositeOperation = 'source-in';
+            tintCtx.fillStyle = stroke;
+            tintCtx.fillRect(0, 0, offW, offH);
+            const maxRadius = Math.max(0.5, strokeWidth);
+            for (let r = 2.5; ; r += 2.5) {
+              const radius = Math.min(r, maxRadius);
+              const steps = Math.max(12, Math.min(36, Math.ceil(Math.PI * 2 * radius)));
+              for (let s = 0; s < steps; s++) {
+                const angle = (s / steps) * Math.PI * 2;
+                ctx.drawImage(
+                  tintCanvas,
+                  0,
+                  0,
+                  offW,
+                  offH,
+                  originX + Math.cos(angle) * radius,
+                  originY + Math.sin(angle) * radius,
+                  boxW,
+                  boxH,
+                );
+              }
+              if (radius >= maxRadius) break;
+            }
+          }
+          ctx.drawImage(scratchEl, 0, 0, offW, offH, originX, originY, boxW, boxH);
+        } finally {
+          tintCanvas.width = 0;
+          tintCanvas.height = 0;
+        }
+      }
       unifiedStroke = true;
       if (!retained) {
         // كانفس فوق السقف: مؤقت لهذا الاستدعاء فقط — تصفير الأبعاد يحرر

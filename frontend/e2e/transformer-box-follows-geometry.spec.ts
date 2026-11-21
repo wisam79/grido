@@ -64,12 +64,22 @@ test.describe('Transformer box follows store geometry', () => {
 
     // تكبير ناعم (عامل 1.015 لكل ضغطة) — تغيّر أبعاد من المتجر
     await page.keyboard.press('Alt+ArrowUp');
+    await expect
+      .poll(
+        async () => {
+          const b = await transformerBox(page);
+          return b && b.w > initial!.w + 1;
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
+    const afterFirstGrow = (await transformerBox(page))!;
     await page.keyboard.press('Alt+ArrowUp');
     await expect
       .poll(
         async () => {
           const b = await transformerBox(page);
-          return b && b.w > initial!.w + 2;
+          return b && b.w > afterFirstGrow.w + 1;
         },
         { timeout: 5000 },
       )

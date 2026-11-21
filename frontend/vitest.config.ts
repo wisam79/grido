@@ -29,6 +29,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/e2e/**',
+      '**/e2e-acceptance/**',
       '**/.{idea,git,cache,output,temp}/**',
     ],
     coverage: {
@@ -43,6 +44,7 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/e2e/**',
+        '**/e2e-acceptance/**',
         '**/svg-paths.ts',
         '**/vision_bundle*',
       ],
