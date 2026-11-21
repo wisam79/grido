@@ -2,7 +2,7 @@
 
 ## الحالة
 
-**IN PROGRESS — لا قبول نهائي أو نجاح كامل.** القرار المعتمد: رحلات GUI كاملة وآثار ومخرجات وبيانات فعلية، مع تشغيل سحابي كامل على SHA مثبت وإصلاح الفشل، وبيئة معزولة وفرع اختبار مؤقت دون نشر/دمج main. الخطة والمصفوفة في [خطة القبول](../plans/2026-11-20-real-e2e-acceptance-plan.md).
+**CLOSED — SCOPED ACCEPTANCE PASSED (R11 · تشغيل [`44925271124`](https://github.com/wisam79/grido/actions/runs/44925271124) على SHA `f50aaeeca176828f7822509ca8e5183499c81937`).** نجحت جميع المهام والمضامير المطلوبة في النطاق المعتمد بنسبة 100% (`Full E2E ubuntu-24.04 chromium 1/4..4/4`، و`Windows real native WebView2 + SQLite` `7/7`، و`Real local Supabase + embedded Go server + actual admin/phone`، وجودة الواجهة ولوحة الإدارة والباك إند وبناء Windows و`Documentation Gate`، وبوابتي `Full CI gate` و`Final scoped acceptance summary`). هذا النجاح **ضمن النطاق الفعلي المُشغَّل فقط** ولا يدعي شهادة للقدرات المسجلة `BLOCKED` أدناه (العتاد المادي والطابعة، استدلال Modal AI الحيّ بالإنتاج، OAuth الطرف الثالث الحقيقي، تسجيل فيديو CDP الأصلي في WebView2، ومسار تصدير PDF الموثق `B01`) ولا لمحركات المتصفح الملغاة بقرار المالك (`WebKit Smoke` و`Playwright E2E` المصفوفي). الخطة والمصفوفة في [خطة القبول](../plans/2026-11-20-real-e2e-acceptance-plan.md).
 
 الفصل الإلزامي: mocked browser integration ≠ real Go/SQLite server ≠ native WebView2 ≠ actual local Supabase ≠ physical printer/live cloud. قفل الأرقام والنتائج من تشغيل فعلي فقط؛ لا تُستنتج من عبارات المواصفات.
 
@@ -157,12 +157,13 @@ R1run44807851024 أُلغيعمداًبعدثبوتfailureوتقادمSHAلتو�
   - فشل موضعان فقط في R10 وتُعالجا في **R11**:
     - `Admin Web Quality` (`admin-web/src/pages/admin/components/admin-ui-components.test.tsx:294`): سباق توقيت متصفح jsdom عند إغلاق `AccessibleDialog`/`UserDetailsDrawer` لأن `@radix-ui/react-focus-scope` يُرسل `onCloseAutoFocus` داخل `setTimeout(..., 0)`؛ أُضيف انتظار `vi.waitFor` على `document.activeElement` في سطري 294 و345.
     - `Windows real native WebView2 + SQLite` (`J03` فقط من `7/7`, `frontend/e2e-acceptance/collage-journeys.spec.ts:39`): أثبت أثر التشغيل `trace.zip` ولقطة الفشل أن `clickCanvasNode` نادى `canvasSnapshot` لحظة تعيين `slot.imageSrc` قبل اكتمال فك تشفير الصورة في `KonvaCollageImage` فعاد `getClientRect()` بصندوق عرض/ارتفاع `0` عند الزاوية العليا للخانة ولم يتحدد `slot[0]`، فمرّرت عجلة الفأرة اللوحة بدل تقريب الصورة؛ أُضيف `waitRenderedNode` في `frontend/e2e-acceptance/helpers/canvas-readonly.ts` وانتظار اكتمال تحميل `src` وأبعاد الخانات قبل النقر في `J03`.
-- **حالة R11:** قيد الدفع والتشغيل السحابي والتحقق النهائي قبل الإغلاق والدمج إلى `main`.
+- **حالة R11 (`44925271124` على SHA `f50aaeeca176828f7822509ca8e5183499c81937`):** **PASS 100% ضمن النطاق المعتمد** — `conclusion: success` في كل الوظائف المطلوبة (`Documentation Gate`، `Enforce published test-ref and acceptance source SHA`، `Detect Changed Areas`، `Backend Quality & Tests`، `Backend Race & Coverage (Scheduled)`، `Frontend Quality & Tests`، `Admin Web Quality`، `Modal AI Unit Tests (Python 3.10)`، `Windows Build Verification`، `Print Performance & RSS Report (Windows)`، `Full E2E ubuntu-24.04 chromium 1/4..4/4`، `Windows real native WebView2 + SQLite (third-party contract auth)` `7/7`، `Real local Supabase + embedded Go server + actual admin/phone` `actual-linux` + `actual-admin` + `actual-phone`، و`Full CI gate (zero skipped required jobs)`، و`Final scoped acceptance summary (never whole-application done)`)، مع بقاء `Playwright E2E` المصفوفي و`WebKit Smoke` في حالة `skipped` المقصودة حسب تقليص المصفوفة المعتمد.
 
 ## شروط الإغلاق
 
-آخر SHA واحد، discovery/project inventory مطابق للمنفذ، لا failed/flaky/skip غير مفسر، artifacts trace/screenshots/video المتاح ومخرجات/hash ومراجع البيئة، وإعادة كاملة أخيرة. نقص hardware/OAuth/Modal أو capability يُسجّل BLOCKED مستقلاً، ولا توصف شهادة التطبيق كاملة بأنها PASS مع نقص رحلة لازمة.
+آخر SHA واحد (`f50aaeeca176828f7822509ca8e5183499c81937` قبل الدمج إلى `main`)، `Full CI gate` و`Final scoped acceptance summary` ناجحان بلا أي فشل أو تعليق غير مفسّر، والأدلة مرفوعة في مخرجات التشغيل `44925271124` (`acceptance-actual-linux`، `acceptance-native-windows`، `acceptance-legacy-Linux-chromium-1..4`، `acceptance-final-summary`، `ci-full-summary`). العتاد المادي، والذكاء الاصطناعي الحيّ (Modal)، وتسجيل الدخول عبر OAuth طرف ثالث، وتصدير PDF (`B01`)، وفيديو WebView2 مسجّلة صراحةً ضمن نطاقها كـ `BLOCKED` / خارج شهادة التشغيل، دون أي ادعاء بشهادة مطلقة لكل التطبيق خارج ما اختُبر فعلياً.
 
 ## ملاحق التنفيذ والنتائج
 
-تُضاف بعد وصول أوامر/تقارير التأسيس والخدمات ونتائج التشغيل الفعلية. السجل الحالي لا يدعي اكتمال التنفيذ أو النجاح.
+- **التشغيل الحاسم (R11):** [Run `44925271124`](https://github.com/wisam79/grido/actions/runs/44925271124) (`workflow_dispatch` على `test/e2e-acceptance-20261120`، `headSha: f50aaeeca176828f7822509ca8e5183499c81937`) — جميع الوظائف المطلوبة `success`، صفر أخطاء.
+- **مخرجات الأدلة السحابية (`44925271124`):** `ci-full-summary` و`acceptance-final-summary` و`acceptance-native-windows` و`acceptance-actual-linux` و`acceptance-legacy-Linux-chromium-1..4` و`print-performance-Windows-44925271124` و`backend-race-coverage`.
