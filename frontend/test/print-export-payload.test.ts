@@ -1132,4 +1132,50 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     expect(onDone).not.toHaveBeenCalled();
     expect(mockToastSuccess).not.toHaveBeenCalled();
   });
+
+  it('يعتبر JOB_NOT_FOUND بعد نجاح PrintDirect إتماماً وتصفيةً طبيعية من طابور ويندوز بلا خطأ كاذب', async () => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
+    const onDone = vi.fn();
+    try {
+      mockPrintDirect.mockReset();
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 202,
+        status: 'Spooling',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
+      mockPollJobStatus.mockReset();
+      mockPollJobStatus.mockResolvedValueOnce({
+        success: false,
+        jobId: 202,
+        status: 'NotFound',
+        code: 'JOB_NOT_FOUND',
+        terminal: true,
+        error: 'job left queue',
+      } as Awaited<ReturnType<typeof PollJobStatus>>);
+
+      const { result } = renderHook(() => usePrintExport(makeContext({ printColorSpace: 'sRGB' })));
+      let attempt!: Promise<void>;
+      act(() => {
+        attempt = result.current.executePrint(0, onDone, {
+          directPrint: true,
+          printerName: 'Epson L805',
+        });
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20);
+        await vi.advanceTimersByTimeAsync(1600);
+        await attempt;
+      });
+
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('المهمة #202'));
+      expect(onDone).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

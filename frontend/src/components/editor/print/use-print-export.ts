@@ -349,6 +349,12 @@ export function usePrintExport({
               return;
             }
             if (!result.success) {
+              // بعد نجاح PrintDirect وحصولنا على jobId حقيقي، يحذف Windows Spooler
+              // المهمة المكتملة فور إرسالها للطابعة، فيُرجع PollJobStatus الكود JOB_NOT_FOUND.
+              if (result.code === 'JOB_NOT_FOUND') {
+                finish('success');
+                return;
+              }
               finish('failure', spoolFailureDetail(result));
               return;
             }
@@ -385,8 +391,28 @@ export function usePrintExport({
 
   const { paperWidth, paperHeight } = layout;
 
-  const buildItems = useCallback(async (): Promise<BuiltItems> => {
-    return buildCollagePayload({
+  const buildItems = useCallback(
+    async (
+      imageDimensions?: ReadonlyMap<string, { width: number; height: number }>,
+    ): Promise<BuiltItems> => {
+      return buildCollagePayload({
+        layout,
+        slots,
+        canvasWidth,
+        canvasHeight,
+        collageTemplate,
+        collageMargin,
+        collageGap,
+        collageRadius,
+        collageStrokeWidth,
+        collageStrokeColor,
+        collageShowCutLines,
+        collageShowEndCutLine,
+        cutLineStyle: printCutLineStyle,
+        imageDimensions,
+      });
+    },
+    [
       layout,
       slots,
       canvasWidth,
@@ -399,23 +425,9 @@ export function usePrintExport({
       collageStrokeColor,
       collageShowCutLines,
       collageShowEndCutLine,
-      cutLineStyle: printCutLineStyle,
-    });
-  }, [
-    layout,
-    slots,
-    canvasWidth,
-    canvasHeight,
-    collageTemplate,
-    collageMargin,
-    collageGap,
-    collageRadius,
-    collageStrokeWidth,
-    collageStrokeColor,
-    collageShowCutLines,
-    collageShowEndCutLine,
-    printCutLineStyle,
-  ]);
+      printCutLineStyle,
+    ],
+  );
 
   const buildSingleItems = useCallback(
     async (
@@ -505,12 +517,29 @@ export function usePrintExport({
         let stickerSrcMap: ReadonlyMap<string, string> | undefined;
         let freeformImageDimensions:
           ReadonlyMap<string, { width: number; height: number }> | undefined;
+        let collageImageDimensions:
+          ReadonlyMap<string, { width: number; height: number }> | undefined;
         if (mode !== 'collage') {
           const dims = await resolveFreeformImageDimensions(elements);
           if (attempt !== attemptRef.current) return;
 
           const canvasWidthMM = layout.imageWidthMM;
           const canvasHeightMM = layout.imageHeightMM;
+
+          // التحقق المبدئي من الصور غير المقروءة قبل إعادة راسترة ورفع الملصقات بلا جدوى
+          const blockingPreflight = runFreeformPreflight({
+            elements,
+            canvasWidthMM,
+            canvasHeightMM,
+            canvasWidthPx: canvasWidth,
+            canvasHeightPx: canvasHeight,
+            imageDimensions: dims,
+          });
+          if (blockingPreflight.blocking.length > 0) {
+            toast.error(`لا يمكن الطباعة: ${blockingPreflight.blocking[0].message}`);
+            setExporting(false);
+            return;
+          }
 
           const reraster = await ensureStickerPrintResolution(elements, {
             canvasWidthMM,
@@ -537,11 +566,6 @@ export function usePrintExport({
             canvasHeightPx: canvasHeight,
             imageDimensions: dims,
           });
-          if (preflight.blocking.length > 0) {
-            toast.error(`لا يمكن الطباعة: ${preflight.blocking[0].message}`);
-            setExporting(false);
-            return;
-          }
           const notices = [...reraster.notes, ...preflight.warnings.map((w) => w.message)];
           if (notices.length > 0) {
             toast.warning(
@@ -550,24 +574,11 @@ export function usePrintExport({
                 : `${notices.length} تنبيهات جودة (دقة) — تتم الطباعة`,
             );
           }
-        }
-
-        const built =
-          mode === 'collage'
-            ? await buildItems()
-            : await buildSingleItems(attempt, stickerSrcMap, freeformImageDimensions);
-        // الإلغاء أثناء الالتقاط/الرفع يمنع بدء طلب جديد أو تحرير حالة جولة أحدث.
-        if (attempt !== attemptRef.current) return;
-        if (!built) {
-          setExporting(false);
-          return;
-        }
-
-        // 🔍 فحص المحتوى قبل الطباعة: الصور غير المقروءة مانعة، والفراغ المقصود
-        // والدقة المنخفضة تحذيرات تستمر بعد تنبيه واحد.
-        if (mode === 'collage') {
+        } else {
+          // 🔍 فحص المحتوى قبل بناء الحمولة في الكولاج: الصور غير المقروءة تمنع بناء/رفع الحمولة
           const loadResult = await loadCollageSlotImages(slots);
           if (attempt !== attemptRef.current) return;
+          collageImageDimensions = getLoadedImageDimensions(slots, loadResult.loaded);
           const preflight = runCollagePreflight({
             slots,
             slotRectsMM: new Map(
@@ -584,7 +595,7 @@ export function usePrintExport({
                 }),
               ]),
             ),
-            imageDimensions: getLoadedImageDimensions(slots, loadResult.loaded),
+            imageDimensions: collageImageDimensions,
             failedSlotIds: loadResult.failedSlotIds,
           });
           if (preflight.blocking.length > 0) {
@@ -599,6 +610,17 @@ export function usePrintExport({
                 : `${preflight.warnings.length} تنبيهات جودة (فراغ/دقة) — تتم الطباعة`,
             );
           }
+        }
+
+        const built =
+          mode === 'collage'
+            ? await buildItems(collageImageDimensions)
+            : await buildSingleItems(attempt, stickerSrcMap, freeformImageDimensions);
+        // الإلغاء أثناء الالتقاط/الرفع يمنع بدء طلب جديد أو تحرير حالة جولة أحدث.
+        if (attempt !== attemptRef.current) return;
+        if (!built) {
+          setExporting(false);
+          return;
         }
 
         const { items, cutLines, composition } = built;

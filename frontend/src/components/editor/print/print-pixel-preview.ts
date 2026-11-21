@@ -22,12 +22,13 @@ import {
   resolveSlotCropMode,
   type SlotCropMode,
 } from '@/lib/export/export-primitives';
+import { applyPrintFilterOperation } from '@/lib/filters/custom-filters';
 import {
-  applyLuminanceThreshold,
   applyNearestPixelate,
   isPixelFilter,
   PIXELATE_BLOCK_PX,
 } from '@/lib/filters/pixel-filters';
+import { getOrderedPrintFilterOperations } from '@/lib/filters/print-filter-contract';
 import { buildAdjustmentCSS, type FilterableObject } from '@/lib/utils';
 
 /** سقف الضلع الأطول لكانفاس المعاينة — يكفي حدة الشاشة ويحفظ الذاكرة. */
@@ -99,7 +100,7 @@ export function renderPixelFilterPreview(
   src: string,
   filter: string,
   el: PixelPreviewSlotInput | undefined,
-  slotRectMM: { wMM: number; hMM: number },
+  slotRectMM: { wMM: number; hMM: number; dpi?: number },
 ): Promise<PixelPreviewResult> {
   if (!isPixelFilter(filter)) {
     return Promise.resolve({ url: '', naturalW: 0, naturalH: 0 });
@@ -107,15 +108,18 @@ export function renderPixelFilterPreview(
 
   // أبعاد الطباعة المحلية للخانة (تبدّل عند 90/270) مخفّضة إلى سقف المعاينة —
   // كتلة pixelate تُقاس بنسبة التصغير نفسها فتبقى المكعبات بمقياس المطبوع.
+  const effectiveDpi =
+    slotRectMM.dpi && Number.isFinite(slotRectMM.dpi) && slotRectMM.dpi > 0
+      ? slotRectMM.dpi
+      : DEFAULT_DPI;
   const localSize = getSlotLocalSize(slotRectMM.wMM, slotRectMM.hMM, el?.rotation);
-  const printW = Math.max(1, Math.round((localSize.width / 25.4) * DEFAULT_DPI));
-  const printH = Math.max(1, Math.round((localSize.height / 25.4) * DEFAULT_DPI));
+  const printW = Math.max(1, Math.round((localSize.width / 25.4) * effectiveDpi));
+  const printH = Math.max(1, Math.round((localSize.height / 25.4) * effectiveDpi));
   const shrink = Math.min(1, MAX_PREVIEW_PX / Math.max(printW, printH));
   const targetW = Math.max(4, Math.round(printW * shrink));
   const targetH = Math.max(4, Math.round(printH * shrink));
   const blockPx = Math.max(1, Math.round(PIXELATE_BLOCK_PX * shrink));
 
-  const adjustments = buildAdjustmentCSS(el);
   const key = buildPixelPreviewCacheKey(src, filter, el, targetW, targetH, blockPx);
 
   const cached = resultCache.get(key);
@@ -137,8 +141,6 @@ export function renderPixelFilterPreview(
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('no 2d context for pixel preview');
 
-    // تعديلات الألوان أولاً (نفس ترتيب Go: applyColorAdjustments قبل applyFilter)
-    ctx.filter = adjustments === 'none' ? 'none' : adjustments;
     // نافذة القصّ الفعلية للخانة (cover + zoom + dragX/dragY + rotation + cropMode)
     const { sx, sy, sw, sh } = computeSlotCrop(
       { width: nw, height: nh },
@@ -152,14 +154,18 @@ export function renderPixelFilterPreview(
         cropMode: el?.cropMode,
       },
     );
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
     ctx.filter = 'none';
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
 
+    // ترتيب العقد القانوني (مطابق لـ Konva و Go): الوصفة الأساسية (pixelate / threshold)
+    // أولاً، ثم تعديلات المستخدم (brightness → contrast → saturation) على بيانات البكسل.
     const imageData = ctx.getImageData(0, 0, targetW, targetH);
-    if (filter === 'pixelate') {
-      applyNearestPixelate(imageData.data, targetW, targetH, blockPx);
-    } else {
-      applyLuminanceThreshold(imageData.data);
+    for (const op of getOrderedPrintFilterOperations(filter, el)) {
+      if (op.kind === 'pixelate') {
+        applyNearestPixelate(imageData.data, targetW, targetH, blockPx);
+      } else {
+        applyPrintFilterOperation(imageData, op);
+      }
     }
     ctx.putImageData(imageData, 0, 0);
 

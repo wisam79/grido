@@ -302,7 +302,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     collageStrokeColor,
     collageShowCutLines,
     collageShowEndCutLine,
-    printDpi: printSettings.dpi,
+    printDpi: layout.dpi || printSettings.dpi,
     printShowCutLines: printSettings.showCutLines,
     printShowEndCutLine: printSettings.showEndCutLine,
     printCutLineStyle: printSettings.cutLineStyle || 'dashed',
@@ -424,10 +424,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   // مطابقة قالب الورق المدعوم من الطابعة مع مقاس الورقة الحالي
   const matchedPaper = useMemo(() => {
-    if (!supportedPapers.length) return null;
+    if (!sanitizedDriverPapers.length) return null;
 
     if (printSettings.paperId?.startsWith('driver:')) {
-      const directMatch = supportedPapers.find(
+      const directMatch = sanitizedDriverPapers.find(
         (p) => getDriverPaperKey(p) === printSettings.paperId,
       );
       if (directMatch) return directMatch;
@@ -437,7 +437,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const targetH = paperHeight;
     const isBorderless = effectiveMarginMM === 0;
 
-    const matches = supportedPapers.filter((p) => {
+    const matches = sanitizedDriverPapers.filter((p) => {
       return (
         (Math.abs(p.widthMM - targetW) <= 2.5 && Math.abs(p.heightMM - targetH) <= 2.5) ||
         (Math.abs(p.widthMM - targetH) <= 2.5 && Math.abs(p.heightMM - targetW) <= 2.5)
@@ -447,9 +447,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     if (isBorderless) {
       const borderlessMatch = matches.find((p) => p.isBorderless);
       if (borderlessMatch) return borderlessMatch;
+    } else {
+      const borderedMatch = matches.find((p) => !p.isBorderless);
+      if (borderedMatch) return borderedMatch;
     }
     return matches[0] || null;
-  }, [supportedPapers, printSettings.paperId, paperWidth, paperHeight, effectiveMarginMM]);
+  }, [sanitizedDriverPapers, printSettings.paperId, paperWidth, paperHeight, effectiveMarginMM]);
 
   // استنتاج القيمة المحددة في قائمة اختيار مقاس الورق
   const selectedPaperValue = useMemo(() => {
@@ -487,7 +490,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (matched) return getDriverPaperKey(matched);
     }
 
-    if (ALL_PAPER_SIZES.some((p) => p.id === currentId)) {
+    if (sanitizedDriverPapers.length === 0 && ALL_PAPER_SIZES.some((p) => p.id === currentId)) {
       return currentId;
     }
 
@@ -1030,6 +1033,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         </SelectItem>
                         <SelectItem value="solid" className="text-xs font-semibold cursor-pointer">
                           متصل
+                        </SelectItem>
+                        <SelectItem
+                          value="cropmarks"
+                          className="text-xs font-semibold cursor-pointer"
+                        >
+                          علامات الزوايا
                         </SelectItem>
                       </SelectContent>
                     </Select>

@@ -79,6 +79,7 @@ export async function exportCanvas(
           captureRect,
           {
             useFullResolution: true,
+            readiness: { fonts: true, images: true },
             ...(stickerOverrides?.imageOverrides.length
               ? { imageOverrides: stickerOverrides.imageOverrides }
               : {}),

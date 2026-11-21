@@ -300,6 +300,35 @@ describe('Print preview paper background', () => {
     const html = container.innerHTML;
     expect(html).not.toContain('linear-gradient');
   });
+
+  it('renders linear gradient per copy block rather than full sheet in collage mode', () => {
+    const { container } = render(
+      <SheetPreview
+        {...sheetProps}
+        mode="collage"
+        backgroundColor="#FFFFFF"
+        backgroundGradientColor2="#1E40AF"
+        backgroundGradientAngle={0}
+        slots={[
+          {
+            id: 'slot-1',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1,
+            imageSrc: '/local-image/a.png',
+          },
+        ]}
+      />,
+    );
+    const rootPaper = container.firstElementChild as HTMLElement;
+    expect(rootPaper.style.background).not.toContain('linear-gradient');
+    const copyBg = Array.from(rootPaper.children).find((el) =>
+      String((el as HTMLElement).style.background || '').includes('linear-gradient'),
+    );
+    expect(copyBg).toBeTruthy();
+  });
 });
 
 describe('Collage geometry (shared by Konva layer and quick bar)', () => {

@@ -240,6 +240,9 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		// ملف .tif للمتصفح = صفحة طباعة بصورة مكسورة بلا خطأ.
 		htmlImageName = baseName + "_preview.png"
 		htmlImagePath := filepath.Join(outDir, htmlImageName)
+		// مسار CMYK تخطّى drawCutLines في generatePrintSheet حتى لا تتضاعف خطوط
+		// القص في ملف الـ TIFF؛ نرسمها هنا على dc لإظهارها في صورة المعاينة HTML.
+		s.drawCutLines(dc, req)
 		previewImg := dc.Image()
 		if b := previewImg.Bounds(); b.Dx() > previewMaxWidth {
 			previewImg = imaging.Fit(previewImg, previewMaxWidth, previewMaxWidth, imaging.Linear)

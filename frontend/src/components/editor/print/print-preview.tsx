@@ -300,13 +300,15 @@ export function SheetPreview({
     backgroundColor !== 'transparent' &&
     backgroundGradientColor2 !== 'transparent',
   );
+  const sheetSolidBackground =
+    backgroundColor && backgroundColor !== 'transparent' ? backgroundColor : '#FFFFFF';
   const paperBackground = hasPaperGradient
     ? formatGradientCss(
         [0, backgroundColor, 1, backgroundGradientColor2 as string],
         'linear',
         backgroundGradientAngle,
       )
-    : backgroundColor || '#FFFFFF';
+    : sheetSolidBackground;
   // الأبعاد الطبيعية للصور بعد تحميلها (naturalWidth/Height) — تُستخدم لتحويل
   // سحب dragX/dragY شبكة البكسل إلى إزاحة نقل (%) مطابقة لمنطق Konva/التصدير
   const [naturalSizes, setNaturalSizes] = useState<Record<string, { w: number; h: number }>>({});
@@ -489,10 +491,25 @@ export function SheetPreview({
       <div
         className="w-full h-full relative overflow-hidden"
         style={{
-          background: paperBackground,
+          background: sheetSolidBackground,
           boxSizing: 'border-box',
         }}
       >
+        {hasPaperGradient &&
+          copyBlocks.map((block, i) => (
+            <div
+              key={`copy-bg-${i}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: `${(block.xMM / Math.max(1, paperWidthMM)) * 100}%`,
+                top: `${(block.yMM / Math.max(1, paperHeightMM)) * 100}%`,
+                width: `${(imageWidthMM / Math.max(1, paperWidthMM)) * 100}%`,
+                height: `${(imageHeightMM / Math.max(1, paperHeightMM)) * 100}%`,
+                background: paperBackground,
+                boxSizing: 'border-box',
+              }}
+            />
+          ))}
         {slots && slots.length > 0 ? (
           copyBlocks.map((block, i) => {
             return slots.map((slot, index) => (
@@ -567,7 +584,7 @@ export function SheetPreview({
     <div
       className="relative w-full h-full overflow-hidden"
       style={{
-        background: paperBackground,
+        background: sheetSolidBackground,
         boxSizing: 'border-box',
       }}
     >

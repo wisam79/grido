@@ -400,3 +400,29 @@ func TestApplyPureBlackCutLines_CropMarks_CornersOnly(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyPureBlackCutLines_PaperEdges(t *testing.T) {
+	// 50mm @ 300 DPI = round(50 * 300 / 25.4) = 591px
+	w := int(math.Round(50.0 * 300.0 / 25.4))
+	h := w
+	cmyk := image.NewCMYK(image.Rect(0, 0, w, h))
+	req := domain.PrintRequest{
+		ShowCutLines:  true,
+		CutLineStyle:  "solid",
+		DPI:           300,
+		PaperWidthMM:  50,
+		PaperHeightMM: 50,
+		CutLines: []domain.CutLine{
+			{X1: 50, Y1: 0, X2: 50, Y2: 50},
+			{X1: 0, Y1: 50, X2: 50, Y2: 50},
+		},
+	}
+	ApplyPureBlackCutLines(cmyk, req)
+
+	if px := cmyk.CMYKAt(w-1, h/2); px.K != 255 {
+		t.Errorf("expected right-edge cut line clamped inside x=%d, got %+v", w-1, px)
+	}
+	if px := cmyk.CMYKAt(w/2, h-1); px.K != 255 {
+		t.Errorf("expected bottom-edge cut line clamped inside y=%d, got %+v", h-1, px)
+	}
+}

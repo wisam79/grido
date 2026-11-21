@@ -184,6 +184,9 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 			startY := int(math.Max(0, lo))
 			endY := int(math.Min(float64(maxH-1), hi))
 			px := int(x1)
+			if px == maxW && maxW > 0 {
+				px = maxW - 1
+			}
 			for y := startY; y <= endY; y++ {
 				if !inDash(float64(y) - y1) {
 					continue
@@ -204,6 +207,9 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 			startX := int(math.Max(0, lo))
 			endX := int(math.Min(float64(maxW-1), hi))
 			py := int(y1)
+			if py == maxH && maxH > 0 {
+				py = maxH - 1
+			}
 			for x := startX; x <= endX; x++ {
 				if !inDash(float64(x) - x1) {
 					continue

@@ -13,6 +13,7 @@
  * هي الغلاف الأمين هناك.
  */
 import { MM_PER_INCH } from '@/lib/canvas/units';
+import { computeSlotCrop } from '@/lib/export/export-primitives';
 import { createLogger } from '@/lib/logger';
 
 import { getStickerTemplateById } from '../templates';
@@ -99,10 +100,11 @@ export async function ensureStickerPrintResolution(
     return { srcMap, newDimensions, notes };
   }
 
-  // 1) جمع المقاس المطلوب لكل مصدر (أكبر استخدام على الكانفس)
+  // 1) جمع المقاس المطلوب لكل مصدر مع الحفاظ على نسبة المصدر الأصلية (cover)
   interface Needed {
     widthMM: number;
     heightMM: number;
+    sourceAspect: number;
     source: StickerElementSource;
   }
   const neededBySrc = new Map<string, Needed>();
@@ -119,14 +121,27 @@ export async function ensureStickerPrintResolution(
     const dims = options.imageDimensions?.get(src);
     if (!dims || !(dims.width > 0) || !(dims.height > 0)) continue;
 
-    const dpiX = dims.width / (widthMM / MM_PER_INCH);
-    const dpiY = dims.height / (heightMM / MM_PER_INCH);
+    const crop = computeSlotCrop(dims, widthMM, heightMM, {});
+    const dpiX = crop.sw / (widthMM / MM_PER_INCH);
+    const dpiY = crop.sh / (heightMM / MM_PER_INCH);
     const effectiveDpi = Math.min(dpiX, dpiY);
     if (!Number.isFinite(effectiveDpi) || effectiveDpi >= minDpi) continue;
 
     const existing = neededBySrc.get(src);
-    if (!existing || widthMM * heightMM > existing.widthMM * existing.heightMM) {
-      neededBySrc.set(src, { widthMM, heightMM, source });
+    if (!existing) {
+      neededBySrc.set(src, {
+        widthMM,
+        heightMM,
+        sourceAspect: dims.width / dims.height,
+        source,
+      });
+    } else {
+      neededBySrc.set(src, {
+        widthMM: Math.max(existing.widthMM, widthMM),
+        heightMM: Math.max(existing.heightMM, heightMM),
+        sourceAspect: existing.sourceAspect,
+        source: existing.source,
+      });
     }
   }
 
@@ -134,7 +149,7 @@ export async function ensureStickerPrintResolution(
     return { srcMap, newDimensions, notes };
   }
 
-  // 2) إعادة التصيير والرفع — مصدر واحد مرة واحدة
+  // 2) إعادة التصيير والرفع — مصدر واحد مرة واحدة مع حفظ نسبة أبعاد المصدر الأصلية
   let upgraded = 0;
   for (const [oldSrc, need] of neededBySrc) {
     try {
@@ -144,7 +159,16 @@ export async function ensureStickerPrintResolution(
         continue;
       }
 
-      const target = computeTargetRasterPx(need.widthMM, need.heightMM, options.targetDpi);
+      const rawTarget = computeTargetRasterPx(need.widthMM, need.heightMM, options.targetDpi);
+      if (!rawTarget) {
+        notes.push('مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية');
+        continue;
+      }
+      const rawAspect = rawTarget.width / rawTarget.height;
+      const target =
+        Math.abs(need.sourceAspect - rawAspect) > 0.01
+          ? computeStickerCoverRasterSize(rawTarget.width, rawTarget.height, need.sourceAspect)
+          : rawTarget;
       if (!target) {
         notes.push('مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية');
         continue;

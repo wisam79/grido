@@ -213,6 +213,49 @@ describe('print-pixel-preview crop & cache key', () => {
     expect(centeredSx).toBe(300);
     expect(centeredSy).toBe(250);
   });
+
+  it('applies base threshold recipe BEFORE user brightness adjustments (canonical filter order)', async () => {
+    const putCalls: Array<Uint8ClampedArray> = [];
+    HTMLCanvasElement.prototype.getContext = vi.fn(function (this: HTMLCanvasElement) {
+      const w = this.width || 100;
+      const h = this.height || 100;
+      const buf = new Uint8ClampedArray(w * h * 4);
+      // Mid-gray pixels (100 < 128 threshold); with brightness=200:
+      // Canonical order (threshold -> brightness) produces 0; reversed order would produce 255.
+      for (let i = 0; i < buf.length; i += 4) {
+        buf[i] = 100;
+        buf[i + 1] = 100;
+        buf[i + 2] = 100;
+        buf[i + 3] = 255;
+      }
+      return {
+        drawImage: (...args: unknown[]) => {
+          drawImageCalls.push(args);
+        },
+        getImageData: () => ({
+          data: buf,
+          width: w,
+          height: h,
+        }),
+        putImageData: (img: ImageData) => {
+          putCalls.push(new Uint8ClampedArray(img.data));
+        },
+      } as unknown as CanvasRenderingContext2D;
+    }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+
+    await renderPixelFilterPreview(
+      'data:image/png;base64,threshold-order',
+      'threshold',
+      { ...baseSlot, filter: 'threshold', brightness: 200 },
+      { wMM: 20, hMM: 20, dpi: 150 },
+    );
+
+    expect(putCalls).toHaveLength(1);
+    expect(putCalls[0][0]).toBe(0);
+    expect(putCalls[0][1]).toBe(0);
+    expect(putCalls[0][2]).toBe(0);
+    expect(putCalls[0][3]).toBe(255);
+  });
 });
 
 describe('SheetPreview with active pixelPreviewSrc', () => {

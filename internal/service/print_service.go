@@ -259,6 +259,9 @@ func validatePrintItem(item domain.PrintItem, index int, scope string) error {
 	if item.Zoom < 0 || (item.Zoom > 0 && item.Zoom < 1) || item.Zoom > 3 {
 		return fmt.Errorf("%s item %d zoom %.4g must be 0 or between 1 and 3", scope, index+1, item.Zoom)
 	}
+	if item.CornerRadiusMM < 0 || item.BorderWidthMM < 0 {
+		return fmt.Errorf("%s item %d cornerRadiusMM (%.4g) and borderWidthMM (%.4g) must be non-negative", scope, index+1, item.CornerRadiusMM, item.BorderWidthMM)
+	}
 	if item.CropMode != "" && item.CropMode != "legacy" && item.CropMode != "centered" {
 		return fmt.Errorf("%s item %d cropMode %q must be legacy or centered", scope, index+1, item.CropMode)
 	}
@@ -834,10 +837,10 @@ func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintR
 	}
 
 	// 🖨️ RV-16-M1: مسار PDF يرسم خطوط القص متجهة فوق الصورة (drawPDFCutLines)
-	// فلا تُخبز نقطياً في الصورة المضمّنة — كانت تُرسم مرتين (نقطية داخل JPEG +
-	// متجهة فوقه) وتتضاعف عند حافة الورقة لأن النقطية مسحوبة 1.5px للداخل
-	// بينما المتجهة على المليمتر الخام.
-	if !strings.EqualFold(req.ExportFormat, "pdf") {
+	// ومسار CMYK يرسم خطوطاً سوداء نقية (ApplyPureBlackCutLines في saveOutput)،
+	// فلا تُخبز الخطوط الرمادية نقطياً في dc قبل التحويل — كانت تُرسم مرتين
+	// وتتضاعف عند حافة الورقة بسبب إزاحة 1.5px في drawCutLines.
+	if !strings.EqualFold(req.ExportFormat, "pdf") && !strings.EqualFold(req.ColorSpace, "cmyk") {
 		s.drawCutLines(dc, req)
 	}
 

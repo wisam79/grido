@@ -363,6 +363,18 @@ func TestValidatePrintItem_ZoomAndCropMode(t *testing.T) {
 			t.Fatalf("expected nil error for CropMode=%q, got %v", goodMode, err)
 		}
 	}
+
+	negCorner := base
+	negCorner.CornerRadiusMM = -1
+	if err := validatePrintItem(negCorner, 0, "sheet 1"); err == nil {
+		t.Fatalf("expected error for negative CornerRadiusMM, got nil")
+	}
+
+	negBorder := base
+	negBorder.BorderWidthMM = -0.5
+	if err := validatePrintItem(negBorder, 0, "sheet 1"); err == nil {
+		t.Fatalf("expected error for negative BorderWidthMM, got nil")
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

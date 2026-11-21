@@ -60,6 +60,8 @@ export interface CollagePayloadContext {
   collageShowCutLines: boolean;
   collageShowEndCutLine: boolean | undefined;
   cutLineStyle?: PrintSettings['cutLineStyle'];
+  /** أبعاد المصادر المحلولة مسبقاً في preflight (مفتاحها imageSrc) لتفادي التكرار التسلسلي */
+  imageDimensions?: ReadonlyMap<string, { width: number; height: number }>;
 }
 
 export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<BuiltItems> {
@@ -132,7 +134,23 @@ export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<B
   const stepXMM = actualCopies > 1 ? grid.cellWidth : 0;
   const stepYMM = actualCopies > 1 ? grid.cellHeight : 0;
 
-  for (const slot of slotTemplates) {
+  // حلّ أبعاد الخانات بالتوازي مع تفضيل الخريطة المحلولة في preflight
+  const slotDimensionsList = await Promise.all(
+    slotTemplates.map(async (slot) => {
+      if (!slot.imageSrc) return null;
+      const preloaded = ctx.imageDimensions?.get(slot.imageSrc);
+      if (preloaded && preloaded.width > 0 && preloaded.height > 0) {
+        return preloaded;
+      }
+      return Promise.race([
+        resolveImageDimensions(slot.imageSrc),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), CROP_DIMS_TIMEOUT_MS)),
+      ]);
+    }),
+  );
+
+  for (let i = 0; i < slotTemplates.length; i++) {
+    const slot = slotTemplates[i];
     const rect = computeCollageSlotRectMM(slot, slotGeometry, firstBlock);
     // نسبة الخانة المطبوعة بعد الهامش والفجوة — نسبة الإحداثيات الطبيعية
     // وحدها تتجاهل ما يقتطعه الهامش/الفجوة فتخطئ خانات Go في اقتصاص cover
@@ -146,13 +164,7 @@ export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<B
     // (تدهور آمن مطابق للسلوك السابق).
     let cropWindow: { cropX: number; cropY: number; cropW: number; cropH: number } | null = null;
     if (slot.imageSrc) {
-      // 🛡️ مهلة قصيرة: مصدر صامت (يتلف ولا يطلق onload/onerror) لا يجوز أن
-      // يعلّق مسار الطباعة كلها — انتهاء المهلة يعيد null فيسقط الاشتقاق
-      // إلى فرع Go القديم (تدهور آمن مطابق للسلوك السابق)
-      const dims = await Promise.race([
-        resolveImageDimensions(slot.imageSrc),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), CROP_DIMS_TIMEOUT_MS)),
-      ]);
+      const dims = slotDimensionsList[i];
       if (dims && dims.width > 0 && dims.height > 0) {
         const crop = computeSlotCrop(dims, rect.wMM, rect.hMM, {
           zoom: slot.zoom,
@@ -303,7 +315,11 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
       'image/png',
       undefined,
       captureRect,
-      { useFullResolution: true, imageOverrides: nodeOverrides },
+      {
+        useFullResolution: true,
+        imageOverrides: nodeOverrides,
+        readiness: { fonts: true, images: true },
+      },
     );
     if (!capturedBlob) {
       throw new Error('stage capture returned no blob');

@@ -258,7 +258,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const finalW = Math.round(targetW);
     const finalH = Math.round(targetH);
 
-    setCanvasSize(finalW, finalH, { templateAction: 'preserve' });
+    setCanvasSize(finalW, finalH, { templateAction: 'clear' });
     setShowBleedGuides(false);
   };
 

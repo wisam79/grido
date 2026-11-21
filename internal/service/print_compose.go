@@ -583,7 +583,7 @@ func (s *PrintService) composeCanvas(
 		if item.BorderWidthMM > 0 && item.BorderColor != "" {
 			// بكسل كانفاس في هذا السياق (سطر واحد مع نصف القطر أعلاه)
 			bPx := item.BorderWidthMM * scaleX
-			dc.SetHexColor(item.BorderColor)
+			dc.SetColor(parseColor(item.BorderColor))
 			dc.SetLineWidth(bPx)
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 			dc.Stroke()

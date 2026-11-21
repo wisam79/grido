@@ -258,3 +258,76 @@ func TestPrintService_CropMarks_CornersOnly(t *testing.T) {
 		}
 	}
 }
+
+func TestPrintService_CMYK_NoDoubleGhostCutLines(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    50.0,
+		PaperHeightMM:   50.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ShowCutLines:    true,
+		CutLineStyle:    "solid",
+		ColorSpace:      "CMYK",
+		ExportFormat:    "tiff",
+		CutLines: []domain.CutLine{
+			{X1: 25, Y1: 0, X2: 25, Y2: 50}, // Vertical center
+			{X1: 50, Y1: 0, X2: 50, Y2: 50}, // Right edge
+			{X1: 0, Y1: 50, X2: 50, Y2: 50}, // Bottom edge
+		},
+		Items: []domain.PrintItem{},
+	}
+
+	outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet failed: %v", err)
+	}
+	t.Cleanup(func() {
+		os.Remove(outPath)
+	})
+	if htmlDoc == "" {
+		t.Fatalf("expected non-empty htmlDoc preview")
+	}
+
+	outImg := cmykFromTIFFFile(t, outPath)
+	bounds := outImg.Bounds()
+	w, h := bounds.Dx(), bounds.Dy()
+
+	// Right-edge cut line at x=50mm must exist cleanly inside x=w-1 with pure black (K=255),
+	// and must not have a gray ghost line offset by 1.5px inside (x=w-4).
+	foundRightPureBlack := false
+	for y := h / 4; y < 3*h/4; y++ {
+		edgePx := outImg.CMYKAt(w-1, y)
+		if edgePx.K == 255 && edgePx.C == 0 && edgePx.M == 0 && edgePx.Y == 0 {
+			foundRightPureBlack = true
+		}
+		innerGhostPx := outImg.CMYKAt(w-4, y)
+		if innerGhostPx.K > 0 && innerGhostPx.K < 255 {
+			t.Fatalf("unexpected gray ghost pixel near right edge at (%d,%d): %+v", w-4, y, innerGhostPx)
+		}
+	}
+	if !foundRightPureBlack {
+		t.Errorf("expected pure-black right-edge cut line at x=%d", w-1)
+	}
+
+	// Bottom-edge cut line at y=50mm must exist cleanly at y=h-1 without gray ghost halo at y=h-4,
+	// nor gray ghost pixels next to the vertical center cut line.
+	foundBottomPureBlack := false
+	for x := w / 4; x < 3*w/4; x++ {
+		edgePx := outImg.CMYKAt(x, h-1)
+		if edgePx.K == 255 && edgePx.C == 0 && edgePx.M == 0 && edgePx.Y == 0 {
+			foundBottomPureBlack = true
+		}
+		innerGhostPx := outImg.CMYKAt(x, h-4)
+		if innerGhostPx.K > 0 && innerGhostPx.K < 255 {
+			t.Fatalf("unexpected gray ghost pixel near bottom edge at (%d,%d): %+v", x, h-4, innerGhostPx)
+		}
+		if (x < w/2-5 || x > w/2+5) && innerGhostPx.K > 0 {
+			t.Fatalf("unexpected extra cut-line pixel away from vertical center at (%d,%d): %+v", x, h-4, innerGhostPx)
+		}
+	}
+	if !foundBottomPureBlack {
+		t.Errorf("expected pure-black bottom-edge cut line at y=%d", h-1)
+	}
+}

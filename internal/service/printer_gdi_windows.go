@@ -1238,24 +1238,27 @@ func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32
 		return 0, err
 	}
 
-	var pDevMode uintptr
+	var pDevMode *byte
 	if len(devModeBuf) > 0 {
-		pDevMode = uintptr(unsafe.Pointer(&devModeBuf[0]))
+		pDevMode = &devModeBuf[0]
 	}
 
-	hdc, _, lastErr := procCreateDCW.Call(
-		0,
-		uintptr(unsafe.Pointer(pPrinterName)),
-		0,
-		pDevMode,
-	)
-	if hdc == 0 {
+	hdcHandle, lastErr := printerGDIWin32.createDC(pPrinterName, pDevMode)
+	if hdcHandle == 0 {
 		return 0, fmt.Errorf("فشل إنشاء سياق الطابعة CreateDCW: %s", win32ErrText(lastErr))
 	}
-	defer procDeleteDC.Call(hdc)
+	defer printerGDIWin32.deleteDC(hdcHandle)
+	hdc := uintptr(hdcHandle)
 
-	// 4. استعلام قياسات الطابعة
-	metrics := queryDeviceMetrics(windows.Handle(hdc))
+	// 4. استعلام قياسات الطابعة وتجهيز مصفوفة DIB وحساب الموضع قبل بدء المستند
+	metrics := queryDeviceMetrics(hdcHandle)
+	imgW := img.Bounds().Dx()
+	imgH := img.Bounds().Dy()
+	destX, destY, destW, destH := calculatePrintDestRect(metrics, imgW, imgH, req.Borderless)
+	dibPixels, bmi := convertToBottomUpDIB(img)
+	if imgW <= 0 || imgH <= 0 || len(dibPixels) == 0 {
+		return 0, fmt.Errorf("صورة الطباعة فارغة (%dx%d)", imgW, imgH)
+	}
 
 	// 5. بدء المستند StartDocW
 	jobTitle := strings.TrimSpace(req.JobTitle)
@@ -1291,12 +1294,7 @@ func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32
 	procSetStretchBltMode.Call(hdc, uintptr(halfToneMode))
 	procSetBrushOrgEx.Call(hdc, 0, 0, 0)
 
-	// 8. تجهيز مصفوفة DIB وحساب موضع وأبعاد الرسم
-	dibPixels, bmi := convertToBottomUpDIB(img)
-	imgW := img.Bounds().Dx()
-	imgH := img.Bounds().Dy()
-
-	destX, destY, destW, destH := calculatePrintDestRect(metrics, imgW, imgH, req.Borderless)
+	// 8. تسجيل تحذير التحجيم الفيزيائي عند الاحتواء داخل هوامش الطابعة
 
 	// 🖨️ RV-Print-29: احتواء (contain) داخل المساحة القابلة للطباعة في الوضع
 	// العادي يصغّر ورقة مصمّمة على مقاس الورق بالضبط (~1.5%) داخل هوامش العتاد

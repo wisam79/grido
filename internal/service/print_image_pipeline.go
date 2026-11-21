@@ -431,6 +431,7 @@ type processedKey struct {
 	filter     string
 	targetW    int
 	targetH    int
+	cropMode   string
 	cropX      float64
 	cropY      float64
 	cropW      float64
@@ -1130,6 +1131,7 @@ func (s *PrintService) loadAndProcessImage(
 		filter:     item.Filter,
 		targetW:    targetW,
 		targetH:    targetH,
+		cropMode:   item.CropMode,
 		cropX:      item.CropX,
 		cropY:      item.CropY,
 		cropW:      item.CropW,
