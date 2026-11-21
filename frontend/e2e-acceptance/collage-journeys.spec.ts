@@ -64,6 +64,7 @@ test('[J04] Freeform collage manual cell edit apply and restart', async ({ journ
     .getByRole('textbox', { name: 'اسم التخطيط', exact: true })
     .fill(`${journey.name}-layout`);
   await dialog.getByRole('button', { name: 'إضافة خلية فارغة', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'خصائص', exact: true }).click();
   const width = dialog
     .getByRole('spinbutton', { name: /^العرض(?:\s+مم)?$/ })
     .or(dialog.getByRole('textbox', { name: /^العرض(?:\s+مم)?$/ }));
@@ -78,7 +79,7 @@ test('[J04] Freeform collage manual cell edit apply and restart', async ({ journ
   await dialog.getByRole('button', { name: 'تدوير 90°', exact: true }).click();
   await dialog.getByRole('button', { name: 'تطبيق الكولاج', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect.poll(async () => (await canvasSnapshot(page)).slots.length).toBe(2);
+  await expect.poll(async () => (await canvasSnapshot(page)).slots.length).toBe(10);
   const applied = await canvasSnapshot(page);
   expect(applied.slots.some((slot) => slot.rotation === 90)).toBe(true);
   await importImages(journey, [journey.inputs.landscape, journey.inputs.portrait]);

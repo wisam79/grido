@@ -27,6 +27,11 @@ related_files:
   - frontend/e2e-acceptance/helpers/canvas-readonly.ts:48
   - scripts/e2e/runtime-auth-contract.mjs:33
   - frontend/e2e/app.spec.ts:63
+  - frontend/e2e/transformer-box-follows-geometry.spec.ts:65
+  - frontend/e2e-acceptance/helpers/gui.ts:62
+  - frontend/e2e-acceptance/collage-journeys.spec.ts:66
+  - frontend/e2e-acceptance/stickers-vdp.spec.ts:52
+  - frontend/e2e-acceptance/settings-journey.spec.ts:5
   - admin-web/vite.config.ts:25
 ---
 بوابة قبول سحابية شاملة على فرع اختبار معزول: حزمة المتصفح المطابق Chromium على Ubuntu (4 شاردات بعد تقليص المصفوفة بقرار المالك 2026-11-21)، ورحلات GUI مع Go/SQLite والمخرجات الفعلية، وWebView2 أصلي ومصادقة/Storage/Realtime محلية مؤقتة؛ شهادات المسارات والقدرات المحجوبة منفصلة دون نشر إنتاج.

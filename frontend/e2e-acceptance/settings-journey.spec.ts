@@ -4,7 +4,10 @@ import { test, expect } from './helpers/real-app';
 
 async function settingsAction(page: import('@playwright/test').Page, name: string): Promise<void> {
   await page.getByTestId('rail-settings-menu-trigger').click();
-  await page.getByRole('menuitem', { name: new RegExp(name) }).click();
+  const item = page.getByRole('menuitem', { name: new RegExp(name) });
+  await expect(item).toBeVisible();
+  await item.click();
+  await expect(page.getByRole('menu')).toHaveCount(0);
 }
 
 test('[J07] Settings theme canvas zoom menu outcomes survive restart', async ({ journey }) => {
@@ -19,6 +22,7 @@ test('[J07] Settings theme canvas zoom menu outcomes survive restart', async ({ 
   for (let clicks = 0; clicks < 3; clicks++) {
     await page.getByTestId('rail-settings-menu-trigger').click();
     await page.getByTestId('rail-theme-toggle-item').click();
+    await expect(page.getByRole('menu')).toHaveCount(0);
     const dark = await page.locator('html').evaluate((html) => html.classList.contains('dark'));
     if (dark !== initiallyDark) break;
   }

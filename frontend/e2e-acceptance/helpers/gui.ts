@@ -61,14 +61,14 @@ export async function renameSelectedLayer(page: Page, name: string): Promise<Loc
   await input.press('Enter');
   const row = list
     .getByRole('listitem')
-    .filter({ has: list.getByRole('button', { name, exact: true }) });
+    .filter({ has: page.getByRole('button', { name, exact: true }) });
   await expect(row).toHaveCount(1);
   return row;
 }
 
 export async function saveProject(page: Page, name: string): Promise<void> {
   await page.getByTestId('toolbar-save').click();
-  const dialog = page.getByRole('dialog').filter({ has: page.locator('#proj-name') });
+  const dialog = page.getByRole('dialog', { name: 'مكتبة المشاريع', exact: true });
   await expect(dialog).toBeVisible();
   await dialog.locator('#proj-name').fill(name);
   await dialog.getByRole('button', { name: 'حفظ المشروع', exact: true }).click();
@@ -85,6 +85,10 @@ export async function reopenProject(page: Page, name: string): Promise<void> {
   await expect(open).toBeVisible();
   await open.click();
   const replace = page.getByRole('alertdialog');
+  await Promise.race([
+    open.waitFor({ state: 'hidden' }).catch(() => {}),
+    replace.waitFor({ state: 'visible' }).catch(() => {}),
+  ]);
   if (await replace.isVisible())
     await replace.getByRole('button', { name: /تحميل|فتح|استبدال/ }).click();
   await expect(open).not.toBeVisible();

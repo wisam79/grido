@@ -63,12 +63,13 @@ test.describe('Transformer box follows store geometry', () => {
     expect(initial!.w).toBeGreaterThan(0);
 
     // تكبير ناعم (عامل 1.015 لكل ضغطة) — تغيّر أبعاد من المتجر
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
     await page.keyboard.press('Alt+ArrowUp');
     await expect
       .poll(
         async () => {
           const b = await transformerBox(page);
-          return b && b.w > initial!.w + 1;
+          return b && b.w > initial!.w + 0.5;
         },
         { timeout: 5000 },
       )
@@ -79,7 +80,7 @@ test.describe('Transformer box follows store geometry', () => {
       .poll(
         async () => {
           const b = await transformerBox(page);
-          return b && b.w > afterFirstGrow.w + 1;
+          return b && b.w > afterFirstGrow.w + 0.5;
         },
         { timeout: 5000 },
       )

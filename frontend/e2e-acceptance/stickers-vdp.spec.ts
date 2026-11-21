@@ -49,9 +49,7 @@ test('[J05] Sticker QR customization VDP rows real PNG and decode', async ({
     journey.record('independent-qr-decode', png.qr.reason, 'blocked');
   await testInfo.attach('exported-qr-png', { path: pngPath, contentType: 'image/png' });
   await custom.getByRole('button', { name: 'من جدول', exact: true }).click();
-  const vdp = page
-    .getByRole('dialog')
-    .filter({ has: page.locator('input[type="file"][accept*=".csv"]') });
+  const vdp = page.getByRole('dialog', { name: 'طباعة بالبيانات المتغيرة', exact: true });
   await vdp.locator('input[type="file"]').setInputFiles(journey.inputs.vdp);
   await vdp
     .getByRole('combobox', { name: 'عمود حقل العنوان أعلى الرمز', exact: true })
