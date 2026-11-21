@@ -91,7 +91,27 @@ R1run44807851024 أُلغيعمداًبعدثبوتfailureوتقادمSHAلتو�
   - `frontend/src/lib/canvas/text-stroke-filter.ts` و`frontend/src/lib/canvas/curved-text-utils.ts`: إضافة مجس `supportsScaledCanvasSvgStrokeFilter()` وتنفيذ بديل موحّد للحد على الكتلة بأكملها لـ WebKit (تجاهل `url(#...)`) وFirefox (تمدد ببكسل الجهاز عند CTM `2×`) دون رسم حد لكل حرف.
 - **`F-R2-05` (`Final scoped acceptance summary`, job `136562362339`):** نفاد مساحة القرص (`No space left on device`) أثناء تجميع الأدلة؛ أُعيدت تسمية مخرج `full-gate` في `ci.yml` إلى `ci-full-summary` لمنع إعادة تنزيله في `acceptance-gate`، وأُضيف تفريغ أدوات الـ runner وحذف `downloaded-evidence` بعد تحقق `report-merge.mjs` في `ci.yml` و`e2e-acceptance.yml`.
 - **تنظيف الفروع الموازية:** حُذفا فرعا الريموت المدموجان مسبقاً `fix/print-export-parity-closure` و`fix/ui-audit-followup` وأُزيل الـ worktree اليتيم `well-mollusk` قبل إطلاق جولة R3.
-- **حالة R3:** قيد التجهيز والتشغيل السحابي على الـ SHA الجديد — لا إعلان نجاح أو دمج إلى `main` قبل وصول نتائج R3 الكاملة.
+- **حالة R3:** اكتمل التشغيل [44900123938](https://github.com/wisam79/grido/actions/runs/44900123938) على `96340422fb12469675b837a82edde4ac56b00dfe` بنتيجة عامة **FAILURE** مع تقدم ملموس:
+
+## R3 (`44900123938`) وقرار تقليص المصفوفة لجولة R4 (2026-11-21)
+
+- **ما نجح في R3:**
+  - جميع بوابات الجودة والبناء التسع (`Documentation Gate`، `Detect Changed Areas`، `Enforce published test-ref and acceptance source SHA`، `Backend Race & Coverage (Scheduled)`، `Print Performance & RSS Report (Windows)`، `Windows Build Verification`، `Backend Quality & Tests`، `Admin Web Quality`، `Frontend Quality & Tests` بعد استبعاد `e2e-acceptance` من Vitest، و`Modal AI Unit Tests`).
+  - انحلت مشكلة نفاد مساحة القرص في `Full CI gate` و`Final scoped acceptance summary`.
+  - نجح مسار `actual-admin/admin-chromium` (`2/2`) على Supabase المحلية الحقيقية.
+  - نجحت إصلاحات R2 في شاردات Chromium (`perf-canvas-drag`، `phone-bridge`، `print-dialog`، `print-export`، `transformer-reselect`، `user-journeys`، واجتاز `ubuntu-24.04 chromium 3/4` و`windows-2022 firefox 3/4` بالكامل).
+- **قرار المالك 2026-11-21 (تقليص مصفوفة المتصفحات المقلدة):** وافق المالك صراحةً على حذف **Firefox** وحذف شاردات **Windows/WebKit** المقلّدة المكررة من `e2e-full`، والإبقاء على:
+  1. `Ubuntu Chromium` (4 شاردات، مطابق لمحرك WebView2).
+  2. `Windows real native WebView2 + SQLite` (الثنائي الحقيقي).
+  3. `Real local Supabase + embedded Go server + actual admin/phone` (على Ubuntu Docker).
+- **إخفاقات R3 المتبقية وإصلاحاتها المرفوعة في R4:**
+  - **`F-R3-01` (`app.spec.ts:25`):** عرضت المرحلة مسار المصغّرة `/local-image/thumb/saved-b64.png?w=2048` بدلاً من `/local-image/saved-b64.png`؛ حُدّث استطلاع المرحلة لقبول النمطين مع بقاء فحص `SaveProject` على المسار الكنسي الصارم `/local-image/saved-b64.png`.
+  - **`F-R3-02` (`grid-collage.spec.ts:26`, `single-photo.spec.ts:20`, `workflows.spec.ts:20`):** تعارض المحدد المركب `getByTestId('canvas-zoom-in').or(getByLabel('تكبير'))` مع زر تكبير النافذة `تكبير` (strict mode violation = عنصران)؛ اقتصر الاختبار على `getByTestId('canvas-zoom-in')`.
+  - **`F-R3-03` (`frontend/e2e-acceptance/helpers/real-app.ts`):**
+    1. في `actual-linux/real-server` (`7/7`): `--trace=on` في Playwright يبدأ التتبع تلقائياً على `browser.newContext()` ففشل `context.tracing.start()` المزدوج؛ أُحيط البدء والإيقاف اليدويان بحارس `manualTrace` دون إسقاط مرفق التتبع التلقائي.
+    2. في `native-windows` (`7/7`): طلب `startRuntimeAuthContract` متغير `E2E_USER_PASSWORD`؛ أُضيف توليد كلمة مرور مؤقتة عشوائية (`randomBytes(16).toString('hex')`) عندما تغيب متغيرات البيئة (بلا أي أسرار ثابتة).
+  - **`F-R3-04` (`admin-web/e2e-acceptance/phone-real.spec.ts:22`):** تعرض `PhoneCameraPage.tsx:709` عبارة مصافحة التخزين في الواجهة عند الخطأ فقط بينما ترفع `.handshake.json` فعلياً للتخزين؛ استُبدل الفحص بالتحقق من غياب رسالة الخطأ مع استطلاع وجود ملف `.handshake.json` الحقيقي عبر Storage REST API قبل رفع الصورة.
+- **حالة R4:** قيد التجهيز والتشغيل السحابي على SHA جديد — لا إعلان نجاح أو دمج إلى `main` قبل وصول نتائج R4 الكاملة.
 
 ## شروط الإغلاق
 

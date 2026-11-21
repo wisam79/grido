@@ -17,7 +17,7 @@ test.describe('Single Photo Workflow E2E', () => {
         .or(page.getByTitle(/صورة جديدة/))
         .first(),
     ).toBeVisible();
-    await expect(page.getByTestId('canvas-zoom-in').or(page.getByLabel('تكبير'))).toBeVisible();
+    await expect(page.getByTestId('canvas-zoom-in')).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-out')).toBeVisible();
 
     // الزوم سلوك فعلي: نسبة العرض الرقمية تتغير بعد تكبير

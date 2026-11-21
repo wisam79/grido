@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { test as base, expect, chromium } from '@playwright/test';
@@ -129,7 +129,9 @@ export const test = base.extend<{ journey: Journey }>({
         ? await startRuntimeAuthContract({
             password:
               process.env.GRIDO_E2E_PASSWORD ??
-              credential('E2E_USER_PASSWORD', 'GRIDO_ACCEPTANCE_PASSWORD'),
+              process.env.E2E_USER_PASSWORD ??
+              process.env.GRIDO_ACCEPTANCE_PASSWORD ??
+              randomBytes(16).toString('hex'),
             email: process.env.E2E_USER_EMAIL,
           })
         : undefined;
@@ -147,6 +149,7 @@ export const test = base.extend<{ journey: Journey }>({
     let context!: BrowserContext;
     let page!: Page;
     let connected = false;
+    let manualTrace = false;
     let generation = 0;
     let browserState: Awaited<ReturnType<BrowserContext['storageState']>> | undefined;
     const outcomes: Outcome[] = [];
@@ -174,7 +177,15 @@ export const test = base.extend<{ journey: Journey }>({
         await page.goto(targetURL);
       }
       connected = true;
-      await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+      manualTrace = false;
+      try {
+        await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+        manualTrace = true;
+      } catch (error) {
+        if (!/already started/i.test(error instanceof Error ? error.message : String(error))) {
+          throw error;
+        }
+      }
     };
     const checkpoint = async (name: string) => {
       const path = testInfo.outputPath(
@@ -194,12 +205,15 @@ export const test = base.extend<{ journey: Journey }>({
         }
       }
       if (context) {
-        const trace = testInfo.outputPath(`trace-${generation}.zip`);
-        try {
-          await context.tracing.stop({ path: trace });
-          await testInfo.attach('trace', { path: trace, contentType: 'application/zip' });
-        } catch (error) {
-          errors.push(error);
+        if (manualTrace) {
+          manualTrace = false;
+          const trace = testInfo.outputPath(`trace-${generation}.zip`);
+          try {
+            await context.tracing.stop({ path: trace });
+            await testInfo.attach('trace', { path: trace, contentType: 'application/zip' });
+          } catch (error) {
+            errors.push(error);
+          }
         }
         if (lane === 'server') {
           const video = page?.video();

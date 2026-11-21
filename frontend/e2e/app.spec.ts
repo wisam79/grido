@@ -22,7 +22,9 @@ test.describe('Project save/reload — stateful mocked integration, not real fil
     await expect.poll(() => stageImageSources(page)).toBe('');
     await page.getByTestId('mode-tab-single').click();
     await page.getByTestId('toolbar-insert').click();
-    await expect.poll(() => stageImageSources(page)).toContain('/local-image/saved-b64.png');
+    await expect
+      .poll(() => stageImageSources(page))
+      .toMatch(/\/local-image\/(?:thumb\/)?saved-b64\.png/);
     const savedImage = await stageImageSources(page);
     await page.getByTestId('toolbar-projects').click();
     const library = page.getByRole('dialog');

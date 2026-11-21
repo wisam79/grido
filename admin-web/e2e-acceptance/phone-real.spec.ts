@@ -19,7 +19,22 @@ test('[P01] actual /cam pairs with second browser peer, uploads real storage and
     await expect(page.locator('#paired')).toHaveText('Received real phone pairing event');
     await expect(sender.getByText('ورد تأكيد سطح المكتب', { exact: true })).toBeVisible();
     await expect(sender.getByText('قناة الإرسال جاهزة', { exact: true })).toBeVisible();
-    await expect(sender.getByText('أُرسلت مصافحة التخزين', { exact: true })).toBeVisible();
+    await expect(sender.getByText('تعذر رفع مصافحة JSON الاحتياطية')).toHaveCount(0);
+    await expect
+      .poll(
+        async () => {
+          const check = await rest(token, '/storage/v1/object/list/phone-bridge', 'POST', {
+            prefix: session,
+            limit: 100,
+          });
+          return (
+            check.ok &&
+            check.data.some((item: { name: string }) => item.name.endsWith('.handshake.json'))
+          );
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(true);
     // Synthetic file content only. Browser camera is not monkey-patched and no
     // physical camera success is inferred; actual file selection/transport used.
     const photoData = await sender.evaluate(() => {

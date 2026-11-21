@@ -17,7 +17,7 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Zoom controls update the zoom level', async ({ page }) => {
-    const zoomIn = page.getByTestId('canvas-zoom-in').or(page.getByLabel('تكبير'));
+    const zoomIn = page.getByTestId('canvas-zoom-in');
     const zoomOut = page.getByTestId('canvas-zoom-out');
 
     await expect(zoomIn).toBeVisible();

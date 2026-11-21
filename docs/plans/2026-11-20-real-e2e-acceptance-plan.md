@@ -42,7 +42,8 @@
 ## شروط التشغيل الكامل
 
 - تقرير المتوقع/المختار/المنفذ/pass/fail/skipped/flaky من discovery/runtime، لا من عدد static وحده.
-- manual workflow يُفعّل الوظائف المطلوبة دون path filter؛ كامل Chromium/Firefox/WebKit في نطاق browser suite المعلن، ثم real/native/admin مستقلة.
+- **تحديث نطاق المصفوفة بقرار المالك 2026-11-21:** تقليص مصفوفة الـ mock في `e2e-full` إلى `ubuntu-24.04 / chromium` (4 شاردات مطابقة لمحرك WebView2)، مع إلغاء Firefox وشادرات Windows/WebKit المقلدة المكررة، والتركيز الكامل معها على مساري القبول الحقيقيين (`Windows real native WebView2 + SQLite` و`Real local Supabase + Go server + Admin + Phone`).
+- manual workflow يُفعّل الوظائف المطلوبة دون path filter؛ كامل شاردات Chromium المقلدة المعلنة، ثم مسارات real/native/admin/phone مستقلة.
 - JSON/JUnit/blob/HTML وtrace/screenshots/video المتاح وملفات خرج وfixture hashes وcommit SHA. نقص capability يُعلن، ولا يُختلق artifact.
 - retry-pass يظل flaky؛ لا حذف assertion أو تغيير tolerance/skip لإخفاء العيب. إعادة كاملة أخيرة على SHA واحد بعد الإصلاحات.
 - hosted native/server على loopback و`GRIDO_APP_DIR` مؤقت، بلا إنتاج أو tunnel عام أو أسرار role في frontend/binary/artifacts.

@@ -23,7 +23,7 @@ test.describe('Grid Collage Workflow E2E', () => {
   test('Verify collage controls and canvas stability', async ({ page }) => {
     await page.getByTestId('mode-tab-collage').click();
     await expect(page.locator('#canvas-area')).toBeVisible();
-    await expect(page.getByTestId('canvas-zoom-in').or(page.getByLabel('تكبير'))).toBeVisible();
+    await expect(page.getByTestId('canvas-zoom-in')).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-out')).toBeVisible();
   });
 });

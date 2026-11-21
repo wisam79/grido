@@ -306,8 +306,7 @@ jobs:
         if: always()
         run: |
           node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
-            --expected legacy-linux/chromium:4 --expected legacy-linux/firefox:4 --expected legacy-linux/webkit:4 \
-            --expected legacy-windows/chromium:4 --expected legacy-windows/firefox:4 --expected legacy-windows/webkit:4 \
+            --expected legacy-linux/chromium:4 \
             --expected actual-linux/real-server-chromium:1 --expected actual-admin/admin-chromium:1 \
             --expected actual-phone/phone-chromium:1 --expected native-windows/real-native-webview2:1 \
             --job preflight=${{ needs.preflight.result }} --job full-ci=${{ needs.full-ci.result }} \

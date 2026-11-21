@@ -1014,8 +1014,8 @@ jobs:
       fail-fast: false
       max-parallel: 6
       matrix:
-        os: [ubuntu-24.04, windows-2022]
-        project: [chromium, firefox, webkit]
+        os: [ubuntu-24.04]
+        project: [chromium]
         shard: [1, 2, 3, 4]
     steps:
       - name: Checkout exact run SHA
@@ -1111,8 +1111,7 @@ jobs:
         if: always()
         run: |
           node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
-            --expected legacy-linux/chromium:4 --expected legacy-linux/firefox:4 --expected legacy-linux/webkit:4 \
-            --expected legacy-windows/chromium:4 --expected legacy-windows/firefox:4 --expected legacy-windows/webkit:4 \
+            --expected legacy-linux/chromium:4 \
             --job changes=${{ needs.changes.result }} --job docs=${{ needs.docs-gate.result }} \
             --job modal-unit=${{ needs.validate-modal-ai.result }} --job frontend=${{ needs.validate-frontend.result }} \
             --job backend=${{ needs.validate-backend.result }} --job race=${{ needs.backend-race-coverage.result }} \
@@ -1425,8 +1424,7 @@ jobs:
         if: always()
         run: |
           node scripts/e2e/report-merge.mjs --input downloaded-evidence --output merged-evidence --sha "${{ github.sha }}" \
-            --expected legacy-linux/chromium:4 --expected legacy-linux/firefox:4 --expected legacy-linux/webkit:4 \
-            --expected legacy-windows/chromium:4 --expected legacy-windows/firefox:4 --expected legacy-windows/webkit:4 \
+            --expected legacy-linux/chromium:4 \
             --expected actual-linux/real-server-chromium:1 --expected actual-admin/admin-chromium:1 \
             --expected actual-phone/phone-chromium:1 --expected native-windows/real-native-webview2:1 \
             --job preflight=${{ needs.acceptance-preflight.result }} --job full-ci=${{ needs.full-gate.result }} \
