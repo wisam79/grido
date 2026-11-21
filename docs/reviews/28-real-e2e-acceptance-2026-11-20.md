@@ -152,7 +152,12 @@ R1run44807851024 أُلغيعمداًبعدثبوتfailureوتقادمSHAلتو�
   - **النتيجة:** اجتازت **`Full CI gate (zero skipped required jobs)` بنسبة 100%** (كافة مهام الجودة والبناء والتوثيق والذكاء الاصطناعي وشرادات `ubuntu-24.04 chromium 1/4..4/4`)، كما نجحت مسارات القبول `actual-admin/admin-chromium 1/1` (`2/2`) و`actual-phone/phone-chromium 1/1` (`1/1`) و`6/7` مسارات في كلٍّ من `actual-linux` و`native-windows` (`J01`, `J02`, `J03`, `J05`, `J06`, `J07`).
   - **العيب الإنتاجي الأخير المكتشف في R9 وتصحيح R10:**
     - **`J04` (`frontend/src/lib/store/slices/collage-slice.ts:169-218` — عيب إنتاجي حقيقي):** بعد مرور `canvasSnapshot`، كشف السطر 84 (`expect(applied.slots.some((slot) => slot.rotation === 90)).toBe(true)`) أن `commitCollageLayout` يمرر خلايا القالب الحر إلى `remapSlotsToCells` التي كانت تنسخ `{ x, y, w, h }` فقط وتُسقط `presetType` و`label` و`rotation` (بينما كان `setCollageTemplate` يرقعها موضعياً بعد النداء)؛ عُمّم تمرير `presetType`/`label`/`rotation` داخل `remapSlotsToCells` نفسه لتصل التعديلات والتدويرات الحرة سليمة إلى الكانفاس والملفات المحفوظة.
-- **حالة R10:** قيد الدفع والتشغيل السحابي والتحقق النهائي قبل الإغلاق والدمج إلى `main`.
+- **نتائج R10 (تشغيل `44923100414` على SHA `a51ae5c10aaf15f4d6e1cab46cfbeed34b404631`):**
+  - نجحت حزمة المتصفح المطابق كاملةً (`Full E2E ubuntu-24.04 chromium 1/4..4/4`)، ومضمار `Real local Supabase + embedded Go server + actual admin/phone` كاملاً (`7/7` + `2/2` + `1/1`)، وجميع فحوصات الباك إند والواجهة و`Modal AI` وبناء Windows و`Documentation Gate`.
+  - فشل موضعان فقط في R10 وتُعالجا في **R11**:
+    - `Admin Web Quality` (`admin-web/src/pages/admin/components/admin-ui-components.test.tsx:294`): سباق توقيت متصفح jsdom عند إغلاق `AccessibleDialog`/`UserDetailsDrawer` لأن `@radix-ui/react-focus-scope` يُرسل `onCloseAutoFocus` داخل `setTimeout(..., 0)`؛ أُضيف انتظار `vi.waitFor` على `document.activeElement` في سطري 294 و345.
+    - `Windows real native WebView2 + SQLite` (`J03` فقط من `7/7`, `frontend/e2e-acceptance/collage-journeys.spec.ts:39`): أثبت أثر التشغيل `trace.zip` ولقطة الفشل أن `clickCanvasNode` نادى `canvasSnapshot` لحظة تعيين `slot.imageSrc` قبل اكتمال فك تشفير الصورة في `KonvaCollageImage` فعاد `getClientRect()` بصندوق عرض/ارتفاع `0` عند الزاوية العليا للخانة ولم يتحدد `slot[0]`، فمرّرت عجلة الفأرة اللوحة بدل تقريب الصورة؛ أُضيف `waitRenderedNode` في `frontend/e2e-acceptance/helpers/canvas-readonly.ts` وانتظار اكتمال تحميل `src` وأبعاد الخانات قبل النقر في `J03`.
+- **حالة R11:** قيد الدفع والتشغيل السحابي والتحقق النهائي قبل الإغلاق والدمج إلى `main`.
 
 ## شروط الإغلاق
 

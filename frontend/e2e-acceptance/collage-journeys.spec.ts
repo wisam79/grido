@@ -27,7 +27,14 @@ test('[J03] Collage layout import transforms and lossless export', async ({ jour
   await expect.poll(async () => (await canvasSnapshot(page)).slots.length).toBe(2);
   await importImages(journey, [journey.inputs.landscape, journey.inputs.portrait]);
   await expect
-    .poll(async () => (await canvasSnapshot(page)).slots.filter((slot) => slot.imageSrc).length)
+    .poll(async () => {
+      const snap = await canvasSnapshot(page);
+      const readySlots = snap.slots.filter((slot) => slot.imageSrc);
+      return readySlots.filter((slot) => {
+        const rendered = snap.nodes.find((candidate) => candidate.id === slot.id);
+        return Boolean(rendered?.src && rendered.box.width > 10 && rendered.box.height > 10);
+      }).length;
+    })
     .toBe(2);
   const initial = (await canvasSnapshot(page)).slots;
   await clickCanvasNode(page, initial[0].id);

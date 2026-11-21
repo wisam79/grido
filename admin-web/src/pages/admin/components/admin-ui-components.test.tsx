@@ -291,7 +291,10 @@ describe('Admin UI Desktop Identity & Organizational Components', () => {
     expect(document.activeElement).toBe(close);
     await act(async () => { close.click(); });
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    // Radix FocusScope dispatches onCloseAutoFocus inside setTimeout(..., 0).
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(trigger);
+    });
     await act(async () => { trigger.click(); });
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
     expect(document.activeElement?.getAttribute('aria-label')).toBe('إغلاق لوحة التفاصيل');
@@ -342,7 +345,10 @@ describe('Admin UI Desktop Identity & Organizational Components', () => {
     });
 
     expect(document.querySelector('[role="alertdialog"]')).toBeNull();
-    expect(document.activeElement).toBe(banBtn);
+    // Radix FocusScope dispatches onCloseAutoFocus inside setTimeout(..., 0).
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(banBtn);
+    });
   });
 
   it('StatsBreakdown displays trial tier, account health counts, and top AI consumers', async () => {

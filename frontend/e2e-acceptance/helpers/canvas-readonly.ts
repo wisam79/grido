@@ -177,6 +177,20 @@ export async function canvasSnapshot(page: Page): Promise<CanvasSnapshot> {
     });
 }
 
+async function waitRenderedNode(page: Page, id: string) {
+  let matched: CanvasSnapshot['nodes'][number] | undefined;
+  await expect
+    .poll(async () => {
+      matched = (await canvasSnapshot(page)).nodes.find(
+        (candidate) => candidate.id === id && candidate.box.width > 0 && candidate.box.height > 0,
+      );
+      return Boolean(matched);
+    })
+    .toBe(true);
+  if (!matched) throw new Error(`No rendered canvas object ${id}`);
+  return matched;
+}
+
 export async function expectElementCount(page: Page, count: number): Promise<void> {
   await expect.poll(async () => (await canvasSnapshot(page)).elements.length).toBe(count);
 }
@@ -185,8 +199,7 @@ export async function clickCanvasNode(
   id: string,
   options: { button?: 'left' | 'right'; clickCount?: number } = {},
 ): Promise<void> {
-  const node = (await canvasSnapshot(page)).nodes.find((candidate) => candidate.id === id);
-  if (!node) throw new Error(`No rendered canvas object ${id}`);
+  const node = await waitRenderedNode(page, id);
   await page.mouse.click(
     node.box.x + node.box.width / 2,
     node.box.y + node.box.height / 2,
@@ -199,8 +212,7 @@ export async function dragCanvasNode(
   dx: number,
   dy: number,
 ): Promise<void> {
-  const node = (await canvasSnapshot(page)).nodes.find((candidate) => candidate.id === id);
-  if (!node) throw new Error(`No rendered canvas object ${id}`);
+  const node = await waitRenderedNode(page, id);
   const x = node.box.x + node.box.width / 2,
     y = node.box.y + node.box.height / 2;
   await page.mouse.move(x, y);
