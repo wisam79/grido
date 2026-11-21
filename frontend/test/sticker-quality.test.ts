@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { computeTargetRasterPx } from '@/features/stickers/lib/print-rerasterize';
+import {
+  computeTargetRasterPx,
+  ensureStickerPrintResolution,
+} from '@/features/stickers/lib/print-rerasterize';
 import {
   autoFitSheetGrid,
   computeSheetCellLayout,
@@ -18,7 +21,10 @@ import {
   namespaceStickerSvgIds,
   postProcessStickerSvg,
 } from '@/features/stickers/lib/sticker-text';
+import * as svgRasterizer from '@/features/stickers/lib/svg-rasterizer';
 import { searchStickerTemplates } from '@/features/stickers/templates';
+
+import type { ImageElement } from '@/lib/store/types';
 
 describe('sticker-quality: Arabic search normalization', () => {
   it('unifies hamza/alef variants', () => {
@@ -199,5 +205,115 @@ describe('sticker-quality: sheet auto-fit', () => {
     expect(computeTargetRasterPx(1000, 1000, 300)).toBeNull();
     expect(computeTargetRasterPx(0, 100, 300)).toBeNull();
     expect(computeTargetRasterPx(100, 100, 0)).toBeNull();
+  });
+});
+
+describe('sticker-quality: ensureStickerPrintResolution real cover & multi-aspect', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const sampleSvg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="#1e293b"/></svg>';
+
+  const makeStickerElement = (
+    id: string,
+    imageSrc: string,
+    widthNorm: number,
+    heightNorm: number,
+  ): ImageElement => ({
+    id,
+    type: 'image',
+    imageSrc,
+    x: 0,
+    y: 0,
+    width: widthNorm,
+    height: heightNorm,
+    rotation: 0,
+    opacity: 1,
+    zIndex: 1,
+    visible: true,
+    stickerSource: {
+      templateId: 'seal-01',
+      svg: sampleSvg,
+      params: {
+        fields: {},
+        primaryColor: '#1e293b',
+        secondaryColor: '#f59e0b',
+        backgroundColor: '#ffffff',
+        isTransparent: false,
+        fontFamily: 'Cairo',
+      },
+    },
+  });
+
+  it('preserves original 1:1 source aspect ratio when two elements with different aspect ratios share the same sticker src', async () => {
+    const rasterCalls: Array<{ width: number; height: number }> = [];
+    vi.spyOn(svgRasterizer, 'renderSvgToPngBlob').mockImplementation(
+      async (_svg, width, height) => {
+        rasterCalls.push({ width: width ?? 0, height: height ?? 0 });
+        return new Blob(['upgraded-png'], { type: 'image/png' });
+      },
+    );
+
+    const upload = vi.fn(async () => '/local-image/upgraded_sticker.png');
+    const sharedSrc = '/local-image/sticker_orig_400.png';
+
+    // كانفاس 100×100 مم:
+    // العنصر الأول عريض 80×30 مم، والعنصر الثاني طولي 30×90 مم، وكلاهما يشتركان في ملصق مربع 400×400 (1:1).
+    // الترقية الصحيحة يجب أن تغطي أكبر عرض (80مم) وأكبر ارتفاع (90مم) مع حفظ نسبة المصدر 1:1
+    // أي 90مم × 90مم عند 300DPI = 1063×1063 بكسل، كي لا يقص computeSlotCrop أي عنصر بشكل مشوه.
+    const elements = [
+      makeStickerElement('wide-el', sharedSrc, 0.8, 0.3),
+      makeStickerElement('tall-el', sharedSrc, 0.3, 0.9),
+    ];
+
+    const res = await ensureStickerPrintResolution(elements, {
+      canvasWidthMM: 100,
+      canvasHeightMM: 100,
+      targetDpi: 300,
+      imageDimensions: new Map([[sharedSrc, { width: 400, height: 400 }]]),
+      upload,
+    });
+
+    expect(upload).toHaveBeenCalledTimes(1);
+    expect(rasterCalls).toHaveLength(1);
+    const expectedSide = mmToPx(90, 300); // 1063px
+    expect(rasterCalls[0]).toEqual({ width: expectedSide, height: expectedSide });
+    expect(res.srcMap.get(sharedSrc)).toBe('/local-image/upgraded_sticker.png');
+    expect(res.newDimensions.get(sharedSrc)).toEqual({ width: expectedSide, height: expectedSide });
+  });
+
+  it('triggers re-rasterization when visible cover crop window falls below minDpi even if raw source width is large', async () => {
+    const rasterCalls: Array<{ width: number; height: number }> = [];
+    vi.spyOn(svgRasterizer, 'renderSvgToPngBlob').mockImplementation(
+      async (_svg, width, height) => {
+        rasterCalls.push({ width: width ?? 0, height: height ?? 0 });
+        return new Blob(['upgraded-wide-png'], { type: 'image/png' });
+      },
+    );
+
+    const upload = vi.fn(async () => '/local-image/upgraded_wide.png');
+    const wideSrc = '/local-image/sticker_wide_2000x400.png';
+
+    // عنصر مربع 60×60 مم على كانفاس 200×200 مم، ومصدره عريض 2000×400 (نسبة 5:1):
+    // نافذة القص المرئية (cover) تأخذ 400×400 بكسل فقط ← الدقة الفعالة = 400 / (60/25.4) ≈ 169 DPI (< 250).
+    // يجب أن يُعاد تصييره ليغطي 60×60 مم عند 300DPI (709×709) مع حفظ نسبة المصدر 5:1 (3545×709).
+    const elements = [makeStickerElement('square-box', wideSrc, 0.3, 0.3)];
+
+    const res = await ensureStickerPrintResolution(elements, {
+      canvasWidthMM: 200,
+      canvasHeightMM: 200,
+      targetDpi: 300,
+      imageDimensions: new Map([[wideSrc, { width: 2000, height: 400 }]]),
+      upload,
+    });
+
+    expect(upload).toHaveBeenCalledTimes(1);
+    expect(rasterCalls).toHaveLength(1);
+    const expectedH = mmToPx(60, 300); // 709px
+    expect(rasterCalls[0].height).toBe(expectedH);
+    expect(rasterCalls[0].width / rasterCalls[0].height).toBeCloseTo(5, 2);
+    expect(res.srcMap.get(wideSrc)).toBe('/local-image/upgraded_wide.png');
   });
 });

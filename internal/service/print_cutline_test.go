@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"math"
 	"os"
+	"strings"
 	"testing"
 
 	"grido/internal/core/domain"
@@ -329,5 +330,27 @@ func TestPrintService_CMYK_NoDoubleGhostCutLines(t *testing.T) {
 	}
 	if !foundBottomPureBlack {
 		t.Errorf("expected pure-black bottom-edge cut line at y=%d", h-1)
+	}
+
+	// التحقق من ملف المعاينة المرافق (_preview.png): يجب أن يُبنى للمتصفح
+	// ويحتوي على خط القص الرمادي في المنتصف (x ≈ 25mm) رغم تخطيه في ملف الـ CMYK TIFF.
+	previewPath := strings.TrimSuffix(outPath, ".tif") + "_preview.png"
+	previewImg, err := imaging.Open(previewPath)
+	if err != nil {
+		t.Fatalf("expected valid HTML preview PNG alongside CMYK TIFF at %s: %v", previewPath, err)
+	}
+	pb := previewImg.Bounds()
+	midX := pb.Dx() / 2
+	midY := pb.Dy() / 2
+	foundPreviewCutLine := false
+	for dx := -2; dx <= 2; dx++ {
+		r, g, b, _ := previewImg.At(midX+dx, midY).RGBA()
+		if int(r>>8) < 180 && int(g>>8) < 180 && int(b>>8) < 180 {
+			foundPreviewCutLine = true
+			break
+		}
+	}
+	if !foundPreviewCutLine {
+		t.Errorf("expected visible gray cut line in CMYK HTML preview image %s around x=%d", previewPath, midX)
 	}
 }

@@ -5,6 +5,7 @@ package service
 import (
 	"image"
 	"image/color"
+	"image/png"
 	"math"
 	"os"
 	"path/filepath"
@@ -1194,5 +1195,87 @@ func TestGDIPure_PrintImageDirectGDI_CorruptedFile_ReturnsSafeError(t *testing.T
 	}
 	if !strings.Contains(err.Error(), "تعذر قراءة ترويسة الصورة") {
 		t.Fatalf("expected header decode error, got: %v", err)
+	}
+}
+
+func TestGDIPure_PrintImageDirectGDI_UsesCreateDCSeamAndFailsCleanly(t *testing.T) {
+	validFile := filepath.Join(os.TempDir(), "grido_print_valid_"+time.Now().Format("150405.000000000")+".png")
+	f, err := os.Create(validFile)
+	if err != nil {
+		t.Fatalf("create valid temp png: %v", err)
+	}
+	img := image.NewRGBA(image.Rect(0, 0, 40, 60))
+	for y := 0; y < 60; y++ {
+		for x := 0; x < 40; x++ {
+			img.SetRGBA(x, y, color.RGBA{R: 50, G: 120, B: 200, A: 255})
+		}
+	}
+	if err := png.Encode(f, img); err != nil {
+		f.Close()
+		t.Fatalf("encode png: %v", err)
+	}
+	f.Close()
+	defer os.Remove(validFile)
+
+	createDCCalled := false
+	var gotDevModeCopies int16
+	usePrinterGDIWin32Stub(t, func(api *printerGDIWin32API) {
+		api.openPrinter = func(_ *uint16, handle *windows.Handle, _ uint32) (bool, error) {
+			*handle = windows.Handle(55)
+			return true, nil
+		}
+		api.closePrinter = func(windows.Handle) {}
+		api.documentProperties = func(_ windows.Handle, _ *uint16, out, in *byte, mode uint32) (int32, error) {
+			switch mode {
+			case 0:
+				return int32(unsafe.Sizeof(devModeW{})), nil
+			case dmOutBuffer:
+				writeTestDevMode(out, devModeW{
+					DmSize:        uint16(unsafe.Sizeof(devModeW{})),
+					DmFields:      dmPaperSizeField | dmCopiesField | dmOrientationField,
+					DmPaperSize:   9, // A4
+					DmCopies:      1,
+					DmOrientation: dmOrientPortrait,
+				})
+				return 1, nil
+			default:
+				if in != nil && out != nil {
+					inDM := (*devModeW)(unsafe.Pointer(in))
+					writeTestDevMode(out, *inDM)
+				}
+				return 1, nil
+			}
+		}
+		api.createDC = func(_ *uint16, devMode *byte) (windows.Handle, error) {
+			createDCCalled = true
+			if devMode != nil {
+				dm := (*devModeW)(unsafe.Pointer(devMode))
+				gotDevModeCopies = dm.DmCopies
+			}
+			return 0, windows.ERROR_ACCESS_DENIED
+		}
+	})
+
+	svc := &PrintService{}
+	jobID, err := svc.PrintImageDirectGDI(domain.DirectPrintRequest{
+		FilePath:      validFile,
+		PrinterName:   "Stub Studio Printer",
+		PaperID:       9,
+		PaperWidthMM:  210,
+		PaperHeightMM: 297,
+		Orientation:   "portrait",
+		Copies:        3,
+	})
+	if err == nil {
+		t.Fatalf("expected error when createDC fails, got jobID=%d", jobID)
+	}
+	if !createDCCalled {
+		t.Fatalf("expected PrintImageDirectGDI to route through printerGDIWin32.createDC seam")
+	}
+	if gotDevModeCopies != 3 {
+		t.Fatalf("expected DEVMODE copies=3 passed to createDC, got %d", gotDevModeCopies)
+	}
+	if !strings.Contains(err.Error(), "فشل إنشاء سياق الطابعة CreateDCW") {
+		t.Fatalf("unexpected createDC error message: %v", err)
 	}
 }

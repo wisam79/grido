@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/disintegration/imaging"
+
 	"grido/internal/core/domain"
 )
 
@@ -129,5 +131,70 @@ func TestPrintService_TooManyCompositionItemsStillRejected(t *testing.T) {
 	_, _, err := svc.GeneratePrintSheet(req)
 	if err == nil || !strings.Contains(err.Error(), "too many composition items") {
 		t.Fatalf("expected too-many-items error, got: %v", err)
+	}
+}
+
+// TestPrintService_ComposeCanvas_RGBBorderColorRendered يتحقق على مستوى البكسل
+// من أن composeCanvas يحلل ألوان الحدود عبر parseColor (بما فيها #RGBA ذات
+// الألفا والمسافات و"transparent") ويرسمها باللون الفعلي.
+func TestPrintService_ComposeCanvas_RGBBorderColorRendered(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+	photoSrc := stagePrintTestImage(t, "comp_border", 100, 100, color.RGBA{R: 255, G: 255, B: 255, A: 255})
+
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    100.0,
+		PaperHeightMM:   100.0,
+		DPI:             100,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "png",
+		Items: []domain.PrintItem{
+			{
+				// ImageSrc فارغ ليستقبل composedCanvas المرسوم عبر composeCanvas
+				ImageSrc: "", X: 0, Y: 0, W: 100, H: 100,
+				Filter: "none", Brightness: 100, Contrast: 100, Saturation: 100,
+			},
+		},
+		Composition: &domain.CanvasComposition{
+			CanvasWidthPx:   1000,
+			CanvasHeightPx:  1000,
+			CanvasWidthMM:   100,
+			CanvasHeightMM:  100,
+			BackgroundColor: "#FFFFFF",
+			Items: []domain.PrintItem{
+				{
+					ImageSrc:      photoSrc,
+					X:             200, // 20mm
+					Y:             200, // 20mm
+					W:             600, // 60mm
+					H:             600, // 60mm
+					BorderWidthMM: 20.0,
+					BorderColor:   " #dc1923ff ",
+					Filter:        "none",
+					Brightness:    100,
+					Contrast:      100,
+					Saturation:    100,
+				},
+			},
+		},
+	}
+
+	outPath, _, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet with composition border: %v", err)
+	}
+	outImg, err := imaging.Open(outPath)
+	if err != nil {
+		t.Fatalf("open output sheet: %v", err)
+	}
+
+	// الحافة العلوية للعنصر تقع عند y=20mm و x=50mm (منتصف الضلع العلوي)
+	bx := int(math.Round(mmToPx(50, req.DPI)))
+	by := int(math.Round(mmToPx(20, req.DPI)))
+	r, g, b, _ := outImg.At(bx, by).RGBA()
+	r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
+	if r8 < 180 || g8 > 60 || b8 > 60 {
+		t.Fatalf("expected red border at (%d,%d), got RGB(%d,%d,%d)", bx, by, r8, g8, b8)
 	}
 }

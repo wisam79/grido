@@ -43,11 +43,37 @@ vi.mock('../wailsjs/go/main/App', () => ({
 vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
   ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
+  PrintDirect: vi.fn(() =>
+    Promise.resolve({ success: true, jobId: 0, status: 'Printed', error: '' }),
+  ),
+  PollJobStatus: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      jobId: 0,
+      status: 'Completed',
+      code: 'COMPLETED',
+      terminal: true,
+      error: '',
+    }),
+  ),
+  ResolvePrinterPlan: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      code: 'EXACT',
+      appliedFormName: '',
+      appliedPaperId: 0,
+      paperWidthMM: 101.6,
+      paperHeightMM: 152.4,
+      scale: 1,
+      fallbackReason: '',
+    }),
+  ),
   GetPrinters: vi.fn(() => Promise.resolve({ success: true, printers: [] })),
   OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
   // 🛑 عقد الإلغاء الجديد (C4) — يُستدعى من cancelExport في use-print-export
   CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
   CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
+  CancelSpoolJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 vi.mock('@bindings/grido/app', () => ({
@@ -463,6 +489,148 @@ describe('PrintDialog Backstage View Tests', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'صيغة JPEG' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('matches bordered vs borderless driver paper based on effectiveMarginMM and filters invalid driver papers', async () => {
+    const { GetSupportedPapers } = await import('../wailsjs/go/handlers/PrintHandler');
+    const { PrintDirect } = await import('@bindings/grido/internal/handlers/printhandler');
+
+    vi.mocked(GetSupportedPapers).mockResolvedValue({
+      success: true,
+      papers: [
+        // ورقة تالفة (< 10مم) يجب أن يرشحها sanitizedDriverPapers
+        { id: 99, name: 'Tiny Corrupt', widthMM: 5, heightMM: 5, isBorderless: false },
+        // ورقة بدون حواف تأتي أولاً في مصفوفة الدرايفر
+        { id: 43, name: '4x6 Borderless', widthMM: 101.6, heightMM: 152.4, isBorderless: true },
+        // ورقة قياسية بهامش تأتي ثانياً
+        { id: 44, name: '4x6 Standard', widthMM: 101.6, heightMM: 152.4, isBorderless: false },
+      ],
+    } as never);
+
+    act(() => {
+      useEditorStore.getState().setMode('collage');
+      useEditorStore.setState({
+        slots: [{ id: 's1', cellIndex: 0, x: 0, y: 0, w: 1, h: 1, bgColor: '#224466' }],
+      });
+      useEditorStore.getState().setPrintSettings({
+        paperId: '4x6',
+        paperWidthMM: 101.6,
+        paperHeightMM: 152.4,
+        orientation: 'portrait',
+        marginMM: 5, // هامش مفعّل -> يجب أن يختار الورقة غير الـ borderless (id: 44)
+      });
+    });
+
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(GetSupportedPapers).toHaveBeenCalledWith('EPSON L805 Series');
+    });
+
+    const printBtn = screen.getByRole('button', { name: 'طباعة الورقة' });
+    await act(async () => {
+      fireEvent.click(printBtn);
+    });
+
+    await waitFor(() => {
+      expect(PrintDirect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          paperId: 44,
+          formName: '4x6 Standard',
+          borderless: false,
+        }),
+      );
+    });
+
+    vi.mocked(PrintDirect).mockClear();
+
+    // عند تصفير الهامش (بدون هوامش) يجب أن يختار الورقة الـ borderless (id: 43)
+    await act(async () => {
+      useEditorStore.getState().setPrintSettings({ marginMM: 0 });
+    });
+
+    await act(async () => {
+      fireEvent.click(printBtn);
+    });
+
+    await waitFor(() => {
+      expect(PrintDirect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          paperId: 43,
+          formName: '4x6 Borderless',
+          borderless: true,
+        }),
+      );
+    });
+  });
+
+  it('forwards active photo template DPI to ExportPrintSheet and renders cropmarks in preview', async () => {
+    const { ExportPrintSheet } = await import('@bindings/grido/internal/handlers/printhandler');
+    const { setCachedImageDimensions } = await import('@/lib/canvas/image-dimensions');
+    capture.stage = { width: () => 945 };
+    setCachedImageDimensions('/local-image/id.png', 945, 1417);
+
+    act(() => {
+      useEditorStore.getState().setTemplate({
+        id: 'id-600dpi',
+        name: 'High-Res ID · 40×60 mm',
+        category: 'passport',
+        width: 945,
+        height: 1417,
+        widthMM: 40,
+        heightMM: 60,
+        dpi: 600,
+        background: '#FFFFFF',
+        backgroundHint: 'White',
+      });
+      useEditorStore.setState({
+        elements: [
+          {
+            id: 'el-1',
+            type: 'image',
+            imageSrc: '/local-image/id.png',
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+          },
+        ],
+      });
+      useEditorStore.getState().setPrintSettings({
+        paperId: 'a4',
+        paperWidthMM: 210,
+        paperHeightMM: 297,
+        dpi: 300, // إعداد الورقة 300، لكن القالب الفعال 600 DPI
+        showCutLines: true,
+        cutLineStyle: 'cropmarks',
+        copiesPerSheet: 2,
+      });
+    });
+
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    // شريط الحالة يعرض 600 DPI من القالب، والمعاينة ترسم 8 أذرع لعلامات الزوايا (4 زوايا × ذراعين)
+    expect(screen.getAllByText('600 DPI')).toHaveLength(1);
+    const paper = screen.getByTestId('print-preview-paper');
+    const cropArms = paper.querySelectorAll('.border-canvas-collage-cut');
+    expect(cropArms.length).toBe(8);
+
+    const printBtn = screen.getByRole('button', { name: 'طباعة الورقة' });
+    await act(async () => {
+      fireEvent.click(printBtn);
+    });
+
+    await waitFor(() => {
+      expect(ExportPrintSheet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dpi: 600,
+          cutLineStyle: 'cropmarks',
+        }),
+      );
     });
   });
 });

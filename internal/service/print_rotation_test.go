@@ -499,3 +499,102 @@ func TestDrawItemImage_RectFastPathMatchesClipPath(t *testing.T) {
 		})
 	}
 }
+
+// TestGeneratePrintSheet_ProcessedCacheSeparatesCropMode يتحقق ببكسلات الورقة
+// المولّدة فعلياً من أن كاش المعالجة (processedKey) لا يخلط بين عنصرين في نفس
+// الورقة يشتركان في نفس الصورة والأبعاد وZoom=2 ويختلفان في CropMode فقط
+// ("legacy" المثبت عند الحافة العلوية مقابل "centered" المتمركز في المحورين).
+func TestGeneratePrintSheet_ProcessedCacheSeparatesCropMode(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+	mediaDir := filepath.Join(tempDir, "Media")
+	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+		t.Fatalf("mkdir Media: %v", err)
+	}
+
+	// صورة 800×600 مقسمة رأسياً حسب المحور X (نفس معادلة TestComputeCropFromSlot_CenteredVsLegacy):
+	// مع slotAspect=2.0 و zoom=2.0:
+	// - legacy يعطي crop=(0, 200, 400×200) ← منتصف العنصر يقرأ srcX=200 (أحمر صريح x < 300)
+	// - centered يعطي crop=(200, 200, 400×200) ← منتصف العنصر يقرأ srcX=400 (أزرق صريح x >= 300)
+	srcImg := image.NewRGBA(image.Rect(0, 0, 800, 600))
+	for y := 0; y < 600; y++ {
+		for x := 0; x < 800; x++ {
+			if x < 300 {
+				srcImg.SetRGBA(x, y, color.RGBA{R: 240, G: 20, B: 20, A: 255})
+			} else {
+				srcImg.SetRGBA(x, y, color.RGBA{R: 20, G: 40, B: 240, A: 255})
+			}
+		}
+	}
+	imgPath := filepath.Join(mediaDir, "bands.png")
+	if err := imaging.Save(srcImg, imgPath); err != nil {
+		t.Fatalf("save bands.png: %v", err)
+	}
+
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    100,
+		PaperHeightMM:   100,
+		DPI:             100,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "png",
+		Items: []domain.PrintItem{
+			{
+				ImageSrc:   "/local-image/bands.png",
+				X:          10,
+				Y:          10,
+				W:          40,
+				H:          20,
+				SlotAspect: 2.0,
+				Zoom:       2.0,
+				CropMode:   "legacy",
+				Filter:     "none",
+				Brightness: 100,
+				Contrast:   100,
+				Saturation: 100,
+			},
+			{
+				ImageSrc:   "/local-image/bands.png",
+				X:          10,
+				Y:          50,
+				W:          40,
+				H:          20,
+				SlotAspect: 2.0,
+				Zoom:       2.0,
+				CropMode:   "centered",
+				Filter:     "none",
+				Brightness: 100,
+				Contrast:   100,
+				Saturation: 100,
+			},
+		},
+	}
+
+	outPath, _, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet: %v", err)
+	}
+	outImg, err := imaging.Open(outPath)
+	if err != nil {
+		t.Fatalf("open output sheet: %v", err)
+	}
+
+	samplePx := func(xMM, yMM float64) (uint8, uint8, uint8) {
+		px := int(math.Round(mmToPx(xMM, req.DPI)))
+		py := int(math.Round(mmToPx(yMM, req.DPI)))
+		r, g, b, _ := outImg.At(px, py).RGBA()
+		return uint8(r >> 8), uint8(g >> 8), uint8(b >> 8)
+	}
+
+	// مركز العنصر الأول (legacy) عند (30مم، 20مم) يجب أن يكون أحمر
+	r1, g1, b1 := samplePx(30, 20)
+	if r1 < 180 || b1 > 80 {
+		t.Fatalf("legacy item pixel at (30mm,20mm) = RGB(%d,%d,%d), want red (R>=180, B<=80)", r1, g1, b1)
+	}
+
+	// مركز العنصر الثاني (centered) عند (30مم، 60مم) يجب أن يكون أزرق (لا يتلوث بكاش legacy الأحمر!)
+	r2, g2, b2 := samplePx(30, 60)
+	if b2 < 180 || r2 > 80 {
+		t.Fatalf("centered item pixel at (30mm,60mm) = RGB(%d,%d,%d), want blue (B>=180, R<=80) — processedKey cache collision", r2, g2, b2)
+	}
+}

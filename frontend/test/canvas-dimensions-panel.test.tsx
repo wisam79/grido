@@ -215,4 +215,37 @@ describe('CanvasDimensionsPanel Component Tests', () => {
     expect(state.backgroundColor).toBe('#dc2626');
     expect(state.historyIndex).toBe(historyBefore + 1);
   });
+
+  it('clears an active passport template when switching to a standard paper preset so print layout uses the new paper dimensions', () => {
+    useEditorStore.getState().setTemplate({
+      id: 'passport-standard',
+      name: 'Passport 35x45',
+      category: 'passport',
+      width: 413,
+      height: 531,
+      widthMM: 35,
+      heightMM: 45,
+      dpi: 300,
+      background: '#FFFFFF',
+      backgroundHint: 'White',
+    });
+
+    render(
+      <TooltipProvider>
+        <CanvasDimensionsPanel />
+      </TooltipProvider>,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'المقاس: مقاس مخصص' });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(trigger);
+
+    const a4Option = screen.getByText(/A4 \(/);
+    fireEvent.click(a4Option);
+
+    const after = useEditorStore.getState();
+    expect(after.template).toBeNull();
+    expect(after.canvasWidth).toBe(2480);
+    expect(after.canvasHeight).toBe(3508);
+  });
 });

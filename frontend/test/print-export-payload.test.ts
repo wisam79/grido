@@ -1178,4 +1178,89 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
       vi.useRealTimers();
     }
   });
+
+  it('في الوضع الحر: صورة تالفة غير مقروءة توقف الطباعة فوراً قبل رفع أي ملصق مُرقّى', async () => {
+    const batchSpy = vi.spyOn(imageDimensions, 'resolveBatchImageDimensions').mockResolvedValueOnce(
+      new Map([
+        // الصورة الأولى '/local-image/broken.png' غائبة (فشل فك الترميز)
+        ['/local-image/sticker.png', { width: 120, height: 120 }],
+      ]),
+    );
+
+    try {
+      await runPrint(
+        makeContext({
+          mode: 'single',
+          slots: [],
+          elements: [
+            {
+              id: 'broken-photo',
+              type: 'image',
+              imageSrc: '/local-image/broken.png',
+              x: 0.1,
+              y: 0.1,
+              width: 0.4,
+              height: 0.4,
+              rotation: 0,
+              opacity: 1,
+              zIndex: 1,
+              visible: true,
+            },
+            {
+              id: 'low-dpi-sticker',
+              type: 'image',
+              imageSrc: '/local-image/sticker.png',
+              x: 0.5,
+              y: 0.5,
+              width: 0.4,
+              height: 0.4,
+              rotation: 0,
+              opacity: 1,
+              zIndex: 2,
+              visible: true,
+              stickerSource: {
+                templateId: 'seal-01',
+                svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100"/></svg>',
+                params: {
+                  fields: {},
+                  primaryColor: '#1e293b',
+                  secondaryColor: '#f59e0b',
+                  backgroundColor: '#ffffff',
+                  isTransparent: false,
+                  fontFamily: 'Cairo',
+                },
+              },
+            },
+          ],
+        }),
+      );
+
+      expect(mockToastError).toHaveBeenCalledWith(
+        expect.stringContaining('عنصر صورة غير قابل للقراءة'),
+      );
+      // لا يجوز استدعاء uploadPrintImage أو ExportPrintSheet عندما يفشل الفحص المبدئي
+      expect(uploadPrintImage).not.toHaveBeenCalled();
+      expect(mockExportPrintSheet).not.toHaveBeenCalled();
+    } finally {
+      batchSpy.mockRestore();
+    }
+  });
+
+  it('في وضع الكولاج: يعيد استخدام أبعاد الصور المفكوكة في preflight دون استدعاء resolveImageDimensions مجدداً', async () => {
+    const resolveSpy = vi.spyOn(imageDimensions, 'resolveImageDimensions');
+    try {
+      FakeImage.decodedWidth = 1000;
+      FakeImage.decodedHeight = 800;
+
+      await runPrint(makeContext());
+
+      expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+      const sentItem = mockExportPrintSheet.mock.calls[0][0].items[0];
+      expect(sentItem.cropW).toBeGreaterThan(0);
+      expect(sentItem.cropH).toBeGreaterThan(0);
+      expect(resolveSpy).not.toHaveBeenCalled();
+    } finally {
+      resolveSpy.mockRestore();
+    }
+  });
 });
