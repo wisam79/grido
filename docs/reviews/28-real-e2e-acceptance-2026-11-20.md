@@ -148,7 +148,11 @@ R1run44807851024 أُلغيعمداًبعدثبوتfailureوتقادمSHAلتو�
     2. **`ubuntu-24.04 chromium 3/4` (`frontend/e2e/transformer-box-follows-geometry.spec.ts`):** تبدأ عقدة الصورة المضافة في `image-node.tsx:129-143` حركة دخول `280ms` بمنحنى `BackEaseOut` (`scale 0.8 → ~1.07 overshoot → 1.0`)؛ فالتقط `afterFirstGrow` ذروة التمدد قبل انكماش العقدة عائدةً إلى `1.0` فظهرت الضغطة الثانية أصغر من الذروة رغم ارتفاع أبعاد المتجر فعلياً إلى `1533×2044`؛ أُضيف انتظار استقرار `scaleX/scaleY ≈ 1` قبل قياس `initial`.
     3. **`ubuntu-24.04 chromium 1/4` (`frontend/e2e/helpers/wails-v3-bridge.ts:623` — `element-properties.spec.ts:9`):** انتهت مهلة `waitForAppReady` الافتراضية (`20s`) أثناء تحميل وحدات ESM الباردة عبر Vite dev قبل تركيب React (`"rpc": []`)؛ رُفعت المهلة الافتراضية إلى `45000ms` (دون سقف اختبار `60s`).
     4. **`ubuntu-24.04 chromium 4/4` (`frontend/e2e/ux-keyboard.spec.ts:326`):** نجحت جميع الحالات `21/21` لكن حالة `scanner corner keys` أُغلقت بـ `Escape` مباشرة ففات Playwright حفظ ملف `screenshot` عند الإغلاق؛ أُضيف انتظار إطارَي رسم مع إرفاق لقطة ختامية صريحة على القرص (`testInfo.attach('screenshot', { path })`).
-- **حالة R9:** قيد الدفع والتشغيل السحابي والتحقق النهائي قبل الإغلاق والدمج إلى `main`.
+- **حالة R9 (`44921555869` على `f46aba18ed043378b1522eca7afabffe30841013`):**
+  - **النتيجة:** اجتازت **`Full CI gate (zero skipped required jobs)` بنسبة 100%** (كافة مهام الجودة والبناء والتوثيق والذكاء الاصطناعي وشرادات `ubuntu-24.04 chromium 1/4..4/4`)، كما نجحت مسارات القبول `actual-admin/admin-chromium 1/1` (`2/2`) و`actual-phone/phone-chromium 1/1` (`1/1`) و`6/7` مسارات في كلٍّ من `actual-linux` و`native-windows` (`J01`, `J02`, `J03`, `J05`, `J06`, `J07`).
+  - **العيب الإنتاجي الأخير المكتشف في R9 وتصحيح R10:**
+    - **`J04` (`frontend/src/lib/store/slices/collage-slice.ts:169-218` — عيب إنتاجي حقيقي):** بعد مرور `canvasSnapshot`، كشف السطر 84 (`expect(applied.slots.some((slot) => slot.rotation === 90)).toBe(true)`) أن `commitCollageLayout` يمرر خلايا القالب الحر إلى `remapSlotsToCells` التي كانت تنسخ `{ x, y, w, h }` فقط وتُسقط `presetType` و`label` و`rotation` (بينما كان `setCollageTemplate` يرقعها موضعياً بعد النداء)؛ عُمّم تمرير `presetType`/`label`/`rotation` داخل `remapSlotsToCells` نفسه لتصل التعديلات والتدويرات الحرة سليمة إلى الكانفاس والملفات المحفوظة.
+- **حالة R10:** قيد الدفع والتشغيل السحابي والتحقق النهائي قبل الإغلاق والدمج إلى `main`.
 
 ## شروط الإغلاق
 

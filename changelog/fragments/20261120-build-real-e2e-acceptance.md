@@ -24,6 +24,7 @@ related_files:
   - frontend/src/components/editor/workspace/app-dialogs-host.tsx:94
   - frontend/src/lib/wails-env.ts:17
   - frontend/src/lib/store/slices/license-slice.ts:183
+  - frontend/src/lib/store/slices/collage-slice.ts:169
   - frontend/e2e-acceptance/helpers/canvas-readonly.ts:48
   - frontend/e2e-acceptance/helpers/gui.ts:62
   - frontend/e2e-acceptance/collage-journeys.spec.ts:66
