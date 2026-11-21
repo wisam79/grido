@@ -161,6 +161,9 @@ export const test = base.extend<{ journey: Journey }>({
           throw new Error('Native runner did not expose a real WebView2 CDP URL');
         attached = await chromium.connectOverCDP(runtime.cdpURL);
         page = await findNativePage(attached);
+        // Hosted Windows runners default to 1024x768 (ResolveDefaultWindowSize -> 976px < 1024 compact breakpoint).
+        // Match the desktop acceptance viewport used by the server lane via CDP without altering production sizing.
+        await page.setViewportSize({ width: 1600, height: 1000 });
         context = page.context();
       } else {
         context = await browser.newContext({

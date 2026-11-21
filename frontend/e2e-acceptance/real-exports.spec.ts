@@ -1,5 +1,5 @@
 import { canvasSnapshot, expectElementCount } from './helpers/canvas-readonly';
-import { ensureSingle, exportCanvasFile, importImages, openPanel } from './helpers/gui';
+import { ensureSingle, exportCanvasFile, importImages } from './helpers/gui';
 import { test, expect } from './helpers/real-app';
 
 test('[J02] Real PNG JPEG CMYK TIFF export bytes DPI pixels', async ({ journey }) => {
@@ -8,8 +8,12 @@ test('[J02] Real PNG JPEG CMYK TIFF export bytes DPI pixels', async ({ journey }
   // 1200x800 source has manually specified red/green/blue/yellow quadrants.
   // Make a 3:2 paper through real controls so imported image is not cropped.
   const width = page.getByRole('textbox', { name: 'العرض', exact: true });
-  await openPanel(page, 'rail-studio-layers', page.getByRole('list', { name: 'قائمة الطبقات' }));
-  // The paper properties are always at the beginning of the properties panel.
+  // Paper properties live in the right inspector panel (open by default on desktop);
+  // toggle via settings menu if collapsed.
+  if (!(await width.isVisible())) {
+    await page.getByTestId('rail-settings-menu-trigger').click();
+    await page.getByRole('menuitem', { name: /لوحة الخصائص والمفتش/ }).click();
+  }
   await expect(width).toBeVisible();
   await width.fill('101.6');
   await width.press('Enter');

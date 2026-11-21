@@ -32,10 +32,12 @@ test('[J05] Sticker QR customization VDP rows real PNG and decode', async ({
   const download = await downloadPromise;
   const pngPath = journey.outputPath('qr-sticker.png');
   await download.saveAs(pngPath);
+  const expectedWidth = Math.round((88 * 300) / 25.4);
+  const expectedHeight = Math.round(expectedWidth / (88 / 96));
   const png = await verifyOutput(pngPath, {
     format: 'png',
-    width: Math.round((88 * 300) / 25.4),
-    height: Math.round((96 * 300) / 25.4),
+    width: expectedWidth,
+    height: expectedHeight,
     dpi: 300,
     alpha: 'transparent',
     nonUniform: true,

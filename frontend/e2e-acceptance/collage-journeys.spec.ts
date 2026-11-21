@@ -65,13 +65,13 @@ test('[J04] Freeform collage manual cell edit apply and restart', async ({ journ
     .fill(`${journey.name}-layout`);
   await dialog.getByRole('button', { name: 'إضافة خلية فارغة', exact: true }).click();
   const width = dialog
-    .getByRole('spinbutton', { name: 'العرض', exact: true })
-    .or(dialog.getByRole('textbox', { name: 'العرض', exact: true }));
+    .getByRole('spinbutton', { name: /^العرض(?:\s+مم)?$/ })
+    .or(dialog.getByRole('textbox', { name: /^العرض(?:\s+مم)?$/ }));
   await width.fill('40');
   await width.press('Enter');
   const height = dialog
-    .getByRole('spinbutton', { name: 'الارتفاع', exact: true })
-    .or(dialog.getByRole('textbox', { name: 'الارتفاع', exact: true }));
+    .getByRole('spinbutton', { name: /^الارتفاع(?:\s+مم)?$/ })
+    .or(dialog.getByRole('textbox', { name: /^الارتفاع(?:\s+مم)?$/ }));
   await height.fill('60');
   await height.press('Enter');
   await dialog.getByRole('button', { name: 'تكرار (Ctrl+D)', exact: true }).click();

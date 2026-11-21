@@ -41,13 +41,13 @@ test('[J07] Settings theme canvas zoom menu outcomes survive restart', async ({ 
   expect(zoomed.nodes[0].box.width).toBeGreaterThan(before.nodes[0].box.width);
   await runCommand(page, 'zoom-fit');
   await expect(page.getByTestId('canvas-fit-status')).toBeVisible();
-  // A real menu action changes actual panel visibility, then restores it.
+  // A real menu action collapses/expands the properties panel (w-0 + data-collapsed), then restores it.
   const properties = page.getByTestId('workspace-panel-properties');
-  const wasVisible = await properties.isVisible();
+  const wasCollapsed = (await properties.getAttribute('data-collapsed')) === 'true';
   await settingsAction(page, 'لوحة الخصائص والمفتش');
-  await expect.poll(() => properties.isVisible()).toBe(!wasVisible);
+  await expect(properties).toHaveAttribute('data-collapsed', String(!wasCollapsed));
   await settingsAction(page, 'لوحة الخصائص والمفتش');
-  await expect.poll(() => properties.isVisible()).toBe(wasVisible);
+  await expect(properties).toHaveAttribute('data-collapsed', String(wasCollapsed));
   await saveProject(page, journey.name);
   const selectedText = (await canvasSnapshot(page)).elements.find((el) => el.type === 'text')?.text;
   page = await journey.restart();

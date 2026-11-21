@@ -195,6 +195,7 @@ jobs:
           name: acceptance-actual-linux
           path: ${{ runner.temp }}/evidence/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
       - name: Upload sanitized disposable provision report
         if: always()
@@ -275,6 +276,7 @@ jobs:
           name: acceptance-native-windows
           path: ${{ runner.temp }}/evidence/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 7
 
   acceptance-gate:
