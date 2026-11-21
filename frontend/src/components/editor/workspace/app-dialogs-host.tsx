@@ -1,13 +1,10 @@
 import { lazy, Suspense, useState } from 'react';
 
 import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
-import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
 import { KeyboardShortcutsDialog } from '@/components/editor/dialogs/keyboard-shortcuts-dialog';
 import { StickerStudioHost } from '@/components/editor/dialogs/sticker-studio-host';
-import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import {
   notifyFreeformTemplateSaved,
   setFreeformDialogOpen,
@@ -123,8 +120,6 @@ export function AppDialogsHost({
         </ErrorBoundary>
       )}
 
-      <AccountLicenseModal />
-      <UpdateNotifier />
       <StickerStudioHost />
       <CrashRecoveryDialog
         open={crashReport !== null}
@@ -133,7 +128,6 @@ export function AppDialogsHost({
         onDismiss={onDismissCrash}
       />
 
-      <SonnerToaster position="bottom-center" duration={2000} offset={20} />
       <KeyboardShortcutsDialog />
     </>
   );

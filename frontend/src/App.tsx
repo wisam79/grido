@@ -201,10 +201,10 @@ export default function App() {
     );
   }
 
-  if (!isLicenseActive) {
-    return (
-      <FluentIconProvider weight="regular" size={18}>
-        <TooltipProvider delayDuration={650} skipDelayDuration={150}>
+  return (
+    <FluentIconProvider weight="regular" size={18}>
+      <TooltipProvider delayDuration={650} skipDelayDuration={150}>
+        {!isLicenseActive ? (
           <LicenseLockScreen
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -218,269 +218,259 @@ export default function App() {
             onLogout={logoutAccount}
             user={user}
           />
-          <AccountLicenseModal />
-          <UpdateNotifier />
-          <QuitSaveFailedDialog
-            quitState={quitState}
-            onRetry={retryQuitSave}
-            onCancel={cancelQuit}
-            onQuitWithoutSaving={quitWithoutSaving}
-          />
-          <SonnerToaster position="bottom-center" duration={2000} offset={20} />
-        </TooltipProvider>
-      </FluentIconProvider>
-    );
-  }
-
-  return (
-    <FluentIconProvider weight="regular" size={18}>
-      <TooltipProvider delayDuration={650} skipDelayDuration={150}>
-        <div
-          className={cn(
-            'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background',
-          )}
-          dir="rtl"
-          data-file-drop-target="true"
-        >
-          {!isMaximized && <WindowResizeHandles />}
-          {/* الرأس الموحد للنافذة بتصميم Fluent 2 صلب وخفيف */}
-          <ErrorBoundary>
-            <header
-              className={cn(
-                'border-b border-border bg-sidebar no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) shadow-2xs',
-                !isFocused && 'opacity-75',
-              )}
-              // شريط النافذة بنمط RTL العربي الأصيل (القوائم تبدأ يميناً وأزرار التحكم يساراً)
-              dir="rtl"
-              onDoubleClick={(e) => {
-                // 🛡️ منع تقليص النافذة (Unmaximise) عند النقر المزدوج على عناصر التحكم
-                if (
-                  (e.target as HTMLElement).closest(
-                    '.title-bar-controls, button, [role="tab"], [role="menuitem"], a, input, select',
-                  )
-                ) {
-                  return;
-                }
-                handleMaximize();
-              }}
-            >
-              <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
-                <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0" />
-                    <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
-                      <span>GRIDO</span>
-                      <span className="sr-only">Grido Studio | استوديو الهوية</span>
-                    </h1>
-                  </div>
-                  <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block shrink-0" />
-                  <div
-                    className="hidden sm:flex items-center title-bar-controls"
-                    onDoubleClick={(e) => e.stopPropagation()}
-                  >
-                    <DesktopMenuBar />
-                  </div>
-                  {/* مبدّل الوضع المدمج للشاشات الصغيرة — المبدّل الكامل مخفي
+        ) : (
+          <div
+            className={cn(
+              'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background',
+            )}
+            dir="rtl"
+            data-file-drop-target="true"
+          >
+            {!isMaximized && <WindowResizeHandles />}
+            {/* الرأس الموحد للنافذة بتصميم Fluent 2 صلب وخفيف */}
+            <ErrorBoundary>
+              <header
+                className={cn(
+                  'border-b border-border bg-sidebar no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) shadow-2xs',
+                  !isFocused && 'opacity-75',
+                )}
+                // شريط النافذة بنمط RTL العربي الأصيل (القوائم تبدأ يميناً وأزرار التحكم يساراً)
+                dir="rtl"
+                onDoubleClick={(e) => {
+                  // 🛡️ منع تقليص النافذة (Unmaximise) عند النقر المزدوج على عناصر التحكم
+                  if (
+                    (e.target as HTMLElement).closest(
+                      '.title-bar-controls, button, [role="tab"], [role="menuitem"], a, input, select',
+                    )
+                  ) {
+                    return;
+                  }
+                  handleMaximize();
+                }}
+              >
+                <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
+                  <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0" />
+                      <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
+                        <span>GRIDO</span>
+                        <span className="sr-only">Grido Studio | استوديو الهوية</span>
+                      </h1>
+                    </div>
+                    <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block shrink-0" />
+                    <div
+                      className="hidden sm:flex items-center title-bar-controls"
+                      onDoubleClick={(e) => e.stopPropagation()}
+                    >
+                      <DesktopMenuBar />
+                    </div>
+                    {/* مبدّل الوضع المدمج للشاشات الصغيرة — المبدّل الكامل مخفي
                       تحت md بلا بديل لمسي، فيبقى التبديل ممكناً بأيقونتين */}
-                  <div
-                    role="tablist"
-                    aria-label="وضع العمل"
-                    dir="rtl"
-                    tabIndex={-1}
-                    onKeyDown={(e) => {
-                      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
-                        return;
-                      let nextMode: 'collage' | 'single' | null = null;
-                      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                        nextMode = mode === 'collage' ? 'single' : 'collage';
-                      } else if (e.key === 'Home') {
-                        nextMode = 'collage';
-                      } else if (e.key === 'End') {
-                        nextMode = 'single';
-                      }
-                      if (!nextMode) return;
-                      e.preventDefault();
-                      setMode(nextMode);
-                      const nextBtn = e.currentTarget.querySelector<HTMLButtonElement>(
-                        nextMode === 'collage'
-                          ? '[data-compact-mode="collage"]'
-                          : '[data-compact-mode="single"]',
-                      );
-                      nextBtn?.focus();
-                    }}
-                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted border border-border/70 select-none title-bar-controls shrink-0"
-                  >
-                    <button
-                      type="button"
-                      role="tab"
-                      data-compact-mode="collage"
-                      aria-selected={mode === 'collage'}
-                      tabIndex={mode === 'collage' ? 0 : -1}
-                      aria-label="وضع الكولاج"
-                      title="وضع الكولاج (Ctrl+Alt+1)"
-                      onClick={() => setMode('collage')}
-                      className={cn(
-                        'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
-                        FOCUS_RING,
-                        mode === 'collage'
-                          ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
+                    <div
+                      role="tablist"
+                      aria-label="وضع العمل"
+                      dir="rtl"
+                      tabIndex={-1}
+                      onKeyDown={(e) => {
+                        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)
+                          return;
+                        let nextMode: 'collage' | 'single' | null = null;
+                        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                          nextMode = mode === 'collage' ? 'single' : 'collage';
+                        } else if (e.key === 'Home') {
+                          nextMode = 'collage';
+                        } else if (e.key === 'End') {
+                          nextMode = 'single';
+                        }
+                        if (!nextMode) return;
+                        e.preventDefault();
+                        setMode(nextMode);
+                        const nextBtn = e.currentTarget.querySelector<HTMLButtonElement>(
+                          nextMode === 'collage'
+                            ? '[data-compact-mode="collage"]'
+                            : '[data-compact-mode="single"]',
+                        );
+                        nextBtn?.focus();
+                      }}
+                      className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted border border-border/70 select-none title-bar-controls shrink-0"
                     >
-                      <SquaresFour
-                        aria-hidden="true"
-                        className="w-3.5 h-3.5 shrink-0"
-                        weight={mode === 'collage' ? 'fill' : 'regular'}
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      data-compact-mode="single"
-                      aria-selected={mode === 'single'}
-                      tabIndex={mode === 'single' ? 0 : -1}
-                      aria-label="وضع التعديل الحر"
-                      title="وضع التعديل الحر (Ctrl+Alt+2)"
-                      onClick={() => setMode('single')}
-                      className={cn(
-                        'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
-                        FOCUS_RING,
-                        mode === 'single'
-                          ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <Image
-                        aria-hidden="true"
-                        className="w-3.5 h-3.5 shrink-0"
-                        weight={mode === 'single' ? 'fill' : 'regular'}
-                      />
-                    </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        data-compact-mode="collage"
+                        aria-selected={mode === 'collage'}
+                        tabIndex={mode === 'collage' ? 0 : -1}
+                        aria-label="وضع الكولاج"
+                        title="وضع الكولاج (Ctrl+Alt+1)"
+                        onClick={() => setMode('collage')}
+                        className={cn(
+                          'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                          FOCUS_RING,
+                          mode === 'collage'
+                            ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <SquaresFour
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5 shrink-0"
+                          weight={mode === 'collage' ? 'fill' : 'regular'}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        data-compact-mode="single"
+                        aria-selected={mode === 'single'}
+                        tabIndex={mode === 'single' ? 0 : -1}
+                        aria-label="وضع التعديل الحر"
+                        title="وضع التعديل الحر (Ctrl+Alt+2)"
+                        onClick={() => setMode('single')}
+                        className={cn(
+                          'coarse-touch-target h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                          FOCUS_RING,
+                          mode === 'single'
+                            ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Image
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5 shrink-0"
+                          weight={mode === 'single' ? 'fill' : 'regular'}
+                        />
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* 🧭 عناصر شريط العنوان — نظيفة تماماً وفق Fluent 2:
+                  {/* 🧭 عناصر شريط العنوان — نظيفة تماماً وفق Fluent 2:
                     انتقلت عناصر الثيم والحساب والألواح إلى قائمة الإعدادات الموحدة
                     في أسفل الشريط الجانبي (RailSettingsMenu) لتحرير شريط العنوان */}
-                <div
-                  className="flex items-center gap-1 h-full title-bar-controls shrink-0"
-                  onDoubleClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="coarse-touch-target lg:hidden gap-1.5 h-7 px-2.5 rounded-md text-foreground/80 hover:text-foreground"
-                    onClick={() => panelsHook.openPanel('templates')}
+                  <div
+                    className="flex items-center gap-1 h-full title-bar-controls shrink-0"
+                    onDoubleClick={(e) => e.stopPropagation()}
                   >
-                    <SidebarSimple className="w-4 h-4" />
-                    <span className="text-xs font-semibold">
-                      {mode === 'collage' ? 'القوالب' : 'التصميم'}
-                    </span>
-                  </Button>
-
-                  {/* Window Buttons */}
-                  <WindowControls
-                    isMaximized={isMaximized}
-                    onMinimize={handleMinimize}
-                    onMaximize={handleMaximize}
-                    onClose={handleClose}
-                  />
-                </div>
-              </div>
-            </header>
-          </ErrorBoundary>
-
-          {/* شريط الأدوات */}
-          <Toolbar
-            onPrint={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
-            onExport={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
-            onSave={() =>
-              window.dispatchEvent(
-                new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
-              )
-            }
-          />
-
-          {/* المحتوى الرئيسي للمساحة بتصميم Fluent 2 المستقر */}
-          <WorkspaceLayout
-            panelsHook={panelsHook}
-            templatesContent={
-              <ErrorBoundary>
-                <TemplatePanel
-                  onCollapse={
-                    panelsHook.breakpoint === 'compact'
-                      ? undefined
-                      : () => panelsHook.togglePanel('templates')
-                  }
-                  collapseSide="left"
-                  hideHeader={panelsHook.breakpoint === 'compact'}
-                  activeStudioTab={panelsHook.activeStudioTab}
-                  activeCollageTab={panelsHook.activeCollageTab}
-                  onActiveCollageTabChange={panelsHook.setActiveCollageTab}
-                />
-              </ErrorBoundary>
-            }
-            propertiesContent={
-              <ErrorBoundary>
-                <PropertiesPanel
-                  onCollapse={
-                    panelsHook.breakpoint === 'compact'
-                      ? undefined
-                      : () => panelsHook.togglePanel('properties')
-                  }
-                  isPinned={panelsHook.isInspectorPinned}
-                  onTogglePin={() => panelsHook.setIsInspectorPinned((prev) => !prev)}
-                />
-              </ErrorBoundary>
-            }
-            canvasContent={
-              <ErrorBoundary>
-                <EditorCanvas
-                  onOpenFile={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
-                  onOpenTemplates={() => panelsHook.openPanel('templates')}
-                />
-              </ErrorBoundary>
-            }
-            floatingFeedback={
-              activeOperation && (!isInlineAiOperation || panelsHook.isZenMode) ? (
-                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 pointer-events-auto">
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
-                  <span className="text-xs font-bold text-foreground truncate max-w-xs">
-                    {activeOperation.title}
-                  </span>
-                  {activeOperation.canCancel && (
                     <Button
-                      size="sm"
                       variant="ghost"
-                      onClick={cancelActiveOperation}
-                      className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-colors"
+                      size="sm"
+                      className="coarse-touch-target lg:hidden gap-1.5 h-7 px-2.5 rounded-md text-foreground/80 hover:text-foreground"
+                      onClick={() => panelsHook.openPanel('templates')}
                     >
-                      إلغاء
+                      <SidebarSimple className="w-4 h-4" />
+                      <span className="text-xs font-semibold">
+                        {mode === 'collage' ? 'القوالب' : 'التصميم'}
+                      </span>
                     </Button>
-                  )}
-                </div>
-              ) : null
-            }
-            footerContent={<CanvasViewportDeck isZenMode={panelsHook.isZenMode} />}
-          />
 
-          {/* استضافة الحوارات الكسولة والمودال والإشعارات */}
-          <AppDialogsHost
-            exportOpen={exportOpen}
-            onExportOpenChange={setExportOpen}
-            printOpen={printOpen}
-            onPrintOpenChange={setPrintOpen}
-            crashReport={crashReport}
-            onRecoverCrash={handleRecoverCrash}
-            onDismissCrash={handleDismissCrash}
-          />
-          <QuitSaveFailedDialog
-            quitState={quitState}
-            onRetry={retryQuitSave}
-            onCancel={cancelQuit}
-            onQuitWithoutSaving={quitWithoutSaving}
-          />
-        </div>
+                    {/* Window Buttons */}
+                    <WindowControls
+                      isMaximized={isMaximized}
+                      onMinimize={handleMinimize}
+                      onMaximize={handleMaximize}
+                      onClose={handleClose}
+                    />
+                  </div>
+                </div>
+              </header>
+            </ErrorBoundary>
+
+            {/* شريط الأدوات */}
+            <Toolbar
+              onPrint={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
+              onExport={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
+              onSave={() =>
+                window.dispatchEvent(
+                  new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+                )
+              }
+            />
+
+            {/* المحتوى الرئيسي للمساحة بتصميم Fluent 2 المستقر */}
+            <WorkspaceLayout
+              panelsHook={panelsHook}
+              templatesContent={
+                <ErrorBoundary>
+                  <TemplatePanel
+                    onCollapse={
+                      panelsHook.breakpoint === 'compact'
+                        ? undefined
+                        : () => panelsHook.togglePanel('templates')
+                    }
+                    collapseSide="left"
+                    hideHeader={panelsHook.breakpoint === 'compact'}
+                    activeStudioTab={panelsHook.activeStudioTab}
+                    activeCollageTab={panelsHook.activeCollageTab}
+                    onActiveCollageTabChange={panelsHook.setActiveCollageTab}
+                  />
+                </ErrorBoundary>
+              }
+              propertiesContent={
+                <ErrorBoundary>
+                  <PropertiesPanel
+                    onCollapse={
+                      panelsHook.breakpoint === 'compact'
+                        ? undefined
+                        : () => panelsHook.togglePanel('properties')
+                    }
+                    isPinned={panelsHook.isInspectorPinned}
+                    onTogglePin={() => panelsHook.setIsInspectorPinned((prev) => !prev)}
+                  />
+                </ErrorBoundary>
+              }
+              canvasContent={
+                <ErrorBoundary>
+                  <EditorCanvas
+                    onOpenFile={() =>
+                      window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))
+                    }
+                    onOpenTemplates={() => panelsHook.openPanel('templates')}
+                  />
+                </ErrorBoundary>
+              }
+              floatingFeedback={
+                activeOperation && (!isInlineAiOperation || panelsHook.isZenMode) ? (
+                  <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 pointer-events-auto">
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
+                    <span className="text-xs font-bold text-foreground truncate max-w-xs">
+                      {activeOperation.title}
+                    </span>
+                    {activeOperation.canCancel && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={cancelActiveOperation}
+                        className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-colors"
+                      >
+                        إلغاء
+                      </Button>
+                    )}
+                  </div>
+                ) : null
+              }
+              footerContent={<CanvasViewportDeck isZenMode={panelsHook.isZenMode} />}
+            />
+
+            {/* استضافة الحوارات الكسولة والمودال */}
+            <AppDialogsHost
+              exportOpen={exportOpen}
+              onExportOpenChange={setExportOpen}
+              printOpen={printOpen}
+              onPrintOpenChange={setPrintOpen}
+              crashReport={crashReport}
+              onRecoverCrash={handleRecoverCrash}
+              onDismissCrash={handleDismissCrash}
+            />
+          </div>
+        )}
+        <AccountLicenseModal />
+        <UpdateNotifier />
+        <QuitSaveFailedDialog
+          quitState={quitState}
+          onRetry={retryQuitSave}
+          onCancel={cancelQuit}
+          onQuitWithoutSaving={quitWithoutSaving}
+        />
+        <SonnerToaster position="bottom-center" duration={2000} offset={20} />
       </TooltipProvider>
     </FluentIconProvider>
   );

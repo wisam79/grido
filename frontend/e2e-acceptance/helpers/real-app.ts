@@ -83,7 +83,8 @@ export async function loginThroughGui(
     await expect(authEmail).not.toBeVisible({ timeout: 60_000 });
   }
   await expect(page.getByTestId('workspace-toolbar')).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('#canvas-area canvas').first()).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'الحساب والترخيص' })).toBeHidden();
+  await expect(page.locator('.canvas-viewport .konvajs-content canvas').first()).toBeVisible();
   // The acceptance lane rejects the DEV-only window.go mock rather than hiding it.
   const bridge = await page.evaluate(() => ({
     legacy: !!(window as unknown as { go?: unknown }).go,

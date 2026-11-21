@@ -30,7 +30,8 @@ export async function startRuntimeAuthContract({ email = 'native-acceptance@exam
   if (typeof password !== 'string' || password.length < 8) throw new Error('fixture password must be supplied (8+ characters)');
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('invalid fixture port');
   const user = { id: randomUUID(), email: email.toLowerCase(), user_metadata: { name: 'Native acceptance fixture' } };
-  const profile = { plan: 'free', expires_at: '0001-01-01T00:00:00Z', license_key: '', status: 'none' };
+  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const profile = { plan: 'pro', expires_at: expiresAt, license_key: '', status: 'active' };
   const tokens = new Set();
   const refreshTokens = new Map();
   const calls = [];
