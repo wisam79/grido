@@ -17,7 +17,8 @@ import type { CurrencyCode } from "../data/landing-content";
 import { GITHUB_RELEASE_DOWNLOAD_URL } from "../lib/version";
 
 export default function LandingPage() {
-  const [showFloatingCta, setShowFloatingCta] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
+  const [ctaSectionVisible, setCtaSectionVisible] = useState(false);
   const [currency, setCurrency] = useState<CurrencyCode>("IQD");
   const mainRef = useRef<HTMLElement>(null);
 
@@ -25,8 +26,8 @@ export default function LandingPage() {
     let rafId: number | null = null;
     const update = () => {
       rafId = null;
-      const shouldShow = window.scrollY > 500;
-      setShowFloatingCta((previous) =>
+      const shouldShow = window.scrollY > 560;
+      setPastHero((previous) =>
         previous === shouldShow ? previous : shouldShow,
       );
     };
@@ -43,6 +44,31 @@ export default function LandingPage() {
     };
   }, []);
 
+  // Hide the floating download button when Pricing or the closing CTA is visible
+  // so two primary download CTAs never compete on screen simultaneously.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const targets = [
+      document.getElementById("pricing"),
+      document.getElementById("cta-banner"),
+    ].filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+
+    const visible = new Set<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) visible.add(entry.target);
+          else visible.delete(entry.target);
+        });
+        setCtaSectionVisible(visible.size > 0);
+      },
+      { threshold: 0.15 },
+    );
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   // Optional card-only fades. Nothing is hidden while waiting for this enhancement.
   useEffect(() => {
     const main = mainRef.current;
@@ -55,7 +81,9 @@ export default function LandingPage() {
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const cards = Array.from(
-      main.querySelectorAll<HTMLElement>(".landing-section .landing-card"),
+      main.querySelectorAll<HTMLElement>(
+        ".landing-section .landing-card, .landing-section .landing-card-featured",
+      ),
     );
     const revealed = new WeakSet<Element>();
     let observer: IntersectionObserver | null = null;
@@ -94,6 +122,8 @@ export default function LandingPage() {
     };
   }, []);
 
+  const showFloatingCta = pastHero && !ctaSectionVisible;
+
   return (
     <div
       dir="rtl"
@@ -126,7 +156,7 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-primary landing-floating-download"
+          className="btn-primary landing-floating-download hidden sm:inline-flex"
           aria-label="تحميل Grido Studio لويندوز"
         >
           <Download aria-hidden="true" className="h-4 w-4 shrink-0" />

@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from "react";
+import { Clock, TrendingUp } from "lucide-react";
 import { CURRENCIES, type CurrencyCode } from "../../data/landing-content";
 import { SectionHeader } from "./SectionHeader";
 
@@ -46,20 +47,23 @@ function RoiEstimate({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center">
-      <div className="md:col-span-6 space-y-6">
+      <div className="md:col-span-6 space-y-7">
         <div>
-          <div className="flex flex-wrap justify-between items-center gap-2">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-1">
             <label
               htmlFor="roi-clients"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-semibold text-text-primary"
             >
               زبائن صور الهوية يومياً
             </label>
-            <span className="text-sm text-text-primary">
-              <bdi dir="ltr" className="font-mono tabular-nums">
+            <span className="rounded-md border border-white/10 bg-inset px-2.5 py-1 text-sm text-text-primary">
+              <bdi
+                dir="ltr"
+                className="font-mono font-semibold tabular-nums text-brand-light"
+              >
                 {dailyClients}
               </bdi>{" "}
-              زبون
+              <span className="text-xs text-text-secondary">زبون</span>
             </span>
           </div>
           <input
@@ -77,21 +81,33 @@ function RoiEstimate({
             style={{ "--range-fill": `${clientsFill}%` } as CSSProperties}
             className="ds-range w-full h-11 border-0 bg-transparent bg-no-repeat [background-size:100%_8px] [background-position:center] [--range-accent:var(--grido-brand-primary)]"
           />
+          <div
+            aria-hidden="true"
+            className="flex justify-between font-mono text-[11px] text-text-muted tabular-nums"
+          >
+            <span>{CLIENT_MIN}</span>
+            <span>{CLIENT_MAX}</span>
+          </div>
         </div>
 
         <div>
-          <div className="flex flex-wrap justify-between items-center gap-2">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-1">
             <label
               htmlFor="roi-price"
-              className="text-sm font-medium text-text-primary"
+              className="text-sm font-semibold text-text-primary"
             >
               سعر طقم الصور للزبون
             </label>
-            <span className="text-sm text-text-primary">
-              <bdi dir="ltr" className="font-mono tabular-nums">
+            <span className="rounded-md border border-white/10 bg-inset px-2.5 py-1 text-sm text-text-primary">
+              <bdi
+                dir="ltr"
+                className="font-mono font-semibold tabular-nums text-status-success"
+              >
                 {sheetPrice.toLocaleString("en-US")}
               </bdi>{" "}
-              <bdi>{currentCurr.unit}</bdi>
+              <bdi className="text-xs text-text-secondary">
+                {currentCurr.unit}
+              </bdi>
             </span>
           </div>
           <input
@@ -105,32 +121,50 @@ function RoiEstimate({
             aria-valuetext={`${sheetPrice.toLocaleString("en-US")} ${currentCurr.unit}`}
             aria-describedby="roi-assumptions"
             style={{ "--range-fill": `${priceFill}%` } as CSSProperties}
-            className="ds-range w-full h-11 border-0 bg-transparent bg-no-repeat [background-size:100%_8px] [background-position:center] [--range-accent:var(--grido-brand-primary)]"
+            className="ds-range w-full h-11 border-0 bg-transparent bg-no-repeat [background-size:100%_8px] [background-position:center] [--range-accent:var(--grido-status-success)]"
           />
+          <div
+            aria-hidden="true"
+            className="flex justify-between font-mono text-[11px] text-text-muted tabular-nums"
+          >
+            <span>{currentCurr.roiMinPrice.toLocaleString("en-US")}</span>
+            <span>{currentCurr.roiMaxPrice.toLocaleString("en-US")}</span>
+          </div>
         </div>
       </div>
 
-      <dl className="md:col-span-6 border-t md:border-t-0 md:border-s border-border-subtle pt-6 md:pt-0 md:ps-8 divide-y divide-border-subtle">
-        <div className="pb-5">
-          <dt id="roi-time-label" className="text-sm text-text-secondary">
-            الوقت الموفر شهرياً، بافتراض الحسبة
-          </dt>
+      <dl className="md:col-span-6 grid grid-cols-1 gap-4">
+        <div className="landing-metric-tile p-5">
+          <div className="flex items-center justify-between gap-3">
+            <dt id="roi-time-label" className="text-sm text-text-secondary">
+              الوقت الموفر شهرياً، بافتراض الحسبة
+            </dt>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand-primary/25 bg-brand-primary/10 text-brand-light">
+              <Clock aria-hidden="true" className="h-4 w-4" />
+            </span>
+          </div>
           <dd className="mt-3 text-text-primary">
             <output htmlFor="roi-clients" aria-labelledby="roi-time-label">
               <bdi
                 dir="ltr"
-                className="text-2xl sm:text-3xl font-mono font-semibold tabular-nums"
+                className="text-3xl sm:text-4xl font-mono font-bold tabular-nums text-brand-light"
               >
                 {savedHoursPerMonth}
               </bdi>{" "}
-              <span className="text-sm text-text-secondary">ساعة</span>
+              <span className="text-sm text-text-secondary">ساعة / شهر</span>
             </output>
           </dd>
         </div>
-        <div className="pt-5">
-          <dt id="roi-revenue-label" className="text-sm text-text-secondary">
-            إيراد إضافي تقديري، قبل التكاليف
-          </dt>
+
+        <div className="landing-metric-tile p-5">
+          <div className="flex items-center justify-between gap-3">
+            <dt id="roi-revenue-label" className="text-sm text-text-secondary">
+              إيراد إضافي تقديري، قبل التكاليف
+            </dt>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-status-success/25 bg-status-success/10 text-status-success">
+              <TrendingUp aria-hidden="true" className="h-4 w-4" />
+            </span>
+          </div>
           <dd className="mt-3 text-text-primary">
             <output
               htmlFor="roi-clients roi-price"
@@ -138,7 +172,7 @@ function RoiEstimate({
             >
               <bdi
                 dir="ltr"
-                className="text-2xl sm:text-3xl font-mono font-semibold tabular-nums"
+                className="text-3xl sm:text-4xl font-mono font-bold tabular-nums text-text-primary"
               >
                 {monthlyExtraRevenue.toLocaleString("en-US")}
               </bdi>{" "}
@@ -161,16 +195,23 @@ export function RoiCalculator({
   const [dailyClients, setDailyClients] = useState(25);
 
   return (
-    <section id="roi" className="landing-section relative">
+    <section
+      id="roi"
+      className="landing-section landing-section-bordered relative"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
+          eyebrow="تقدير الإنتاجية"
           title="حاسبة الوقت والعائد التقديري"
           description="عدّل المدخلات لاستكشاف سيناريو عمل افتراضي، وليس وعداً بالتوفير أو الربح."
         />
 
         <div className="landing-card p-5 sm:p-8">
           {onCurrencyChange && (
-            <div className="mb-6 flex justify-center">
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.07] pb-6">
+              <span className="text-sm font-medium text-text-secondary">
+                عملة الحساب
+              </span>
               <div
                 className="landing-switch"
                 role="group"
@@ -201,7 +242,7 @@ export function RoiCalculator({
 
           <p
             id="roi-assumptions"
-            className="mt-6 pt-5 border-t border-border-subtle text-xs text-text-secondary leading-7"
+            className="mt-7 pt-5 border-t border-white/[0.07] text-xs text-text-secondary leading-7"
           >
             تفترض الحسبة توفير <bdi dir="ltr">{MINUTES_SAVED_PER_CLIENT}</bdi>{" "}
             دقيقة لكل زبون على مدار <bdi dir="ltr">{WORK_DAYS_PER_MONTH}</bdi>{" "}

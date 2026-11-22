@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAppVersion } from "../../lib/version";
+import { GridoBrandMark } from "../common/GridoBrandMark";
 import { WHATSAPP_URL } from "./WhatsAppButton";
 
 export function Footer() {
@@ -8,38 +9,35 @@ export function Footer() {
   return (
     <footer className="landing-footer text-sm text-text-secondary">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 border-b border-border-subtle pb-8 md:grid-cols-12">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 border-b border-white/[0.07] pb-10 md:grid-cols-12">
           <div className="col-span-2 md:col-span-5">
             <a
               href="#top"
               className="inline-flex min-h-11 items-center gap-2.5 rounded-md"
             >
-              <img
-                src="/logo.png"
-                alt=""
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
-              />
+              <GridoBrandMark size={28} />
               <span
                 dir="ltr"
-                className="text-base font-semibold text-text-primary"
+                className="text-base font-bold tracking-tight text-text-primary"
               >
                 Grido Studio
               </span>
             </a>
-            <p className="mt-2 max-w-sm leading-relaxed">
-              أدوات صور الهوية والكولاج والطباعة، لاستوديوهات التصوير ومراكز
-              الطباعة.
+            <p className="mt-2.5 max-w-sm leading-relaxed">
+              أدوات صور الهوية والكولاج والطباعة، المصممة لاستوديوهات التصوير
+              ومراكز الطباعة.
             </p>
-            <p className="mt-4 flex items-center gap-3 text-xs text-text-muted">
+            <p className="mt-4 inline-flex items-center gap-2.5 rounded-md border border-white/[0.08] bg-card/70 px-3 py-1.5 text-xs text-text-secondary">
               <span>
-                لنظام <bdi>Windows</bdi>
+                لنظام <bdi dir="ltr">Windows 10 / 11</bdi>
               </span>
               {version && (
-                <span dir="ltr" className="font-mono">
-                  v{version}
-                </span>
+                <>
+                  <span aria-hidden="true" className="h-3 w-px bg-white/15" />
+                  <span dir="ltr" className="font-mono text-brand-light">
+                    v{version}
+                  </span>
+                </>
               )}
             </p>
           </div>
@@ -50,7 +48,7 @@ export function Footer() {
           >
             <h2
               id="footer-navigation-heading"
-              className="mb-2 text-sm font-semibold"
+              className="mb-2.5 text-sm font-semibold text-text-primary"
             >
               استكشف
             </h2>
@@ -84,7 +82,7 @@ export function Footer() {
           >
             <h2
               id="footer-support-heading"
-              className="mb-2 text-sm font-semibold"
+              className="mb-2.5 text-sm font-semibold text-text-primary"
             >
               المساعدة والخصوصية
             </h2>
@@ -118,9 +116,13 @@ export function Footer() {
           </nav>
         </div>
 
-        <p className="pt-5 text-xs leading-relaxed text-text-muted">
-          جميع الحقوق محفوظة © {new Date().getFullYear()} Grido Studio.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-6 text-xs leading-relaxed text-text-muted">
+          <p>
+            جميع الحقوق محفوظة © {new Date().getFullYear()}{" "}
+            <bdi dir="ltr">Grido Studio</bdi>.
+          </p>
+          <p>تصميم محلي لسطح المكتب</p>
+        </div>
       </div>
     </footer>
   );

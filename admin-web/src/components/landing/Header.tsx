@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Menu, X } from "lucide-react";
 import { GITHUB_RELEASE_DOWNLOAD_URL } from "../../lib/version";
+import { GridoBrandMark } from "../common/GridoBrandMark";
 
 const NAV_LINKS = [
   { href: "#capabilities", label: "المميزات" },
@@ -39,7 +40,7 @@ export function Header() {
         if (current)
           setActiveSection(current.id === "top" ? "" : `#${current.id}`);
       },
-      { rootMargin: "-80px 0px 0px" },
+      { rootMargin: "-80px 0px -35% 0px" },
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
@@ -65,7 +66,7 @@ export function Header() {
     };
     const desktop =
       typeof window.matchMedia === "function"
-        ? window.matchMedia("(min-width: 80rem)")
+        ? window.matchMedia("(min-width: 64rem)")
         : null;
     const onDesktopChange = () => {
       if (desktop?.matches) setMenuOpen(false);
@@ -92,28 +93,17 @@ export function Header() {
             aria-label="Grido Studio — الرئيسية"
             className="inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-md py-2"
           >
-            <img
-              src="/logo.png"
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain"
-              onError={(event) => {
-                const image = event.currentTarget;
-                if (image.getAttribute("src") !== "/appicon.png")
-                  image.src = "/appicon.png";
-              }}
-            />
+            <GridoBrandMark size={30} />
             <span
               dir="ltr"
-              className="text-base font-semibold tracking-tight text-text-primary"
+              className="text-base font-bold tracking-tight text-text-primary"
             >
               Grido Studio
             </span>
           </a>
 
           <nav
-            className="hidden xl:flex items-center gap-0.5"
+            className="hidden lg:flex items-center gap-0.5"
             aria-label="التنقل الرئيسي"
           >
             {NAV_LINKS.map((link) => (
@@ -135,7 +125,7 @@ export function Header() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary hidden sm:inline-flex"
+              className="btn-primary hidden sm:inline-flex text-[13px] px-4"
             >
               <Download aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span>تحميل البرنامج</span>
@@ -144,7 +134,7 @@ export function Header() {
               ref={menuButtonRef}
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              className="btn-secondary h-11 w-11 p-0 xl:hidden"
+              className="btn-secondary h-11 w-11 p-0 lg:hidden"
               aria-label={menuOpen ? "إغلاق القائمة" : "فتح القائمة"}
               aria-expanded={menuOpen}
               aria-controls="mobile-nav"
@@ -162,7 +152,7 @@ export function Header() {
       <div
         id="mobile-nav"
         hidden={!menuOpen}
-        className="landing-mobile-nav xl:hidden"
+        className="landing-mobile-nav lg:hidden"
       >
         <nav className="grid gap-1" aria-label="التنقل للجوال">
           {NAV_LINKS.map((link) => (
@@ -176,7 +166,7 @@ export function Header() {
               aria-current={
                 activeSection === link.href ? "location" : undefined
               }
-              className="landing-nav-link justify-start"
+              className="landing-nav-link justify-start px-3"
             >
               {link.label}
             </a>
@@ -192,7 +182,7 @@ export function Header() {
             className="btn-primary mt-2 w-full"
           >
             <Download aria-hidden="true" className="h-4 w-4 shrink-0" />
-            <span>تحميل مباشر لويندوز</span>
+            <span>تحميل مباشر لنظام Windows</span>
           </a>
         </nav>
       </div>

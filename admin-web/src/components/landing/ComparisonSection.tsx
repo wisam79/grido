@@ -1,3 +1,5 @@
+import { Check, Minus } from "lucide-react";
+import { GridoBrandMark } from "../common/GridoBrandMark";
 import { SectionHeader } from "./SectionHeader";
 
 const COMPARISON_ROWS = [
@@ -32,43 +34,70 @@ const COMPARISON_ROWS = [
 
 export function ComparisonSection() {
   return (
-    <section id="comparison" className="landing-section relative">
+    <section
+      id="comparison"
+      className="landing-section landing-section-bordered relative"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
+          eyebrow="مقارنة سير العمل"
           title="من أدوات متفرقة إلى سير عمل واحد"
-          description="مقارنة خطوات العمل، دون افتراض نتائج ثابتة للسرعة أو استهلاك الورق."
+          description="مقارنة خطوات العمل اليومية، دون افتراض نتائج ثابتة للسرعة أو استهلاك الورق."
         />
 
-        <div className="landing-card p-5 sm:p-8">
+        <div className="landing-card overflow-hidden">
           <div
-            className="hidden md:grid grid-cols-12 gap-6 pb-4 border-b border-border-subtle text-sm font-semibold text-text-primary"
+            className="hidden md:grid grid-cols-12 border-b border-white/[0.08] text-sm font-semibold"
             aria-hidden="true"
           >
-            <span className="col-span-2">المهمة</span>
-            <span className="col-span-5">أدوات منفصلة</span>
-            <span className="col-span-5">استوديو جريدو</span>
+            <div className="col-span-2 px-6 py-4 text-text-secondary">
+              المهمة
+            </div>
+            <div className="col-span-5 px-6 py-4 text-text-secondary border-s border-white/[0.06]">
+              أدوات منفصلة
+            </div>
+            <div className="col-span-5 px-6 py-4 text-text-primary border-s border-brand-primary/20 bg-brand-primary/[0.07] flex items-center gap-2">
+              <GridoBrandMark size={18} />
+              <span>استوديو جريدو</span>
+            </div>
           </div>
-          <ul className="divide-y divide-border-subtle">
+
+          <ul className="divide-y divide-white/[0.07]">
             {COMPARISON_ROWS.map((item) => (
               <li
                 key={item.title}
-                className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-5 first:pt-0 md:first:pt-5 last:pb-0"
+                className="grid grid-cols-1 md:grid-cols-12"
               >
-                <h3 className="md:col-span-2 text-sm font-semibold text-text-primary leading-7">
-                  {item.title}
-                </h3>
-                <p className="md:col-span-5 text-sm text-text-secondary leading-7">
-                  <span className="block text-xs font-medium text-text-muted md:sr-only">
+                <div className="md:col-span-2 px-5 pt-5 pb-2 md:px-6 md:py-5 flex items-start">
+                  <h3 className="text-sm font-semibold text-text-primary leading-7">
+                    {item.title}
+                  </h3>
+                </div>
+
+                <div className="md:col-span-5 px-5 py-2.5 md:px-6 md:py-5 md:border-s md:border-white/[0.06]">
+                  <span className="mb-1 block text-xs font-medium text-text-muted md:sr-only">
                     أدوات منفصلة
                   </span>
-                  {item.separate}
-                </p>
-                <p className="md:col-span-5 text-sm text-text-primary leading-7">
-                  <span className="block text-xs font-medium text-text-secondary md:sr-only">
+                  <p className="flex items-start gap-2.5 text-sm text-text-secondary leading-7">
+                    <Minus
+                      aria-hidden="true"
+                      className="mt-1.5 h-4 w-4 shrink-0 text-text-muted/70"
+                    />
+                    <span>{item.separate}</span>
+                  </p>
+                </div>
+
+                <div className="md:col-span-5 px-5 pt-2.5 pb-5 md:px-6 md:py-5 md:border-s md:border-brand-primary/20 bg-brand-primary/[0.04]">
+                  <span className="mb-1 block text-xs font-medium text-brand-light md:sr-only">
                     استوديو جريدو
                   </span>
-                  {item.grido}
-                </p>
+                  <p className="flex items-start gap-2.5 text-sm text-text-primary leading-7">
+                    <span className="mt-1.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-brand-light">
+                      <Check aria-hidden="true" className="h-3 w-3" />
+                    </span>
+                    <span>{item.grido}</span>
+                  </p>
+                </div>
               </li>
             ))}
           </ul>

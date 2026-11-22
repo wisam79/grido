@@ -173,8 +173,10 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
 
   return (
     <div ref={rootRef} className="relative w-full max-w-6xl mx-auto">
+      <div aria-hidden="true" className="landing-stage-aura" />
+
       {/* View Mode Toggle: Interactive Canvas vs Real Desktop UI */}
-      <div className="flex items-center justify-between gap-3 mb-3.5 px-1 flex-wrap">
+      <div className="relative z-10 flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
         <div
           role="group"
           aria-label="طريقة عرض واجهة التطبيق"
@@ -195,7 +197,7 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
             onClick={() => setViewMode("real_ui")}
             aria-pressed={viewMode === "real_ui"}
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye aria-hidden="true" className="w-3.5 h-3.5" />
             <span>صورة البرنامج الفعلية</span>
           </button>
         </div>
@@ -221,12 +223,13 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
             onClick={() => setIsZoomed(true)}
             className="btn-secondary text-xs"
           >
-            <Expand aria-hidden="true" className="size-4" />
+            <Expand aria-hidden="true" className="size-4 text-brand-light" />
             <span>تكبير الواجهة</span>
           </button>
         </div>
       </div>
 
+      <div className="landing-stage-shell">
       {/* Render Real UI or Interactive Window */}
       {viewMode === "real_ui" ? (
         <button
@@ -235,9 +238,13 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
           onClick={() => setIsZoomed(true)}
           className="landing-visual relative flex h-[360px] w-full cursor-zoom-in flex-col overflow-hidden text-start sm:h-[520px] lg:h-[640px]"
         >
-          <span className="p-2 sm:p-3 bg-[#1A1A1A] border-b border-[#333] flex items-center justify-between text-xs text-white shrink-0">
-            <span className="font-semibold">لقطة فعلية من Grido Studio</span>
-            <span className="text-[11px] text-text-secondary hidden sm:inline">
+          <span className="px-3.5 py-2.5 bg-[#1A1A1A] border-b border-white/[0.08] flex items-center justify-between text-xs text-white shrink-0">
+            <span className="font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-primary" />
+              لقطة فعلية من Grido Studio
+            </span>
+            <span className="text-[11px] text-brand-light hidden sm:inline-flex items-center gap-1.5">
+              <Expand aria-hidden="true" className="w-3.5 h-3.5" />
               انقر للتكبير
             </span>
           </span>
@@ -461,16 +468,14 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
                   <Printer className="w-3.5 h-3.5" />
                 </div>
                 <div
-                  className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-md text-xs font-bold flex items-center gap-1 sm:gap-1.5 transition-all whitespace-nowrap cursor-default ${
+                  className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-md text-xs font-bold flex items-center gap-1 sm:gap-1.5 transition-colors whitespace-nowrap cursor-default ${
                     stage === "print"
-                      ? "bg-[#2563eb] text-white ring-2 ring-[#60a5fa] shadow-lg shadow-[#2563eb]/50 animate-pulse"
+                      ? "bg-[#2563eb] text-white ring-1 ring-[#60a5fa]"
                       : "bg-[#3b82f6] text-white hover:bg-[#2563eb]"
                   }`}
                   title="تصدير صورة"
                 >
-                  <ArrowUpRight
-                    className={`w-3.5 h-3.5 shrink-0 ${stage === "print" ? "animate-bounce" : ""}`}
-                  />
+                  <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                   <span>تصدير</span>
                 </div>
               </div>
@@ -578,18 +583,18 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
                 })}
 
                 {/* Quick tabs */}
-                <div className="flex items-center gap-1 bg-[#242424]/50 p-1 rounded-xl border border-[#333]/60 mt-3">
-                  <div className="flex-1 h-7 px-2 rounded-lg bg-[#333] text-amber-400 text-[10px] font-bold flex items-center justify-center gap-1">
-                    <Lightning className="w-3 h-3" />
-                    نماذج سريعة
+                <div className="grid grid-cols-3 gap-1 bg-[#242424]/50 p-1 rounded-xl border border-[#333]/60 mt-3">
+                  <div className="h-7 px-1.5 rounded-lg bg-[#333] text-amber-400 text-[10px] font-bold flex items-center justify-center gap-1 whitespace-nowrap">
+                    <Lightning className="w-3 h-3 shrink-0" />
+                    <span>نماذج</span>
                   </div>
-                  <div className="flex-1 h-7 px-2 rounded-lg text-[#999] text-[10px] font-semibold flex items-center justify-center gap-1">
-                    <Plus className="w-3 h-3" />
-                    تخصيص
+                  <div className="h-7 px-1.5 rounded-lg text-[#999] text-[10px] font-semibold flex items-center justify-center gap-1 whitespace-nowrap">
+                    <Plus className="w-3 h-3 shrink-0" />
+                    <span>تخصيص</span>
                   </div>
-                  <div className="flex-1 h-7 px-2 rounded-lg text-[#999] text-[10px] font-semibold flex items-center justify-center gap-1">
-                    <Folder className="w-3 h-3" />
-                    مكتبتي
+                  <div className="h-7 px-1.5 rounded-lg text-[#999] text-[10px] font-semibold flex items-center justify-center gap-1 whitespace-nowrap">
+                    <Folder className="w-3 h-3 shrink-0" />
+                    <span>مكتبتي</span>
                   </div>
                 </div>
               </div>
@@ -1020,6 +1025,7 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
           </div>
         </div>
       )}
+      </div>
 
       {/* Lightbox — لقطة الواجهة الفعلية */}
       {isZoomed && (

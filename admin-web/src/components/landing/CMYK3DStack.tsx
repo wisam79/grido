@@ -289,7 +289,7 @@ export function CMYK3DStack() {
   return (
     <StudioSceneFrame
       label="طبقات توضيحية لفصل ألوان الطباعة CMYK"
-      fallbackImage="/studio-cutter-sheet.jpg"
+      fallbackImage="/cmyk-print-lab-macro.jpg"
       camera={CAMERA}
       view={VIEW}
       build={buildCmykStack}

@@ -489,16 +489,84 @@ html {
 
   .landing-shell .landing-section {
     position: relative;
-    padding-block: 3.5rem;
+    padding-block: 4rem;
     /* html already supplies 6rem anchor clearance; do not double that offset. */
     scroll-margin-block-start: 0;
   }
 
+  .landing-shell .landing-section-bordered::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 18%,
+      rgba(255, 255, 255, 0.08) 82%,
+      transparent 100%
+    );
+  }
+
   .landing-shell .landing-card {
     min-width: 0;
-    background: var(--grido-surface-card);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.032) 0%,
+        rgba(255, 255, 255, 0) 40%
+      ),
+      var(--grido-surface-card);
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    border-radius: var(--radius-xl);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.065),
+      0 1px 2px rgba(0, 0, 0, 0.35),
+      0 14px 32px -18px rgba(0, 0, 0, 0.6);
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease;
+  }
+
+  .landing-shell .landing-card-featured {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        ellipse 80% 55% at 50% 0%,
+        rgba(59, 130, 246, 0.1),
+        transparent 72%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        rgba(255, 255, 255, 0) 42%
+      ),
+      var(--grido-surface-card);
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    border-radius: var(--radius-xl);
+    box-shadow:
+      inset 0 1px 0 0 rgba(147, 197, 253, 0.22),
+      0 2px 4px rgba(0, 0, 0, 0.42),
+      0 24px 56px -24px rgba(0, 0, 0, 0.78);
+  }
+
+  .landing-shell .landing-card-featured::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 12%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(96, 165, 250, 0.72) 50%,
+      transparent 100%
+    );
   }
 
   .landing-shell .landing-visual {
@@ -508,12 +576,85 @@ html {
     background:
       radial-gradient(
         ellipse at 50% 0%,
-        rgba(255, 255, 255, 0.04),
-        transparent 70%
+        rgba(255, 255, 255, 0.035),
+        transparent 68%
+      ),
+      radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      var(--grido-surface-inset);
+    background-size:
+      100% 100%,
+      20px 20px,
+      100% 100%;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: var(--radius-lg);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.32);
+  }
+
+  .landing-shell .landing-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.015) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: var(--grido-brand-light);
+  }
+
+  .landing-shell .landing-metric-tile {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.025) 0%,
+        rgba(255, 255, 255, 0) 50%
       ),
       var(--grido-surface-inset);
-    border: 1px solid var(--grido-border-subtle);
+    border: 1px solid rgba(255, 255, 255, 0.075);
     border-radius: var(--radius-lg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .landing-shell .landing-stage-shell {
+    position: relative;
+    padding: 6px;
+    border-radius: 18px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 32px 90px -24px rgba(0, 0, 0, 0.88);
+  }
+
+  .landing-shell .landing-stage-aura {
+    position: absolute;
+    inset-inline: 8%;
+    inset-block-start: -44px;
+    height: 180px;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 65% 75% at 50% 45%,
+      rgba(59, 130, 246, 0.2),
+      transparent 72%
+    );
+    filter: blur(28px);
+  }
+
+  .landing-shell .landing-headline-accent {
+    background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 58%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .landing-shell .landing-switch {
@@ -524,8 +665,9 @@ html {
     max-width: 100%;
     padding: 4px;
     background: var(--grido-surface-inset);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
   }
 
   .landing-shell .landing-switch > button {
@@ -537,7 +679,7 @@ html {
     min-height: 44px;
     padding: 8px 16px;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: 7px;
     background: transparent;
     color: var(--grido-text-secondary);
     font-size: 0.8125rem;
@@ -547,13 +689,17 @@ html {
     transition:
       background-color 0.15s ease,
       border-color 0.15s ease,
-      color 0.15s ease;
+      color 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .landing-shell .landing-switch > button[aria-pressed="true"] {
     background: var(--grido-surface-card-hover);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.14);
     color: var(--grido-text-primary);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.09),
+      0 1px 2px rgba(0, 0, 0, 0.35);
   }
 
   .landing-shell .landing-switch > button:disabled {
@@ -564,46 +710,75 @@ html {
   .landing-shell .landing-facts {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 0;
+    align-items: center;
+    gap: 10px 16px;
     margin: 0;
     padding: 0;
     list-style: none;
     color: var(--grido-text-secondary);
-    font-size: 0.75rem;
-    line-height: 1.75;
+    font-size: 0.8125rem;
+    line-height: 1.6;
   }
 
   .landing-shell .landing-fact {
-    padding-inline: 16px;
-    border-inline-start: 1px solid var(--grido-border-subtle);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
   }
 
-  .landing-shell .landing-fact:first-child {
-    border-inline-start: 0;
+  @media (min-width: 40rem) {
+    .landing-shell .landing-facts {
+      gap: 10px 0;
+    }
+
+    .landing-shell .landing-fact {
+      padding-inline: 16px;
+      border-inline-start: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .landing-shell .landing-fact:first-child {
+      border-inline-start: 0;
+    }
   }
 
   .landing-shell :is(.btn-primary, .btn-secondary) {
     min-height: 44px;
     min-width: 44px;
     padding: 10px 20px;
-    border-radius: var(--radius-md);
+    border-radius: 9px;
     font-weight: 600;
     line-height: 1.5;
-    box-shadow: none;
     transition:
       background-color 0.15s ease,
       border-color 0.15s ease,
       color 0.15s ease;
   }
 
-  /* The darker brand action keeps normal-size white button labels legible. */
+  /* Zero Button Glow: crisp specular top bevel + neutral shadow only. */
   .landing-shell .btn-primary {
     background: var(--grido-brand-hover);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 1px 2px rgba(0, 0, 0, 0.35);
   }
 
   .landing-shell .btn-primary:hover {
-    background: color-mix(in srgb, var(--grido-brand-hover) 88%, black);
+    background: #1d4ed8;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .landing-shell .btn-secondary {
+    background: rgba(30, 30, 32, 0.9);
+    border-color: rgba(255, 255, 255, 0.11);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+
+  .landing-shell .btn-secondary:hover {
+    background: var(--grido-surface-card-hover);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .landing-shell :is(.btn-primary, .btn-secondary):is(:hover, :active) {
@@ -614,19 +789,20 @@ html {
     position: sticky;
     inset-block-start: 0;
     z-index: var(--landing-z-header);
-    background: rgba(18, 18, 18, 0.94);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--grido-border-subtle);
+    background: rgba(16, 16, 18, 0.86);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
   }
 
   .landing-shell .landing-nav-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
+    padding: 8px 11px;
+    border-radius: 7px;
     color: var(--grido-text-secondary);
     font-size: 0.8125rem;
     font-weight: 500;
@@ -637,8 +813,18 @@ html {
   }
 
   .landing-shell .landing-nav-link[aria-current="location"] {
-    background: var(--grido-surface-card-hover);
+    background: rgba(255, 255, 255, 0.07);
     color: var(--grido-text-primary);
+  }
+
+  .landing-shell .landing-nav-link[aria-current="location"]::after {
+    content: "";
+    position: absolute;
+    inset-block-end: 5px;
+    inset-inline: 14px;
+    height: 2px;
+    border-radius: 9999px;
+    background: var(--grido-brand-light);
   }
 
   .landing-shell .landing-mobile-nav {
@@ -649,10 +835,12 @@ html {
     padding: 12px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: var(--grido-surface-sidebar);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-md);
-    box-shadow: var(--material-shadow-4);
+    background: rgba(23, 23, 25, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--material-shadow-16);
   }
 
   .landing-shell .landing-mobile-nav[hidden] {
@@ -674,50 +862,70 @@ html {
 
   .landing-shell .landing-hero {
     position: relative;
-    padding-block: 3rem 3.5rem;
+    overflow: hidden;
+    padding-block: 3.5rem 4rem;
   }
 
   .landing-shell .landing-hero-light {
     position: absolute;
     inset-inline: 0;
     inset-block-start: 0;
-    height: 36rem;
+    height: 44rem;
     max-height: 100%;
     pointer-events: none;
-    background: radial-gradient(
-      ellipse 65% 60% at 50% 0%,
-      rgba(255, 255, 255, 0.045),
-      transparent 80%
-    );
+    background:
+      radial-gradient(
+        ellipse 72% 55% at 50% -4%,
+        rgba(59, 130, 246, 0.14),
+        rgba(59, 130, 246, 0.03) 42%,
+        transparent 75%
+      ),
+      radial-gradient(
+        ellipse 48% 38% at 50% 0%,
+        rgba(255, 255, 255, 0.06),
+        transparent 70%
+      );
   }
 
   .landing-shell .landing-hero-light::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent calc(8rem - 1px),
-      rgba(255, 255, 255, 0.035) calc(8rem - 1px),
-      rgba(255, 255, 255, 0.035) 8rem
-    );
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.035) 1px,
+        transparent 1px
+      );
+    background-size: 4.5rem 4.5rem;
+    background-position: top center;
     mask-image: radial-gradient(
-      ellipse 50% 65% at 50% 0%,
-      black,
-      transparent 90%
+      ellipse 62% 68% at 50% 0%,
+      black 15%,
+      transparent 88%
     );
     -webkit-mask-image: radial-gradient(
-      ellipse 50% 65% at 50% 0%,
-      black,
-      transparent 90%
+      ellipse 62% 68% at 50% 0%,
+      black 15%,
+      transparent 88%
     );
   }
 
   .landing-shell .landing-footer {
-    padding-block: 40px calc(88px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--grido-border-subtle);
-    background: var(--grido-surface-inset);
+    padding-block: 48px calc(92px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.018) 0%,
+        transparent 40%
+      ),
+      var(--grido-surface-inset);
   }
 
   .landing-shell :is(.landing-floating-download, .landing-floating-contact) {
@@ -732,11 +940,11 @@ html {
     min-width: 44px;
     padding: 10px 16px;
     border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: var(--radius-md);
+    border-radius: 10px;
     font-size: 0.8125rem;
     font-weight: 600;
     line-height: 1.5;
-    box-shadow: var(--material-shadow-2);
+    box-shadow: var(--material-shadow-8);
     transition:
       background-color 0.15s ease,
       border-color 0.15s ease;
@@ -749,7 +957,9 @@ html {
   .landing-shell .landing-floating-contact {
     inset-inline-start: 16px;
     padding-inline: 12px;
-    background: var(--grido-surface-card);
+    background: rgba(28, 28, 30, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     color: var(--grido-text-primary);
   }
 
@@ -792,10 +1002,14 @@ html {
 
   @media (min-width: 48rem) {
     .landing-shell .landing-section {
-      padding-block: 4.5rem;
+      padding-block: 5.25rem;
     }
     .landing-shell .landing-hero {
-      padding-block: 4rem 4.5rem;
+      padding-block: 4.5rem 5rem;
+    }
+    .landing-shell .landing-stage-shell {
+      padding: 8px;
+      border-radius: 20px;
     }
   }
 
@@ -807,6 +1021,10 @@ html {
     .landing-shell .landing-floating-contact:hover {
       background: var(--grido-surface-card-hover);
       color: var(--grido-text-primary);
+    }
+
+    .landing-shell .landing-card-hoverable:hover {
+      border-color: rgba(255, 255, 255, 0.16);
     }
 
     .landing-shell .landing-text-link:hover {
@@ -844,6 +1062,12 @@ html {
 }
 
 @media (forced-colors: active) {
+  .landing-shell .landing-headline-accent {
+    background: none !important;
+    color: CanvasText !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+  }
   :focus-visible {
     outline: 2px solid Highlight !important;
     outline-offset: 2px !important;
@@ -860,7 +1084,10 @@ html {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .app-mockup {
+  .app-mockup,
+  .landing-shell .landing-header,
+  .landing-shell .landing-mobile-nav,
+  .landing-shell .landing-floating-contact {
     background: var(--grido-surface-card) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;

@@ -62,30 +62,37 @@ export function FaqSection() {
   };
 
   return (
-    <section id="faq" className="landing-section relative">
+    <section
+      id="faq"
+      className="landing-section landing-section-bordered relative"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          <div className="lg:col-span-5 text-start">
+          <div className="lg:col-span-5 text-start lg:sticky lg:top-28">
             <SectionHeader
+              eyebrow="استفسارات متكررة"
               title="الأسئلة الشائعة"
-              description="عن التجربة المجانية والعمل المحلي والطباعة والتفعيل."
+              description="إجابات واضحة حول التجربة المجانية، العمل المحلي، الطابعات المدعومة، والتفعيل."
               align="start"
               size="lg"
               gap="none"
             />
 
-            <div className="mt-6 pt-6 border-t border-border-subtle">
-              <p className="mb-3 text-sm text-text-secondary leading-relaxed">
-                هل تحتاج مساعدة في الإعداد؟
+            <div className="landing-card mt-7 p-5">
+              <p className="text-sm font-semibold text-text-primary leading-relaxed">
+                هل لديك استفسار عن طابعتك أو التفعيل؟
+              </p>
+              <p className="mt-1.5 text-xs text-text-secondary leading-relaxed">
+                تواصل معنا مباشرة وسنساعدك في الإعداد والتجربة.
               </p>
               <a
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-secondary min-h-11 gap-2 text-sm"
+                className="btn-secondary mt-4 w-full sm:w-auto min-h-11 gap-2 text-sm"
               >
                 <MessageCircle
-                  className="w-4 h-4 shrink-0"
+                  className="w-4 h-4 shrink-0 text-[#25D366]"
                   aria-hidden="true"
                 />
                 <span>تواصل عبر واتساب</span>
@@ -93,14 +100,17 @@ export function FaqSection() {
             </div>
           </div>
 
-          <div className="lg:col-span-7 landing-card divide-y divide-border-subtle min-w-0">
+          <div className="lg:col-span-7 landing-card divide-y divide-white/[0.07] min-w-0 overflow-hidden">
             {FAQS.map((faq, index) => {
               const isOpen = openIdx === index;
               const questionId = `${accordionId}-question-${index}`;
               const answerId = `${accordionId}-answer-${index}`;
 
               return (
-                <div key={faq.q}>
+                <div
+                  key={faq.q}
+                  className={isOpen ? "bg-white/[0.02]" : undefined}
+                >
                   <h3>
                     <button
                       id={questionId}
@@ -110,15 +120,23 @@ export function FaqSection() {
                       type="button"
                       onClick={() => setOpenIdx(isOpen ? null : index)}
                       onKeyDown={(event) => handleHeaderKeyDown(event, index)}
-                      className="w-full min-h-14 px-5 py-4 rounded-lg text-start flex items-center justify-between gap-4 text-sm font-semibold text-text-primary cursor-pointer hover:bg-card-hover transition-colors duration-150 motion-reduce:transition-none"
+                      className="w-full min-h-15 px-5 sm:px-6 py-4 text-start flex items-center justify-between gap-4 text-sm font-semibold text-text-primary cursor-pointer hover:bg-white/[0.03] transition-colors duration-150 motion-reduce:transition-none"
                       aria-expanded={isOpen}
                       aria-controls={answerId}
                     >
                       <span className="leading-7">{faq.q}</span>
-                      <ChevronDown
-                        className={`w-5 h-5 text-text-secondary shrink-0 transition-transform duration-150 motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
+                      <span
                         aria-hidden="true"
-                      />
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 motion-reduce:transition-none ${
+                          isOpen
+                            ? "border-brand-primary/40 bg-brand-primary/15 text-brand-light"
+                            : "border-white/10 bg-inset text-text-secondary"
+                        }`}
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-150 motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      </span>
                     </button>
                   </h3>
                   <div
@@ -126,7 +144,7 @@ export function FaqSection() {
                     role="region"
                     aria-labelledby={questionId}
                     hidden={!isOpen}
-                    className="px-5 pb-5 text-sm text-text-secondary leading-7"
+                    className="px-5 sm:px-6 pb-5 text-sm text-text-secondary leading-7"
                   >
                     {faq.a}
                   </div>
