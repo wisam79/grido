@@ -651,10 +651,11 @@ html {
   }
 
   .landing-shell .landing-headline-accent {
+    color: var(--grido-brand-light);
     background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 58%, #3b82f6 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
+    -webkit-text-fill-color: transparent;
   }
 
   .landing-shell .landing-switch {
@@ -1062,12 +1063,6 @@ html {
 }
 
 @media (forced-colors: active) {
-  .landing-shell .landing-headline-accent {
-    background: none !important;
-    color: CanvasText !important;
-    -webkit-background-clip: initial !important;
-    background-clip: initial !important;
-  }
   :focus-visible {
     outline: 2px solid Highlight !important;
     outline-offset: 2px !important;
@@ -1084,10 +1079,7 @@ html {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .app-mockup,
-  .landing-shell .landing-header,
-  .landing-shell .landing-mobile-nav,
-  .landing-shell .landing-floating-contact {
+  .app-mockup {
     background: var(--grido-surface-card) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
