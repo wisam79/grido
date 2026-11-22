@@ -8,7 +8,15 @@ export interface ImageIconProps extends React.SVGProps<SVGSVGElement> {
  * أيقونة "إضافة صورة" الاحترافية
  * بطاقة صورة فوتوغرافية مع شارة علامة (+) مصممة بدقة هندسية عالية
  */
-export function AddPhotoIcon({ className = 'w-5 h-5', ...props }: ImageIconProps) {
+export interface AddPhotoIconProps extends ImageIconProps {
+  cutoutColor?: string;
+}
+
+export function AddPhotoIcon({
+  className = 'w-5 h-5',
+  cutoutColor = 'var(--color-card, #ffffff)',
+  ...props
+}: AddPhotoIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -43,10 +51,10 @@ export function AddPhotoIcon({ className = 'w-5 h-5', ...props }: ImageIconProps
       />
       {/* شارة الإضافة الدائرية البارزة في الزاوية السفلية اليمين */}
       <circle cx="14.5" cy="14.5" r="4.25" fill="currentColor" />
-      {/* خطوط علامة (+) واضحة ونقية بلون خلفية الواجهة */}
+      {/* خطوط علامة (+) واضحة ونقية بلون الخلفية المحيطة */}
       <path
         d="M14.5 12V17M12 14.5H17"
-        stroke="var(--color-card, #ffffff)"
+        stroke={cutoutColor}
         strokeWidth="1.75"
         strokeLinecap="round"
       />

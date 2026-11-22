@@ -116,7 +116,7 @@ export function AccountLicenseModal() {
                     : 'text-xs text-muted-foreground/80 mt-0.5 truncate'
                 }
               >
-                سجّل لتفعيل الذكاء الاصطناعي والمزامنة
+                تجربة مجانية 7 أيام عند التسجيل
               </DialogDescription>
             </div>
 

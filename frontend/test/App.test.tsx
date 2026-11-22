@@ -287,6 +287,9 @@ describe('Component Testing: UI Rendering', () => {
     render(<App />);
     expect(await screen.findByText('GRIDO')).toBeInTheDocument();
     expect(await screen.findByLabelText('إدراج صورة جديدة')).toBeInTheDocument();
+    expect(screen.getByLabelText('دفعة صور')).toBeInTheDocument();
+    expect(screen.getByLabelText('كاميرا الهاتف')).toBeInTheDocument();
+    expect(screen.queryByLabelText('خيارات الإدراج')).not.toBeInTheDocument();
     expect(await screen.findByLabelText('مكتبة المشاريع')).toBeInTheDocument();
     const compactCollageTab = screen.getByRole('tab', { name: 'وضع الكولاج', hidden: true });
     const compactSingleTab = screen.getByRole('tab', { name: 'وضع التعديل الحر', hidden: true });
@@ -933,7 +936,9 @@ describe('Startup splash regressions', () => {
     await act(async () => {});
 
     expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'النسخة مقفلة', hidden: true })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'مرحباً بك في Grido Studio', hidden: true }),
+    ).toBeInTheDocument();
     // The live region is mounted even when Sonner has no toast/list yet.
     expect(
       document.querySelectorAll('section[aria-live="polite"][aria-relevant="additions text"]'),
@@ -1050,11 +1055,21 @@ describe('Startup splash regressions', () => {
     {
       session: 'an inactive profile without a token',
       profile: { ...activeProfile, status: 'expired', token: '' },
+      expectedHeading: 'انتهت الفترة التجريبية',
     },
-    { session: 'no stored session', profile: null },
+    {
+      session: 'no stored session',
+      profile: null,
+      expectedHeading: 'مرحباً بك في Grido Studio',
+    },
+    {
+      session: 'backend default free/none guest profile without token',
+      profile: { ...activeProfile, id: '', email: '', plan: 'free', status: 'none', token: '' },
+      expectedHeading: 'مرحباً بك في Grido Studio',
+    },
   ])(
-    'routes $session to the existing lock/account screen, not the editor',
-    async ({ profile }) => {
+    'routes $session to the existing welcome/expired screen, not the editor',
+    async ({ profile, expectedHeading }) => {
       vi.mocked(GetLicenseStatus).mockResolvedValueOnce(profile);
       const startedAt = Date.now();
       render(<App />);
@@ -1065,7 +1080,7 @@ describe('Startup splash regressions', () => {
       expect(screen.queryByRole('main', { name: 'Grido Studio' })).not.toBeInTheDocument();
       expect(screen.queryByText('جاري التهيئة ...')).not.toBeInTheDocument();
       expect(
-        screen.getByRole('heading', { name: 'النسخة مقفلة', hidden: true }),
+        screen.getByRole('heading', { name: expectedHeading, hidden: true }),
       ).toBeInTheDocument();
       // Existing duplicate Radix hosts can aria-hide one another; only verify route ownership.
       const accountDialogs = screen.getAllByRole('dialog', { hidden: true });
@@ -1079,4 +1094,22 @@ describe('Startup splash regressions', () => {
     },
     15000,
   );
+
+  it('shows the trial-expired activation form for an authenticated expired account', async () => {
+    vi.mocked(GetLicenseStatus).mockResolvedValueOnce({
+      ...activeProfile,
+      plan: 'free',
+      status: 'expired',
+    });
+    render(<App />);
+    await act(async () => {});
+
+    expect(screen.getByRole('heading', { name: 'انتهت الفترة التجريبية' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('GRIDO-PRO-XXXX-XXXX-XXXX')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'تفعيل الترخيص' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'تسجيل الدخول / إنشاء حساب' }),
+    ).not.toBeInTheDocument();
+    expect(useEditorStore.getState().accountModalOpen).toBe(false);
+  });
 });

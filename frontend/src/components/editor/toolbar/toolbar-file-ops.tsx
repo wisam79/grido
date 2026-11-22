@@ -13,13 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
+import { Stack, Folders, DeviceMobileCamera } from '@/components/ui/icons';
 import { AddPhotoIcon } from '@/components/ui/image-icons';
 import { clearAutoSave } from '@/hooks/use-autosave';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
@@ -233,78 +227,44 @@ export function ToolbarFileOps() {
   return (
     <>
       {/* مجموعة الإدراج والمشاريع */}
-      <div className="flex items-center gap-1.5">
-        {/* زر الإدراج المنقسم البارز: نقطة البداية الأساسية بتمييز لوني متناسق مع الهوية */}
-        <div className="inline-flex items-center rounded-md shadow-2xs">
+      <div className="flex items-center gap-1">
+        {/* أزرار الإدراج الثلاثة ظاهرة مباشرة ومرتبطة بتقارب: إدراج، دفعة صور، كاميرا الهاتف */}
+        <div className="inline-flex items-center gap-0.5">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
-              variant="outline"
+              variant="default"
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="coarse-touch-target h-8 px-3 gap-1.5 text-control font-semibold rounded-e-none border-control-border bg-card text-foreground hover:bg-accent cursor-pointer focus-visible:relative shadow-none"
+              className="coarse-touch-target h-8 px-3.5 gap-1.5 text-control font-semibold bg-primary-action text-primary-foreground hover:bg-primary-action-hover border border-white/10 shadow-2xs cursor-pointer"
             >
-              <AddPhotoIcon className="w-4 h-4 shrink-0" />
+              <AddPhotoIcon className="w-4 h-4 shrink-0" cutoutColor="var(--primary-action)" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
 
-          <DropdownMenu>
-            <TooltipBtn content="خيارات الإدراج">
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="خيارات الإدراج"
-                  className="coarse-touch-target h-8 w-7 p-0 rounded-s-none border-s-0 border-control-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus-visible:relative data-[state=open]:bg-accent data-[state=open]:text-foreground shadow-none"
-                >
-                  <CaretDown className="w-3.5 h-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipBtn>
-            <DropdownMenuContent
-              align="start"
-              className="w-56 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
+          <TooltipBtn content="دفعة صور (Ctrl + Shift + O)">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setBatchMounted(true);
+                setIsBatchInsertOpen(true);
+              }}
+              data-testid="toolbar-batch-insert"
+              aria-label="دفعة صور"
+              className="coarse-touch-target h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent cursor-pointer rounded-md"
             >
-              <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
-                خيارات الإدراج
-              </div>
-              <DropdownMenuItem
-                onClick={() => {
-                  setBatchMounted(true);
-                  setIsBatchInsertOpen(true);
-                }}
-                className="flex items-center gap-2.5 py-1.5 px-2.5 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <Stack className="w-4 h-4 shrink-0" />
-                <span className="font-bold text-foreground flex-1">دفعة صور</span>
-                <span className="text-micro font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
-              </DropdownMenuItem>
+              <Stack className="w-4 h-4 shrink-0" />
+            </Button>
+          </TooltipBtn>
 
-              <DropdownMenuItem
-                onClick={() => {
-                  setPhoneBridgeMounted(true);
-                  setIsPhoneBridgeOpen(true);
-                }}
-                className="flex items-center gap-2.5 py-1.5 px-2.5 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <DeviceMobileCamera className="w-4 h-4 shrink-0" />
-                <span className="font-bold text-foreground flex-1">كاميرا الهاتف</span>
-                {isPhoneBridgeRunning && (
-                  <span className="flex items-center gap-1 text-micro text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>نشط</span>
-                  </span>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* مؤشر كاميرا الهاتف النشط — أيقونة موحدة هادئة متناسقة مع شريط الأدوات */}
-        {isPhoneBridgeRunning && (
           <TooltipBtn
-            content={`كاميرا الهاتف متصلة (${phoneBridgePairedDevice || 'جاهز للاستلام'}) — انقر للإدارة أو الإيقاف`}
+            content={
+              isPhoneBridgeRunning
+                ? `كاميرا الهاتف متصلة (${phoneBridgePairedDevice || 'جاهز للاستلام'}) — انقر للإدارة أو الإيقاف`
+                : 'كاميرا الهاتف'
+            }
           >
             <Button
               variant="ghost"
@@ -313,22 +273,27 @@ export function ToolbarFileOps() {
                 setPhoneBridgeMounted(true);
                 setIsPhoneBridgeOpen(true);
               }}
-              className="coarse-touch-target relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer rounded-md flex items-center justify-center select-none"
+              data-testid="toolbar-phone-bridge"
+              aria-label="كاميرا الهاتف"
+              className="coarse-touch-target relative h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent transition-colors cursor-pointer rounded-md flex items-center justify-center select-none"
             >
-              <DeviceMobileCamera className="w-4 h-4" />
-              {/* نقطة حالة خضراء دقيقة على الزر */}
-              <span className="absolute top-1.5 start-1.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              {phoneBridgeReceivedCount > 0 && (
-                <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-2xs font-bold leading-none">
-                  {phoneBridgeReceivedCount}
-                </span>
+              <DeviceMobileCamera className="w-4 h-4 shrink-0" />
+              {isPhoneBridgeRunning && (
+                <>
+                  <span className="absolute top-1.5 start-1.5 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  {phoneBridgeReceivedCount > 0 && (
+                    <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-2xs font-bold leading-none">
+                      {phoneBridgeReceivedCount}
+                    </span>
+                  )}
+                </>
               )}
             </Button>
           </TooltipBtn>
-        )}
+        </div>
 
         {/* المكتبة المحلية */}
         <TooltipBtn content="مكتبة المشاريع">

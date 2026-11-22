@@ -104,17 +104,18 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     expect(printBlock![0]).toContain('<span>طباعة</span>');
   });
 
-  it('يحافظ الإدراج على تسمية واضحة وسطح محايد وارتفاع h-8 دون منافسة الطباعة', () => {
+  it('يُوحد مظهر الإدراج مع الطباعة كتوازن بصري أساسي بارتفاع h-8', () => {
     const fileOpsContent = readFileSync(join(toolbarDir, 'toolbar-file-ops.tsx'), 'utf-8');
 
     const insertBlock = fileOpsContent.match(
       /<Button[^>]*data-testid="toolbar-insert"[\s\S]*?<\/Button>/,
     );
     expect(insertBlock).toBeTruthy();
+    expect(insertBlock![0]).toContain('variant="default"');
     expect(insertBlock![0]).toContain('h-8');
-    expect(insertBlock![0]).toMatch(/bg-(background|card)/);
-    expect(insertBlock![0]).toContain('text-foreground');
-    expect(insertBlock![0]).toContain('border-control-border');
+    expect(insertBlock![0]).toContain('bg-primary-action');
+    expect(insertBlock![0]).toContain('text-primary-foreground');
+    expect(insertBlock![0]).toContain('hover:bg-primary-action-hover');
     expect(insertBlock![0]).toContain('coarse-touch-target');
     expect(insertBlock![0]).toContain('<span>إدراج</span>');
   });
