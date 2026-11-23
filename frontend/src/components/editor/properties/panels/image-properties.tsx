@@ -12,6 +12,7 @@ import {
   ImageSquare,
   ArrowCounterClockwise,
   Eye,
+  FrameCorners,
   PaintBrush,
   ArrowClockwise,
   X,
@@ -22,10 +23,12 @@ import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useFaceFrame } from '@/hooks/use-face-frame';
 import { findLiveAiTarget } from '@/lib/ai/ai-result-commit';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
+import { hasCustomImageCrop } from '@/lib/export/export-primitives';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
@@ -373,7 +376,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       const finalPath = await pickLocalImage();
       if (!isMountedRef.current || getDocumentSession() !== session) return;
       if (finalPath) {
-        onUpdate(targetElementId, { imageSrc: finalPath });
+        onUpdate(targetElementId, {
+          imageSrc: finalPath,
+          cropZoom: undefined,
+          cropPanX: undefined,
+          cropPanY: undefined,
+        });
         useEditorStore.getState().pushHistory();
       }
     } catch (err) {
@@ -597,6 +605,49 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           </Tooltip>
         </div>
 
+        {!element.stickerSource && (
+          <div
+            className={cn(
+              'grid gap-1.5',
+              hasCustomImageCrop(element) ? 'grid-cols-2' : 'grid-cols-1',
+            )}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-colors duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
+              onClick={() => useCanvasInteraction.getState().setCroppingElementId(element.id)}
+              title="ضبط الكادر داخل الإطار دون قصّ الأصل"
+            >
+              <FrameCorners
+                className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
+                weight="regular"
+              />
+              <span>ضبط الكادر</span>
+            </Button>
+
+            {hasCustomImageCrop(element) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md border-border/80 hover:bg-muted transition-colors duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs text-muted-foreground hover:text-foreground shadow-2xs"
+                onClick={() => {
+                  onUpdate(element.id, {
+                    cropZoom: undefined,
+                    cropPanX: undefined,
+                    cropPanY: undefined,
+                  });
+                  useEditorStore.getState().pushHistory();
+                }}
+                title="تصفير تكبير وإزاحة الكادر"
+              >
+                <ArrowCounterClockwise className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                <span>تصفير الكادر</span>
+              </Button>
+            )}
+          </div>
+        )}
+
         {Boolean(element.originalImageSrc && element.originalImageSrc !== element.imageSrc) && (
           <div className="space-y-1.5 pt-2 border-t border-border/40 animate-in fade-in duration-150">
             <div className="grid grid-cols-2 gap-1.5">
@@ -609,6 +660,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     imageSrc: element.originalImageSrc,
                     originalImageSrc: undefined,
                     bgColor: 'transparent',
+                    cropZoom: undefined,
+                    cropPanX: undefined,
+                    cropPanY: undefined,
                     ...(element.stickerSource
                       ? {
                           stickerSource: {

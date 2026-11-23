@@ -1,7 +1,7 @@
 import { isElementFullyOutsideCanvas } from '@/lib/canvas/element-geometry';
 import { resolveBatchImageDimensions } from '@/lib/canvas/image-dimensions';
 import { MM_PER_INCH } from '@/lib/canvas/units';
-import { computeSlotCrop } from '@/lib/export/export-primitives';
+import { computeImageCrop } from '@/lib/export/export-primitives';
 
 import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
@@ -101,10 +101,10 @@ export function runFreeformPreflight(input: FreeformPreflightInput): FreeformPre
     const heightPx = el.height * canvasHeightPx;
     if (!(widthMM > 0) || !(heightMM > 0) || !(widthPx > 0) || !(heightPx > 0)) continue;
 
-    // نفس عقد المحرر والمسار السريع: object-fit: cover يستهلك نافذة من المصدر
+    // نفس عقد المحرر والمسار السريع: object-fit: cover + الكادر يستهلكان نافذة من المصدر
     // بنسبة مستطيل الرسم الفعلية على الكانفس، ثم تُقاس بكسلات النافذة المرئية
-    // على المقاس الفيزيائي النهائي بدلاً من احتساب بكسلات سيقصّها cover.
-    const crop = computeSlotCrop(dims, widthPx, heightPx, {});
+    // على المقاس الفيزيائي النهائي بدلاً من احتساب بكسلات سيقصّها cover أو cropZoom.
+    const crop = computeImageCrop(dims, widthPx, heightPx, el);
     const dpiX = crop.sw / (widthMM / MM_PER_INCH);
     const dpiY = crop.sh / (heightMM / MM_PER_INCH);
     const effectiveDpi = Math.min(dpiX, dpiY);

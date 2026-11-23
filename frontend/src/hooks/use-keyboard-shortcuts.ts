@@ -12,6 +12,7 @@ import {
   zoomInStore,
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import {
   clampElementPositionToCanvas,
   resizeElementAroundCenter,
@@ -37,6 +38,7 @@ export function isModalActive(): boolean {
 
 function shouldIgnoreCanvasAction(e: KeyboardEvent): boolean {
   if (isModalActive()) return true;
+  if (useCanvasInteraction.getState().croppingElementId) return true;
   const target = e.target as HTMLElement | null;
   if (!target) return false;
   return Boolean(
@@ -606,6 +608,17 @@ export function useKeyboardShortcuts(enabled = true) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (isModalActive()) return;
+      const interaction = useCanvasInteraction.getState();
+      if (interaction.croppingElementId) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          interaction.cropSessionActions?.cancel();
+        } else if (e.key === 'Enter' && !(e.target as HTMLElement | null)?.closest?.('button')) {
+          e.preventDefault();
+          interaction.cropSessionActions?.commit();
+        }
+        return;
+      }
       const target = e.target as HTMLElement;
       if (isInteractiveTarget(target)) return;
 

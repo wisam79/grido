@@ -39,6 +39,8 @@
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
 
+**إغلاق مهمة `FF-02` (ضبط الكادر غير الهدّام داخل الإطار) — 2026-11-23:** أُضيفت حقول `cropZoom` و`cropPanX` و`cropPanY` الاختيارية في [`types.ts`](../frontend/src/lib/store/types.ts#L114) و[`schema.ts`](../frontend/src/lib/schema.ts#L131)، واستُخرج حساب النافذة الموحّد [`computeImageCrop`](../frontend/src/lib/export/export-primitives.ts#L108) وربطه عبر [`image-node.tsx`](../frontend/src/components/editor/konva/elements/image-node.tsx#L207) و[`export-canvas-fitted.ts`](../frontend/src/lib/export/export-canvas-fitted.ts#L153) و[`freeform-preflight.ts`](../frontend/src/lib/export/freeform-preflight.ts#L107) وحرس [`single-print-composition.ts`](../frontend/src/lib/print/single-print-composition.ts#L143) مع شاشة الضبط الموضعي [`ImageCropOverlay`](../frontend/src/components/editor/canvas/image-crop-overlay.tsx#L574) وfragment في [`changelog/fragments/20261123-canvas-ff02-inplace-crop-pan-zoom.md`](../changelog/fragments/20261123-canvas-ff02-inplace-crop-pan-zoom.md). ارتفع عداد `vitest_test_files` من `188` إلى `189` بعد إضافة `frontend/test/image-inplace-crop.test.tsx` (عدد ملفات الاختبار لا مجموع الحالات)، واجتازت 9 ملفات Vitest مستهدفة منفردة مع `typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو full suite أو `commit`/`push`.
+
 **إغلاق مهمة `FF-01` (النقر المزدوج الذكي وتوحيد حفظ القص) — 2026-11-23:** استُخرج مصدر الحقيقة الموحّد `commitImageElementCrop` في [`image-crop-commit.ts`](../frontend/src/lib/canvas/image-crop-commit.ts#L56) لحفظ `originalImageSrc` وتوحيد مسارات القص بين [`editor-canvas.tsx`](../frontend/src/components/editor/canvas/editor-canvas.tsx#L264) و[`image-properties.tsx`](../frontend/src/components/editor/properties/panels/image-properties.tsx#L736) و[`element-menu-section.tsx`](../frontend/src/components/editor/canvas/context-menu/element-menu-section.tsx#L168) و[`context-menu.tsx`](../frontend/src/components/editor/canvas/context-menu.tsx#L273) مع fragment في [`changelog/fragments/20261123-canvas-ff01-smart-dblclick-crop-origin.md`](../changelog/fragments/20261123-canvas-ff01-smart-dblclick-crop-origin.md). ارتفع عداد `vitest_test_files` من `187` إلى `188` بعد إضافة `frontend/test/freeform-double-click-crop.test.tsx` (عدد ملفات لا مجموع حالات)، واجتازت 6 ملفات Vitest مستهدفة منفردة مع `typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو full suite أو `commit`/`push`.
 
 **تأسيس خارطة الصقل الحيّة وبروتوكول استئناف الوكلاء — 2026-11-23:** أُنشئت [`docs/development-plan/POLISH_ROADMAP.md`](development-plan/POLISH_ROADMAP.md) (`16` مهمة صقل عبر `4` مسارات مع «مؤشر الاستئناف الحي») ومسار [`.agents/workflows/polish-sprint.md`](../.agents/workflows/polish-sprint.md)، وربطت بالبروتوكول الإلزامي في [`.agents/rules/architecture-governance.md`](../.agents/rules/architecture-governance.md) و[`.agents/AGENTS.md`](../.agents/AGENTS.md) مع fragment توثيقي في [`changelog/fragments/20261123-docs-polish-roadmap-protocol.md`](../changelog/fragments/20261123-docs-polish-roadmap-protocol.md)؛ لا تعديلات كود أو تغييرات في عدادات `docs-metrics` (`187 / 32 / 69 / 6`).
@@ -122,7 +124,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=188
+vitest_test_files=189
 e2e_spec_files=32
 go_test_files=69
 docs_files=6

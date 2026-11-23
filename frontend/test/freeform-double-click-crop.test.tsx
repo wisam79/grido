@@ -10,7 +10,12 @@ import { EditorCanvas } from '../src/components/editor/canvas/editor-canvas';
 import { REEDIT_STICKER_EVENT } from '../src/components/editor/dialogs/sticker-reedit-bus';
 import { ImageStyleProperties } from '../src/components/editor/properties/panels/image-properties';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import {
+  resetCanvasInteraction,
+  useCanvasInteraction,
+} from '../src/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '../src/lib/canvas/image-crop-commit';
+import { setCachedImageDimensions } from '../src/lib/canvas/image-dimensions';
 import { useEditorStore } from '../src/lib/editor-store';
 import { advanceDocumentSession } from '../src/lib/io/document-session';
 
@@ -214,6 +219,7 @@ beforeEach(() => {
     isActiveValue: true,
   };
   capturedHandlers.handleDoubleClick = undefined;
+  resetCanvasInteraction();
   useEditorStore.getState().reset();
   vi.stubGlobal('Image', MockImage);
 });
@@ -503,7 +509,8 @@ describe('EditorCanvas — smart handleDoubleClick routing (FF-01)', () => {
     }
   });
 
-  it('opens CropDialog on double-clicking a regular image and preserves originalImageSrc on save', async () => {
+  it('enters in-place crop on double-clicking a regular image and supports advanced CropDialog with originalImageSrc preservation', async () => {
+    setCachedImageDimensions('/local-image/photo.png', 1600, 800);
     const photo = makeImageElement({
       id: 'photo-1',
       imageSrc: '/local-image/photo.png',
@@ -526,11 +533,17 @@ describe('EditorCanvas — smart handleDoubleClick routing (FF-01)', () => {
         capturedHandlers.handleDoubleClick!(photo);
       });
 
+      expect(await screen.findByTestId('image-crop-overlay')).toBeInTheDocument();
+      expect(useCanvasInteraction.getState().croppingElementId).toBe('photo-1');
+      expect(reeditListener).not.toHaveBeenCalled();
+      expect(OpenFile).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: 'قص وتدوير متقدم' }));
+
       const dialog = await screen.findByTestId('mock-crop-dialog');
       expect(dialog).toHaveAttribute('data-image-src', '/local-image/photo.png');
       expect(dialog).toHaveAttribute('data-original-src', '');
-      expect(reeditListener).not.toHaveBeenCalled();
-      expect(OpenFile).not.toHaveBeenCalled();
+      expect(useCanvasInteraction.getState().croppingElementId).toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'تطبيق القص التجريبي' }));
 
@@ -541,6 +554,9 @@ describe('EditorCanvas — smart handleDoubleClick routing (FF-01)', () => {
       const updated = useEditorStore.getState().elements[0] as ImageElement;
       expect(updated.imageSrc).toBe('data:image/png;base64,Y3JvcHBlZA==');
       expect(updated.originalImageSrc).toBe('/local-image/photo.png');
+      expect(updated.cropZoom).toBeUndefined();
+      expect(updated.cropPanX).toBeUndefined();
+      expect(updated.cropPanY).toBeUndefined();
       expect(updated.height).toBeCloseTo(0.8, 6);
       expect(useEditorStore.getState().history).toHaveLength(2);
     } finally {
@@ -583,6 +599,7 @@ describe('EditorCanvas — smart handleDoubleClick routing (FF-01)', () => {
 
       expect(reeditListener).not.toHaveBeenCalled();
       expect(screen.queryByTestId('mock-crop-dialog')).not.toBeInTheDocument();
+      expect(useCanvasInteraction.getState().croppingElementId).toBeNull();
       expect(OpenFile).not.toHaveBeenCalled();
 
       rerender(

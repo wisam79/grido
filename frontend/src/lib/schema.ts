@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { clampSlotZoom } from '@/lib/export/export-primitives';
+import {
+  clampImageCropPan,
+  clampImageCropZoom,
+  clampSlotZoom,
+} from '@/lib/export/export-primitives';
 
 import { sanitizeText } from './canvas/text-helpers';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
@@ -124,6 +128,21 @@ export const CanvasElementSchema = z.object({
 
   imageSrc: safeUriStringSchema.optional(),
   originalImageSrc: safeUriStringSchema.optional(),
+  cropZoom: z
+    .number()
+    .finite()
+    .transform((val) => clampImageCropZoom(val))
+    .optional(),
+  cropPanX: z
+    .number()
+    .finite()
+    .transform((val) => clampImageCropPan(val))
+    .optional(),
+  cropPanY: z
+    .number()
+    .finite()
+    .transform((val) => clampImageCropPan(val))
+    .optional(),
   filter: z.string().optional(),
   brightness: z.number().finite().optional(),
   contrast: z.number().finite().optional(),

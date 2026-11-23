@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layer, Rect } from 'react-konva';
 
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
 import { isCornerAnchor, oppositeCornerAnchor } from '@/lib/canvas/transform-anchors';
 import { useEditorStore } from '@/lib/editor-store';
@@ -60,10 +61,11 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
     [sortedElements],
   );
   const editingTextId = useEditorStore((s) => s.editingTextId);
-  const transformerSelectedIds = React.useMemo(
-    () => (editingTextId ? selectedIds.filter((id) => id !== editingTextId) : selectedIds),
-    [editingTextId, selectedIds],
-  );
+  const croppingElementId = useCanvasInteraction((s) => s.croppingElementId);
+  const transformerSelectedIds = React.useMemo(() => {
+    if (!editingTextId && !croppingElementId) return selectedIds;
+    return selectedIds.filter((id) => id !== editingTextId && id !== croppingElementId);
+  }, [editingTextId, croppingElementId, selectedIds]);
 
   const isText =
     selectedIds.length > 0 && selectedIds.every((id) => elementsById.get(id)?.type === 'text');

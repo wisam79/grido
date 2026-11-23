@@ -9,6 +9,60 @@ export type SlotCropMode = 'legacy' | 'centered';
 export const SLOT_MIN_ZOOM = 1;
 export const SLOT_MAX_ZOOM = 3;
 
+export const IMAGE_CROP_MIN_ZOOM = 1;
+export const IMAGE_CROP_MAX_ZOOM = 4;
+
+/** حقول ضبط الكادر غير الهدّام لعنصر الصورة الحر في الوضع الحر */
+export interface ImageCropFraming {
+  cropZoom?: number;
+  cropPanX?: number;
+  cropPanY?: number;
+}
+
+/** يطبّع تكبير الكادر للوضع الحر إلى النطاق الآمن [1..4] */
+export function clampImageCropZoom(zoom: number | undefined): number {
+  if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom <= IMAGE_CROP_MIN_ZOOM) {
+    return IMAGE_CROP_MIN_ZOOM;
+  }
+  return Math.min(IMAGE_CROP_MAX_ZOOM, zoom);
+}
+
+/** يطبّع إزاحة الكادر إلى النطاق [-1..1] */
+export function clampImageCropPan(pan: number | undefined): number {
+  if (typeof pan !== 'number' || !Number.isFinite(pan)) return 0;
+  return Math.max(-1, Math.min(1, pan));
+}
+
+/** يتحقق من وجود ضبط كادر فعلي غير افتراضي */
+export function hasCustomImageCrop(framing: ImageCropFraming | undefined): boolean {
+  if (!framing) return false;
+  return (
+    clampImageCropZoom(framing.cropZoom) > 1 + 1e-4 ||
+    Math.abs(clampImageCropPan(framing.cropPanX)) > 1e-4 ||
+    Math.abs(clampImageCropPan(framing.cropPanY)) > 1e-4
+  );
+}
+
+/** يزيل الحقول الافتراضية ويقرّب القيم لأربع خانات عشرية لمنع تلوث المشاريع */
+export function normalizeImageCropFraming(framing: ImageCropFraming): {
+  cropZoom: number | undefined;
+  cropPanX: number | undefined;
+  cropPanY: number | undefined;
+} {
+  const round4 = (v: number) => Math.round(v * 10000) / 10000;
+  const z = round4(clampImageCropZoom(framing.cropZoom));
+  const px = round4(clampImageCropPan(framing.cropPanX));
+  const py = round4(clampImageCropPan(framing.cropPanY));
+  if (!hasCustomImageCrop({ cropZoom: z, cropPanX: px, cropPanY: py })) {
+    return { cropZoom: undefined, cropPanX: undefined, cropPanY: undefined };
+  }
+  return {
+    cropZoom: z > 1 + 1e-4 ? z : undefined,
+    cropPanX: Math.abs(px) > 1e-4 ? px : undefined,
+    cropPanY: Math.abs(py) > 1e-4 ? py : undefined,
+  };
+}
+
 /** يطبّع قيمة التكبير إلى النطاق المدعوم [1..3] (القيم الفارغة أو ≤ 0 تعود إلى 1). */
 export function clampSlotZoom(zoom: number | undefined): number {
   if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom <= 0) return SLOT_MIN_ZOOM;
@@ -50,7 +104,79 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// رسم صورة مع object-fit: cover
+// حساب نافذة القصّ (object-fit: cover + cropZoom/cropPanX/cropPanY) لعناصر الصور الحرة
+export function computeImageCrop(
+  img: Pick<HTMLImageElement, 'width' | 'height'>,
+  boxW: number,
+  boxH: number,
+  framing?: ImageCropFraming,
+): SlotCrop {
+  if (!(img.width > 0) || !(img.height > 0) || !(boxW > 0) || !(boxH > 0)) {
+    return {
+      sx: 0,
+      sy: 0,
+      sw: Math.max(0, img.width || 0),
+      sh: Math.max(0, img.height || 0),
+    };
+  }
+  const imgAspect = img.width / img.height;
+  const boxAspect = boxW / boxH;
+  let sw = img.width;
+  let sh = img.height;
+  if (imgAspect > boxAspect) {
+    sw = img.height * boxAspect;
+  } else {
+    sh = img.width / boxAspect;
+  }
+  const zoom = clampImageCropZoom(framing?.cropZoom);
+  sw /= zoom;
+  sh /= zoom;
+  const slackX = Math.max(0, img.width - sw);
+  const slackY = Math.max(0, img.height - sh);
+  const sx = (slackX / 2) * (1 + clampImageCropPan(framing?.cropPanX));
+  const sy = (slackY / 2) * (1 + clampImageCropPan(framing?.cropPanY));
+  return { sx, sy, sw, sh };
+}
+
+// تحويل سحب المؤشر على الورقة إلى إزاحة كادر مطبَّعة [-1..1] مع احترام الدوران والقلب
+export function panImageCropByDelta(params: {
+  img: Pick<HTMLImageElement, 'width' | 'height'>;
+  boxW: number;
+  boxH: number;
+  framing: ImageCropFraming;
+  dxPaper: number;
+  dyPaper: number;
+  rotation?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+}): { cropPanX: number; cropPanY: number } {
+  const { img, boxW, boxH, framing, dxPaper, dyPaper, rotation = 0, flipX, flipY } = params;
+  const rad = (rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  let dxLocal = cos * dxPaper + sin * dyPaper;
+  let dyLocal = -sin * dxPaper + cos * dyPaper;
+  if (flipX) dxLocal = -dxLocal;
+  if (flipY) dyLocal = -dyLocal;
+
+  const { sw, sh } = computeImageCrop(img, boxW, boxH, framing);
+  const slackX = Math.max(0, img.width - sw);
+  const slackY = Math.max(0, img.height - sh);
+  const startPanX = clampImageCropPan(framing.cropPanX);
+  const startPanY = clampImageCropPan(framing.cropPanY);
+
+  const nextPanX =
+    slackX > 1e-6 && boxW > 0
+      ? clampImageCropPan(startPanX + (-2 * dxLocal * (sw / boxW)) / slackX)
+      : 0;
+  const nextPanY =
+    slackY > 1e-6 && boxH > 0
+      ? clampImageCropPan(startPanY + (-2 * dyLocal * (sh / boxH)) / slackY)
+      : 0;
+  return { cropPanX: nextPanX, cropPanY: nextPanY };
+}
+
+// رسم صورة مع object-fit: cover + إزاحة وتكبير الكادر الاختياري
 export function drawImageCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -58,20 +184,10 @@ export function drawImageCover(
   y: number,
   w: number,
   h: number,
+  framing?: ImageCropFraming,
 ) {
-  const imgAspect = img.width / img.height;
-  const boxAspect = w / h;
-  let sx = 0,
-    sy = 0,
-    sw = img.width,
-    sh = img.height;
-  if (imgAspect > boxAspect) {
-    sw = img.height * boxAspect;
-    sx = (img.width - sw) / 2;
-  } else {
-    sh = img.width / boxAspect;
-    sy = (img.height - sh) / 2;
-  }
+  const { sx, sy, sw, sh } = computeImageCrop(img, w, h, framing);
+  if (!(sw > 0) || !(sh > 0)) return;
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 

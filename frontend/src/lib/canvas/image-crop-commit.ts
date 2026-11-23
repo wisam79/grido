@@ -114,6 +114,9 @@ export async function commitImageElementCrop(
       imageSrc: localPath,
       height: newHeight,
       originalImageSrc,
+      cropZoom: undefined,
+      cropPanX: undefined,
+      cropPanY: undefined,
     });
 
     state.setLastEditedImage(localPath);

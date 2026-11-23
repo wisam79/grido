@@ -8,6 +8,8 @@
 // الصور تستخدم object-fit: cover داخل مستطيلها، والقلب حول المحور الأوسط، والزوايا
 // المستديرة تُقصّ — أي عنصر خارج هذه المجموعة يعيد التوجيه إلى مسار الالتقاط.
 
+import { hasCustomImageCrop } from '@/lib/export/export-primitives';
+
 import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
 export interface SingleCompositionItem {
@@ -137,6 +139,9 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
     // المسار السريع لا تحمل القناع فيطبع Go الصورة مستطيلًا كاملًا (audit-2).
     if ((el as ImageElement).maskShape && (el as ImageElement).maskShape !== 'none') {
       return fail('عنصر مقنّع (المسار السريع يرسم مستطيلاً كاملاً بلا قص)');
+    }
+    if (hasCustomImageCrop(el as ImageElement)) {
+      return fail('عنصر بكادر قص مخصص (يتطلب مسار التقاط Konva)');
     }
     // 🛡️ إذا كان العنصر يتجاوز حدود الكانفاس (مثل صورة مكبرة أو مزاحة لتأطير الوجه)،
     // فإن رسم العنصر مباشرة كـ PrintItem مستقل في Go سيتجاوز بطاقة الورقة أو يرفضه

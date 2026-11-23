@@ -150,7 +150,7 @@ export async function renderFittedBranch(
       const filtered = renderWithCanonicalPrintFilters(w, h, el, (octx) => {
         octx.save();
         clipImage(octx);
-        drawImageCover(octx, img, 0, 0, w, h);
+        drawImageCover(octx, img, 0, 0, w, h, el);
         octx.restore();
       });
       if (filtered) ctx.drawImage(filtered, 0, 0, w, h);

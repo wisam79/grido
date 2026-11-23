@@ -20,6 +20,7 @@ import { CanvasContextMenu } from './canvas-context-menu';
 import { CanvasQuickBar } from './canvas-quick-bar';
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from './canvas-rulers';
 import { CanvasVerticalScrollbar, CanvasScrollbarsBottomBar } from './canvas-scrollbars';
+import { ImageCropOverlay } from './image-crop-overlay';
 import { TextEditingOverlay } from './text-editing-overlay';
 import { useCanvasViewport } from './use-canvas-viewport';
 import { useImageDrop } from './use-image-drop';
@@ -94,8 +95,10 @@ export const EditorCanvas = React.memo(
       isMountedRef.current = true;
       return () => {
         isMountedRef.current = false;
+        useCanvasInteraction.getState().setCroppingElementId(null);
       };
     }, []);
+    const croppingElementId = useCanvasInteraction((s) => s.croppingElementId);
     const setActiveGuides = useCallback(
       (guides: SnapGuide[]) => useCanvasInteraction.getState().setActiveGuides(guides),
       [],
@@ -261,6 +264,10 @@ export const EditorCanvas = React.memo(
       setCropTarget(null);
     }
 
+    const handleOpenAdvancedCrop = useCallback((elementId: string) => {
+      setCropTarget({ elementId, session: getDocumentSession() });
+    }, []);
+
     const handleDoubleClick = useCallback(
       (el: CanvasElement) => {
         if (printMode || isLoading) return;
@@ -270,14 +277,16 @@ export const EditorCanvas = React.memo(
           if (el.stickerSource) {
             requestStickerReedit(el.id);
           } else if (el.imageSrc) {
-            setCropTarget({ elementId: el.id, session: getDocumentSession() });
+            flushViewport();
+            selectElement(el.id);
+            useCanvasInteraction.getState().setCroppingElementId(el.id);
           }
         } else if (el.type === 'text') {
           flushViewport();
           setEditingTextId(el.id);
         }
       },
-      [printMode, isLoading, setEditingTextId, flushViewport],
+      [printMode, isLoading, selectElement, setEditingTextId, flushViewport],
     );
 
     const handleSlotClick = useCallback(
@@ -591,6 +600,20 @@ export const EditorCanvas = React.memo(
                 updateElement={updateElement}
                 pushHistory={pushHistory}
                 setEditingTextId={setEditingTextId}
+              />
+
+              <ImageCropOverlay
+                key={`crop-${croppingElementId || 'none'}`}
+                printMode={printMode}
+                croppingElementId={croppingElementId}
+                elements={elements}
+                displayW={displayW}
+                displayH={displayH}
+                canvasWidth={canvasWidth}
+                canvasHeight={canvasHeight}
+                updateElement={updateElement}
+                pushHistory={pushHistory}
+                onOpenAdvancedCrop={handleOpenAdvancedCrop}
               />
 
               {/* خطوط وهوامش النزيف والقص والأمان للمطابع (طافية حول ورقة الكانفس) */}

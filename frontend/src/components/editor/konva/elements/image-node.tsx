@@ -7,8 +7,10 @@ import { useDisplayImage } from '@/hooks/use-display-image';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { useStickerDisplayRaster } from '@/hooks/use-sticker-display-raster';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { isStageCaptureActive } from '@/lib/canvas/konva-export-utils';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { computeImageCrop } from '@/lib/export/export-primitives';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
 import { withShadowlessDrag } from './drag-shadow';
@@ -113,6 +115,7 @@ export const URLImage = React.memo(function URLImage({
   const hasAnimatedRef = React.useRef(false);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
+  const isCropping = useCanvasInteraction((s) => s.croppingElementId === element.id);
 
   const { onDragStart, dragBoundFunc, onDragMove, onDragEnd } = useKonvaDrag({
     element,
@@ -172,6 +175,7 @@ export const URLImage = React.memo(function URLImage({
     hasFilters,
     canvasWidth,
     filterKey,
+    observeCropChanges: true,
   });
 
   // إعادة الكاش بعد استقرار التحجيم فقط (الستور يُكتب عند onTransformEnd لا أثناءه،
@@ -193,33 +197,29 @@ export const URLImage = React.memo(function URLImage({
   const nodeX = element.x * canvasWidth;
   const nodeY = element.y * canvasHeight;
 
-  // ⚖️ مطابقة object-fit: cover مع مسار التصدير اليدوي (drawImageCover في export-primitives.ts):
+  // ⚖️ مطابقة object-fit: cover + الكادر غير الهدّام مع مسار التصدير اليدوي (computeImageCrop في export-primitives.ts):
   // يمنع مطّ وتشويه الوجوه عند تغيير أبعاد الصورة بمقابض الجوانب ويوحّد المعاينة والتصدير 100%.
   const coverCrop = React.useMemo(() => {
     if (!shown || nodeW <= 0 || nodeH <= 0) return undefined;
     const shownW = shown.width || (shown as HTMLImageElement).naturalWidth || 0;
     const shownH = shown.height || (shown as HTMLImageElement).naturalHeight || 0;
     if (shownW <= 0 || shownH <= 0) return undefined;
-    const imgRatio = shownW / shownH;
-    const boxRatio = nodeW / nodeH;
-    let cw = shownW;
-    let ch = shownH;
-    let cx = 0;
-    let cy = 0;
-    if (imgRatio > boxRatio) {
-      cw = shownH * boxRatio;
-      cx = (shownW - cw) / 2;
-    } else if (imgRatio < boxRatio) {
-      ch = shownW / boxRatio;
-      cy = (shownH - ch) / 2;
-    }
+    const crop = computeImageCrop({ width: shownW, height: shownH }, nodeW, nodeH, {
+      cropZoom: element.cropZoom,
+      cropPanX: element.cropPanX,
+      cropPanY: element.cropPanY,
+    });
+    const cropWidth = Math.max(1, Math.min(shownW, Math.round(crop.sw)));
+    const cropHeight = Math.max(1, Math.min(shownH, Math.round(crop.sh)));
+    const cropX = Math.max(0, Math.min(shownW - cropWidth, Math.round(crop.sx)));
+    const cropY = Math.max(0, Math.min(shownH - cropHeight, Math.round(crop.sy)));
     return {
-      cropX: Math.round(cx),
-      cropY: Math.round(cy),
-      cropWidth: Math.max(1, Math.round(cw)),
-      cropHeight: Math.max(1, Math.round(ch)),
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
     };
-  }, [shown, nodeW, nodeH]);
+  }, [shown, nodeW, nodeH, element.cropZoom, element.cropPanX, element.cropPanY]);
 
   // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts و konva-rendering-invariants).
   const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } = withShadowlessDrag(
@@ -358,7 +358,7 @@ export const URLImage = React.memo(function URLImage({
       opacity={element.opacity}
       visible={element.visible !== false}
       id={element.id}
-      draggable={!element.locked && isSelected}
+      draggable={!element.locked && isSelected && !isCropping}
       onDragStart={handleShadowlessStart}
       dragBoundFunc={dragBoundFunc}
       onDragMove={onDragMove}

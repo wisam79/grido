@@ -12,11 +12,13 @@ import {
   Sparkle,
   MagicWand,
   Crop,
+  FrameCorners,
   ClipboardText,
   Sticker,
   Code,
 } from '@/components/ui/icons';
 import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
@@ -152,6 +154,27 @@ export function ElementMenuSection({
         <>
           <div className={menuSectionLabelClassName}>معالجة الصور</div>
           <div className="space-y-0.5">
+            {!imgEl.stickerSource && (
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                disabled={isLocked}
+                className={lockableItemClassName}
+                onClick={() => {
+                  if (isLocked) return;
+                  handleAction(() =>
+                    useCanvasInteraction.getState().setCroppingElementId(imgEl.id),
+                  );
+                }}
+              >
+                <FrameCorners
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="regular"
+                />
+                <span className="truncate">ضبط الكادر</span>
+              </button>
+            )}
+
             <button
               role="menuitem"
               tabIndex={-1}

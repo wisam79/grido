@@ -230,6 +230,9 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                       imageSrc: element.originalImageSrc,
                       originalImageSrc: undefined,
                       bgColor: 'transparent',
+                      cropZoom: undefined,
+                      cropPanX: undefined,
+                      cropPanY: undefined,
                     });
                     useEditorStore.getState().pushHistory();
                     toast.success('تمت الاستعادة');

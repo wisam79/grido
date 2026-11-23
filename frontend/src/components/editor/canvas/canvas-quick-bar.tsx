@@ -258,6 +258,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   const isDragging = useCanvasInteraction((s) => s.isDragging);
   const isTransforming = useCanvasInteraction((s) => s.isTransforming);
+  const isCroppingImage = useCanvasInteraction((s) => Boolean(s.croppingElementId));
   const isEditingText = useEditorStore((s) => Boolean(s.editingTextId));
 
   const selectedSlot = mode === 'collage' ? slots?.find((s) => s.id === selectedId) : undefined;
@@ -269,13 +270,14 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   // 🧷 قاعدة السكون (Rest State Invariant): يظهر الشريط فقط في حالة السكون
   // التام للعناصر. يختفي تماماً أثناء السحب أو التحجيم أو تدوير المقابض
-  // أو تحرير النصوص، ليتيح رؤية كاملة للمرسم ودلائل المحاذاة، ثم يعود
-  // للظهور بسلاسة بعد الاستقرار.
+  // أو تحرير النصوص أو ضبط الكادر، ليتيح رؤية كاملة للمرسم ودلائل المحاذاة،
+  // ثم يعود للظهور بسلاسة بعد الاستقرار.
   if (
     printMode ||
     isContextMenuOpen ||
     isDragging ||
     isTransforming ||
+    isCroppingImage ||
     isEditingText ||
     (!hasSlotSection && !hasElementSection && !hasMultiSection)
   ) {

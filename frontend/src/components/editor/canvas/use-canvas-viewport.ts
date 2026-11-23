@@ -313,8 +313,12 @@ export function useCanvasViewport(
       if (live.intent !== 'manual') liveRef.current = { ...live, intent: 'manual' };
     };
     const handleWheel = (e: WheelEvent) => {
-      // Text scrolling/composition keeps its normal focus and input behavior.
-      if ((e.target as HTMLElement | null)?.closest?.('textarea,input,[contenteditable="true"]'))
+      // Text scrolling/composition and in-place image crop overlay keep their wheel behavior.
+      if (
+        (e.target as HTMLElement | null)?.closest?.(
+          'textarea,input,[contenteditable="true"],[data-crop-overlay="true"]',
+        )
+      )
         return;
       e.preventDefault();
       const local = clientToLocal(

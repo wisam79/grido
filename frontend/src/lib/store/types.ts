@@ -110,6 +110,12 @@ export interface ImageElement extends BaseCanvasElement {
   stickerSource?: StickerElementSource;
   /** قناع قص متجهات للصورة */
   maskShape?: 'none' | 'circle' | 'heart' | 'star';
+  /** تكبير الكادر غير الهدّام داخل الإطار (1..4، افتراضي 1) */
+  cropZoom?: number;
+  /** إزاحة الكادر الأفقية المطبَّعة (-1..1، افتراضي 0 = منتصف) */
+  cropPanX?: number;
+  /** إزاحة الكادر الرأسية المطبَّعة (-1..1، افتراضي 0 = منتصف) */
+  cropPanY?: number;
 }
 
 /** الركن الذي يبقى مثبتاً في فضاء الكانفس بعد تحجيم زاوية نص */
