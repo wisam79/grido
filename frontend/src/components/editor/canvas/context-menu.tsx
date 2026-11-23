@@ -27,6 +27,16 @@ export interface ContextMenuTarget {
   type: 'element' | 'slot' | 'canvas';
 }
 
+export interface ContextMenuCropTarget {
+  imageSrc: string;
+  originalImageSrc?: string;
+  onSave: (
+    croppedB64: string,
+    dims?: { width: number; height: number },
+    isActive?: () => boolean,
+  ) => void | boolean | Promise<void | boolean>;
+}
+
 interface ContextMenuProps {
   position: ContextMenuPosition;
   target: ContextMenuTarget;
@@ -37,8 +47,16 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const focusIndexRef = React.useRef(-1);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
+  const isMountedRef = useRef(true);
   const { zoomScale } = useUiZoom();
   const safeZoom = zoomScale > 0 ? zoomScale : 1;
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const { updateSlot, updateElement, pushHistory } = useEditorStore(
     useShallow((state) => ({
@@ -64,14 +82,11 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     target.type === 'slot' ? onUpdateSlot : onUpdateElement,
   );
 
-  const [cropTarget, setCropTarget] = useState<{
-    imageSrc: string;
-    originalImageSrc?: string;
-    onSave: (croppedB64: string, dims?: { width: number; height: number }) => void;
-  } | null>(null);
+  const [cropTarget, setCropTarget] = useState<ContextMenuCropTarget | null>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
+    if (cropTarget) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
@@ -82,7 +97,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
     };
-  }, [onClose]);
+  }, [cropTarget, onClose]);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
@@ -94,6 +109,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
   // Handle keyboard navigation
   useEffect(() => {
+    if (cropTarget) return;
     const MENUITEM_SELECTOR = "[role='menuitem']:not([disabled]):not([aria-disabled='true'])";
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -128,7 +144,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [cropTarget, onClose]);
 
   const handleAction = (action: () => void) => {
     action();
@@ -254,10 +270,13 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
             }}
             imageSrc={cropTarget.imageSrc}
             originalImageSrc={cropTarget.originalImageSrc}
-            onCropSave={(croppedB64, dims) => {
-              cropTarget.onSave(croppedB64, dims);
-              setCropTarget(null);
-              onClose();
+            onCropSave={async (croppedB64, dims, isActive) => {
+              const committed = await cropTarget.onSave(croppedB64, dims, isActive);
+              if (committed !== false && isMountedRef.current) {
+                setCropTarget(null);
+                onClose();
+              }
+              return committed;
             }}
           />
         </Suspense>

@@ -2,6 +2,11 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات النقر المزدوج الذكي وتوحيد حفظ القص (`FF-01`) — 2026-11-23
+
+- **الإضافات:** أُضيف ملف الاختبار المستقل [`frontend/test/freeform-double-click-crop.test.tsx`](../frontend/test/freeform-double-click-crop.test.tsx) لتغطية دالة [`commitImageElementCrop`](../frontend/src/lib/canvas/image-crop-commit.ts#L56) (حفظ `originalImageSrc` عند أول قص وعدم مسحه في القصات اللاحقة، استنتاج الأبعاد عند غياب `dims`، مسار سطح المكتب `SaveImageFromBase64`، وحراس الجلسة والقفل والتركيب)، وتدفق القص واستعادة الأصل في `ImageStyleProperties`، وتدفق `ContextMenu` غير المتزامن، وتوجيه `handleDoubleClick` في `EditorCanvas` بين إعادة تحرير الملصق (`REEDIT_STICKER_EVENT`) وقص الصورة وتحرير النص وحماية العناصر المقفلة و`printMode`.
+- **التحقق المستهدف المنفصل (`--maxWorkers=1 --no-file-parallelism --coverage.enabled=false`):** اجتازت كل الملفات التالية منفردة: `test/freeform-double-click-crop.test.tsx` (**12/12**)، `test/image-dialog-lifecycle.test.tsx` (**12/12**)، `test/element-properties-tabs.test.tsx` (**54/54**)، `test/collage-image-crop.test.tsx` (**23/23**)، `test/sticker-studio.test.tsx` (**16/16**)، و`test/ui-compliance.test.ts` (**57/57**)، بالإضافة إلى `npm --prefix frontend run typecheck` و`lint` و`format:check` (دون تشغيل full suite أو Playwright محلي).
+
 ## اختبارات التطوير البارامتري للملصقات والبطاقات — 2026-11-23
 
 - **الإضافات:** أُضيف ملف اختبار مستقل [`frontend/test/sticker-parametric-surfaces.test.ts`](../frontend/test/sticker-parametric-surfaces.test.ts) للتحقق من اشتقاق ألوان OKLCH عبر `culori`، وخلو البطاقات الإجرائية من مرشحات الراستر (`feTurbulence`/`feDisplacementMap`)، وتكامل `composeParametricCardSvg`، و`resolveTemplateCutShape`؛ كما توسّع [`frontend/test/sticker-stamp-composer.test.tsx`](../frontend/test/sticker-stamp-composer.test.tsx) لاختبار منتقي الأشكال والأيقونات (`IconGridPicker` مع `type="search"`)، وزر «توليفة»، وحصر تنقل `Enter` على الحقول النصية، مع تحديث توقع العد الكلي (`210` قوالب و`102` في `cards`) في [`frontend/test/sticker-templates.test.ts`](../frontend/test/sticker-templates.test.ts).

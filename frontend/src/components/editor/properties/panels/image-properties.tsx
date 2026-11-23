@@ -22,6 +22,7 @@ import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useFaceFrame } from '@/hooks/use-face-frame';
 import { findLiveAiTarget } from '@/lib/ai/ai-result-commit';
+import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
@@ -30,10 +31,8 @@ import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
-import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 import { ColorField, ColorPanel } from '../color-panel';
 import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
 
@@ -735,74 +734,20 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             imageSrc={element.imageSrc}
             originalImageSrc={element.originalImageSrc}
             onCropSave={async (cropped, dims, isActive) => {
-              const session = getDocumentSession();
-              const isCurrent = () =>
-                isMountedRef.current &&
-                (!isActive || isActive()) &&
-                session === getDocumentSession() &&
-                findLiveAiTarget(element.id)?.imageSrc === element.imageSrc;
-              try {
-                if (!isCurrent()) return false;
-                let localPath = cropped;
-                if (wailsIsDesktop() && cropped.startsWith('data:image/')) {
-                  localPath = await SaveImageFromBase64(cropped);
-                }
-
-                const applyUpdate = (w: number, h: number) => {
-                  if (!isCurrent()) return false;
-                  if (![w, h].every((value) => Number.isFinite(value) && value > 0)) {
-                    throw new Error('فشل قراءة أبعاد القص');
-                  }
-                  const croppedAspect = w / h;
-                  const state = useEditorStore.getState();
-                  const live = state.elements.find((item) => item.id === element.id);
-                  const canvasRatio = state.canvasWidth / state.canvasHeight;
-                  const newHeight = ((live?.width ?? element.width) * canvasRatio) / croppedAspect;
-
-                  onUpdate(element.id, {
-                    imageSrc: localPath,
-                    height: newHeight,
-                  });
-
-                  state.setLastEditedImage(localPath);
-                  state.setLastEditedImageAspect(croppedAspect);
-                  // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
-                  state.pushHistory();
-                  setCropOpen(false);
-                  return true;
-                };
-
-                if (dims && dims.width > 0 && dims.height > 0) {
-                  return applyUpdate(dims.width, dims.height);
-                }
-                const decoded = await new Promise<{ width: number; height: number }>(
-                  (resolve, reject) => {
-                    const img = new Image();
-                    const cleanup = () => {
-                      img.onload = null;
-                      img.onerror = null;
-                      img.src = '';
-                    };
-                    img.onload = () => {
-                      const size = { width: img.width, height: img.height };
-                      cleanup();
-                      resolve(size);
-                    };
-                    img.onerror = () => {
-                      cleanup();
-                      reject(new Error('فشل قراءة القص'));
-                    };
-                    img.src = cropped;
-                  },
-                );
-                return applyUpdate(decoded.width, decoded.height);
-              } catch (err) {
-                if (isCurrent()) {
-                  logger.error('Failed to save cropped image:', err);
-                  toast.error(toErrorMessage(err, 'فشل حفظ القص'));
-                }
-                return false;
+              if (!element.imageSrc) return false;
+              const committed = await commitImageElementCrop({
+                elementId: element.id,
+                expectedImageSrc: element.imageSrc,
+                cropped,
+                dims,
+                isActive,
+                isMounted: () => isMountedRef.current,
+                onUpdate,
+              });
+              if (committed) {
+                setCropOpen(false);
               }
+              return committed;
             }}
           />
         </Suspense>

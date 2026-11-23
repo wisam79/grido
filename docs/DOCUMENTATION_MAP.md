@@ -39,6 +39,8 @@
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
 
+**إغلاق مهمة `FF-01` (النقر المزدوج الذكي وتوحيد حفظ القص) — 2026-11-23:** استُخرج مصدر الحقيقة الموحّد `commitImageElementCrop` في [`image-crop-commit.ts`](../frontend/src/lib/canvas/image-crop-commit.ts#L56) لحفظ `originalImageSrc` وتوحيد مسارات القص بين [`editor-canvas.tsx`](../frontend/src/components/editor/canvas/editor-canvas.tsx#L264) و[`image-properties.tsx`](../frontend/src/components/editor/properties/panels/image-properties.tsx#L736) و[`element-menu-section.tsx`](../frontend/src/components/editor/canvas/context-menu/element-menu-section.tsx#L168) و[`context-menu.tsx`](../frontend/src/components/editor/canvas/context-menu.tsx#L273) مع fragment في [`changelog/fragments/20261123-canvas-ff01-smart-dblclick-crop-origin.md`](../changelog/fragments/20261123-canvas-ff01-smart-dblclick-crop-origin.md). ارتفع عداد `vitest_test_files` من `187` إلى `188` بعد إضافة `frontend/test/freeform-double-click-crop.test.tsx` (عدد ملفات لا مجموع حالات)، واجتازت 6 ملفات Vitest مستهدفة منفردة مع `typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو full suite أو `commit`/`push`.
+
 **تأسيس خارطة الصقل الحيّة وبروتوكول استئناف الوكلاء — 2026-11-23:** أُنشئت [`docs/development-plan/POLISH_ROADMAP.md`](development-plan/POLISH_ROADMAP.md) (`16` مهمة صقل عبر `4` مسارات مع «مؤشر الاستئناف الحي») ومسار [`.agents/workflows/polish-sprint.md`](../.agents/workflows/polish-sprint.md)، وربطت بالبروتوكول الإلزامي في [`.agents/rules/architecture-governance.md`](../.agents/rules/architecture-governance.md) و[`.agents/AGENTS.md`](../.agents/AGENTS.md) مع fragment توثيقي في [`changelog/fragments/20261123-docs-polish-roadmap-protocol.md`](../changelog/fragments/20261123-docs-polish-roadmap-protocol.md)؛ لا تعديلات كود أو تغييرات في عدادات `docs-metrics` (`187 / 32 / 69 / 6`).
 
 **تطوير نظام الملصقات والبطاقات البارامتري — 2026-11-23:** أُضيفت الخطة المنفذة [`docs/plans/2026-11-23-sticker-parametric-evolution-plan.md`](plans/2026-11-23-sticker-parametric-evolution-plan.md) ضمن مجلد `docs/plans/` المسجل، مع fragment في [`changelog/fragments/20261123-ui-sticker-parametric-evolution.md`](../changelog/fragments/20261123-ui-sticker-parametric-evolution.md) ومزامنة `features-tracker.md` و`testing_guide.md` و`README.md`. ارتفع عداد `vitest_test_files` من `186` إلى `187` بعد إضافة `frontend/test/sticker-parametric-surfaces.test.ts` (عدد ملفات لا حالات نجاح)، وتم التحقق من 9 ملفات Vitest مستهدفة منفردة إضافةً إلى `stickers:audit` (`210/210` قوالب بمقاسات ملم صالحة) و`typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو `commit`/`push`.
@@ -120,7 +122,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=187
+vitest_test_files=188
 e2e_spec_files=32
 go_test_files=69
 docs_files=6

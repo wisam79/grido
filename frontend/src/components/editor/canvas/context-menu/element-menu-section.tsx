@@ -17,10 +17,10 @@ import {
   Code,
 } from '@/components/ui/icons';
 import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
+import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
-import { createLogger } from '@/lib/logger';
-import { wailsIsDesktop } from '@/lib/wails-env';
+import { getDocumentSession } from '@/lib/io/document-session';
 
 import {
   menuItemClassName,
@@ -29,21 +29,15 @@ import {
   menuSectionLabelClassName,
   menuSeparatorClassName,
 } from './menu-item-styles';
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 
-import type { ImageElement, CanvasElement } from '@/lib/store/types';
-
-const logger = createLogger('element-menu-section');
+import type { ContextMenuCropTarget } from '../context-menu';
+import type { ImageElement } from '@/lib/store/types';
 
 export interface ElementMenuShared {
   targetId: string;
   onClose: () => void;
   handleAction: (action: () => void) => void;
-  setCropTarget: (target: {
-    imageSrc: string;
-    originalImageSrc?: string;
-    onSave: (croppedB64: string, dims?: { width: number; height: number }) => void;
-  }) => void;
+  setCropTarget: (target: ContextMenuCropTarget) => void;
   isRemovingBg: boolean;
   isEnhancing: boolean;
   handleRemoveBg: (el: ImageElement) => void;
@@ -74,7 +68,6 @@ export function ElementMenuSection({
     removeElements,
     bringToFront,
     sendToBack,
-    updateElement,
     elements,
     selectedIds,
   } = useEditorStore(
@@ -87,7 +80,6 @@ export function ElementMenuSection({
       removeElements: state.removeElements,
       bringToFront: state.bringToFront,
       sendToBack: state.sendToBack,
-      updateElement: state.updateElement,
       elements: state.elements,
       selectedIds: state.selectedIds,
     })),
@@ -166,60 +158,22 @@ export function ElementMenuSection({
               disabled={isLocked}
               className={lockableItemClassName}
               onClick={() => {
-                if (isLocked) return;
+                if (isLocked || !imgEl.imageSrc) return;
+                const elementId = imgEl.id;
+                const expectedImageSrc = imgEl.imageSrc;
+                const session = getDocumentSession();
                 setCropTarget({
-                  imageSrc: imgEl.imageSrc!,
+                  imageSrc: expectedImageSrc,
                   originalImageSrc: imgEl.originalImageSrc,
-                  onSave: async (croppedB64, dims) => {
-                    try {
-                      const isWailsDesktop = wailsIsDesktop();
-                      let finalPath = croppedB64;
-                      if (isWailsDesktop && croppedB64.startsWith('data:image/')) {
-                        try {
-                          const localPath = await SaveImageFromBase64(croppedB64);
-                          if (localPath) finalPath = localPath;
-                        } catch (e) {
-                          logger.error('Failed to save cropped image locally:', e);
-                        }
-                      }
-
-                      const applyUpdate = (w: number, h: number) => {
-                        const croppedAspect = w / h;
-                        const state = useEditorStore.getState();
-                        const canvasRatio = state.canvasWidth / state.canvasHeight;
-                        const newHeight = (imgEl.width * canvasRatio) / croppedAspect;
-
-                        updateElement(imgEl.id, {
-                          imageSrc: finalPath,
-                          height: newHeight,
-                          originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
-                        } as Partial<CanvasElement>);
-
-                        state.setLastEditedImage(finalPath);
-                        state.setLastEditedImageAspect(croppedAspect);
-                        state.pushHistory();
-                      };
-
-                      if (dims && dims.width > 0 && dims.height > 0) {
-                        applyUpdate(dims.width, dims.height);
-                      } else {
-                        const img = new Image();
-                        img.onload = () => {
-                          applyUpdate(img.width, img.height);
-                        };
-                        img.onerror = () => {
-                          updateElement(imgEl.id, {
-                            imageSrc: finalPath,
-                            originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
-                          } as Partial<CanvasElement>);
-                          useEditorStore.getState().pushHistory();
-                        };
-                        img.src = croppedB64;
-                      }
-                    } catch (err) {
-                      logger.error('Failed to crop image in context menu:', err);
-                    }
-                  },
+                  onSave: (croppedB64, dims, isActive) =>
+                    commitImageElementCrop({
+                      elementId,
+                      expectedImageSrc,
+                      cropped: croppedB64,
+                      dims,
+                      session,
+                      isActive,
+                    }),
                 });
               }}
             >

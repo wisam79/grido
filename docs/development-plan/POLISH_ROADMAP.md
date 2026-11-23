@@ -12,11 +12,11 @@
 
 | المؤشر | القيمة الحالية |
 | --- | --- |
-| **آخر مهمة مكتملة** | التطوير البارامتري للملصقات والبطاقات (ما قبل التأسيس — Commit `ef8737c9` · CI `45200311732` PASS) |
-| **المهمة الحالية / التالية** | **`FF-01`** — النقر المزدوج الذكي وتوحيد مسار القص وحفظ الأصل |
+| **آخر مهمة مكتملة** | **`FF-01`** — النقر المزدوج الذكي + إصلاح حفظ الأصل عند القص (تحقق محلي PASS · بانتظار الدفع) |
+| **المهمة الحالية / التالية** | **`FF-02`** — ضبط الكادر غير الهدّام داخل الإطار (In-place Crop Pan/Zoom) |
 | **المسار النشط** | المسار 1 (`FF` — تعميق وصقل الوضع الحر) |
-| **إجمالي التقدم** | **`0 / 16` مكتملة** |
-| **ملاحظات التسليم للوكيل التالي** | الخارطة مُثبَّتة وجاهزة للتنفيذ. عند بدء التنفيذ في `FF-01` افحص `editor-canvas.tsx` (`handleDoubleClick`), و`sticker-reedit-bus.ts` (`requestStickerReedit`), و`image-properties.tsx` (`CropDialog` `onCropSave`) مقابل `element-menu-section.tsx` لتوحيد حفظ `originalImageSrc`. |
+| **إجمالي التقدم** | **`1 / 16` مكتملة** |
+| **ملاحظات التسليم للوكيل التالي** | أُغلقت `FF-01` بتوحيد حفظ القص في `frontend/src/lib/canvas/image-crop-commit.ts` وتوجيه `handleDoubleClick` في `editor-canvas.tsx`. للمهمة التالية `FF-02` راجع `frontend/src/lib/store/types.ts` و`frontend/src/lib/schema.ts` و`frontend/src/lib/export/export-primitives.ts` و`frontend/src/components/editor/konva/elements/image-node.tsx` و`frontend/src/lib/export/export-canvas-fitted.ts` و`frontend/src/lib/export/freeform-preflight.ts` و`frontend/src/lib/print/single-print-composition.ts`. |
 
 ---
 
@@ -36,7 +36,7 @@
 
 | المعرف | المهمة | النطاق والملفات الأساسية | معيار القبول | الحالة | آخر تحقق / SHA |
 | --- | --- | --- | --- | --- | --- |
-| **`FF-01`** | **النقر المزدوج الذكي + إصلاح حفظ الأصل عند القص** | تعديل `handleDoubleClick` في `frontend/src/components/editor/canvas/editor-canvas.tsx` (فتح استوديو الملصقات للملصق عبر `requestStickerReedit` في `sticker-reedit-bus.ts`، وفتح ضبط/قص الصورة للصور العادية بدل استبدال الملف) + توحيد مسار حفظ `CropDialog` بين `frontend/src/components/editor/properties/panels/image-properties.tsx` و`element-menu-section.tsx` مع ضمان حفظ `originalImageSrc`. | النقر المزدوج على ملصق يفتح إعادة تحريره، وعلى صورة يدخل القص؛ القص من الخصائص يحفظ `originalImageSrc` ويتيح «استعادة الأصل»؛ اختبارات مستهدفة + `docs-gate` PASS. | `⬜ pending` | — |
+| **`FF-01`** | **النقر المزدوج الذكي + إصلاح حفظ الأصل عند القص** | تعديل `handleDoubleClick` في `frontend/src/components/editor/canvas/editor-canvas.tsx` (فتح استوديو الملصقات للملصق عبر `requestStickerReedit` في `sticker-reedit-bus.ts`، وفتح ضبط/قص الصورة للصور العادية بدل استبدال الملف) + توحيد مسار حفظ `CropDialog` بين `frontend/src/components/editor/properties/panels/image-properties.tsx` و`element-menu-section.tsx` مع ضمان حفظ `originalImageSrc`. | النقر المزدوج على ملصق يفتح إعادة تحريره، وعلى صورة يدخل القص؛ القص من الخصائص يحفظ `originalImageSrc` ويتيح «استعادة الأصل»؛ اختبارات مستهدفة + `docs-gate` PASS. | `✅ done` | PASS محلي — بانتظار الدفع |
 | **`FF-02`** | **ضبط الكادر غير الهدّام داخل الإطار (In-place Crop Pan/Zoom)** | إضافة حقول اختيارية `cropZoom`, `cropPanX`, `cropPanY` في `frontend/src/lib/store/types.ts` و`frontend/src/lib/schema.ts`؛ ربط حساب النافذة المشترك مع `frontend/src/lib/export/export-primitives.ts` و`frontend/src/components/editor/konva/elements/image-node.tsx` و`frontend/src/lib/export/export-canvas-fitted.ts` و`frontend/src/lib/export/freeform-preflight.ts` و`frontend/src/lib/print/single-print-composition.ts` مع تجربة سحب/تكبير موضعية على الكانفاس و`Enter`/`Esc`. | تغيير الكادر لا يتلف الأصل ويُحفظ بخطوة `Ctrl+Z` واحدة ويتطابق بين Konva والتصدير فائق الدقة 300+ DPI وفحص الـ Preflight؛ اختبارات وحدة وتطابق هندسي PASS. | `⬜ pending` | — |
 | **`FF-03`** | **توحيد الأقنعة الهندسية وتوسيعها بمنتقي بصري** | استخراج مصدر هندسي واحد للأقنعة (مكتبة نقية مثل `mask-geometry.ts`) يستهلكه `image-node.tsx` و`export-canvas-fitted.ts` معاً بلا تكرار؛ توسيع `maskShape` في `types.ts` و`schema.ts` و`image-properties.tsx` إلى 8 أشكال عصرية (طبيعي، دائري، قوس، سداسي، ماسة، قلب، نجمة، ختم مزخرف) بمنتقي أيقونات بصري. | صفر كود قناع مكرر بين Konva والتصدير؛ جميع الأشكال الـ 8 تُرسم وتُصدَّر بنفس الإحداثيات وظل القناع سليم؛ اختبارات مستهدفة PASS. | `⬜ pending` | — |
 | **`FF-04`** | **الإفلات السحري للصورة داخل أي شكل + «قنّع الصورة بهذا الشكل»** | تحديث `frontend/src/components/editor/canvas/use-image-drop.ts` لاكتشاف `ShapeElement` تحت مؤشر الإفلات عبر Konva Hit-Testing (`fillType: 'image'`, `fillImageSrc`) + إضافة إجراء «قنّع الصورة بهذا الشكل» عند تحديد صورة وشكل معاً. | سحب صورة وإفلاتها فوق شكل على الكانفاس يعبّئ الشكل فوراً، أو دمج صورة+شكل محددين كقناع في خطوة تاريخ واحدة؛ اختبارات سحب ودمج PASS. | `⬜ pending` | — |
@@ -81,3 +81,4 @@
 | التاريخ | المهمة | الملخص والتحقق | الالتزام (`Commit SHA`) |
 | --- | --- | --- | --- |
 | `2026-11-23` | **تأسيس الخارطة** | اعتماد خارطة الصقل الموحدة (`16` مهمة عبر `4` مسارات) وربطها ببروتوكول الاستئناف الإلزامي في `.agents/AGENTS.md` و`.agents/rules/architecture-governance.md` ومسار `.agents/workflows/polish-sprint.md`. | قيد الانتظار — التأسيس قبل الدفع |
+| `2026-11-23` | **`FF-01`** | استخراج `commitImageElementCrop` في `image-crop-commit.ts` وتوحيد مسارات القص وحفظ `originalImageSrc` بين `editor-canvas.tsx` و`image-properties.tsx` و`element-menu-section.tsx` و`context-menu.tsx`، وتوجيه النقر المزدوج للملصقات (`requestStickerReedit`) والصور (`CropDialog`). اجتاز 6 ملفات Vitest مستهدفة منفردة (`freeform-double-click-crop` 12/12، `image-dialog-lifecycle` 12/12، `element-properties-tabs` 54/54، `collage-image-crop` 23/23، `sticker-studio` 16/16، `ui-compliance` 57/57) و`typecheck` و`lint` و`format:check` و`docs-gate --strict-refs`. | بانتظار الدفع |

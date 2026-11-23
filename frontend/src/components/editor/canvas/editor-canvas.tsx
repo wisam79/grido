@@ -1,13 +1,16 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { lazy, Suspense, useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { OpenFile, SaveImageFromBase64 } from '@bindings/grido/app';
 
+import { requestStickerReedit } from '@/components/editor/dialogs/sticker-reedit-bus';
 import { Spinner } from '@/components/ui/huge-icon';
 import { guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { DEFAULT_DPI, formatGuideMeasurement, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { wailsIsDesktop } from '@/lib/wails-env';
@@ -26,11 +29,15 @@ import { KonvaCanvas } from '../konva/konva-canvas';
 
 import type { ContextMenuPosition, ContextMenuTarget } from './context-menu';
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
-import type { CanvasElement } from '@/lib/editor-store';
+import type { CanvasElement, ImageElement } from '@/lib/editor-store';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 
 const logger = createLogger('editor-canvas');
+
+const CropDialog = lazy(() =>
+  import('../dialogs/crop-dialog').then((module) => ({ default: module.CropDialog })),
+);
 
 /**
  * 🧭 عزل خطوط المحاذاة الذكية في مكوّن مستقل لمنع إعادة رندر شجرة الكانفاس الأب
@@ -82,6 +89,13 @@ export const EditorCanvas = React.memo(
     const innerRef = useRef<HTMLDivElement>(null);
 
     const lastDblClickRef = useRef<number>(0);
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    }, []);
     const setActiveGuides = useCallback(
       (guides: SnapGuide[]) => useCanvasInteraction.getState().setActiveGuides(guides),
       [],
@@ -90,6 +104,10 @@ export const EditorCanvas = React.memo(
     const [contextMenu, setContextMenu] = useState<{
       position: ContextMenuPosition;
       target: ContextMenuTarget;
+    } | null>(null);
+    const [cropTarget, setCropTarget] = useState<{
+      elementId: string;
+      session: number;
     } | null>(null);
 
     // وحدة المساطر والخطوط الإرشادية من الـ Store
@@ -231,48 +249,35 @@ export const EditorCanvas = React.memo(
       return 0;
     }, [mode, collageMargin, canvasHeight, displayH, printSettings?.marginMM, heightMM]);
 
+    const cropElement: ImageElement | null = (() => {
+      if (!cropTarget || printMode || mode !== 'single') return null;
+      if (getDocumentSession() !== cropTarget.session) return null;
+      const found = elements.find((item) => item.id === cropTarget.elementId);
+      if (!found || found.type !== 'image' || !found.imageSrc || found.locked) return null;
+      return found;
+    })();
+
+    if (cropTarget && !cropElement) {
+      setCropTarget(null);
+    }
+
     const handleDoubleClick = useCallback(
-      async (el: CanvasElement) => {
+      (el: CanvasElement) => {
         if (printMode || isLoading) return;
         // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
         if (el.locked) return;
         if (el.type === 'image') {
-          try {
-            setIsLoading(true);
-            const b64 = await OpenFile();
-            if (b64) {
-              const isWailsDesktop = wailsIsDesktop();
-              let srcToUse = b64;
-              if (isWailsDesktop && b64.startsWith('data:image/')) {
-                try {
-                  const localPath = await SaveImageFromBase64(b64);
-                  if (localPath) srcToUse = localPath;
-                } catch (e) {
-                  logger.error('Failed to save image locally:', e);
-                }
-              }
-              updateElement(el.id, { imageSrc: srcToUse });
-              pushHistory();
-            }
-          } catch (err) {
-            logger.error('Open file error:', err);
-          } finally {
-            setIsLoading(false);
+          if (el.stickerSource) {
+            requestStickerReedit(el.id);
+          } else if (el.imageSrc) {
+            setCropTarget({ elementId: el.id, session: getDocumentSession() });
           }
         } else if (el.type === 'text') {
           flushViewport();
           setEditingTextId(el.id);
         }
       },
-      [
-        printMode,
-        isLoading,
-        updateElement,
-        pushHistory,
-        setEditingTextId,
-        setIsLoading,
-        flushViewport,
-      ],
+      [printMode, isLoading, setEditingTextId, flushViewport],
     );
 
     const handleSlotClick = useCallback(
@@ -649,6 +654,35 @@ export const EditorCanvas = React.memo(
             onResetPan={handleResetPan}
             showRuler={showRuler}
           />
+        )}
+
+        {cropElement?.imageSrc && (
+          <Suspense fallback={null}>
+            <CropDialog
+              open={true}
+              onOpenChange={(open) => {
+                if (!open) setCropTarget(null);
+              }}
+              imageSrc={cropElement.imageSrc}
+              originalImageSrc={cropElement.originalImageSrc}
+              onCropSave={async (cropped, dims, isActive) => {
+                const committed = await commitImageElementCrop({
+                  elementId: cropElement.id,
+                  expectedImageSrc: cropElement.imageSrc!,
+                  cropped,
+                  dims,
+                  session: cropTarget?.session,
+                  isActive,
+                  isMounted: () => isMountedRef.current,
+                  onUpdate: updateElement,
+                });
+                if (committed) {
+                  setCropTarget(null);
+                }
+                return committed;
+              }}
+            />
+          </Suspense>
         )}
       </div>
     );

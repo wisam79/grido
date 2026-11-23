@@ -27,6 +27,7 @@ import {
 } from './menu-item-styles';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 
+import type { ContextMenuCropTarget } from '../context-menu';
 import type { CanvasSlot } from '@/lib/store/types';
 
 const logger = createLogger('slot-menu-section');
@@ -35,11 +36,7 @@ export interface SlotMenuShared {
   targetId: string;
   onClose: () => void;
   handleActionWithHistory: (action: () => void) => void;
-  setCropTarget: (target: {
-    imageSrc: string;
-    originalImageSrc?: string;
-    onSave: (croppedB64: string, dims?: { width: number; height: number }) => void;
-  }) => void;
+  setCropTarget: (target: ContextMenuCropTarget) => void;
   isRemovingBg: boolean;
   isEnhancing: boolean;
   handleRemoveBg: (slot: CanvasSlot) => void;
