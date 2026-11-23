@@ -1,5 +1,6 @@
 // import type فقط: الأنواع تُبعَّد وقت الترجمة فلا تُنشأ حلقة استيراد وقت التشغيل
 // (grid-slice يعتمد بالمثل على أنواع الستور)
+import type { MaskShape } from '../canvas/mask-geometry';
 import type { ShapeFillImageFit } from '../canvas/shape-pattern';
 import type { ProjectFileV1 } from '../io/project-serializer';
 import type { PhotoTemplate, CollageTemplate } from '../templates';
@@ -109,7 +110,7 @@ export interface ImageElement extends BaseCanvasElement {
   /** مصدر قالب الملصق إن كان العنصر أُدرج من استوديو الملصقات */
   stickerSource?: StickerElementSource;
   /** قناع قص متجهات للصورة */
-  maskShape?: 'none' | 'circle' | 'heart' | 'star';
+  maskShape?: MaskShape;
   /** تكبير الكادر غير الهدّام داخل الإطار (1..4، افتراضي 1) */
   cropZoom?: number;
   /** إزاحة الكادر الأفقية المطبَّعة (-1..1، افتراضي 0 = منتصف) */

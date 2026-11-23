@@ -4,6 +4,14 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 > **تحديث سحابة Supabase (2026-11-15):** أُزيل أثر الدالتين اليتيمتين `license` و`ai-enhance` حياً بإطلاق نسخة **v7** (`verify_jwt: true`, `410 Gone`) منزوعة `SUPABASE_SERVICE_ROLE_KEY`؛ كما تمت مواءمة هجرة `20261113171327_phone_bridge_handshake_json_mime.sql` وتطبيق هجرة التقوية `20261115221300_security_hardening_anon_revokes_rls_and_extend_fix.sql` عبر `supabase db push` (`43 = 43` متطابقة حياً، `0` تنبيهات `anon_security_definer_function_executable` و`0` `multiple_permissive_policies`). التفاصيل في [SECURITY_NOTICE.md](../SECURITY_NOTICE.md).
 
+## مصدر الأقنعة الهندسية الموحّد (`FF-03`) — 2026-11-23
+
+- `frontend/src/lib/canvas/mask-geometry.ts` مصدر نقي واحد لـ `MASK_SHAPES` و`MaskShape` وأوامر المسارات المحلية `buildMaskPath` وراسم Canvas/Konva `traceMaskPath` ومحوّل SVG `maskPathToSvg`. يستورد المخطط `MASK_SHAPES` ويستورد الستور النوع فقط؛ غياب `maskShape` يبقى مساوياً لـ `none` في المشاريع القديمة بلا ترحيل أو تغيير إصدار الملف.
+- `image-node.tsx` يبني المسار مرة لكل قناع/أبعاد ويستهلكه في `clipFunc` وراسم الظل. الأقنعة الهندسية تتقدم على استدارة الصورة دون حذف قيمتها المحفوظة؛ `filterKey` يعتمد الاستدارة **الفعلية**، فيبطل كاش الفلاتر عند الانتقال من/إلى الطبيعي فقط، ولا يعيد خبز الفلاتر عند تبديل قناعين خارجيين أو تحريك العنصر. ظل الالتقاط يظل يقرأ مصدر الصورة والقص الحيّين داخل معاملة `captureStageBlob` ولا يحتفظ بمصدر التصدير.
+- `export-canvas-fitted.ts` يفلتر مستطيل الصورة أولاً ثم يقصّ الناتج بالقناع المشترك، مطابقاً لمجموعة Konva خارج كاش الصورة، كي لا تغيّر `pixelate` حواف Alpha. تُركّب الخلفية غير المفلترة داخل القناع ثم تُرسم الصورة المركبة بظل واحد خارج القص. سطح التركيب بحجم العنصر يُعاد استخدامه داخل استدعاء التصدير المتسلسل، مع تصفيره بتعيين أبعاده لكل عنصر؛ لا يشارك مسبح الفلاتر. الاستدارة الطبيعية تبقى قبل الفلاتر كما في `KonvaImage`.
+- `image-properties.tsx` يعرض ثماني معاينات SVG مشتقة من المسار نفسه مع `aria-label` و`aria-pressed` وحلقات التركيز وهدف اللمس؛ بلا كتالوج هندسي تقريبي موازٍ. الاختيار يفحص الهدف والقفل والحالة الحية، ويثبت خطوة تاريخ واحدة فقط عند تغير القيمة. مسار Go السريع يبقى ممنوعاً لكل قناع غير طبيعي؛ الطباعة تستخدم Konva بدقة المصدر الكامل، ولا تغيير لـ `cutShapeType` أو عقود القص والنزيف.
+- الأدلة والحدود في [دليل الاختبار](testing_guide.md) و[خارطة الصقل](development-plan/POLISH_ROADMAP.md): تحقق هندسي وعقود Canvas ومحاكاة DOM والتقاط بعقد Konva حقيقية؛ لا قبول بصري بكسلي أو طابعة فعلية ولا CI جديد في هذه الجلسة.
+
 ## عزل أدوات قبول E2E — 2026-11-20
 
 مصدر قبول backend هو نفسmain/service/SQLite/assets مع `-tags=e2e,server,production` (Ubuntu)، أو`-tags=e2e,production` (Windowsnative). ملفات `runtime_harness*_e2e.go` محصورةtag؛ نسخةrelease تستخدمno-op ولا تملك منفذCDP/testdialogs. `prepareRuntimeHarness` يفرض absolute canonical `GRIDO_APP_DIR` وloopbackliteral وصحةMODE/ports، وnative CDP يمر عبرAdditionalBrowserArgs لا متغيرWebView2 الذي يمسحهWails. الإصدار العام لا يتغير بإعدادtest.

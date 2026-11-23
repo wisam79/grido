@@ -9,6 +9,7 @@ import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { useStickerDisplayRaster } from '@/hooks/use-sticker-display-raster';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { isStageCaptureActive } from '@/lib/canvas/konva-export-utils';
+import { buildMaskPath, traceMaskPath } from '@/lib/canvas/mask-geometry';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { computeImageCrop } from '@/lib/export/export-primitives';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
@@ -20,62 +21,6 @@ import type { ElementProps } from './types';
 import type { CacheableKonvaNode } from '@/hooks/use-filter-cache';
 import type { ImageElement } from '@/lib/editor-store';
 import '@/lib/filters/custom-filters';
-
-function traceMaskClipPath(
-  ctx: Pick<
-    CanvasRenderingContext2D,
-    'beginPath' | 'moveTo' | 'lineTo' | 'bezierCurveTo' | 'arc' | 'closePath'
-  >,
-  maskShape: string | undefined,
-  w: number,
-  h: number,
-) {
-  if (maskShape === 'circle') {
-    ctx.beginPath();
-    ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
-    ctx.closePath();
-  } else if (maskShape === 'star') {
-    const cx = w / 2;
-    const cy = h / 2;
-    const spikes = 5;
-    const outerRadius = Math.min(w, h) / 2;
-    const innerRadius = outerRadius / 2;
-    let rot = (Math.PI / 2) * 3;
-    const step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-      let x = cx + Math.cos(rot) * outerRadius;
-      let y = cy + Math.sin(rot) * outerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-
-      x = cx + Math.cos(rot) * innerRadius;
-      y = cy + Math.sin(rot) * innerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
-  } else if (maskShape === 'heart') {
-    const topCurveHeight = h * 0.3;
-    ctx.beginPath();
-    ctx.moveTo(w / 2, topCurveHeight);
-    ctx.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
-    ctx.bezierCurveTo(0, (h + topCurveHeight) / 2, w / 2, (h + topCurveHeight) / 2, w / 2, h);
-    ctx.bezierCurveTo(
-      w / 2,
-      (h + topCurveHeight) / 2,
-      w,
-      (h + topCurveHeight) / 2,
-      w,
-      topCurveHeight,
-    );
-    ctx.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
-    ctx.closePath();
-  }
-}
 
 export const URLImage = React.memo(function URLImage({
   element: _element,
@@ -160,12 +105,14 @@ export const URLImage = React.memo(function URLImage({
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
   const imageNodeRef = React.useRef<CacheableKonvaNode | null>(null);
+  const hasMask = Boolean(element.maskShape && element.maskShape !== 'none');
+  const cornerRadius = hasMask ? 0 : element.cornerRadius || 0;
   // الأبعاد خارج المفتاح عمداً: التحجيم يعيد الكاش المكلف في كل إطار،
   // ويُعاد بناؤه صراحةً بعد استقرار التحويل (onTransformEnd) والتصدير يرفع الدقة بنفسه
   // 🛡️ cornerRadius داخل المفتاح: الخاصية تُطبَّق على العقدة المُخزَّنة
   // (`node.cache()`)، فبدونها يظل القص الزاوي القديم مرسوماً في البيت ماپ
   // حتى يُجبر تغيير الحجم أو الزوم إعادة بناء الكاش (H2 من تدقيق 2026-10-08).
-  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${element.cornerRadius || 0}`;
+  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${cornerRadius}`;
   const hasFilters = filters.length > 0;
 
   const recacheFilters = useFilterCache({
@@ -228,13 +175,14 @@ export const URLImage = React.memo(function URLImage({
     onDragEnd,
   );
 
+  const maskPath = React.useMemo(
+    () => buildMaskPath(element.maskShape, nodeW, nodeH),
+    [element.maskShape, nodeW, nodeH],
+  );
   const clipFunc = React.useMemo(() => {
     if (!element.maskShape || element.maskShape === 'none') return undefined;
-
-    return (ctx: Konva.Context) => {
-      traceMaskClipPath(ctx, element.maskShape, nodeW, nodeH);
-    };
-  }, [element.maskShape, nodeW, nodeH]);
+    return (ctx: Konva.Context) => traceMaskPath(ctx, maskPath);
+  }, [element.maskShape, maskPath]);
 
   const hasShadow =
     (element.shadowOpacity ?? 0) > 0 &&
@@ -306,7 +254,7 @@ export const URLImage = React.memo(function URLImage({
       if (!ctx) return;
       ctx.scale(cw / nodeW, ch / nodeH);
       if (element.maskShape && element.maskShape !== 'none') {
-        traceMaskClipPath(ctx, element.maskShape, nodeW, nodeH);
+        traceMaskPath(ctx, maskPath);
         ctx.clip();
       } else if (element.cornerRadius && element.cornerRadius > 0) {
         const r = Math.min(element.cornerRadius, nodeW / 2, nodeH / 2);
@@ -400,7 +348,7 @@ export const URLImage = React.memo(function URLImage({
               width={nodeW}
               height={nodeH}
               fill={element.bgColor}
-              cornerRadius={element.cornerRadius || 0}
+              cornerRadius={cornerRadius}
               listening={false}
               {...(useRectShadow ? shadowProps : {})}
             />
@@ -417,7 +365,7 @@ export const URLImage = React.memo(function URLImage({
             width={nodeW}
             height={nodeH}
             perfectDrawEnabled={false}
-            cornerRadius={element.cornerRadius || 0}
+            cornerRadius={cornerRadius}
             {...(useDirectImageShadow
               ? shadowProps
               : {
@@ -443,7 +391,7 @@ export const URLImage = React.memo(function URLImage({
               width={nodeW}
               height={nodeH}
               rotation={0}
-              cornerRadius={element.cornerRadius || 0}
+              cornerRadius={cornerRadius}
             />
           )}
         </Group>

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isSpaceHandledByTarget } from '../src/components/editor/canvas/use-canvas-viewport';
 import { withShadowlessDrag } from '../src/components/editor/konva/elements/drag-shadow';
 import { swapNodeImagesForCapture, withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
+import { MASK_SHAPES } from '../src/lib/canvas/mask-geometry';
 import {
   RING_INNER_RATIO,
   resolveRingInnerRadius,
@@ -453,12 +454,11 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       expect(parsed.success).toBe(true);
     });
 
-    it('validates image vector maskShape attribute', () => {
-      const parsed = CanvasElementSchema.safeParse({
+    describe('FF-03 image mask schema', () => {
+      const image = {
         id: 'img-1',
         type: 'image',
-        imageSrc: 'data:image/png;base64,...',
-        maskShape: 'circle',
+        imageSrc: '/local-image/photo.jpg',
         x: 0,
         y: 0,
         width: 0.4,
@@ -466,8 +466,54 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
         rotation: 0,
         opacity: 1,
         zIndex: 1,
+      };
+
+      it('exports all eight supported masks in picker order', () => {
+        expect(MASK_SHAPES).toEqual([
+          'none',
+          'circle',
+          'arch',
+          'hexagon',
+          'diamond',
+          'heart',
+          'star',
+          'seal',
+        ]);
       });
-      expect(parsed.success).toBe(true);
+
+      it.each(MASK_SHAPES)('validates and preserves the %s image mask', (maskShape) => {
+        const parsed = CanvasElementSchema.safeParse({ ...image, maskShape });
+
+        expect(parsed.success).toBe(true);
+        if (!parsed.success) throw parsed.error;
+        expect(parsed.data.maskShape).toBe(maskShape);
+      });
+
+      it('accepts legacy images with the optional mask omitted', () => {
+        const parsed = CanvasElementSchema.parse(image);
+
+        expect(parsed.maskShape).toBeUndefined();
+        expect(parsed).not.toHaveProperty('maskShape');
+      });
+
+      it.each([
+        ['empty string', ''],
+        ['unknown shape', 'oval'],
+        ['rectangle alias', 'rect'],
+        ['wrong case', 'Circle'],
+        ['null', null],
+        ['number', 1],
+        ['array', ['circle']],
+        ['object', { shape: 'circle' }],
+      ])('rejects an invalid mask value: %s', (_name, maskShape) => {
+        const parsed = CanvasElementSchema.safeParse({ ...image, maskShape });
+
+        expect(parsed.success).toBe(false);
+        if (parsed.success) throw new Error('Invalid mask unexpectedly accepted');
+        expect(parsed.error.issues).toEqual(
+          expect.arrayContaining([expect.objectContaining({ path: ['maskShape'] })]),
+        );
+      });
     });
   });
 });

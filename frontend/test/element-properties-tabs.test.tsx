@@ -1,4 +1,5 @@
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, render, renderHook, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -6,11 +7,14 @@ import { ShadowGlowSection } from '../src/components/editor/properties/element/s
 import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
 import { GradientPicker } from '../src/components/editor/properties/gradient-picker';
+import { ImageStyleProperties } from '../src/components/editor/properties/panels/image-properties';
 import { ShapeStyleProperties } from '../src/components/editor/properties/panels/shape-properties';
 import { FontSizeField } from '../src/components/editor/properties/panels/text/font-size-field';
 import { TextEffectsTab } from '../src/components/editor/properties/panels/text/text-effects-tab';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
+import { useKeyboardShortcuts } from '../src/hooks/use-keyboard-shortcuts';
+import { buildMaskPath, maskPathToSvg } from '../src/lib/canvas/mask-geometry';
 import { useEditorStore } from '../src/lib/editor-store';
 
 import type { FreeformSlot } from '../src/features/freeform-collage/types';
@@ -270,6 +274,263 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     fireEvent.click(toggleBtn);
 
     expect(mockOnUpdate).toHaveBeenCalledWith(textElement.id, { strokeWidth: 0 });
+  });
+});
+
+describe('FF-03 image mask picker — accessible geometry and live store commits', () => {
+  const actions = {
+    updateElement: useEditorStore.getState().updateElement,
+    pushHistory: useEditorStore.getState().pushHistory,
+    undo: useEditorStore.getState().undo,
+    redo: useEditorStore.getState().redo,
+  };
+  const masks = [
+    { id: 'none', name: 'طبيعي' },
+    { id: 'circle', name: 'دائري' },
+    { id: 'arch', name: 'قوس' },
+    { id: 'hexagon', name: 'سداسي' },
+    { id: 'diamond', name: 'ماسة' },
+    { id: 'heart', name: 'قلب' },
+    { id: 'star', name: 'نجمة' },
+    { id: 'seal', name: 'ختم مزخرف' },
+  ] as const;
+  const image: ImageElement = {
+    id: 'mask-image',
+    type: 'image',
+    imageSrc: 'cropped.png',
+    originalImageSrc: 'original.png',
+    x: 0.1,
+    y: 0.2,
+    width: 0.4,
+    height: 0.3,
+    cornerRadius: 16,
+    cropZoom: 1.5,
+    cropPanX: 0.2,
+    cropPanY: -0.3,
+    opacity: 0.75,
+    rotation: 15,
+    zIndex: 1,
+  };
+
+  function seedImage(element: ImageElement = image) {
+    useEditorStore.setState({ elements: [element], history: [], historyIndex: -1 });
+    useEditorStore.getState().pushHistory();
+  }
+
+  function Harness() {
+    const element = useEditorStore((state) => state.elements[0]);
+    const onUpdate = useEditorStore((state) => state.updateElement);
+    return (
+      <div dir="rtl">
+        <TooltipProvider>
+          <ElementProperties element={element} onUpdate={onUpdate} />
+        </TooltipProvider>
+      </div>
+    );
+  }
+
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState(actions);
+    seedImage();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('renders eight icon-only buttons with Arabic names and shared SVG mask geometry', () => {
+    render(<Harness />);
+    const group = screen.getByRole('group', { name: 'قناع الشكل' });
+    const buttons = within(group).getAllByRole('button');
+    expect(buttons).toHaveLength(8);
+    expect(group.closest('[dir="rtl"]')).not.toBeNull();
+    expect(group.querySelectorAll('svg')).toHaveLength(8);
+    expect(group.querySelectorAll('svg path')).toHaveLength(8);
+
+    masks.forEach(({ id, name }, index) => {
+      const button = within(group).getByRole('button', { name });
+      expect(buttons[index]).toBe(button);
+      expect(button).toHaveAttribute('aria-label', name);
+      expect(button).toHaveAttribute('aria-pressed', String(id === 'none'));
+      expect(button).toBeEnabled();
+      expect(button.textContent).toBe('');
+      const svg = button.querySelector('svg');
+      expect(svg).toHaveAttribute('aria-hidden', 'true');
+      expect(svg).toHaveAttribute('focusable', 'false');
+      expect(svg?.querySelector('path')).toHaveAttribute(
+        'd',
+        maskPathToSvg(buildMaskPath(id, 32, 32)),
+      );
+    });
+    expect(within(group).getAllByRole('button', { pressed: true })).toHaveLength(1);
+    expect(screen.getByRole('slider', { name: 'الزوايا' })).toHaveAttribute('aria-valuenow', '16');
+  });
+
+  it.each(masks)(
+    'selects $id once, preserves radius and supports Ctrl+Z/redo',
+    async ({ id, name }) => {
+      const initial: ImageElement = id === 'none' ? { ...image, maskShape: 'circle' } : image;
+      seedImage(initial);
+      const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      const user = userEvent.setup();
+      render(<Harness />);
+      renderHook(() => useKeyboardShortcuts());
+
+      const group = screen.getByRole('group', { name: 'قناع الشكل' });
+      fireEvent.click(within(group).getByRole('button', { name }));
+
+      const expected = { ...initial, maskShape: id };
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(onUpdate).toHaveBeenCalledWith(image.id, { maskShape: id });
+      expect(history).toHaveBeenCalledTimes(1);
+      expect(onUpdate.mock.invocationCallOrder[0]).toBeLessThan(
+        history.mock.invocationCallOrder[0],
+      );
+      expect(useEditorStore.getState().elements[0]).toEqual(expected);
+      expect(useEditorStore.getState().history).toHaveLength(2);
+      expect(useEditorStore.getState().history[1].elements[0]).toEqual(expected);
+      expect(useEditorStore.getState().historyIndex).toBe(1);
+      expect(within(group).getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+      expect(within(group).getAllByRole('button', { pressed: true })).toHaveLength(1);
+      if (id === 'none') {
+        expect(screen.getByRole('slider', { name: 'الزوايا' })).toHaveAttribute(
+          'aria-valuenow',
+          '16',
+        );
+      } else {
+        expect(screen.queryByRole('slider', { name: 'الزوايا' })).not.toBeInTheDocument();
+      }
+
+      // An active choice is a no-op even after the store and inspector have rerendered.
+      const committed = useEditorStore.getState();
+      fireEvent.click(within(group).getByRole('button', { name }));
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(history).toHaveBeenCalledTimes(1);
+      expect(useEditorStore.getState().elements).toBe(committed.elements);
+      expect(useEditorStore.getState().history).toBe(committed.history);
+
+      await user.keyboard('{Control>}z{/Control}');
+      expect(useEditorStore.getState().elements[0]).toEqual(initial);
+      expect(useEditorStore.getState().historyIndex).toBe(0);
+      const previousName = id === 'none' ? 'دائري' : 'طبيعي';
+      expect(within(group).getByRole('button', { name: previousName })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      if (id !== 'none') {
+        expect(screen.getByRole('slider', { name: 'الزوايا' })).toHaveAttribute(
+          'aria-valuenow',
+          '16',
+        );
+      }
+
+      await user.keyboard('{Control>}y{/Control}');
+      expect(useEditorStore.getState().elements[0]).toEqual(expected);
+      expect(useEditorStore.getState().historyIndex).toBe(1);
+      expect(useEditorStore.getState().history).toHaveLength(2);
+      expect(within(group).getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(history).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('treats a missing mask as active none without updating or recording history', () => {
+    const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    render(<Harness />);
+    const initial = useEditorStore.getState();
+    const natural = within(screen.getByRole('group', { name: 'قناع الشكل' })).getByRole('button', {
+      name: 'طبيعي',
+    });
+    expect(natural).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(natural);
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(history).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().elements).toBe(initial.elements);
+    expect(useEditorStore.getState().elements[0]).not.toHaveProperty('maskShape');
+    expect(useEditorStore.getState().history).toBe(initial.history);
+  });
+
+  it('disables every mask for a locked image without updates or history', () => {
+    seedImage({ ...image, locked: true });
+    const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    render(<Harness />);
+    const initial = useEditorStore.getState();
+    const group = screen.getByRole('group', { name: 'قناع الشكل' });
+    for (const button of within(group).getAllByRole('button')) {
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+    }
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(history).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().elements).toBe(initial.elements);
+    expect(useEditorStore.getState().history).toBe(initial.history);
+  });
+
+  it.each([
+    { name: 'newly locked image', elements: [{ ...image, locked: true }] },
+    { name: 'removed image', elements: [] },
+    { name: 'different image id', elements: [{ ...image, id: 'replacement-image' }] },
+    { name: 'shape with reused id', elements: [{ ...image, type: 'shape', shape: 'rect' }] },
+    {
+      name: 'text with reused id',
+      elements: [{ ...image, type: 'text', text: 'نص', fontSize: 24 }],
+    },
+    { name: 'already active live mask', elements: [{ ...image, maskShape: 'star' }] },
+  ] satisfies { name: string; elements: CanvasElement[] }[])(
+    'rejects a stale inspector click for $name using live store state',
+    ({ elements }) => {
+      const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+      const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+      render(
+        <div dir="rtl">
+          <TooltipProvider>
+            <ImageStyleProperties element={image} onUpdate={onUpdate} />
+          </TooltipProvider>
+        </div>,
+      );
+      const star = within(screen.getByRole('group', { name: 'قناع الشكل' })).getByRole('button', {
+        name: 'نجمة',
+      });
+      expect(star).toBeEnabled();
+      expect(star).toHaveAttribute('aria-pressed', 'false');
+      act(() => useEditorStore.setState({ elements }));
+      const live = useEditorStore.getState();
+      expect(star).toBeEnabled();
+      fireEvent.click(star);
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(history).not.toHaveBeenCalled();
+      expect(useEditorStore.getState().elements).toBe(live.elements);
+      expect(useEditorStore.getState().history).toBe(live.history);
+      expect(useEditorStore.getState().historyIndex).toBe(live.historyIndex);
+    },
+  );
+
+  it('can restore a visually active stale choice when the live image has another mask', () => {
+    const stale: ImageElement = { ...image, maskShape: 'circle' };
+    seedImage({ ...image, maskShape: 'heart' });
+    const onUpdate = vi.spyOn(useEditorStore.getState(), 'updateElement');
+    const history = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+    render(
+      <div dir="rtl">
+        <TooltipProvider>
+          <ImageStyleProperties element={stale} onUpdate={onUpdate} />
+        </TooltipProvider>
+      </div>,
+    );
+    const circle = within(screen.getByRole('group', { name: 'قناع الشكل' })).getByRole('button', {
+      name: 'دائري',
+    });
+    expect(circle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(circle);
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate).toHaveBeenCalledWith(image.id, { maskShape: 'circle' });
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().elements[0]).toEqual(stale);
+    expect(useEditorStore.getState().history).toHaveLength(2);
+    act(() => useEditorStore.getState().undo());
+    expect(useEditorStore.getState().elements[0]).toEqual({ ...image, maskShape: 'heart' });
   });
 });
 

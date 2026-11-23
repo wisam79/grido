@@ -26,6 +26,7 @@ import { findLiveAiTarget } from '@/lib/ai/ai-result-commit';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
+import { buildMaskPath, MASK_SHAPES, maskPathToSvg } from '@/lib/canvas/mask-geometry';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
 import { hasCustomImageCrop } from '@/lib/export/export-primitives';
@@ -42,6 +43,21 @@ import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
 import type { ImageElement, CanvasElement } from '@/lib/editor-store';
 
 const logger = createLogger('image-properties');
+const MASK_LABELS = {
+  none: 'طبيعي',
+  circle: 'دائري',
+  arch: 'قوس',
+  hexagon: 'سداسي',
+  diamond: 'ماسة',
+  heart: 'قلب',
+  star: 'نجمة',
+  seal: 'ختم مزخرف',
+};
+const MASK_OPTIONS = MASK_SHAPES.map((id) => ({
+  id,
+  label: MASK_LABELS[id],
+  path: maskPathToSvg(buildMaskPath(id, 32, 32)),
+}));
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
 const CropDialog = lazy(() =>
@@ -732,48 +748,70 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
       {/* 🎴 بطاقة 4: استدارة الحواف وقناع القص */}
       <FluentSection title="استدارة وقناع القص">
-        <FluentSliderField
-          label="الزوايا"
-          value={element.cornerRadius || 0}
-          min={0}
-          max={200}
-          step={1}
-          unit="px"
-          defaultValue={0}
-          onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
-          onCommit={() => useEditorStore.getState().pushHistory()}
-        />
+        {(!element.maskShape || element.maskShape === 'none') && (
+          <FluentSliderField
+            label="الزوايا"
+            value={element.cornerRadius || 0}
+            min={0}
+            max={200}
+            step={1}
+            unit="px"
+            defaultValue={0}
+            onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
+            onCommit={() => useEditorStore.getState().pushHistory()}
+          />
+        )}
 
-        {/* أزرار اختيار قناع القص المتجه */}
         <div className="pt-2 border-t border-border/30 space-y-1.5">
-          <span className="text-mini font-normal text-muted-foreground block">
-            قناع الشكل (Vector Mask)
-          </span>
-          <div className="grid grid-cols-4 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
-            {[
-              { id: 'none', label: 'طبيعي' },
-              { id: 'circle', label: 'دائري' },
-              { id: 'heart', label: 'قلب' },
-              { id: 'star', label: 'نجمة' },
-            ].map((mask) => {
+          <span className="text-mini font-normal text-muted-foreground block">قناع الشكل</span>
+          <div
+            role="group"
+            aria-label="قناع الشكل"
+            className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted border border-border/60"
+          >
+            {MASK_OPTIONS.map((mask) => {
               const isActive = (element.maskShape || 'none') === mask.id;
               return (
-                <button
-                  key={mask.id}
-                  type="button"
-                  className={cn(
-                    'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                    isActive
-                      ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                  )}
-                  onClick={() => {
-                    onUpdate(element.id, { maskShape: mask.id as ImageElement['maskShape'] });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                >
-                  {mask.label}
-                </button>
+                <Tooltip key={mask.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={mask.label}
+                      aria-pressed={isActive}
+                      disabled={element.locked}
+                      className={cn(
+                        'h-10 min-w-7 coarse-touch-target rounded-md border transition-colors motion-reduce:transition-none cursor-pointer flex items-center justify-center select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+                        isActive
+                          ? 'bg-card text-foreground border-border/80 dark:border-white/15'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent',
+                      )}
+                      onClick={() => {
+                        const live = useEditorStore
+                          .getState()
+                          .elements.find((el) => el.id === element.id);
+                        if (
+                          !live ||
+                          live.type !== 'image' ||
+                          live.locked ||
+                          (live.maskShape || 'none') === mask.id
+                        )
+                          return;
+                        onUpdate(element.id, { maskShape: mask.id });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        viewBox="-2 -2 36 36"
+                        className="size-6"
+                      >
+                        <path d={mask.path} fill="currentColor" />
+                      </svg>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{mask.label}</TooltipContent>
+                </Tooltip>
               );
             })}
           </div>

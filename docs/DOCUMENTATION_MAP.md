@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-11-13 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
+**آخر تحديث:** 2026-11-23 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
 
 ---
 
@@ -38,6 +38,10 @@
 | `promo/remotion/README.md`    | دليل الفيديو المحلي: المعاينة، مصادر التسجيل والصوت، القص، وحدود النشر — داخل `promo/` المستثنى من Git                                                                                                             | عند تغيير إخراج الفيديو أو مصادره أو توقيته؛ لا يجعل إضافته في الجرد الأصول قابلة للتوزيع |
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
+
+**إنجاز `FF-03` المحلي (الأقنعة الهندسية والمنتقي البصري) — 2026-11-23:** أُضيف [`mask-geometry.ts`](../frontend/src/lib/canvas/mask-geometry.ts) كمصدر واحد للنوع والكتالوج ومسارات Canvas/SVG، واستهلكه [`image-node.tsx:178`](../frontend/src/components/editor/konva/elements/image-node.tsx#L178) و[`export-canvas-fitted.ts:101`](../frontend/src/lib/export/export-canvas-fitted.ts#L101) و[`image-properties.tsx:56`](../frontend/src/components/editor/properties/panels/image-properties.tsx#L56). يدعم [`types.ts:113`](../frontend/src/lib/store/types.ts#L113) و[`schema.ts:226`](../frontend/src/lib/schema.ts#L226) ثمانية أقنعة اختيارية مع توافق المشاريع القديمة. أُضيف ملف Vitest واحد [`image-mask-geometry.test.tsx`](../frontend/test/image-mask-geometry.test.tsx)، فأعاد `node scripts/docs-gate.mjs --strict-refs` الجرد الفعلي **190 Vitest / 32 E2E / 69 Go / 6 مستندات جذرية**؛ فشلت الجولة الأولية لانحراف 189→190 وحدّث البلوك وفقها (جرد لا عدد حالات). اجتازت 10 ملفات Vitest مستهدفة منفردة مع الفحوص الثلاثة الخفيفة؛ الأوامر والحدود والإخفاقات المرحلية في `docs/testing_guide.md`، والـ fragment الوحيد في [`20261123-canvas-ff03-shared-visual-masks.md`](../changelog/fragments/20261123-canvas-ff03-shared-visual-masks.md). لا E2E/full suite محلي أو commit/push/CI جديد. ثبت `FF-02` سحابياً (`962f717c` · CI `45237376893` success) عبر `gh run view` وسُجّل في الخارطة؛ سجلها المحلي السابق أدناه تاريخي قبل الدفع.
+
+**النتيجة النهائية لـ `FF-03` — 2026-11-23:** `node scripts/docs-gate.mjs --strict-refs` **PASS** بالجرد **190/32/69/6** وinventory **20** وassertions **53**، مع `git diff --check` **PASS** و`changelog-collect` يعرض **5 fragments** (أضيف fragment واحد لهذه الجلسة). لا ملفات staged؛ مصفوفة commit/fragment على الفهرس تبقى بوابة ما قبل الالتزام، ولا ادعاء commit/push أو CI لـ `FF-03`.
 
 **إغلاق مهمة `FF-02` (ضبط الكادر غير الهدّام داخل الإطار) — 2026-11-23:** أُضيفت حقول `cropZoom` و`cropPanX` و`cropPanY` الاختيارية في [`types.ts`](../frontend/src/lib/store/types.ts#L114) و[`schema.ts`](../frontend/src/lib/schema.ts#L131)، واستُخرج حساب النافذة الموحّد [`computeImageCrop`](../frontend/src/lib/export/export-primitives.ts#L108) وربطه عبر [`image-node.tsx`](../frontend/src/components/editor/konva/elements/image-node.tsx#L207) و[`export-canvas-fitted.ts`](../frontend/src/lib/export/export-canvas-fitted.ts#L153) و[`freeform-preflight.ts`](../frontend/src/lib/export/freeform-preflight.ts#L107) وحرس [`single-print-composition.ts`](../frontend/src/lib/print/single-print-composition.ts#L143) مع شاشة الضبط الموضعي [`ImageCropOverlay`](../frontend/src/components/editor/canvas/image-crop-overlay.tsx#L574) وfragment في [`changelog/fragments/20261123-canvas-ff02-inplace-crop-pan-zoom.md`](../changelog/fragments/20261123-canvas-ff02-inplace-crop-pan-zoom.md). ارتفع عداد `vitest_test_files` من `188` إلى `189` بعد إضافة `frontend/test/image-inplace-crop.test.tsx` (عدد ملفات الاختبار لا مجموع الحالات)، واجتازت 9 ملفات Vitest مستهدفة منفردة مع `typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو full suite أو `commit`/`push`.
 
@@ -124,7 +128,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=189
+vitest_test_files=190
 e2e_spec_files=32
 go_test_files=69
 docs_files=6

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
+import { MASK_SHAPES } from '../src/lib/canvas/mask-geometry';
 import { buildSingleComposition } from '../src/lib/print/single-print-composition';
 
 import type { ImageElement } from '../src/lib/store/types';
@@ -54,6 +55,38 @@ describe('buildSingleComposition', () => {
       h: 701.6,
       flipX: false,
       cornerRadius: 0,
+    });
+  });
+
+  it.each(MASK_SHAPES.filter((shape) => shape !== 'none'))(
+    'rejects the %s mask from the Go fast path',
+    (maskShape) => {
+      const result = buildSingleComposition({
+        ...base,
+        elements: [imageElement(), imageElement({ id: 'masked', maskShape, zIndex: 2 })],
+      });
+
+      expect(result.eligible).toBe(false);
+      expect(result.composition).toBeUndefined();
+      expect(result.reason).toContain('مقنّع');
+    },
+  );
+
+  it.each([
+    ['explicit none', { maskShape: 'none' as const }],
+    ['legacy omitted mask', {}],
+  ])('keeps %s eligible for the Go fast path', (_name, overrides) => {
+    const result = buildSingleComposition({
+      ...base,
+      elements: [imageElement(overrides)],
+    });
+
+    expect(result.eligible).toBe(true);
+    expect(result.reason).toBeUndefined();
+    expect(result.composition?.items).toHaveLength(1);
+    expect(result.composition?.items[0]).toMatchObject({
+      imageSrc: '/local-image/photo.jpg',
+      imageFit: 'cover',
     });
   });
 

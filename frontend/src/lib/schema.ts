@@ -6,6 +6,7 @@ import {
   clampSlotZoom,
 } from '@/lib/export/export-primitives';
 
+import { MASK_SHAPES } from './canvas/mask-geometry';
 import { sanitizeText } from './canvas/text-helpers';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
 import { sanitizeSvgMarkup } from './utils';
@@ -222,7 +223,7 @@ export const CanvasElementSchema = z.object({
   // نمط الحد وطرفه — خصائص Konva أصلية (dash + lineCap)
   strokeStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
   lineCap: z.enum(['butt', 'round', 'square']).optional(),
-  maskShape: z.enum(['none', 'circle', 'heart', 'star']).optional(),
+  maskShape: z.enum(MASK_SHAPES).optional(),
 
   // gradient properties
   fillType: z.enum(['solid', 'linear', 'radial', 'image']).optional(),

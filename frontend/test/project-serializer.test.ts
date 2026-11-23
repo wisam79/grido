@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+import { MASK_SHAPES } from '../src/lib/canvas/mask-geometry';
 import { useEditorStore } from '../src/lib/editor-store';
 import { hydrateProjectState, makeUniqueId } from '../src/lib/io/project-hydrator';
 import {
@@ -16,6 +17,7 @@ import { domain } from '../wailsjs/go/models';
 
 import type { EditorState } from '../src/lib/editor-store';
 import type { ProjectFileV1 } from '../src/lib/io/project-serializer';
+import type { ImageElement } from '../src/lib/store/types';
 
 describe('project-serializer - Project Serialization and Migration Tests', () => {
   const mockEditorState: Partial<EditorState> = {
@@ -144,6 +146,103 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     expect(backToFile.collageGap).toBe(0);
     expect(backToFile.collageMargin).toBe(0);
     expect(backToFile.printSettings?.outputFormat).toBe('png');
+  });
+
+  describe('FF-03 image mask and FF-02 crop persistence', () => {
+    const image: ImageElement = {
+      id: 'masked-image',
+      type: 'image',
+      imageSrc: '/local-image/cropped.jpg',
+      originalImageSrc: '/local-image/original.jpg',
+      x: 0.1,
+      y: 0.2,
+      width: 0.4,
+      height: 0.5,
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1,
+    };
+
+    beforeEach(() => {
+      useEditorStore.getState().reset();
+    });
+
+    it.each(MASK_SHAPES)(
+      'round-trips %s with crop framing through JSON, hydration, DB and store',
+      (maskShape) => {
+        const maskedImage: ImageElement = {
+          ...image,
+          maskShape,
+          cropZoom: 2.5,
+          cropPanX: -0.6,
+          cropPanY: 0.35,
+        };
+        const state = {
+          ...mockEditorState,
+          mode: 'single',
+          elements: [maskedImage],
+        } as EditorState;
+
+        const serialized = serializeEditorState(state);
+        expect(serialized.elements).toEqual([maskedImage]);
+
+        const deserialized = deserializeProjectFile(JSON.stringify(serialized));
+        expect(deserialized.elements).toEqual([maskedImage]);
+        expect(hydrateProjectState(deserialized)?.elements).toEqual([maskedImage]);
+
+        const dbProject = projectFileToDomainProject(deserialized, 'p-mask', 'Masked Image');
+        expect(JSON.parse(dbProject.elements)).toEqual([maskedImage]);
+        const backToFile = deserializeProjectFile(domainProjectToProjectFile(dbProject));
+        expect(backToFile.elements).toEqual([maskedImage]);
+
+        useEditorStore.getState().loadProject(backToFile);
+        expect(useEditorStore.getState().elements).toEqual([maskedImage]);
+        const savedAgain = deserializeProjectFile(
+          JSON.stringify(serializeEditorState(useEditorStore.getState())),
+        );
+        expect(savedAgain.elements).toEqual([maskedImage]);
+      },
+    );
+
+    it('round-trips legacy images without optional mask or crop fields', () => {
+      const legacyProject = {
+        mode: 'single',
+        canvasWidth: 1200,
+        canvasHeight: 1200,
+        backgroundColor: '#FFFFFF',
+        elements: [image],
+        slots: [],
+      };
+
+      const deserialized = deserializeProjectFile(JSON.stringify(legacyProject));
+      expect(deserialized.elements).toEqual([image]);
+      expect(hydrateProjectState(deserialized)?.elements).toEqual([image]);
+
+      const dbProject = projectFileToDomainProject(deserialized, 'p-legacy-mask', 'Legacy Image');
+      const backToFile = deserializeProjectFile(domainProjectToProjectFile(dbProject));
+      useEditorStore.getState().loadProject(backToFile);
+      const savedAgain = deserializeProjectFile(
+        JSON.stringify(serializeEditorState(useEditorStore.getState())),
+      );
+
+      expect(savedAgain.elements).toEqual([image]);
+      for (const field of ['maskShape', 'cropZoom', 'cropPanX', 'cropPanY']) {
+        expect(savedAgain.elements[0]).not.toHaveProperty(field);
+      }
+    });
+
+    it('rejects a project containing an unsupported image mask', () => {
+      const invalidProject = {
+        ...mockEditorState,
+        version: 1,
+        mode: 'single',
+        elements: [{ ...image, maskShape: 'oval' }],
+      };
+
+      expect(() => deserializeProjectFile(JSON.stringify(invalidProject))).toThrow(
+        'Project file validation failed',
+      );
+    });
   });
 
   it('should migrate legacy projects without version to current V1 version', () => {

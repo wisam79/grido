@@ -5,6 +5,7 @@
 import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { createElementGlyphPainter, resolveElementFill } from '@/lib/canvas/fill-paint';
+import { buildMaskPath, traceMaskPath } from '@/lib/canvas/mask-geometry';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
@@ -57,6 +58,7 @@ export async function renderFittedBranch(
     });
   await Promise.all(elLoadPromises);
 
+  let imageComposite: HTMLCanvasElement | null = null;
   for (const el of sorted) {
     ctx.save();
     ctx.globalAlpha = el.opacity;
@@ -96,64 +98,57 @@ export async function renderFittedBranch(
       const img = elImageMap[el.id];
       const radius = el.cornerRadius || 0;
       const maskShape = el.maskShape && el.maskShape !== 'none' ? el.maskShape : null;
-      // يقصّ الصورة (قناع/زوايا مستديرة) داخل كانفس بعرض العنصر — يُستخدم في مسار
-      // مرشّح البكسل فقط، بينما يبقى الرسم المباشر بالفلاتر CSS كما كان
+      const maskPath = buildMaskPath(el.maskShape, w, h);
       const clipImage = (target: CanvasRenderingContext2D) => {
-        target.beginPath();
-        if (maskShape === 'circle') {
-          target.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
-        } else if (maskShape === 'star') {
-          drawStar(target, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
-        } else if (maskShape === 'heart') {
-          const topCurveHeight = h * 0.3;
-          target.moveTo(w / 2, topCurveHeight);
-          target.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
-          target.bezierCurveTo(
-            0,
-            (h + topCurveHeight) / 2,
-            w / 2,
-            (h + topCurveHeight) / 2,
-            w / 2,
-            h,
-          );
-          target.bezierCurveTo(
-            w / 2,
-            (h + topCurveHeight) / 2,
-            w,
-            (h + topCurveHeight) / 2,
-            w,
-            topCurveHeight,
-          );
-          target.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
+        if (maskShape) {
+          traceMaskPath(target, maskPath);
         } else if (radius > 0) {
-          drawRoundRect(target, 0, 0, w, h, radius);
+          drawRoundRect(target, 0, 0, w, h, Math.min(radius, w / 2, h / 2));
         } else {
           return;
         }
-        target.closePath();
         target.clip();
       };
 
-      if (el.bgColor && el.bgColor !== 'transparent') {
-        ctx.save();
-        ctx.fillStyle = el.bgColor;
-        if (radius > 0) {
-          ctx.beginPath();
-          drawRoundRect(ctx, 0, 0, w, h, radius);
-          ctx.fill();
-        } else {
-          ctx.fillRect(0, 0, w, h);
-        }
-        ctx.restore();
-      }
-
       const filtered = renderWithCanonicalPrintFilters(w, h, el, (octx) => {
         octx.save();
-        clipImage(octx);
+        // Geometric masks are outside KonvaImage's filtered cache. Only natural
+        // corner rounding is part of that cache; mask the filtered pixels later.
+        if (!maskShape) clipImage(octx);
         drawImageCover(octx, img, 0, 0, w, h, el);
         octx.restore();
       });
-      if (filtered) ctx.drawImage(filtered, 0, 0, w, h);
+      if (filtered) {
+        let bitmap = filtered;
+        if (maskShape) {
+          imageComposite ??= document.createElement('canvas');
+          imageComposite.width = filtered.width;
+          imageComposite.height = filtered.height;
+          const target = imageComposite.getContext('2d');
+          if (!target) throw new Error('Unable to create image mask export context');
+          target.save();
+          clipImage(target);
+          if (el.bgColor && el.bgColor !== 'transparent') {
+            target.fillStyle = el.bgColor;
+            target.fillRect(0, 0, w, h);
+          }
+          target.drawImage(filtered, 0, 0, w, h);
+          target.restore();
+          bitmap = imageComposite;
+        } else if (el.bgColor && el.bgColor !== 'transparent') {
+          // Background is not filtered. One final draw casts the combined
+          // silhouette, never two overlapping image/background shadows.
+          const target = filtered.getContext('2d');
+          if (!target) throw new Error('Unable to create image background export context');
+          target.save();
+          clipImage(target);
+          target.globalCompositeOperation = 'destination-over';
+          target.fillStyle = el.bgColor;
+          target.fillRect(0, 0, w, h);
+          target.restore();
+        }
+        ctx.drawImage(bitmap, 0, 0, w, h);
+      }
     } else if (el.type === 'text') {
       const fontSize = el.fontSize || 32;
       // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)

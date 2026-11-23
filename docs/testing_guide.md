@@ -2,6 +2,23 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات الأقنعة الهندسية المشتركة (`FF-03`) — 2026-11-23
+
+- أُضيف [`frontend/test/image-mask-geometry.test.tsx`](../frontend/test/image-mask-geometry.test.tsx) لاختبار نقاء هندسة الأقنعة الثمانية وإغلاق المسارات ومعالم الأقنعة القديمة وثبات الإحداثيات عند 300/600 DPI، وتطابق أوامر Konva وراسم الظل والتصدير، والقناع **بعد** `none/grayscale/pixelate` وتركيب الخلفية غير المفلترة قبل ظل واحد، والشفافية وإعادة استخدام سطح التركيب ومفتاح كاش الاستدارة الفعلية.
+- توسعت `image-node.test.tsx` لتغطية ترقية المصدر الكامل والقص واستعادة المصدر/الكاش/المصفوفة عند نجاح/إلغاء الالتقاط لكل قناع هندسي؛ و`element-properties-tabs.test.tsx` لتغطية الأسماء الوصولية ومعاينات SVG الثماني وحالة الاختيار والحفظ بخطوة تاريخ واحدة وUndo/Redo وحراس الهدف والقفل وno-op وحفظ الاستدارة. اختبارات المخطط والحفظ والستور ومسار Go السريع تشمل جميع الأقنعة وغيابها القديم وتوافق حقول الكادر من `FF-02`.
+- **آخر النتائج، كل ملف في استدعاء منفرد متسلسل:** `test/image-mask-geometry.test.tsx` **37/37**، `test/image-node.test.tsx` **15/15**، `test/element-properties-tabs.test.tsx` **72/72**، `test/canvas-rendering-core.test.ts` **45/45**، `test/project-serializer.test.ts` **31/31**، `test/single-print-composition.test.ts` **39/39**، `test/image-inplace-crop.test.tsx` **13/13**، `test/scanner-follow-react.test.tsx` **4/4**، `test/export-image-fallback.test.ts` **13/13**، و`test/ui-compliance.test.ts` **57/57**.
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend run format:check
+node scripts/docs-gate.mjs --strict-refs
+```
+
+- `typecheck` و`lint` و`format:check` و`git diff --check` **PASS**. فشل مرحلي في محاكاة سجل Canvas (لم يفرّغ سجل الأوامر عند `clearRect`) صُحّح ثم نجح الملف؛ وُسّعت الاختبارات بعد تصحيح ترتيب القص/الفلاتر وكاش الاستدارة. صُحّح ترتيب استيرادين لـlint، وخيار `exact` غير المدعوم في ستة استعلامات `getByRole` لـtypecheck دون تغيير المطابقة الدقيقة للأسماء. ظهرت تحذيرات Wails browser/React `act` في المحاكاة، وليست نجاح تشغيل Wails أصلي.
+- البوابة الأولية كشفت انحراف عداد ملفات Vitest `189→190`، وحدّثت الخريطة وفق نتيجة الأمر؛ الإعادة النهائية لـ `node scripts/docs-gate.mjs --strict-refs` **PASS** (الجرد 190/32/69/6، inventory20، assertions53)، و`changelog-collect` قبل fragment وبعده أكد 4 ثم 5 fragments، أي إضافة واحدة فقط. لم توجد ملفات staged؛ لذا لم تُختبر مصفوفة commit/fragment على الفهرس، وتُعاد عند اعتماد الالتزام. هذا **جرد ملفات** لا مجموع حالات. لا تغيير E2E/Go أو إعدادات الاختبار، ولا full suite أو Playwright محلي أو commit/push/CI لـ `FF-03`؛ التحقق هندسي وعقود Canvas/DOM والتقاط بعقد Konva حقيقية، لا مقارنة raster فعلية أو قبول طابعة.
+
 ## اختبارات ضبط الكادر غير الهدّام داخل الإطار (`FF-02`) — 2026-11-23
 
 - **الإضافات:** أُضيف ملف الاختبار المستقل [`frontend/test/image-inplace-crop.test.tsx`](../frontend/test/image-inplace-crop.test.tsx) لتغطية دوال [`computeImageCrop`](../frontend/src/lib/export/export-primitives.ts#L108) و`panImageCropByDelta` و`normalizeImageCropFraming`، وثبات الإحداثيات عند مضاعفة DPI ‏(2×) وتدوير/قلب العنصر، وتقييد حدود المخطط والحافظة عبر [`CanvasElementSchema`](../frontend/src/lib/schema.ts#L131)، وتطابق مخرجات Konva و`export-canvas-fitted.ts` و`freeform-preflight.ts` وحرس `single-print-composition.ts`، وتدفق التعديل والالتزام بـ`Enter` (`Ctrl+Z` واحدة) والإلغاء بـ`Esc` (0 خطوات تاريخ) في [`ImageCropOverlay`](../frontend/src/components/editor/canvas/image-crop-overlay.tsx#L574) مع تحديث [`frontend/test/freeform-double-click-crop.test.tsx`](../frontend/test/freeform-double-click-crop.test.tsx) لتدفق النقر المزدوج → ضبط الكادر → «قص وتدوير متقدم».

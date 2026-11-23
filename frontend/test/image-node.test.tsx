@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { URLImage } from '../src/components/editor/konva/elements/image-node';
 import { getDisplayImage } from '../src/lib/canvas/display-image';
 import { captureStageBlob, isStageCaptureActive } from '../src/lib/canvas/konva-export-utils';
+import { MASK_SHAPES, type MaskShape } from '../src/lib/canvas/mask-geometry';
 import type { ElementProps } from '../src/components/editor/konva/elements/types';
 import type { ImageElement } from '../src/lib/store/types';
 
@@ -71,7 +72,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderImage() {
+function renderImage(maskShape: MaskShape = 'circle') {
   const element: ImageElement = {
     id: 'photo',
     type: 'image',
@@ -83,7 +84,7 @@ function renderImage() {
     opacity: 1,
     rotation: 0,
     zIndex: 1,
-    maskShape: 'circle',
+    maskShape,
     shadowOpacity: 0.5,
     shadowColor: '#000000',
     shadowBlur: 5,
@@ -132,9 +133,13 @@ describe('image shadow caster lifetime and capture source', () => {
     view.unmount();
   });
 
-  it.each(['success', 'abort'] as const)(
-    'reads upgraded source/crop only inside serialized capture and restores editor bitmap on %s',
-    async (outcome) => {
+  it.each(
+    MASK_SHAPES.filter((shape) => shape !== 'none').flatMap((maskShape) =>
+      (['success', 'abort'] as const).map((outcome) => ({ maskShape, outcome })),
+    ),
+  )(
+    'reads upgraded source/crop for $maskShape only inside serialized capture and restores editor bitmap on $outcome',
+    async ({ maskShape, outcome }) => {
       const container = document.createElement('div');
       document.body.appendChild(container);
       stage = new Konva.Stage({ container, width: 1200, height: 600 });
@@ -145,7 +150,7 @@ describe('image shadow caster lifetime and capture source', () => {
       vi.spyOn(stage, 'batchDraw').mockReturnValue(stage);
       vi.spyOn(layer, 'batchDraw').mockReturnValue(layer);
       rendered.node = node;
-      const view = renderImage();
+      const view = renderImage(maskShape);
       node.setAttrs(rendered.imageProps as Konva.ImageConfig);
       const displayed = node.image();
       const crop = node.crop();
