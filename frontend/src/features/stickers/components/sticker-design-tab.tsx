@@ -4,7 +4,7 @@ import {
   FluentSliderField,
   FluentSettingRow,
 } from '@/components/ui/blocks';
-import { ArrowCounterClockwise } from '@/components/ui/icons';
+import { ArrowCounterClockwise, Shuffle } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,10 +16,12 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 import { CURATED_PALETTES } from '../constants';
 import { StickerFontSelector } from './sticker-font-selector';
+import { IconGridPicker, ShapeGridPicker } from './sticker-visual-pickers';
 
 import type { StickerFinish, StickerParams, StickerTemplate } from '../types';
 
@@ -98,20 +100,56 @@ export function StickerDesignTab({
     <>
       {/* 1. النصوص */}
       {template.fields.length > 0 && (
-        <FluentSection title="النصوص" collapsible defaultOpen>
+        <FluentSection
+          title="النصوص"
+          collapsible
+          defaultOpen
+          action={
+            template.randomizeParams ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  commit((prev) => template.randomizeParams!(prev));
+                }}
+                aria-label="توليفة عشوائية"
+                title="توليفة عشوائية"
+                className={cn(
+                  'h-6 px-2 rounded-md border border-border/60 bg-background/70 hover:bg-accent text-mini font-semibold text-foreground/85 inline-flex items-center gap-1 transition-colors cursor-pointer',
+                  FOCUS_RING,
+                )}
+              >
+                <Shuffle className="w-3 h-3 text-primary" />
+                <span>توليفة</span>
+              </button>
+            ) : undefined
+          }
+        >
           <div className="space-y-2">
             {template.fields.map((field) => {
               const val = params.fields[field.id] ?? field.defaultValue;
               const isModified = val !== field.defaultValue;
+              const hasSelectOptions = field.type === 'select' && Boolean(field.options?.length);
+              const isGroupPicker =
+                hasSelectOptions &&
+                (field.presentation === 'shape-grid' ||
+                  field.presentation === 'icon-grid' ||
+                  (field.presentation !== 'select' && (field.options?.length ?? 0) <= 8));
               return (
                 <div key={field.id} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor={`sticker-field-${field.id}`}
-                      className="text-mini font-semibold text-foreground/85"
-                    >
-                      {field.label}
-                    </Label>
+                    {isGroupPicker ? (
+                      <span className="text-mini font-semibold text-foreground/85">
+                        {field.label}
+                      </span>
+                    ) : (
+                      <Label
+                        htmlFor={`sticker-field-${field.id}`}
+                        className="text-mini font-semibold text-foreground/85"
+                      >
+                        {field.label}
+                      </Label>
+                    )}
                     {isModified && (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -129,8 +167,20 @@ export function StickerDesignTab({
                       </Tooltip>
                     )}
                   </div>
-                  {field.type === 'select' && field.options?.length ? (
-                    field.options.length <= 8 ? (
+                  {hasSelectOptions && field.options ? (
+                    field.presentation === 'shape-grid' ? (
+                      <ShapeGridPicker
+                        field={field}
+                        value={val}
+                        onChange={(next) => onFieldChange(field.id, next)}
+                      />
+                    ) : field.presentation === 'icon-grid' ? (
+                      <IconGridPicker
+                        field={field}
+                        value={val}
+                        onChange={(next) => onFieldChange(field.id, next)}
+                      />
+                    ) : field.presentation !== 'select' && field.options.length <= 8 ? (
                       <div className="grid grid-cols-4 gap-1" role="group" aria-label={field.label}>
                         {field.options.map((opt) => {
                           const selected = val === opt.value;
@@ -142,6 +192,7 @@ export function StickerDesignTab({
                               onClick={() => onFieldChange(field.id, opt.value)}
                               className={cn(
                                 'h-7 px-1.5 rounded-md border text-micro font-semibold truncate transition-colors cursor-pointer',
+                                FOCUS_RING,
                                 selected
                                   ? 'bg-primary-action hover:bg-primary-action-hover text-primary-foreground border-primary shadow-2xs'
                                   : 'bg-background/70 hover:bg-accent border-border/50 text-foreground/85',

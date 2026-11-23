@@ -19,7 +19,18 @@
  * (SVG متجه ⇒ لا دقة ثابتة)، أو إعدادات الطباعة في التطبيق.
  */
 
-import type { StickerCutShape } from '../types';
+import type { StickerCutShape, StickerParams, StickerTemplate } from '../types';
+
+/** يرجع مسار القص الفعلي للقالب بحسب التخصيص الحالي (ديناميكي أولاً ثم ثابت). */
+export function resolveTemplateCutShape(
+  template: StickerTemplate,
+  params?: StickerParams,
+): StickerCutShape | undefined {
+  if (params && template.resolveCutShape) {
+    return template.resolveCutShape(params);
+  }
+  return template.cutShape;
+}
 
 /** حافة الأمان الافتراضية كنسبة مئوية من أصغر بُعد للـ viewBox (~4% ≈ 2 مم على ملصق 50 مم). */
 export const DEFAULT_BLEED_PERCENT = 4;

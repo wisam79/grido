@@ -2,6 +2,11 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات التطوير البارامتري للملصقات والبطاقات — 2026-11-23
+
+- **الإضافات:** أُضيف ملف اختبار مستقل [`frontend/test/sticker-parametric-surfaces.test.ts`](../frontend/test/sticker-parametric-surfaces.test.ts) للتحقق من اشتقاق ألوان OKLCH عبر `culori`، وخلو البطاقات الإجرائية من مرشحات الراستر (`feTurbulence`/`feDisplacementMap`)، وتكامل `composeParametricCardSvg`، و`resolveTemplateCutShape`؛ كما توسّع [`frontend/test/sticker-stamp-composer.test.tsx`](../frontend/test/sticker-stamp-composer.test.tsx) لاختبار منتقي الأشكال والأيقونات (`IconGridPicker` مع `type="search"`)، وزر «توليفة»، وحصر تنقل `Enter` على الحقول النصية، مع تحديث توقع العد الكلي (`210` قوالب و`102` في `cards`) في [`frontend/test/sticker-templates.test.ts`](../frontend/test/sticker-templates.test.ts).
+- **التحقق المستهدف المنفصل (`--maxWorkers=1 --coverage.enabled=false`):** اجتازت كل الملفات التالية منفردة: `test/sticker-studio.test.tsx` (**16/16**)، `test/sticker-stamp-composer.test.tsx` (**7/7**)، `test/sticker-templates.test.ts` (**16/16**)، `test/sticker-parametric-surfaces.test.ts` (**6/6**)، `test/sticker-inline-editor.test.tsx` (**3/3**)، `test/sticker-coverage.test.ts` (**39/39**)، `test/sticker-quality.test.ts` (**20/20**)، `test/sticker-build-svg.test.ts` (**5/5**)، و`test/ui-compliance.test.ts` (**57/57**)، بالإضافة إلى `npm --prefix frontend run stickers:audit -- --json` (`210/210`) و`typecheck` و`lint` و`format:check` (دون تشغيل full suite أو Playwright محلي).
+
 ## بوابة E2E مع خلفية فعلية — 2026-11-20 (تنفيذ مكتوب، قبول التشغيل قيد العمل)
 
 مسارات الاختبار مفصولة: `frontend/e2e/` واجهة مع fixtures Wails معلنة، و`frontend/e2e-acceptance/` واجهة إنتاج مضمّنة مع Go/SQLite فعليين، و`admin-web/e2e-acceptance/` Auth/REST/Storage/Realtime حقيقية في Supabase محلية مؤقتة. مسار native يستخدم WebView2 الحقيقي مع contract-auth loopback **محاكاة third-party معلنة**؛ لا يُسمّى Supabase حيّاً. dialog adapter تحت build tag `e2e` يختار الملفات فقط ولا يستبدل media/persistence/export، ولا يثبت نوافذ OS.

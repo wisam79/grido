@@ -1,5 +1,5 @@
+import { deriveSurfacePalette } from './color-derivation';
 import { COMPOSER_ICONS, renderComposerIconMarkup } from './composer-icons';
-import { contrastRatio } from './sticker-a11y';
 import { isArabicText } from './sticker-text';
 import { escapeXml } from './svg-rasterizer';
 import { scallopCirclePath, starPoints } from '../templates/svg-elements';
@@ -185,11 +185,10 @@ export function resolveStampV2CutShape(shape: StampShapeId = 'rosette'): Sticker
   return { kind: 'path', d: getStampShapePath(shape) };
 }
 
-function pickContrastInk(bgHex: string): string {
-  const whiteScore = contrastRatio('#ffffff', bgHex);
-  const darkScore = contrastRatio('#0f172a', bgHex);
-  if (whiteScore === null || darkScore === null) return '#ffffff';
-  return whiteScore >= darkScore ? '#ffffff' : '#0f172a';
+/** مصغّر متجهي نقي للشكل لاستخدامه داخل منتقي الأشكال البصري في لوح الخصائص. */
+export function renderStampShapeThumbnailSvg(shape: StampShapeId): string {
+  const pathD = getStampShapePath(shape);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" aria-hidden="true"><path d="${pathD}" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="14" stroke-linejoin="round"/></svg>`;
 }
 
 function dottedRingMarkup(
@@ -341,10 +340,11 @@ export function composeStampV2Svg(params: StickerParams, defaults: ComposeStampV
   const L = STAMP_LAYOUTS[shape];
   const pathD = getStampShapePath(shape);
 
-  const bodyInk = pickContrastInk(primary);
-  const medallionInk = pickContrastInk(secondary);
+  const palette = deriveSurfacePalette(primary, secondary, bgColor);
+  const bodyInk = palette.bodyInk;
+  const medallionInk = palette.accentInk;
   const ribbonFill = transparentRibbon ? 'none' : bgColor;
-  const ribbonTextInk = transparentRibbon ? bodyInk : pickContrastInk(bgColor);
+  const ribbonTextInk = transparentRibbon ? bodyInk : palette.bgInk;
   const { gloss, shade } = finishOpacities(params.finish);
   const isHolo = params.finish === 'holographic';
 
@@ -365,9 +365,21 @@ export function composeStampV2Svg(params: StickerParams, defaults: ComposeStampV
   const ribbonR = ribbonH / 2;
   const ribbonX = 120 - L.ribbonW / 2;
   const ribbonTop = L.subY - 4 - ribbonH / 2;
+  const ribbonInnerW = Math.max(0, L.ribbonW - 2.4);
+  const ribbonInnerH = Math.max(0, ribbonH - 2.4);
+  const ribbonInnerR = Math.max(0, ribbonR - 1.2);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
+    <linearGradient id="v2-body-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${palette.primaryLight}"/>
+      <stop offset="55%" stop-color="${palette.primaryDeep}"/>
+      <stop offset="100%" stop-color="${palette.primaryBase}"/>
+    </linearGradient>
+    <linearGradient id="v2-medal-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${palette.accentLight}"/>
+      <stop offset="100%" stop-color="${palette.accentDark}"/>
+    </linearGradient>
     <linearGradient id="v2-gloss" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="${gloss}"/>
       <stop offset="65%" stop-color="#ffffff" stop-opacity="0"/>
@@ -391,7 +403,7 @@ export function composeStampV2Svg(params: StickerParams, defaults: ComposeStampV
 
   <g data-field-id="shape" data-color-role="primary">
     ${dieCut ? `<path d="${pathD}" fill="#ffffff" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>` : ''}
-    <path d="${pathD}" fill="${primary}"/>
+    <path d="${pathD}" fill="url(#v2-body-grad)"/>
     <g clip-path="url(#v2-clip)">
       <rect x="0" y="0" width="240" height="240" fill="url(#v2-shade)"/>
       ${isHolo ? '<rect x="0" y="0" width="240" height="240" fill="url(#v2-holo)"/>' : ''}
@@ -414,19 +426,26 @@ export function composeStampV2Svg(params: StickerParams, defaults: ComposeStampV
       ${
         isEmojiIcon
           ? `<circle cx="120" cy="${L.iconY}" r="${L.iconR}" fill="rgba(255,255,255,0.16)" stroke="${secondary}" stroke-width="1.6" opacity="0.9"/>`
-          : `<circle cx="120" cy="${L.iconY}" r="${L.iconR}" fill="${secondary}"/><circle cx="120" cy="${L.iconY}" r="${L.iconR - 4}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4"/>`
+          : `<circle cx="120" cy="${L.iconY}" r="${L.iconR}" fill="url(#v2-medal-grad)"/><circle cx="120" cy="${L.iconY}" r="${L.iconR - 4}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.4"/><circle cx="120" cy="${L.iconY}" r="${L.iconR - 8}" fill="rgba(255,255,255,0.14)"/>`
       }
       ${iconBody}
     </g>
 
-    <text aria-hidden="true" x="120" y="${(L.mainY + 1.4).toFixed(1)}" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="${mainSize.toFixed(1)}" font-weight="800" fill="#000000" opacity="0.22">${escapeXml(mainText)}</text>
+    <text aria-hidden="true" data-max-width="${L.maxW}" x="120" y="${(L.mainY + 1.4).toFixed(1)}" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="${mainSize.toFixed(1)}" font-weight="800" fill="#000000" opacity="0.22">${escapeXml(mainText)}</text>
     <text data-field-id="mainText" data-max-width="${L.maxW}" x="120" y="${L.mainY}" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="${mainSize.toFixed(1)}" font-weight="800" fill="${bodyInk}">${escapeXml(mainText)}</text>
 
     ${
       subText
         ? `<g data-color-role="background">
-      <rect x="${ribbonX}" y="${ribbonTop + 2}" width="${L.ribbonW}" height="${ribbonH}" rx="${ribbonR}" fill="#000000" opacity="0.18"/>
-      <rect x="${ribbonX}" y="${ribbonTop}" width="${L.ribbonW}" height="${ribbonH}" rx="${ribbonR}" fill="${ribbonFill}" stroke="${secondary}" stroke-width="1.2"/>
+      ${
+        transparentRibbon
+          ? `<rect x="${ribbonX}" y="${ribbonTop}" width="${L.ribbonW}" height="${ribbonH}" rx="${ribbonR}" fill="none" stroke="${secondary}" stroke-width="1.2" opacity="0.7"/>`
+          : `<rect x="${ribbonX}" y="${ribbonTop + 2}" width="${L.ribbonW}" height="${ribbonH}" rx="${ribbonR}" fill="#000000" opacity="0.18"/>
+      <rect x="${ribbonX}" y="${ribbonTop}" width="${L.ribbonW}" height="${ribbonH}" rx="${ribbonR}" fill="${ribbonFill}"/>
+      <rect x="${(ribbonX + 1.2).toFixed(1)}" y="${(ribbonTop + 1.2).toFixed(1)}" width="${ribbonInnerW.toFixed(1)}" height="${ribbonInnerH.toFixed(1)}" rx="${ribbonInnerR.toFixed(1)}" fill="none" stroke="${secondary}" stroke-width="1.2" opacity="0.55"/>
+      <path d="M ${(ribbonX + ribbonR).toFixed(1)},${(ribbonTop + 2.6).toFixed(1)} H ${(ribbonX + L.ribbonW - ribbonR).toFixed(1)}" stroke="#ffffff" stroke-width="1.4" opacity="0.28"/>
+      <path d="M ${(ribbonX + ribbonR).toFixed(1)},${(ribbonTop + ribbonH - 2.6).toFixed(1)} H ${(ribbonX + L.ribbonW - ribbonR).toFixed(1)}" stroke="#000000" stroke-width="1.4" opacity="0.18"/>`
+      }
     </g>`
         : ''
     }

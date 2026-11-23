@@ -1,10 +1,20 @@
 /**
- * أيقونات متجهية مرخّصة بـ MIT (Phosphor Icons, Tabler Icons, Fluent Emoji Flat).
+ * أيقونات متجهية مرخّصة بـ MIT حصراً:
+ * - Phosphor Icons (MIT) — https://phosphoricons.com (24 أيقونة)
+ * - Tabler Icons (MIT) — https://tabler.io/icons (10 أيقونات)
+ * - Fluent Emoji Flat by Microsoft (MIT) — https://github.com/microsoft/fluentui-emoji (13 أيقونة)
+ *
  * مضمّنة محلياً بلا طلبات شبكة، وتُمرَّر مع القالب عبر namespaceStickerSvgIds.
+ * مُستبعد تماماً أي أصل غير MIT أو يحمل علامة تجارية (Twemoji / Simple Icons).
  */
+
+export type ComposerIconGroup = 'badges' | 'commerce' | 'shipping' | 'lifestyle' | 'celebration';
+
 export interface ComposerIconSpec {
   id: string;
   label: string;
+  group: ComposerIconGroup;
+  keywords?: readonly string[];
   width: number;
   height: number;
   multiColor: boolean;
@@ -12,9 +22,12 @@ export interface ComposerIconSpec {
 }
 
 export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
+  // ── Phosphor Icons (MIT) — 24 أيقونة ──
   {
     id: 'ph:seal-check-fill',
     label: 'ختم موثوق',
+    group: 'badges',
+    keywords: ['موثوق', 'ضمان', 'معتمد', 'جودة', 'صح', 'verified'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -23,6 +36,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:crown-fill',
     label: 'تاج',
+    group: 'badges',
+    keywords: ['ملكي', 'الأكثر مبيعاً', 'فاخر', 'vip', 'crown'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -31,6 +46,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:star-fill',
     label: 'نجمة',
+    group: 'badges',
+    keywords: ['تقييم', 'ممتاز', 'مميز', 'star'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -39,6 +56,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:fire-fill',
     label: 'شعلة',
+    group: 'commerce',
+    keywords: ['عرض حار', 'خصم', 'ترند', 'ساخن', 'fire', 'hot'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -47,6 +66,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:sparkle-fill',
     label: 'بريق',
+    group: 'badges',
+    keywords: ['جديد', 'لامع', 'حصري', 'تنظيف', 'sparkle'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -55,6 +76,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:heart-fill',
     label: 'قلب',
+    group: 'celebration',
+    keywords: ['حب', 'شكر', 'مفضل', 'heart', 'love'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -63,6 +86,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:hand-heart-fill',
     label: 'صنع بحب',
+    group: 'lifestyle',
+    keywords: ['يدوي', 'رعاية', 'عناية', 'handmade'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -71,6 +96,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:leaf-fill',
     label: 'طبيعي',
+    group: 'lifestyle',
+    keywords: ['عضوي', 'نباتي', 'صديق للبيئة', 'ورقة', 'organic', 'eco'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -79,6 +106,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:coffee-fill',
     label: 'قهوة',
+    group: 'lifestyle',
+    keywords: ['كافيه', 'مشروب', 'إسبريسو', 'فنجان', 'coffee'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -87,6 +116,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:gift-fill',
     label: 'هدية',
+    group: 'celebration',
+    keywords: ['عيد', 'تغليف', 'مناسبة', 'مفاجأة', 'gift'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -95,6 +126,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:snowflake-fill',
     label: 'شتاء',
+    group: 'celebration',
+    keywords: ['ثلج', 'بارد', 'مبرد', 'شتوي', 'winter', 'snow'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -103,6 +136,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:sun-fill',
     label: 'صيف',
+    group: 'celebration',
+    keywords: ['شمس', 'صباح', 'إشراق', 'summer', 'sun'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -111,6 +146,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:lightning-fill',
     label: 'سريع',
+    group: 'commerce',
+    keywords: ['برق', 'فوري', 'توصيل', 'طاقة', 'express', 'flash'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -119,6 +156,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:camera-fill',
     label: 'تصوير',
+    group: 'lifestyle',
+    keywords: ['كاميرا', 'استوديو', 'صور', 'فوتو', 'camera'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -127,6 +166,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:cake-fill',
     label: 'كيك',
+    group: 'lifestyle',
+    keywords: ['مخبز', 'حلويات', 'كعكة', 'عيد ميلاد', 'cake', 'bakery'],
     width: 256,
     height: 256,
     multiColor: false,
@@ -135,14 +176,100 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'ph:flower-fill',
     label: 'زهرة',
+    group: 'lifestyle',
+    keywords: ['ورد', 'تجميل', 'عطور', 'ربيع', 'flower'],
     width: 256,
     height: 256,
     multiColor: false,
     body: '<path fill="currentColor" d="M210.35 129.36c-.81-.47-1.7-.92-2.62-1.36c.92-.44 1.81-.89 2.62-1.36a40 40 0 1 0-40-69.28c-.81.47-1.65 1-2.48 1.59c.08-1 .13-2 .13-3a40 40 0 0 0-80 0c0 .94 0 1.94.13 3c-.83-.57-1.67-1.12-2.48-1.59a40 40 0 1 0-40 69.28c.81.47 1.7.92 2.62 1.36c-.92.44-1.81.89-2.62 1.36a40 40 0 1 0 40 69.28c.81-.47 1.65-1 2.48-1.59c-.08 1-.13 2-.13 2.95a40 40 0 0 0 80 0c0-.94-.05-1.94-.13-2.95c.83.57 1.67 1.12 2.48 1.59a39.8 39.8 0 0 0 19.94 5.36a40.4 40.4 0 0 0 10.42-1.38a40 40 0 0 0 9.64-73.28ZM128 156a28 28 0 1 1 28-28a28 28 0 0 1-28 28"/>',
   },
   {
+    id: 'ph:truck-fill',
+    label: 'شاحنة',
+    group: 'shipping',
+    keywords: ['شحن', 'نقل', 'توصيل', 'لوجستي', 'truck'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="m255.43 117l-14-35a15.93 15.93 0 0 0-14.85-10H192v-8a8 8 0 0 0-8-8H32a16 16 0 0 0-16 16v112a16 16 0 0 0 16 16h17a32 32 0 0 0 62 0h50a32 32 0 0 0 62 0h17a16 16 0 0 0 16-16v-64a8.1 8.1 0 0 0-.57-3M80 208a16 16 0 1 1 16-16a16 16 0 0 1-16 16m-48-72V72h144v64Zm160 72a16 16 0 1 1 16-16a16 16 0 0 1-16 16m0-96V88h34.58l9.6 24Z"/>',
+  },
+  {
+    id: 'ph:package-fill',
+    label: 'طرد ممتلئ',
+    group: 'shipping',
+    keywords: ['صندوق', 'تغليف', 'شحنة', 'كرتون', 'package', 'box'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="m223.68 66.15l-88-48.15a15.88 15.88 0 0 0-15.36 0l-88 48.17a16 16 0 0 0-8.32 14v95.64a16 16 0 0 0 8.32 14l88 48.17a15.88 15.88 0 0 0 15.36 0l88-48.17a16 16 0 0 0 8.32-14V80.18a16 16 0 0 0-8.32-14.03M128 32l80.35 44l-29.78 16.29l-80.35-44Zm0 88L47.65 76l33.91-18.57l80.35 44Zm88 55.85l-80 43.79v-85.81l32-17.51V152a8 8 0 0 0 16 0v-44.44l32-17.51v85.76Z"/>',
+  },
+  {
+    id: 'ph:thumbs-up-fill',
+    label: 'إعجاب',
+    group: 'badges',
+    keywords: ['ممتاز', 'اختيار', 'توصية', 'لايك', 'like', 'thumbs'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="M234 80.12A24 24 0 0 0 216 72h-56V56a40 40 0 0 0-40-40a8 8 0 0 0-7.16 4.42L75.06 96H32a16 16 0 0 0-16 16v88a16 16 0 0 0 16 16h172a24 24 0 0 0 23.82-21l12-96A24 24 0 0 0 234 80.12M32 112h40v88H32Z"/>',
+  },
+  {
+    id: 'ph:smiley-fill',
+    label: 'ابتسامة',
+    group: 'celebration',
+    keywords: ['سعيد', 'مرح', 'أطفال', 'ترحيب', 'smile'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24M92 96a12 12 0 1 1-12 12a12 12 0 0 1 12-12m82.92 60c-10.29 17.79-27.39 28-46.92 28s-36.63-10.2-46.92-28a8 8 0 1 1 13.84-8c7.47 12.91 19.21 20 33.08 20s25.61-7.1 33.08-20a8 8 0 1 1 13.84 8M164 120a12 12 0 1 1 12-12a12 12 0 0 1-12 12"/>',
+  },
+  {
+    id: 'ph:scissors-fill',
+    label: 'مقص',
+    group: 'commerce',
+    keywords: ['قص', 'تفصيل', 'صالون', 'حرفي', 'كوبون', 'scissors'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="m236.52 187.09l-143-97.87a36 36 0 1 0-14.38 17.27l21.39 21.69l-21.38 21.36a35.91 35.91 0 1 0 14.38 17.27l26.91-18.41L170 198.64a32.26 32.26 0 0 0 22.7 9.37a31.5 31.5 0 0 0 4.11-.27h.28l36.27-6.11a8 8 0 0 0 3.19-14.5Zm-162.38-97A20 20 0 1 1 80 76a20 20 0 0 1-5.86 14.13Zm0 104A20 20 0 1 1 80 180a20 20 0 0 1-5.86 14.15Zm61-101.5l34.8-35.19a32.19 32.19 0 0 1 26.84-9.14h.28l36 6.07a8.21 8.21 0 0 1 6.09 4.42a8 8 0 0 1-2.67 10.12l-69.93 47.85a4 4 0 0 1-4.51 0l-26.31-18a4 4 0 0 1-.55-6.07Z"/>',
+  },
+  {
+    id: 'ph:drop-fill',
+    label: 'قطرة',
+    group: 'lifestyle',
+    keywords: ['ماء', 'زيت', 'عسل', 'سيروم', 'نقي', 'drop'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="M174 47.75a254.2 254.2 0 0 0-41.45-38.3a8 8 0 0 0-9.18 0A254.2 254.2 0 0 0 82 47.75C54.51 79.32 40 112.6 40 144a88 88 0 0 0 176 0c0-31.4-14.51-64.68-42-96.25m9.85 105.59a57.6 57.6 0 0 1-46.56 46.55a9 9 0 0 1-1.29.11a8 8 0 0 1-1.32-15.89c16.57-2.79 30.63-16.85 33.44-33.45a8 8 0 0 1 15.78 2.68Z"/>',
+  },
+  {
+    id: 'ph:paint-brush-fill',
+    label: 'فرشاة رسم',
+    group: 'lifestyle',
+    keywords: ['فن', 'تصميم', 'ألوان', 'رسم', 'يدوي', 'art', 'brush'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="M232 32a8 8 0 0 0-8-8c-44.08 0-89.31 49.71-114.43 82.63A60 60 0 0 0 32 164c0 30.88-19.54 44.73-20.47 45.37A8 8 0 0 0 16 224h76a60 60 0 0 0 57.37-77.57C182.3 121.31 232 76.08 232 32m-107.58 81.55q5.14-6.66 10.09-12.55A76.2 76.2 0 0 1 155 121.49q-5.9 4.94-12.55 10.09a60.5 60.5 0 0 0-18.03-18.03m42.7-2.68a92.6 92.6 0 0 0-22-22c31.78-34.53 55.75-45 69.9-47.91c-2.85 14.16-13.37 38.13-47.9 69.91"/>',
+  },
+  {
+    id: 'ph:champagne-fill',
+    label: 'احتفال',
+    group: 'celebration',
+    keywords: ['تهنئة', 'مناسبة', 'مبروك', 'حفل', 'celebrate'],
+    width: 256,
+    height: 256,
+    multiColor: false,
+    body: '<path fill="currentColor" d="M149.91 13.53A8 8 0 0 0 142.3 8H97.71a8 8 0 0 0-7.61 5.53a451 451 0 0 0-14.21 59.7c-7.26 44.25-4.35 75.76 8.65 93.66A40 40 0 0 0 112 183.42V232H96a8 8 0 1 0 0 16h48a8 8 0 0 0 0-16h-16v-48.58a39.94 39.94 0 0 0 27.46-16.53c13-17.9 15.92-49.41 8.66-93.66a451 451 0 0 0-14.21-59.7M93.8 64c3-15.58 6.73-29.81 9.79-40h32.83c3.06 10.19 6.77 24.42 9.8 40ZM232 52a12 12 0 1 1-12-12a12 12 0 0 1 12 12m-48-32a12 12 0 1 1 12 12a12 12 0 0 1-12-12m24 80a12 12 0 1 1-12-12a12 12 0 0 1 12 12"/>',
+  },
+
+  // ── Tabler Icons (MIT) — 10 أيقونات ──
+  {
     id: 'tabler:truck-delivery',
     label: 'شحن سريع',
+    group: 'shipping',
+    keywords: ['توصيل', 'مندوب', 'إكسبريس', 'delivery'],
     width: 24,
     height: 24,
     multiColor: false,
@@ -151,30 +278,100 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'tabler:shield-check',
     label: 'ضمان أمان',
+    group: 'badges',
+    keywords: ['أمان', 'حماية', 'أصلي', 'درع', 'shield'],
     width: 24,
     height: 24,
     multiColor: false,
     body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.46 20.846A12 12 0 0 1 3.5 6A12 12 0 0 0 12 3a12 12 0 0 0 8.5 3a12 12 0 0 1-.09 7.06M15 19l2 2l4-4"/>',
   },
   {
-    id: 'tabler:package',
-    label: 'طرد',
+    id: 'tabler:clock',
+    label: 'وقت',
+    group: 'shipping',
+    keywords: ['ساعة', 'مؤقت', 'فترة محدودة', '24 ساعة', 'clock'],
     width: 24,
     height: 24,
     multiColor: false,
-    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/>',
+    body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M12 7v5l3 3"/></g>',
+  },
+  {
+    id: 'tabler:world',
+    label: 'عالمي',
+    group: 'shipping',
+    keywords: ['دولي', 'شحن دولي', 'إنترنت', 'عالم', 'world', 'global'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0m.6-3h16.8M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18m1-18a17 17 0 0 1 0 18"/></g>',
+  },
+  {
+    id: 'tabler:qrcode',
+    label: 'رمز QR',
+    group: 'commerce',
+    keywords: ['مسح', 'منيو', 'باركود', 'رابط', 'qr'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm3 12v.01M14 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zM7 7v.01M4 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm13-8v.01M14 14h3m3 0v.01M14 14v3m0 3h3m0-3h3m0 0v3"/>',
+  },
+  {
+    id: 'tabler:barcode',
+    label: 'باركود',
+    group: 'commerce',
+    keywords: ['تسعير', 'منتج', 'جرد', 'barcode'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7V6a2 2 0 0 1 2-2h2M4 17v1a2 2 0 0 0 2 2h2m8-16h2a2 2 0 0 1 2 2v1m-4 13h2a2 2 0 0 0 2-2v-1M5 11h1v2H5zm5 0v2m4-2h1v2h-1zm5 0v2"/>',
+  },
+  {
+    id: 'tabler:credit-card',
+    label: 'بطاقة دفع',
+    group: 'commerce',
+    keywords: ['دفع', 'إلكتروني', 'كاش', 'مدى', 'فيزا', 'card'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zm0 2h18M7 15h.01M11 15h2"/>',
+  },
+  {
+    id: 'tabler:currency-dollar',
+    label: 'سعر وعرض',
+    group: 'commerce',
+    keywords: ['دولار', 'سعر', 'خصم', 'توفير', 'price'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.7 8A3 3 0 0 0 14 6h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1-2.7-2M12 3v3m0 12v3"/>',
   },
   {
     id: 'tabler:rosette-discount-check',
     label: 'تخفيض',
+    group: 'commerce',
+    keywords: ['خصم', 'تنزيلات', 'معتمد', 'discount'],
     width: 24,
     height: 24,
     multiColor: false,
     body: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M5 7.2A2.2 2.2 0 0 1 7.2 5h1a2.2 2.2 0 0 0 1.55-.64l.7-.7a2.2 2.2 0 0 1 3.12 0l.7.7c.412.41.97.64 1.55.64h1a2.2 2.2 0 0 1 2.2 2.2v1c0 .58.23 1.138.64 1.55l.7.7a2.2 2.2 0 0 1 0 3.12l-.7.7a2.2 2.2 0 0 0-.64 1.55v1a2.2 2.2 0 0 1-2.2 2.2h-1a2.2 2.2 0 0 0-1.55.64l-.7.7a2.2 2.2 0 0 1-3.12 0l-.7-.7a2.2 2.2 0 0 0-1.55-.64h-1a2.2 2.2 0 0 1-2.2-2.2v-1a2.2 2.2 0 0 0-.64-1.55l-.7-.7a2.2 2.2 0 0 1 0-3.12l.7-.7A2.2 2.2 0 0 0 5 8.2z"/><path d="m9 12l2 2l4-4"/></g>',
   },
   {
+    id: 'tabler:package',
+    label: 'طرد',
+    group: 'shipping',
+    keywords: ['صندوق', 'تغليف', 'تعبئة', 'شحنة', 'package'],
+    width: 24,
+    height: 24,
+    multiColor: false,
+    body: '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/>',
+  },
+
+  // ── Fluent Emoji Flat by Microsoft (MIT) — 13 أيقونة ──
+  {
     id: 'fluent-emoji-flat:party-popper',
     label: 'احتفال',
+    group: 'celebration',
+    keywords: ['حفلة', 'مفاجأة', 'قصاصات', 'أطفال', 'party'],
     width: 32,
     height: 32,
     multiColor: true,
@@ -183,6 +380,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'fluent-emoji-flat:glowing-star',
     label: 'نجم ساطع',
+    group: 'celebration',
+    keywords: ['نجمة', 'إيموجي', 'تقدير', 'طفل', 'star'],
     width: 32,
     height: 32,
     multiColor: true,
@@ -191,6 +390,8 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'fluent-emoji-flat:wrapped-gift',
     label: 'هدية ملونة',
+    group: 'celebration',
+    keywords: ['هدية', 'مفاجأة', 'إيموجي', 'gift'],
     width: 32,
     height: 32,
     multiColor: true,
@@ -199,14 +400,116 @@ export const COMPOSER_ICONS: readonly ComposerIconSpec[] = [
   {
     id: 'fluent-emoji-flat:rocket',
     label: 'انطلاق',
+    group: 'celebration',
+    keywords: ['صاروخ', 'إطلاق', 'سريع', 'إبداع', 'rocket'],
     width: 32,
     height: 32,
     multiColor: true,
     body: '<g fill="none"><path fill="#ca0b4a" d="M29.2 2.95c-.947-.947-2.7-.998-3.818-.425c-.913.314-1.874.667-2.854 1.063l.01.01c-2.575 1.095-6.427 3.04-9.51 5.902c-2.164 2.01-3.404 3.556-4.235 4.965l-5.298 1.95a1 1 0 0 0-.362 1.646l11.138 11.137a1 1 0 0 0 1.645-.362l2.204-5.986c1.608-.958 3.223-2.165 4.908-3.85c2.39-2.39 4.366-6.56 5.513-9.357l.009.008c.4-.99.758-1.961 1.074-2.883c.573-1.118.74-2.654-.424-3.818"/><path fill="#f4f4f4" d="M23.299 4.365c-2.517 1.04-6.478 2.978-9.59 5.868c-2.015 1.87-3.172 3.294-3.94 4.55c-.769 1.255-1.175 2.38-1.663 3.74l-.002.007c-.17.474-.35.977-.559 1.514l4.556 4.556c3.602-1.48 6.74-2.828 10.22-6.307c2.351-2.352 4.339-6.642 5.454-9.421z"/><path fill="#9b9b9b" d="M24.528 11.25a3.25 3.25 0 1 1-6.5 0a3.25 3.25 0 0 1 6.5 0"/><path fill="#83cbff" d="M23.528 11.25a2.25 2.25 0 1 1-4.5 0a2.25 2.25 0 0 1 4.5 0"/><path fill="#ff8257" d="M2.451 29.61C1.744 28.905 2.028 24 4.528 23c0 0 2.5-1 4.11.6c1.612 1.601.89 3.4.89 3.4c-.707 2.121-3.718 2.965-4.071 2.61c-.195-.194.156-.55 0-.706c-.157-.157-.398.022-1.06.353c-.472.236-1.663.637-1.946.354"/><path fill="#533566" d="M6.088 21.06a1.5 1.5 0 0 1 2.122 0l3.535 3.536a1.5 1.5 0 1 1-2.121 2.122l-3.536-3.536a1.5 1.5 0 0 1 0-2.121"/><path fill="#f92f60" d="M15.535 18.722c.442-1.2-.725-2.368-1.926-1.926l-7.114 2.619a1 1 0 0 0-.362 1.646l5.138 5.137a1 1 0 0 0 1.645-.362z"/></g>',
   },
+  {
+    id: 'fluent-emoji-flat:sparkles',
+    label: 'بريق ملون',
+    group: 'celebration',
+    keywords: ['نجوم', 'سحر', 'لمعان', 'sparkles'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<path fill="#f9c23c" d="M10.52 7.052a1.17 1.17 0 0 1-.639-.636L8.93 4.257c-.178-.343-.69-.343-.858 0l-.952 2.16a1.28 1.28 0 0 1-.638.635l-1.214.524a.462.462 0 0 0 0 .838l1.214.524c.293.121.523.353.638.636l.952 2.169c.178.343.69.343.858 0l.952-2.17c.126-.282.356-.504.638-.635l1.214-.524a.462.462 0 0 0 0-.838zm15.054 6.503a3.73 3.73 0 0 1-1.922-1.977L20.79 4.81a1.432 1.432 0 0 0-2.58 0l-2.863 6.768a3.8 3.8 0 0 1-1.921 1.977l-3.622 1.64c-1.072.53-1.072 2.08 0 2.61l3.622 1.64a3.74 3.74 0 0 1 1.922 1.977l2.862 6.768a1.432 1.432 0 0 0 2.58 0l2.863-6.768a3.8 3.8 0 0 1 1.921-1.977l3.622-1.64c1.072-.53 1.072-2.08 0-2.61zM8.281 20.33c.16.392.454.696.822.872l1.55.725a.646.646 0 0 1 0 1.146l-1.55.725c-.368.176-.661.49-.822.872l-1.228 2.977a.61.61 0 0 1-1.106 0L4.72 24.67a1.66 1.66 0 0 0-.822-.872l-1.55-.725a.646.646 0 0 1 0-1.146l1.55-.725c.368-.176.661-.49.822-.872l1.228-2.977a.61.61 0 0 1 1.106 0z"/>',
+  },
+  {
+    id: 'fluent-emoji-flat:teddy-bear',
+    label: 'دبدوب',
+    group: 'celebration',
+    keywords: ['أطفال', 'لعبة', 'دب', 'مولود', 'kids', 'bear'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#d3883e" d="M11.5 7.07a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m9 0a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m-2.937 8.491a3 3 0 0 1 4.123-.998l6.83 4.166a3 3 0 0 1-3.126 5.122l-6.829-4.167a3 3 0 0 1-.998-4.123M3.598 18.68a3 3 0 0 0 3 5.195l6.928-4a3 3 0 0 0-3-5.196z"/><path fill="#e19747" d="M24 10.152c0 4.418-3.582 5.918-8 5.918s-8-1.5-8-5.918s4.5-7.582 8-7.582s8 3.164 8 7.582"/><path fill="#ff822d" d="M24 10.152c0 4.418-3.582 5.918-8 5.918s-8-1.5-8-5.918s4.5-7.582 8-7.582s8 3.164 8 7.582"/><path fill="#e19747" d="M21.23 15.017c1.697-.902 2.77-2.446 2.77-4.865c0-4.418-4.5-7.582-8-7.582s-8 3.164-8 7.582c0 2.419 1.073 3.963 2.77 4.865a8 8 0 1 0 10.461 0"/><path fill="#d3883e" d="M7.54 22.52a3.5 3.5 0 0 1 4.898.718l.896 1.203a3.5 3.5 0 0 1-5.616 4.18l-.895-1.203a3.5 3.5 0 0 1 .717-4.897m16.931 0a3.5 3.5 0 0 0-4.897.718l-.896 1.203a3.5 3.5 0 0 0 5.615 4.18l.896-1.203a3.5 3.5 0 0 0-.718-4.897"/><path fill="#ffdea7" d="M21.856 5.212a1.5 1.5 0 0 0-2.38-1.738a9.2 9.2 0 0 1 2.38 1.738m-9.332-1.738a1.5 1.5 0 0 0-2.38 1.738a9.2 9.2 0 0 1 2.38-1.738M19.5 11.5c0 1.38-1.567 3-3.5 3s-3.5-1.62-3.5-3S14.067 9 16 9s3.5 1.12 3.5 2.5M21 22.07v.042a3.5 3.5 0 0 0-1.426 1.126l-.896 1.203a3.5 3.5 0 0 0-.69 2.219c-.61.264-1.282.41-1.988.41c-.702 0-1.37-.144-1.976-.405a3.5 3.5 0 0 0-.69-2.224l-.896-1.203A3.5 3.5 0 0 0 11 22.107v-.037a5 5 0 0 1 10 0m-9.736 2.08a2 2 0 0 0-3.209 2.39l.896 1.203a2 2 0 1 0 3.209-2.389zm12.282-.41a2 2 0 0 0-2.798.41l-.896 1.204a2 2 0 0 0 3.209 2.389l.895-1.204a2 2 0 0 0-.41-2.798"/><path fill="#000" d="M14 8.5a.5.5 0 1 1-1 0a.5.5 0 0 1 1 0m5 0a.5.5 0 1 1-1 0a.5.5 0 0 1 1 0m-3.958 1.799A.5.5 0 0 1 15.5 10h1a.5.5 0 0 1 .458.299c.053.121-.01.254-.104.347l-.5.5a.5.5 0 0 1-.708 0l-.5-.5c-.093-.093-.157-.226-.104-.347"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:balloon',
+    label: 'بالون',
+    group: 'celebration',
+    keywords: ['عيد ميلاد', 'حفل', 'أطفال', 'balloon'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#3f5fff" d="m13.935 19.007l-.002.002l-.002.003l-.008.009a2 2 0 0 0-.094.117a6 6 0 0 0-.23.325a8.4 8.4 0 0 0-.661 1.236C12.463 21.785 12 23.387 12 25.5c0 1.01-.228 1.666-.525 2.1c-.296.432-.704.708-1.176.885c-.83.312-1.736.289-2.412.272q-.21-.006-.387-.007a.75.75 0 0 0 0 1.5q.105 0 .269.006c.645.02 1.917.061 3.057-.366c.694-.26 1.38-.703 1.887-1.443c.505-.738.787-1.708.787-2.947c0-1.887.412-3.285.812-4.2a7 7 0 0 1 .542-1.014A4 4 0 0 1 15.06 20l.007-.008l-.001.001l.001-.001a.75.75 0 0 0-1.132-.984"/><path fill="#3f5fff" d="m15.545 19.09l-1.737-.744a.81.81 0 0 0-.68 1.468l1.69.845a.865.865 0 1 0 .727-1.569"/><path fill="#f8312f" d="M27 11a9 9 0 1 1-18 0a9 9 0 0 1 18 0"/><path fill="#ca0b4a" d="m15.208 21.648l-3.055-1.358a.787.787 0 1 1 .639-1.438l3.055 1.358a.787.787 0 0 1-.639 1.438"/><path fill="#ff8687" d="M24.162 6.838c.898.897 1.105 2.145.463 2.787s-1.89.434-2.787-.463c-.897-.898-1.104-2.146-.463-2.787c.642-.642 1.89-.435 2.787.463"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:birthday-cake',
+    label: 'كعكة عيد',
+    group: 'celebration',
+    keywords: ['كيك', 'تورتة', 'عيد ميلاد', 'شموع', 'cake'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#26eafc" d="M8.5 10.998v-4.04c0-.29.12-.57.32-.77l.68-.67l.68.67c.2.2.32.48.32.77v4.04zm6.5 0v-4.04c0-.29.12-.57.32-.77l.68-.67l.68.67c.2.2.32.48.32.77v4.04zm6.5-4.04v4.04h2v-4.04c0-.29-.11-.57-.32-.77l-.68-.67l-.68.67c-.2.2-.32.48-.32.77"/><path fill="#fcd53f" d="m10.78 3.728l-.9-1.51a.45.45 0 0 0-.77 0l-.89 1.51c-.17.28-.25.61-.21.96c.08.69.63 1.24 1.32 1.31c.9.1 1.67-.6 1.67-1.49a1.7 1.7 0 0 0-.22-.78m6.5 0l-.89-1.51a.45.45 0 0 0-.77 0l-.89 1.51c-.17.27-.25.61-.21.96c.08.68.63 1.23 1.32 1.31c.9.1 1.67-.6 1.67-1.49c-.01-.28-.09-.55-.23-.78m5.61-1.51l.89 1.51c.14.23.22.5.22.78c0 .89-.76 1.59-1.67 1.49c-.68-.07-1.23-.62-1.31-1.31c-.04-.35.04-.69.21-.96l.89-1.51c.17-.29.6-.29.77 0"/><path fill="#ffb02e" d="m9.5 3.137l.61.78a.849.849 0 1 1-1.46.59c0-.23.09-.43.24-.59zm7.11.78l-.61-.78l-.61.79a.85.85 0 1 0 1.46.59c0-.24-.09-.44-.24-.6m6.5 0l-.61-.78l-.61.79a.85.85 0 1 0 1.46.59c0-.24-.09-.44-.24-.6"/><path fill="#d3883e" d="M27.75 29.998H4.25c-.69 0-1.25-.56-1.25-1.25v-13.75h26v13.75c0 .69-.56 1.25-1.25 1.25"/><path fill="#ffdea7" d="M2 12a3 3 0 0 1 3-3h22.01a3 3 0 0 1 3 3v5.557c0 .82-1.04 1.2-1.56.56c-.51-.63-1.43-.73-2.06-.23l-.24.19a4.01 4.01 0 0 1-4.93 0l-.46-.36c-.54-.42-1.29-.42-1.83 0l-.46.36a4.01 4.01 0 0 1-4.93 0l-.46-.36c-.54-.42-1.29-.42-1.83 0l-.46.36a4.01 4.01 0 0 1-4.93 0l-.24-.19c-.63-.49-1.55-.39-2.06.23c-.53.63-1.56.26-1.56-.56zm1 9.997h26v2H3z"/><path fill="#00a6ed" d="M15.15 11.15c-.2.2-.2.51 0 .71l.74.74c.2.2.51.2.71 0s.2-.51 0-.71l-.74-.74c-.2-.2-.52-.2-.71 0"/><path fill="#ff6dc6" d="M6.854 11.146a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708-.708zm13 3a.5.5 0 0 0-.708.708l1 1a.5.5 0 0 0 .708-.708z"/><path fill="#ff822d" d="M25.854 11.854a.5.5 0 0 0-.708-.708l-1 1a.5.5 0 0 0 .708.708zm-14 3a.5.5 0 0 0-.708-.708l-1 1a.5.5 0 0 0 .708.708z"/><path fill="#00a6ed" d="M15.146 11.146a.5.5 0 0 1 .708 0l1 1a.5.5 0 0 1-.708.708l-1-1a.5.5 0 0 1 0-.708"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:red-heart',
+    label: 'قلب أحمر',
+    group: 'celebration',
+    keywords: ['حب', 'شكر', 'قلب', 'heart'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#f8312f" d="M6 6c4.665-2.332 8.5.5 10 2.5c1.5-2 5.335-4.832 10-2.5c6 3 4.5 10.5 0 15c-2.196 2.196-6.063 6.063-8.891 8.214a1.764 1.764 0 0 1-2.186-.041C12.33 27.08 8.165 23.165 6 21C1.5 16.5 0 9 6 6"/><path fill="#ca0b4a" d="M16 8.5v3.05c1.27-2.685 4.425-6.27 9.658-5.713c-4.51-2.03-8.195.712-9.658 2.663m-4.054-2.963C10.26 4.95 8.225 4.887 6 6C0 9 1.5 16.5 6 21c2.165 2.165 6.33 6.08 8.923 8.173a1.764 1.764 0 0 0 2.186.04q.381-.29.785-.618c-2.854-2.143-6.86-5.519-9.035-7.462c-4.957-4.431-6.61-11.815 0-14.769a9.7 9.7 0 0 1 3.087-.827"/><ellipse cx="23.477" cy="12.594" fill="#f37366" rx="2.836" ry="4.781" transform="rotate(30 23.477 12.594)"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:sun',
+    label: 'شمس مشرقة',
+    group: 'celebration',
+    keywords: ['صيف', 'إشراق', 'نهار', 'sun'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#ff822d" d="M13.638 3.202a2.936 2.936 0 0 1 4.724 0a2.94 2.94 0 0 0 3.25 1.055a2.936 2.936 0 0 1 3.822 2.778a2.94 2.94 0 0 0 2.008 2.763a2.936 2.936 0 0 1 1.46 4.494a2.94 2.94 0 0 0 0 3.416a2.936 2.936 0 0 1-1.46 4.494a2.94 2.94 0 0 0-2.008 2.763a2.936 2.936 0 0 1-3.823 2.778a2.94 2.94 0 0 0-3.249 1.055a2.936 2.936 0 0 1-4.724 0a2.94 2.94 0 0 0-3.25-1.055a2.936 2.936 0 0 1-3.822-2.778a2.94 2.94 0 0 0-2.008-2.763a2.936 2.936 0 0 1-1.46-4.494a2.94 2.94 0 0 0 0-3.416a2.936 2.936 0 0 1 1.46-4.494a2.94 2.94 0 0 0 2.008-2.763a2.936 2.936 0 0 1 3.823-2.778a2.94 2.94 0 0 0 3.249-1.055"/><path fill="#fcd53f" d="M25.062 21.232c-2.89 5.005-9.29 6.72-14.294 3.83s-6.72-9.29-3.83-14.294s9.29-6.72 14.294-3.83s6.72 9.29 3.83 14.294"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:snowflake',
+    label: 'ندفة ثلج',
+    group: 'celebration',
+    keywords: ['شتاء', 'بارد', 'مجمد', 'snowflake'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<path fill="#00a6ed" d="m23.564 18.9l5.112-1.36c.553-.15 1.137.15 1.288.71c.15.56-.182 1.12-.735 1.27l-3.11.83l2.224 1.27c.483.28.655.89.373 1.37s-.896.65-1.379.37l-2.224-1.27l.836 3.09c.15.56-.171 1.12-.735 1.27a1.04 1.04 0 0 1-1.278-.73l-1.368-5.08l-2.315-1.33a5.07 5.07 0 0 1-2.747 1.59v2.63l3.744 3.72c.402.4.402 1.06 0 1.46c-.403.4-1.067.4-1.47 0l-2.274-2.26V29a1.006 1.006 0 0 1-2.012 0v-2.54l-2.274 2.26c-.403.4-1.067.4-1.47 0a1.034 1.034 0 0 1 0-1.46l3.744-3.72v-2.63c-1.097-.22-2.033-.8-2.747-1.59l-2.305 1.32l-1.368 5.08c-.151.55-.725.88-1.278.73a1.04 1.04 0 0 1-.735-1.27l.836-3.09l-2.224 1.28A1.02 1.02 0 0 1 4.294 23a.976.976 0 0 1 .363-1.35l2.223-1.28l-3.109-.83a1.04 1.04 0 0 1-.735-1.27c.151-.55.725-.88 1.278-.73l5.112 1.36l2.315-1.33a4.8 4.8 0 0 1-.282-1.57c0-.55.11-1.08.282-1.55l-2.315-1.33l-5.112 1.36a1.04 1.04 0 0 1-1.278-.73c-.15-.56.182-1.12.735-1.27l3.11-.83l-2.224-1.28A1.004 1.004 0 0 1 4.294 9c.272-.48.896-.64 1.369-.37l2.234 1.28l-.836-3.09c-.15-.55.182-1.11.735-1.26s1.117.18 1.268.73l1.368 5.08l2.305 1.32a5.07 5.07 0 0 1 2.747-1.59V8.47L11.74 4.75a1.034 1.034 0 0 1 0-1.46a1.05 1.05 0 0 1 1.469 0l2.274 2.26V3a1.006 1.006 0 0 1 2.012 0v2.55l2.274-2.26a1.05 1.05 0 0 1 1.47 0c.402.4.402 1.06 0 1.46l-3.744 3.72v2.63a5.05 5.05 0 0 1 2.737 1.58l2.314-1.33l1.369-5.08c.151-.55.724-.88 1.278-.73c.553.15.886.72.735 1.27l-.836 3.09l2.224-1.27a1.02 1.02 0 0 1 1.379.37a1 1 0 0 1-.363 1.36l-2.223 1.27l3.109.83c.553.15.885.72.734 1.27c-.15.55-.724.88-1.277.73l-5.112-1.36l-2.314 1.33c.17.49.281 1.02.281 1.57s-.11 1.07-.281 1.57zM19.509 16c0-1.657-1.352-3-3.019-3a3.01 3.01 0 0 0-3.019 3c0 1.657 1.352 3 3.019 3a3.01 3.01 0 0 0 3.019-3"/>',
+  },
+  {
+    id: 'fluent-emoji-flat:jack-o-lantern',
+    label: 'يقطين موسمي',
+    group: 'celebration',
+    keywords: ['خريف', 'موسم', 'قرع', 'أطفال', 'autumn'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#86d72f" d="M13.743 8h3.507c.407 0 .75-.272.75-.614V4.612c0-.535-.793-.816-1.265-.439l-3.506 2.783c-.483.377-.15 1.044.514 1.044"/><path fill="#ff8257" d="M21.438 29h-10.87c-5.718 0-9.83-5.574-8.215-11.137l1.344-4.628C4.77 9.543 8.11 7 11.91 7h8.234c3.83 0 7.2 2.583 8.243 6.337l1.284 4.627C31.216 23.508 27.115 29 21.438 29"/><path fill="#321b41" d="M9.413 15h2.172c.353 0 .545-.434.315-.715l-1.113-1.132a.402.402 0 0 0-.637.008l-1.06 1.132c-.214.281-.023.707.323.707m11 0h2.172c.353 0 .545-.434.315-.715l-1.113-1.132a.402.402 0 0 0-.637.008l-1.06 1.132c-.214.281-.023.707.323.707m.97 2H24c0 3.366-2.548 6.194-5.997 7c-.397-.51-1.12-1.226-2.043-1.226c-1.09 0-1.754.689-2.091 1.19C10.489 23.123 8 20.321 8 17h2.607c.417.501 1.11 1.146 1.983 1.146c1.06 0 1.715-.645 2.062-1.146h2.686c.417.501 1.11 1.146 1.983 1.146c1.06 0 1.715-.645 2.062-1.146"/></g>',
+  },
+  {
+    id: 'fluent-emoji-flat:christmas-tree',
+    label: 'شجرة احتفال',
+    group: 'celebration',
+    keywords: ['شتاء', 'موسم', 'زينة', 'أعياد', 'tree'],
+    width: 32,
+    height: 32,
+    multiColor: true,
+    body: '<g fill="none"><path fill="#6d4534" d="M19.157 29.988h-6.311c-.536 0-.943-.47-.826-.96l.515-2.13l3.374-1.059l3.56 1.059l.513 2.13c.108.49-.289.96-.825.96"/><path fill="#44911b" d="m14.86 7.19l-2.68 4.792c-.5.89.12 2.018 1.12 2.018h.608C11.747 14 10 15.592 10 17.56c0 .8.71 1.439 1.579 1.439h.144C9.116 19 7 21.227 7 23.97C7 25.65 8.294 27 9.878 27h12.244C23.716 27 25 25.639 25 23.97c.01-2.743-2.106-4.97-4.723-4.97h.144C21.3 19 22 18.352 22 17.56c0-1.959-1.747-3.56-3.908-3.56h.558c1 0 1.62-1.118 1.12-2.018L17.09 7.19c-.49-.89-1.73-.89-2.23 0"/><path fill="#f8312f" d="M18.982 18.306a1.29 1.29 0 1 0 0-2.58a1.29 1.29 0 0 0 0 2.58m-8.005 7.081a1.29 1.29 0 1 0 0-2.58a1.29 1.29 0 0 0 0 2.58m12.313-1.359a1.29 1.29 0 1 1-2.58 0a1.29 1.29 0 0 1 2.58 0"/><path fill="#fcd53f" d="M18.289 12.016a1.29 1.29 0 1 1-2.58 0a1.29 1.29 0 0 1 2.58 0m-4.313 5.274a1.29 1.29 0 1 0 0-2.58a1.29 1.29 0 0 0 0 2.58M16 23.254a1.29 1.29 0 1 0 0-2.58a1.29 1.29 0 0 0 0 2.58"/><path fill="#f9c23c" d="m17.005 3.09l.695.106a.43.43 0 0 1 .242.735l-.503.493a.43.43 0 0 0-.125.377l.116.695a.434.434 0 0 1-.628.455l-.619-.329a.43.43 0 0 0-.406 0l-.619.329a.434.434 0 0 1-.628-.455l.116-.695a.43.43 0 0 0-.126-.377l-.502-.493a.43.43 0 0 1 .242-.735l.696-.097a.44.44 0 0 0 .328-.232l.31-.628a.432.432 0 0 1 .773 0l.309.628a.48.48 0 0 0 .329.223"/></g>',
+  },
 ] as const;
 
 const ICON_BY_ID = new Map(COMPOSER_ICONS.map((ic) => [ic.id, ic]));
+
+export function getComposerIconById(id: string): ComposerIconSpec | undefined {
+  return ICON_BY_ID.get(id);
+}
+
+/** SVG معاينة مصغّر لزر الاختيار في شبكة الأيقونات البصرية. */
+export function renderComposerIconPreviewSvg(iconId: string): string {
+  const icon = ICON_BY_ID.get(iconId) ?? COMPOSER_ICONS[0];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${icon.width} ${icon.height}" aria-hidden="true">${icon.body}</svg>`;
+}
 
 export function renderComposerIconMarkup(
   iconId: string,

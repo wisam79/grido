@@ -48,6 +48,8 @@ export interface StickerField {
   defaultValue: string;
   placeholder?: string;
   options?: StickerFieldOption[];
+  /** عرض مخصّص لحقول الاختيار (أزرار مصغّرة للأشكال، شبكة بصرية للأيقونات) */
+  presentation?: 'pills' | 'shape-grid' | 'icon-grid' | 'select';
 }
 
 export interface StickerColors {
@@ -115,6 +117,12 @@ export interface StickerTemplate {
   defaultMm?: { width: number; height: number };
   /** هندسة القص المعلنة — تمكّن مقصّات الفينيل من متابعة الشكل بدل المستطيل */
   cutShape?: StickerCutShape;
+  /** دالة قص ديناميكية للقوالب التي يتغير شكلها عبر الحقول (مثل مركّب الأختام) */
+  resolveCutShape?: (params: StickerParams) => StickerCutShape;
+  /** توليد توليفة عشوائية تحفظ نصوص المستخدم وتبدّل العناصر البصرية */
+  randomizeParams?: (current: StickerParams) => StickerParams;
+  /** يشير إلى أن القالب يشتق حبر النص المتباين تلقائياً (WCAG) */
+  autoContrastInk?: boolean;
   defaultColors: StickerColors;
   fields: StickerField[];
   generateSvg: (params: StickerParams) => string;

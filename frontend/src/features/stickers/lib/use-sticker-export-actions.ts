@@ -5,7 +5,11 @@ import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from './clipboard-utils';
-import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from './die-cut-offset';
+import {
+  generateDieCutContour,
+  resolveTemplateCutShape,
+  DEFAULT_BLEED_PERCENT,
+} from './die-cut-offset';
 import { embedStickerFonts } from './sticker-font-embed';
 import { stickerRasterSize } from './sticker-text';
 import { renderSvgToPngBlob, renderSvgToPngDataUrl, downloadBlob } from './svg-rasterizer';
@@ -72,8 +76,8 @@ export function useStickerExportActions({
       setBusyExport(true);
       const dieCut = generateDieCutContour(exportableSvg || svgString, {
         bleedPercent: DEFAULT_BLEED_PERCENT,
-        // ✂️ الشكل المعلن من القالب يسبق مستطيل viewBox — دوائر الشارات تقص دائرةً
-        cutShape: selectedTemplate.cutShape,
+        // ✂️ الشكل المعلن أو الديناميكي من القالب يسبق مستطيل viewBox — دوائر الشارات تقص دائرةً
+        cutShape: resolveTemplateCutShape(selectedTemplate, params),
         physicalMm: selectedTemplate.defaultMm,
       });
       const portable = await embedStickerFonts(dieCut.fullSvgWithContour, [
@@ -89,14 +93,14 @@ export function useStickerExportActions({
     } finally {
       setBusyExport(false);
     }
-  }, [exportableSvg, svgString, selectedTemplate, params.fontFamily, cancelledRef]);
+  }, [exportableSvg, svgString, selectedTemplate, params, cancelledRef]);
 
   const handleDownloadPureCutContour = useCallback(async () => {
     try {
       setBusyExport(true);
       const dieCut = generateDieCutContour(exportableSvg || svgString, {
         bleedPercent: DEFAULT_BLEED_PERCENT,
-        cutShape: selectedTemplate.cutShape,
+        cutShape: resolveTemplateCutShape(selectedTemplate, params),
         physicalMm: selectedTemplate.defaultMm,
       });
       const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
@@ -108,7 +112,7 @@ export function useStickerExportActions({
     } finally {
       setBusyExport(false);
     }
-  }, [exportableSvg, svgString, selectedTemplate]);
+  }, [exportableSvg, svgString, selectedTemplate, params]);
 
   const handleDownloadPng = useCallback(
     async (dpi: 300 | 600 = 300) => {

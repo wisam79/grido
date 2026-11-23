@@ -5,6 +5,7 @@ import { BARCODE_TEMPLATES } from './barcodes';
 import { BEAUTY_TEMPLATES } from './beauty';
 import { BUSINESS_CARDS } from './business_cards';
 import { CAFE_TEMPLATES } from './cafe';
+import { COMPOSER_CARD_TEMPLATES } from './composer_cards';
 import { COMPOSER_STAMP_TEMPLATES } from './composer_stamps';
 import { CRAFT_CARDS } from './craft_cards';
 import { EVENTS_CARDS } from './events_cards';
@@ -30,6 +31,7 @@ import type {
 } from '../types';
 
 export * from './business_cards';
+export * from './composer_cards';
 export * from './composer_stamps';
 export * from './social_cards';
 export * from './retail_cards';
@@ -147,6 +149,7 @@ export const STICKER_CATEGORIES: StickerCategoryInfo[] = [
 
 export const ALL_STICKER_TEMPLATES: StickerTemplate[] = [
   ...COMPOSER_STAMP_TEMPLATES,
+  ...COMPOSER_CARD_TEMPLATES,
   ...BUSINESS_CARDS,
   ...SOCIAL_CARDS,
   ...RETAIL_CARDS,

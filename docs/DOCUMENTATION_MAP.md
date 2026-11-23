@@ -39,6 +39,8 @@
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
 
+**تطوير نظام الملصقات والبطاقات البارامتري — 2026-11-23:** أُضيفت الخطة المنفذة [`docs/plans/2026-11-23-sticker-parametric-evolution-plan.md`](plans/2026-11-23-sticker-parametric-evolution-plan.md) ضمن مجلد `docs/plans/` المسجل، مع fragment في [`changelog/fragments/20261123-ui-sticker-parametric-evolution.md`](../changelog/fragments/20261123-ui-sticker-parametric-evolution.md) ومزامنة `features-tracker.md` و`testing_guide.md` و`README.md`. ارتفع عداد `vitest_test_files` من `186` إلى `187` بعد إضافة `frontend/test/sticker-parametric-surfaces.test.ts` (عدد ملفات لا حالات نجاح)، وتم التحقق من 9 ملفات Vitest مستهدفة منفردة إضافةً إلى `stickers:audit` (`210/210` قوالب بمقاسات ملم صالحة) و`typecheck` و`lint` و`format:check` دون تشغيل E2E محلي أو `commit`/`push`.
+
 **خطة وقبول E2E — 2026-11-20:** أضيفت `docs/plans/2026-11-20-real-e2e-acceptance-plan.md` و`docs/reviews/28-real-e2e-acceptance-2026-11-20.md` ضمن مجلداتهما المسجلة. قبول فعلي/fixtures/CI قيد التنفيذ؛ لا أرقام حالات جديدة بلا تشغيل ولا استنتاج قبول من الوثائق. الجرد المرجعي سيعاد بـdocs-gate بعد ظهور الملفات الاختبارية الجديدة، وتوثق النتائج وSHA والقدرات blocked منفصلة. أُجيز فرع اختبار مؤقت فقط لا main/deploy/release.
 
 **إضافة مراجعة وجرد — 2026-11-20:** سُجّل [التقرير 27: مراجعة حملة التعديلات](reviews/27-change-campaign-audit-2026-11-20.md) ضمن `docs/reviews/` المسجل، ورُبط بفهرسه ودليلَي المطور والاختبار وسجل الميزات. أعاد `node scripts/docs-gate.mjs --strict-refs` الجرد **186 Vitest / 32 E2E / 68 Go / 6 مستندات جذرية** وفشل مرحلياً بسبب Vitest الموثق178؛ حُدّث البلوك إلى186 بعد إضافة ثمانية ملفات frontend منفصلة. هذه أعداد ملفات لا حالات ناجحة. نتائج الاختبارات المستهدفة منفصلة بالتقرير؛ فحوص frontend typecheck/lint/format وadmin lint/tsc نجحت بعد الإصلاحات. إعادة docs-gate النهائية تُثبت في التقرير عند التشغيل، ولا تُستنتج من هذا التحديث؛ لا ملفات staged فمصفوفة commit/fragment في البوابة لا تُختبر، وتُفحص سكيمة fragment على الشجرة مستقلاً. لا CI/E2E/GUI/طابعة أو commit/push لهذه الجولة.
@@ -116,7 +118,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=186
+vitest_test_files=187
 e2e_spec_files=32
 go_test_files=69
 docs_files=6

@@ -1,3 +1,6 @@
+import { CURATED_PALETTES } from '../constants';
+import { pickDifferentOption, pickDifferentPalette } from '../lib/color-derivation';
+import { COMPOSER_ICONS } from '../lib/composer-icons';
 import {
   composeStampV2Svg,
   resolveStampV2CutShape,
@@ -5,9 +8,39 @@ import {
   STAMP_ICON_FIELD_OPTIONS,
   STAMP_SHAPE_OPTIONS,
   type ComposeStampV2Defaults,
+  type StampShapeId,
 } from '../lib/stamp-composer-v2';
 
-import type { StickerField, StickerTemplate } from '../types';
+import type { StickerField, StickerParams, StickerTemplate } from '../types';
+
+/**
+ * يولّد توليفة عشوائية متناسقة من الأشكال والأيقونات والزخارف واللوحات
+ * مع الإبقاء التام على نصوص المستخدم المكتوبة دون تعديل.
+ */
+function randomizeStampParams(current: StickerParams): StickerParams {
+  const nextShape = pickDifferentOption(
+    STAMP_SHAPE_OPTIONS,
+    { id: (current.fields.shape as StampShapeId) || 'rosette', label: '' },
+    (a, b) => a.id === b.id,
+  ).id;
+  const nextIcon = COMPOSER_ICONS[Math.floor(Math.random() * COMPOSER_ICONS.length)].id;
+  const nextDecor = STAMP_DECOR_OPTIONS[Math.floor(Math.random() * STAMP_DECOR_OPTIONS.length)].id;
+  const palette = pickDifferentPalette(CURATED_PALETTES, current.primaryColor);
+
+  return {
+    ...current,
+    fields: {
+      ...current.fields,
+      shape: nextShape,
+      icon: nextIcon,
+      decor: nextDecor,
+    },
+    primaryColor: palette.primary,
+    secondaryColor: palette.secondary,
+    backgroundColor: palette.background,
+    isTransparent: false,
+  };
+}
 
 function createComposerFields(defaults: ComposeStampV2Defaults): StickerField[] {
   return [
@@ -15,6 +48,7 @@ function createComposerFields(defaults: ComposeStampV2Defaults): StickerField[] 
       id: 'shape',
       label: 'شكل الختم',
       type: 'select',
+      presentation: 'shape-grid',
       defaultValue: defaults.shape,
       options: STAMP_SHAPE_OPTIONS.map((s) => ({ value: s.id, label: s.label })),
     },
@@ -22,6 +56,7 @@ function createComposerFields(defaults: ComposeStampV2Defaults): StickerField[] 
       id: 'icon',
       label: 'الأيقونة',
       type: 'select',
+      presentation: 'icon-grid',
       defaultValue: defaults.icon,
       options: STAMP_ICON_FIELD_OPTIONS,
     },
@@ -29,6 +64,7 @@ function createComposerFields(defaults: ComposeStampV2Defaults): StickerField[] 
       id: 'decor',
       label: 'الزخرفة',
       type: 'select',
+      presentation: 'pills',
       defaultValue: defaults.decor,
       options: STAMP_DECOR_OPTIONS.map((d) => ({ value: d.id, label: d.label })),
     },
@@ -133,12 +169,16 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     category: 'badges',
     shape: 'circle',
     description:
-      'مركّب أختام تفاعلي: بدّل بين 8 أشكال و24 أيقونة متجهة و4 زخارف مع طبقات لمعان وحد قص أبيض',
+      'مركّب أختام تفاعلي: بدّل بين 8 أشكال و47 أيقونة متجهة و4 زخارف مع تدرجات عمق وحد قص أبيض',
     defaultWidth: 240,
     defaultHeight: 240,
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(VERIFIED_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || VERIFIED_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#1e3f63',
       secondary: '#f7d774',
@@ -159,6 +199,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(BEST_SELLER_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || BEST_SELLER_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#991b1b',
       secondary: '#ffd166',
@@ -179,6 +223,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(HOT_DEAL_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || HOT_DEAL_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#d97706',
       secondary: '#451a03',
@@ -199,6 +247,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(EXPRESS_SHIP_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || EXPRESS_SHIP_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#0e7490',
       secondary: '#7ee7f7',
@@ -219,6 +271,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(HANDMADE_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || HANDMADE_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#be123c',
       secondary: '#fecdd3',
@@ -239,6 +295,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(COFFEE_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || COFFEE_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#6b4423',
       secondary: '#e8c39a',
@@ -259,6 +319,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(KIDS_PARTY_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || KIDS_PARTY_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#6d28d9',
       secondary: '#fde047',
@@ -279,6 +343,10 @@ export const COMPOSER_STAMP_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     cutShape: resolveStampV2CutShape(EID_GIFT_DEFAULTS.shape),
+    resolveCutShape: (params) =>
+      resolveStampV2CutShape((params.fields.shape as StampShapeId) || EID_GIFT_DEFAULTS.shape),
+    randomizeParams: randomizeStampParams,
+    autoContrastInk: true,
     defaultColors: {
       primary: '#7e22ce',
       secondary: '#f0abfc',

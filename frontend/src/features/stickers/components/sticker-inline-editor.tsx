@@ -92,6 +92,17 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     () => template.fields.find((f) => f.id === fieldId),
     [template.fields, fieldId],
   );
+  const editableFields = useMemo(
+    () => template.fields.filter((f) => f.type === 'text' || f.type === 'number'),
+    [template.fields],
+  );
+  const navigableFields = useMemo(
+    () =>
+      activeField && editableFields.some((f) => f.id === activeField.fieldId)
+        ? editableFields
+        : template.fields,
+    [activeField, editableFields, template.fields],
+  );
 
   // Auto-focus input when field opens
   useEffect(() => {
@@ -112,12 +123,12 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [onClose]);
 
-  /** تنقل بين حقول القالب بالترتيب (Enter + أسهم التنقل) */
+  /** تنقل بين حقول القالب النصية القابلة للتحرير بالترتيب (Enter + أسهم التنقل) */
   const stepField = (dir: 1 | -1) => {
     if (!activeField) return;
-    const ids = template.fields.map((f) => f.id);
+    const ids = navigableFields.map((f) => f.id);
     const idx = ids.indexOf(activeField.fieldId);
-    if (idx === -1) return;
+    if (idx === -1 || ids.length <= 1) return;
     const nextIdx = (idx + dir + ids.length) % ids.length;
     const nextId = ids[nextIdx];
     if (nextId === activeField.fieldId) return;
@@ -237,8 +248,8 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               </button>
             </span>
             <span className="ms-1 font-mono">
-              {template.fields.findIndex((f) => f.id === activeField.fieldId) + 1} /{' '}
-              {template.fields.length}
+              {navigableFields.findIndex((f) => f.id === activeField.fieldId) + 1} /{' '}
+              {navigableFields.length}
             </span>
           </div>
           <Button

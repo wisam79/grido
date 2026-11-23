@@ -53,7 +53,7 @@ export const StickerProperties = React.memo(function StickerProperties({
     return { textRoles: textColorRoles(svg, params), fontWeights: getStickerFontWeights(svg) };
   }, [template, params]);
   const contrastWarning = useMemo(() => {
-    if (params.isTransparent) return null;
+    if (params.isTransparent || template.autoContrastInk) return null;
     const pairs: { role: 'primary' | 'secondary'; label: string; ratio: number | null }[] = [
       {
         role: 'primary',
@@ -76,6 +76,7 @@ export const StickerProperties = React.memo(function StickerProperties({
     if (low.length === 0) return null;
     return low.map((p) => `${p.label} (${(p.ratio as number).toFixed(1)}:1)`).join('، ');
   }, [
+    template.autoContrastInk,
     textRoles,
     params.primaryColor,
     params.secondaryColor,
