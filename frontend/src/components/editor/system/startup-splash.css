@@ -3,7 +3,7 @@
   --splash-ease-settle: cubic-bezier(0.22, 0.8, 0.24, 1);
   position: fixed;
   inset: 0;
-  z-index: var(--z-ruler);
+  z-index: var(--z-dialog);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -72,7 +72,7 @@
   inline-size: 136px;
   block-size: 136px;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
   background: linear-gradient(
     155deg,
@@ -158,7 +158,7 @@
   inline-size: 96px;
   block-size: 96px;
   overflow: visible;
-  filter: drop-shadow(0 6px 16px rgba(0, 104, 255, 0.22));
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--primary) 24%, transparent));
 }
 
 .startup-splash__piece {
@@ -429,6 +429,12 @@
 
   .startup-splash__activity::before {
     display: none;
+  }
+
+  .startup-splash__activity::after {
+    inset-inline: 25%;
+    inline-size: auto;
+    transform: none;
   }
 }
 

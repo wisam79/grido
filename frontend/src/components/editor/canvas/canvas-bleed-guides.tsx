@@ -159,18 +159,18 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
         dir="rtl"
         className="absolute -bottom-7 start-0 flex items-center gap-1.5 bg-card px-2 py-0.5 rounded-md border border-border/80 text-micro font-bold shadow-fluent-4 font-cairo whitespace-nowrap"
       >
-        <span className="flex items-center gap-1 text-sky-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+        <span className="flex items-center gap-1 text-info">
+          <span className="w-1.5 h-1.5 rounded-full bg-info" />
           <span>قص</span>
         </span>
         <span className="text-muted-foreground/60">•</span>
-        <span className="flex items-center gap-1 text-emerald-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span className="flex items-center gap-1 text-success">
+          <span className="w-1.5 h-1.5 rounded-full bg-success" />
           <span>أمان ({safeMarginMM}مم)</span>
         </span>
         <span className="text-muted-foreground/60">•</span>
         <span className="flex items-center gap-1 text-destructive">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
           <span>نزيف ({bleedMarginMM}مم)</span>
         </span>
       </div>

@@ -242,7 +242,7 @@ export function LicenseLockScreen({
             </>
           ) : (
             <>
-              <GridoBrandMark size={52} />
+              <GridoBrandMark size={52} className="mx-auto" />
 
               <div className="space-y-1.5">
                 <h1 className="text-xl font-extrabold text-foreground">

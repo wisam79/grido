@@ -874,7 +874,7 @@ export function ProjectsDialog({
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+                className="bg-destructive-action hover:bg-destructive-action-hover text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
               >
                 حذف
               </AlertDialogAction>
@@ -908,7 +908,7 @@ export function ProjectsDialog({
                   setPendingLoadProject(null);
                   if (target) void performLoad(target);
                 }}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+                className="bg-destructive-action hover:bg-destructive-action-hover text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
               >
                 تحميل واستبدال
               </AlertDialogAction>
@@ -1008,7 +1008,7 @@ export function ProjectsDialog({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmReset}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+              className="bg-destructive-action hover:bg-destructive-action-hover text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
             >
               حذف الكل
             </AlertDialogAction>

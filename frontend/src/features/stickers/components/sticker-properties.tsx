@@ -191,7 +191,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               label: 'قوالبي',
               badge:
                 templatePresets.length > 0 ? (
-                  <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-success/15 text-success font-bold">
                     {templatePresets.length}
                   </span>
                 ) : undefined,

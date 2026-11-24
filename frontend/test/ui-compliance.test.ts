@@ -459,3 +459,119 @@ describe('UI Compliance Guard — التسجيل الموحد (H9)', () => {
     expect(offenders, `ملفات بلا createLogger:\n${offenders.join('\n')}`).toEqual([]);
   });
 });
+
+function relativeLuminance(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+function contrastRatio(hexA: string, hexB: string): number {
+  const lumA = relativeLuminance(hexA);
+  const lumB = relativeLuminance(hexB);
+  const lighter = Math.max(lumA, lumB);
+  const darker = Math.min(lumA, lumB);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function extractCssVars(block: string): Record<string, string> {
+  const vars: Record<string, string> = {};
+  for (const match of block.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/gi)) {
+    vars[match[1]] = match[2].trim();
+  }
+  return vars;
+}
+
+describe('UI Compliance Guard — ربط توكنز @theme وتباين الألوان الدلالية', () => {
+  it('كل زوج --*-foreground وتوكنز destructive-action مربوطة في @theme inline', () => {
+    const css = read('index.css');
+    const themeMatch = css.match(/@theme inline\s*\{([\s\S]*?)\n\}/);
+    const rootMatch = css.match(/:root\s*\{([\s\S]*?)\n\}/);
+    expect(themeMatch).not.toBeNull();
+    expect(rootMatch).not.toBeNull();
+
+    const themeBlock = themeMatch![1];
+    const rootVars = extractCssVars(rootMatch![1]);
+    const requiredThemeMappings = Object.keys(rootVars).filter(
+      (name) =>
+        !name.startsWith('canvas-') &&
+        (name.endsWith('-foreground') ||
+          name === 'destructive-action' ||
+          name === 'destructive-action-hover'),
+    );
+
+    const unmapped = requiredThemeMappings.filter(
+      (name) => !new RegExp(`--color-${name}\\s*:\\s*var\\(--${name}\\)`).test(themeBlock),
+    );
+    expect(unmapped, `توكنز غير مربوطة في @theme inline: ${unmapped.join(', ')}`).toEqual([]);
+  });
+
+  it('نسب تباين التوكنز الدلالية في الوضعين الفاتح والداكن تحقق >= 4.5:1 (WCAG AA)', () => {
+    const css = read('index.css');
+    const lightVars = extractCssVars(css.match(/:root\s*\{([\s\S]*?)\n\}/)![1]);
+    const darkVars = extractCssVars(css.match(/\.dark\s*\{([\s\S]*?)\n\}/)![1]);
+
+    // Light mode checks
+    expect(
+      contrastRatio(lightVars['muted-foreground'], lightVars.background),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightVars['muted-foreground'], lightVars.card)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrastRatio(lightVars.destructive, lightVars.background)).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightVars['destructive-action'], lightVars['destructive-foreground']),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightVars.success, lightVars['success-foreground']),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightVars.warning, lightVars['warning-foreground']),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightVars.info, lightVars['info-foreground'])).toBeGreaterThanOrEqual(4.5);
+
+    // Dark mode checks
+    expect(contrastRatio(darkVars['muted-foreground'], darkVars.card)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(darkVars.destructive, darkVars.card)).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(darkVars['destructive-action'], darkVars['destructive-foreground']),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(darkVars.success, darkVars['success-foreground'])).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrastRatio(darkVars.warning, darkVars['warning-foreground'])).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrastRatio(darkVars.info, darkVars['info-foreground'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('تمنع تسرب ألوان Tailwind الخام للحالات واستخدام bg-destructive التعبوي الخام', () => {
+    const rawPaletteRe =
+      /\b(?:text|bg|border|ring)-(?:emerald|amber|rose|sky|indigo|violet|purple|teal|cyan)-\d+(?:\/\d+)?/;
+    const offenders: string[] = [];
+    const destructiveOffenders: string[] = [];
+
+    for (const full of walkSource(SRC)) {
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      lines.forEach((line, i) => {
+        if (rawPaletteRe.test(line)) {
+          offenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+        if (
+          /(?:^|[\s"'`:])bg-destructive(?![-/a-z])/.test(line) &&
+          /\btext-destructive-foreground\b/.test(line)
+        ) {
+          destructiveOffenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+      });
+    }
+
+    expect(offenders, `ألوان Tailwind خام متسربة:\n${offenders.join('\n')}`).toEqual([]);
+    expect(
+      destructiveOffenders,
+      `استخدام bg-destructive مع text-destructive-foreground (استخدم bg-destructive-action):\n${destructiveOffenders.join('\n')}`,
+    ).toEqual([]);
+  });
+});

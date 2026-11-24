@@ -743,7 +743,7 @@ export function CollageAutofillTab() {
             </div>
 
             {applyHint && (
-              <p className="rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-micro text-amber-600 dark:text-amber-400 leading-tight">
+              <p className="rounded-md border border-warning/25 bg-warning/10 px-2 py-1 text-micro text-warning leading-tight">
                 {applyHint}
               </p>
             )}

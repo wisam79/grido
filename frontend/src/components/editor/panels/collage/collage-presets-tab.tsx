@@ -416,7 +416,7 @@ export function CollagePresetsTab({
                   onDeleteTemplate?.(pendingDelete.id, event);
                 setPendingDelete(null);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover"
             >
               حذف
             </AlertDialogAction>

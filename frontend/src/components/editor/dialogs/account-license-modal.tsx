@@ -126,13 +126,13 @@ export function AccountLicenseModal() {
                 <div>
                   {active ? (
                     user?.plan === 'trial' ? (
-                      <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 bg-warning/15 text-warning border border-warning/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
                         تجريبي ({trialDaysLeft} يوم)
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 bg-success/15 text-success border border-success/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                         احترافي
                       </span>
                     )

@@ -114,27 +114,26 @@
 }
 ```
 
-> **ممارسة معتمدة (جلسة 0.90):** الاستخدام الافتراضي في المكونات هو أدوات التوكنات مباشرة (`bg-sidebar`/`bg-card`/`bg-inset`, `border-border-subtle`, `text-text-primary/secondary/muted`, `brand-primary/hover/light`, `status-*` مع معدِّلات الشفافية `/15 /40 /70 /85`). القيم الحرفية مسموحة فقط في: لوحات الاستنساخ البصري (`AppMockup`، مشاهد `CMYK3DStack`/`Biometric3DCard`)، والاستعارات الدلالية المقصودة (أخضر واتساب `#25D366`، سماوي CMYK `#06b6d4`، تدرجات السماء `#38bdf8`). عند إعادة الاستخدام المتكرر يُفضَّل التجسيد في فئة مشتركة من `@layer components` (مثل `ds-card`/`ds-icon-tile`).
+> **ممارسة معتمدة (جلسة 0.90):** الاستخدام الافتراضي في المكونات هو أدوات التوكنات مباشرة (`bg-sidebar`/`bg-card`/`bg-inset`, `border-border-subtle`, `text-text-primary/secondary/muted`, `brand-primary/hover/light`, `status-*` مع معدِّلات الشفافية `/15 /40 /70 /85`). القيم الحرفية مسموحة فقط في: لوحات الاستنساخ البصري (`AppMockup`، مشاهد `CMYK3DStack`/`Biometric3DCard`)، والاستعارات الدلالية المقصودة (أخضر واتساب `#25D366`، سماوي CMYK `#06b6d4`، تدرجات السماء `#38bdf8`). عند إعادة الاستخدام المتكرر يُفضَّل التجسيد في فئة مشتركة من `@layer components` (مثل `.landing-card`/`.landing-visual` في الهبوط أو `.admin-card` في الإدارة).
 
-### C. Geometry & Radii — `index.css:66-71`
+### C. Geometry & Radii — `admin-web/src/index.css:72-78`
 | التوكن | القيمة | الاستخدام |
 | :--- | :--- | :--- |
-| `--radius-sm` | `4px` | الشارات الصغيرة (Tags) |
+| `--radius-sm` | `4px` | الشارات الصغيرة (Tags) وأزرار الإدارة (`--admin-radius-sm`) |
 | `--radius-md` | `8px` | الأزرار وحقول الإدخال |
-| `--radius-lg` | `12px` | البطاقات الغائرة والحاويات الفرعية |
-| `--radius-xl` | `16px` | بلاطات الأيقونات (`ds-icon-tile`) |
-| `--radius-2xl` | `20px` | البطاقات القياسية (`ds-card`) وإطارات المحاكاة |
+| `--radius-lg` | `12px` | `.landing-visual` و`.landing-metric-tile` والحاويات الفرعية |
+| `--radius-xl` | `16px` | `.landing-card` و`.landing-card-featured` |
+| `--radius-2xl` | `20px` | `.spotlight-card` و`.app-mockup` في الإدارة |
 
-### D. Elevation (Shadows) — `index.css`
+### D. Elevation (Shadows) — `admin-web/src/index.css:79-84`
 ```css
 --material-shadow-2: 0 2px 4px rgba(0, 0, 0, 0.3);      /* الساكن */
 --material-shadow-4: 0 4px 8px rgba(0, 0, 0, 0.4);      /* التحويم/القوائم */
 --material-shadow-8: 0 8px 16px rgba(0, 0, 0, 0.5);     /* العناصر العائمة/المحاكاة */
 --material-shadow-16: 0 16px 40px rgba(0, 0, 0, 0.55);  /* النوافذ الحوارية */
 ```
-**درجات ارتفاع مسمّاة (Fluent 2 Elevation Ramp)** — تُستبدل بها `shadow-*` الحرفية في العناصر العائمة: `.ds-elevate-rest` (2) · `.ds-elevate-raised` (4) · `.ds-elevate-overlay` (8) · `.ds-elevate-dialog` (16) — معرَّفة في `@layer components` (`index.css`).
 لا يوجد توكن توهج — الإبراز يتم بالأزرق عند حدود التفاعل لا بظلال ملونة (Zero Button Glow).
-**مستهلكوها:** أزرار الهيدر ودرج الجوال (`Header.tsx`) · زر التحميل العائم (`LandingPage.tsx`) · زر واتساب (`WhatsAppButton.tsx`).
+**مستهلكو `--material-shadow-*` الفعليون:** `.app-mockup` و`.landing-mobile-nav` و`.landing-floating-download` و`.landing-floating-contact`.
 
 ---
 
@@ -152,7 +151,7 @@
 
 | العنصر (Role) | الفئات المنفَّذة | المرجع |
 | :--- | :--- | :--- |
-| **Hero Title** | `text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black tracking-tight leading-[1.15] text-balance` (مع span `text-gradient-brand`) | `HeroSection.tsx:55-60` |
+| **Hero Title** | `text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black tracking-tight leading-[1.15] text-balance` (مع span `.landing-headline-accent`) | `HeroSection.tsx:55-60` |
 | **Section Header (H2)** | عنوان أبيض كبير **واحد** فقط لكل قسم: `text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight` (مقاس `xl`) · `… lg:text-[40px] leading-[1.2]` (مقاس `lg` للأعمدة الضيقة) | `SectionHeader.tsx` |
 | **Section Description (وصف القسم)** | **أُعيد بمقاس مصقول (جلسة 0.90):** `mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed text-balance` — موسّط بعرض `max-w-2xl mx-auto` (افتراضي الأقسام الثمانية) أو `max-w-md` بمحاذاة البداية (`align="start"` في Windows 11)؛ الشارة (eyebrow) تبقى محذوفة (جلسة 0.87) | `SectionHeader.tsx:48-56` |
 | **Hero Sub-headline** | `text-sm sm:text-base md:text-lg text-text-secondary leading-relaxed text-balance` (رُبط بالتوكن — جلسة 0.90) | `HeroSection.tsx:63-65` |
@@ -170,38 +169,25 @@
 - **إيقاع الأقسام:** `py-16 md:py-24 relative scroll-mt-20` لكل قسم مرتبط بالتنقل؛ الهيرو استثناء: `pt-8 pb-16 md:pt-14 md:pb-24` (`HeroSection.tsx:32`).
 - **تعويض الهيدر اللاصق:** `scroll-padding-top: 6rem` على `html` (`index.css:415-420`).
 
-### B. Production Surface Classes — كلها في `index.css`
+### B. Production Surface Classes — كلها في `admin-web/src/index.css`
 
 ```css
-/* 1. الحافة المضيئة لطراز Windows 11 — index.css:121-124 */
-.fluent-specular {
-  border: 1px solid var(--grido-border-subtle);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+/* 1. بطاقة لوحة الإدارة القياسية — admin-web/src/index.css:1169-1173 */
+.admin-shell .admin-card {
+  background-color: var(--admin-card); /* #202020 */
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md); /* 6px */
 }
 
-/* 2. بطاقة النظام القياسية — index.css:465-469 (داخل @layer components) */
-.ds-card {
-  background: var(--grido-surface-card);      /* #1E1E1E */
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-2xl);           /* 20px */
+/* 2. بطاقة غائرة في الإدارة — admin-web/src/index.css:1175-1180 */
+.admin-shell .admin-card-inset,
+.admin-dialog-surface .admin-card-inset {
+  background-color: var(--admin-inset); /* #171717 */
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm); /* 4px */
 }
 
-/* 3. بطاقة غائرة (Inset) — index.css:472-476 */
-.ds-card-inset {
-  background: var(--grido-surface-inset);     /* #141414 */
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-lg);            /* 12px */
-}
-
-/* 4. بلاطة أيقونة قياسية — index.css:480-488 */
-.ds-icon-tile {
-  background: var(--grido-surface-inset);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-xl);            /* 16px */
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-
-/* 5. إطار محاكاة نافذة التطبيق — index.css:570-577 */
+/* 3. إطار محاكاة نافذة التطبيق وبطاقة تسجيل الدخول — admin-web/src/index.css:429-438 */
 .app-mockup {
   background: rgba(30, 30, 30, 0.88);
   backdrop-filter: blur(24px) saturate(115%);
@@ -214,17 +200,17 @@
 ### C. Visual Primitives (بدائيات الإبراز) — بعد v2.7
 | الفئة | الوظيفة | المرجع |
 | :--- | :--- | :--- |
-| `.landing-card` | بطاقة قسم الهبوط القياسية: سطح card صلب + حد شعري + استدارة 12px بلا ظل افتراضي | `index.css` (طبقة components نطاق `.landing-shell`) |
-| `.landing-visual` | إطار المعاينة الغائر: سطح inset بتدرج إضاءة علوي خافت + حد شعري + 12px، بلا ارتفاع مفروض | `index.css` |
+| `.landing-card` | بطاقة قسم الهبوط القياسية: سطح card مع تدرج علوي خافت + حد شعري + استدارة `--radius-xl` (`16px`) | `index.css` (طبقة components نطاق `.landing-shell`) |
+| `.landing-visual` | إطار المعاينة الغائر: سطح inset بتدرج إضاءة علوي ونقاط شبكة + حد شعري + `--radius-lg` (`12px`) | `index.css` |
 | `.landing-switch` | مجموعة مبدّل عرض: أزرار مباشرة ≥44px مع حالة `[aria-pressed='true']` | `index.css` |
-| `.landing-facts / .landing-fact` | صفوق معلومات مختصرة بفواصل شعرية منطقية | `index.css` |
+| `.landing-facts / .landing-fact` | صفوف معلومات مختصرة بفواصل شعرية منطقية | `index.css` |
 | `.aurora-bg` | هالة محيطة (أزرق/بنفسجي خافت) — مستهلكها لوحة الإدارة فقط | `index.css` |
 | `.spotlight-card` | بطاقة اللوحة مع وميض يتبع المؤشر (تُربط `--mouse-x/y` في مكوّنات الإدارة) | `index.css` |
 
 > 🧹 **تنظيف v2.7:** حُذفت بدائيات الهبوط الميتة بعد إعادة التصميم: `.card-specular-edge` و`.text-gradient-brand` و`.spotlight-hover` (مع تتبّع المؤشر العام) و`.cta-shine` و`.ai-badge`/`.ai-badge-pulse` و`.ds-card`/`.ds-card-inset`/`.ds-icon-tile`/`.ds-card-interactive`/`.ds-elevate-*`/`.ds-focusable`/`.fluent-specular`/`.no-scrollbar` — تحقّق بلا مستهلكين في `admin-web/src`. تظل `.magnetic-pill` و`.tab-content-reveal` و`.aurora-bg` و`.app-mockup` و`.spotlight-card` حيّة في لوحة الإدارة.
 
-### D. Layering Rule (@layer components) — `index.css:458-462`
-بدائيات `.ds-card/.ds-card-inset/.ds-icon-tile/.btn-primary/.btn-secondary` مسجَّلة عمداً داخل `@layer components` كي تتغلب عليها utilities الطبقة المتأخرة عند الحاجة (طبقات Tailwind v4 تُحسم قبل النوعية). هذا ما يجعل أمثلة مثل `bg-sidebar` (`ComparisonSection.tsx:66`) و`border-brand-primary/40` (`ComparisonSection.tsx:103`) وحدود فتح الأسئلة (`FaqSection.tsx:78-79`) فعّالة. **أي بدائية CSS غير طبقية تُكتب مستقبلاً ستُلغي utilities بصمت — تُمنع.**
+### D. Layering Rule (`@layer components`) — `admin-web/src/index.css:146-279,481`
+بدائيات `.btn-primary`/`.btn-secondary`/`.ds-range`/`.landing-*` مسجَّلة عمداً داخل `@layer components` كي تتغلب عليها utilities الطبقة المتأخرة عند الحاجة (طبقات Tailwind v4 تُحسم قبل النوعية). هذا ما يجعل أمثلة مثل `bg-sidebar` (`ComparisonSection.tsx:66`) و`border-brand-primary/40` (`ComparisonSection.tsx:103`) وحدود فتح الأسئلة (`FaqSection.tsx:78-79`) فعّالة. **أي بدائية CSS غير طبقية تُكتب مستقبلاً ستُلغي utilities بصمت — تُمنع.**
 
 ---
 
@@ -234,11 +220,11 @@
 
 | المكون | الساكنة (Resting) | التحويم (Hover) | الضغط (Active) |
 | :--- | :--- | :--- | :--- |
-| **`.btn-primary`** `index.css:135-160` | `bg #3b82f6` · نص أبيض · `14px/600` · `radius-md` · `10px 22px` · ظل `0 1px 2px rgba(0,0,0,.3)` | `#2563eb` + `translateY(-1px)` | `scale(0.98)` |
-| **`.btn-secondary`** `index.css:162-187` | `background: var(--grido-surface-card)` · حد `#2C2C2C` · `14px/500` · `10px 20px` (رُبط بالتوكن — جلسة 0.90) | `var(--grido-surface-card-hover)` + حد `white/20` + `translateY(-1px)` | `scale(0.98)` |
-| **`.ds-card-interactive`** `index.css:491-500` | — | حد `white/20` + خلفية `#262626` | `scale(0.99)` |
-| **`.ds-range`** `index.css:218-286` | مسار `8px` بخلفية `#141414` وحد subtle · مقبض `18px` بخلفية `--range-accent` | تمدد المقبض `scale(1.1)` | انضغاط `scale(0.95)` |
+| **`.btn-primary`** `index.css:147-174` | `bg var(--grido-brand-primary)` · نص أبيض · `14px/600` · `radius-md` · `10px 22px` · ظل `0 1px 2px rgba(0,0,0,.3)` | `var(--grido-brand-hover)` + `translateY(-1px)` | `scale(0.98)` |
+| **`.btn-secondary`** `index.css:176-204` | `background: var(--grido-surface-card)` · حد `var(--grido-border-subtle)` · `14px/500` · `10px 20px` | `var(--grido-surface-card-hover)` + حد `white/20` + `translateY(-1px)` | `scale(0.98)` |
+| **`.ds-range`** `index.css:214-279` | مسار `8px` بخلفية `#141414` وحد subtle · مقبض `18px` بخلفية `--range-accent` | تمدد المقبض `scale(1.1)` | انضغاط `scale(0.95)` |
 | **أزرار الهبوط** (`.btn-primary/.btn-secondary` داخل `.landing-shell`) | `min-height/min-width: 44px` + خلفية التوكن | تغيير لون فقط بلا رفع (`transform: none`) | بلا تحجيم |
+| **أزرار الإدارة** (`.admin-btn-primary/.admin-btn-secondary`) | ألوان `.admin-shell` (`#2563eb` / `#171717`) وحدود `4px` | `#1d4ed8` / `var(--admin-active)` | ثبات موضعي |
 
 أزرار الهيرو والبانرات تضيف فوق فئات الأساس أدوات الحركة: `hover:scale-105 active:scale-95` (`HeroSection.tsx:73,81`).
 

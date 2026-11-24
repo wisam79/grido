@@ -135,13 +135,13 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               {user?.plan === 'trial' ? (
-                <span className="inline-flex items-center gap-1 text-3xs font-medium text-amber-500">
-                  <span className="size-1.5 rounded-full bg-amber-500" />
+                <span className="inline-flex items-center gap-1 text-3xs font-medium text-warning">
+                  <span className="size-1.5 rounded-full bg-warning" />
                   نسخة تجريبية
                 </span>
               ) : isLicenseActive ? (
-                <span className="inline-flex items-center gap-1 text-3xs font-medium text-emerald-500">
-                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                <span className="inline-flex items-center gap-1 text-3xs font-medium text-success">
+                  <span className="size-1.5 rounded-full bg-success" />
                   ترخيص مفعّل
                 </span>
               ) : (

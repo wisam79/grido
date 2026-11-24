@@ -288,14 +288,14 @@ export function StickerDesignTab({
         {contrastWarning && (
           <p
             role="note"
-            className="text-micro leading-relaxed px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300"
+            className="text-micro leading-relaxed px-2 py-1.5 rounded-md bg-warning/10 border border-warning/30 text-warning"
           >
             تباين منخفض قد يُطبع باهتاً: {contrastWarning} — جرّب لوحة أغمق أو خلفية أفتح.
           </p>
         )}
 
         {/* Curated Quick Palettes */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
           {CURATED_PALETTES.map((palette) => {
             const isActive =
               params.primaryColor.toLowerCase() === palette.primary.toLowerCase() &&

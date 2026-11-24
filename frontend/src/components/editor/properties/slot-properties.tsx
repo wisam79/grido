@@ -554,7 +554,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                       className={cn(
                         'relative overflow-hidden h-13 flex flex-col items-center justify-center gap-1 rounded-md border transition-all cursor-pointer p-1 shadow-2xs',
                         isRemovingBg
-                          ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent'
+                          ? 'bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover border-transparent'
                           : 'border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 text-foreground',
                       )}
                       onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(slot)}
@@ -657,7 +657,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                       className={cn(
                         'relative overflow-hidden h-13 flex flex-col items-center justify-center gap-1 rounded-md border transition-all cursor-pointer p-1 shadow-2xs',
                         isFraming
-                          ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent'
+                          ? 'bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover border-transparent'
                           : 'border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-primary/5 text-foreground',
                       )}
                       onClick={isFraming ? handleCancelFrame : () => handleFrameFace(slot)}

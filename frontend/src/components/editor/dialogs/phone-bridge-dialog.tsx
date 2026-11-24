@@ -295,8 +295,8 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* تحذير عند اختيار وضع الإنترنت والمستخدم غير مسجل الدخول */}
               {bridgeMode === 'cloud' && !bridgeInfo.cloudUrl && (
-                <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-md border border-amber-500/30 text-center">
-                  <WarningCircle className="w-6 h-6 text-amber-500 shrink-0" weight="duotone" />
+                <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-warning/10 rounded-md border border-warning/30 text-center">
+                  <WarningCircle className="w-6 h-6 text-warning shrink-0" weight="duotone" />
                   <div className="text-xs font-bold text-foreground">يتطلب تسجيل الدخول للحساب</div>
                   <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                     لتشغيل جسر الكاميرا عبر الإنترنت، سجّل دخولك إلى حسابك أولاً، أو استخدم وضع
@@ -306,7 +306,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                     variant="outline"
                     size="sm"
                     onClick={() => setBridgeMode('local')}
-                    className="h-7 text-xs rounded-lg mt-1 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer"
+                    className="h-7 text-xs rounded-lg mt-1 border-warning/40 text-warning hover:bg-warning/10 cursor-pointer"
                   >
                     التحويل إلى الشبكة المحلية
                   </Button>
@@ -332,8 +332,8 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               <div className="w-full flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-md bg-muted/40 border border-border/60 text-xs">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
                   </span>
                   <span className="font-semibold text-foreground truncate">
                     {pairedDevice ? `متصل: ${pairedDevice}` : 'الجسر متصل ويعمل'}
@@ -373,7 +373,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   >
                     {copied ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <Check className="w-3.5 h-3.5 text-success" />
                         <span>تم النسخ</span>
                       </>
                     ) : (

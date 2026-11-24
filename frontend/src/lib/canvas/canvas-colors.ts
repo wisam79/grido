@@ -93,20 +93,20 @@ export const slotPlaceholderBg = () =>
   css('--canvas-slot-placeholder-bg', 'rgba(241, 245, 249, 0.88)');
 export const slotPlaceholderBorder = () => css('--canvas-slot-placeholder-border', '#94a3b8');
 export const slotPlaceholderBorderHover = () =>
-  css('--canvas-slot-placeholder-border-hover', '#0078d4');
+  css('--canvas-slot-placeholder-border-hover', '#2563eb');
 export const slotPlaceholderBadge = () => css('--canvas-slot-placeholder-badge', '#ffffff');
 export const slotPlaceholderBadgeBorder = () =>
   css('--canvas-slot-placeholder-badge-border', '#cbd5e1');
 export const slotPlaceholderIcon = () => css('--canvas-slot-placeholder-icon', '#475569');
 export const slotPlaceholderIconHover = () =>
-  css('--canvas-slot-placeholder-icon-hover', '#0078d4');
+  css('--canvas-slot-placeholder-icon-hover', '#2563eb');
 export const slotPlaceholderText = slotPlaceholderIcon;
 // حلقة تحديد الخلية وأزرار الإضافة — ألوان دلالية بدل hex صلبة داخل المرسم
-export const collageSelectionPrimary = () => css('--canvas-collage-selection-primary', '#0078d4');
+export const collageSelectionPrimary = () => css('--canvas-collage-selection-primary', '#2563eb');
 export const collageSelectionSecondary = () =>
   css('--canvas-collage-selection-secondary', '#60a5fa');
-export const collageSelectionShadow = () => css('--canvas-collage-selection-shadow', '#0078d4');
-export const collageHandle = () => css('--canvas-collage-handle', '#0078d4');
+export const collageSelectionShadow = () => css('--canvas-collage-selection-shadow', '#2563eb');
+export const collageHandle = () => css('--canvas-collage-handle', '#2563eb');
 export const collageHandleForeground = () => css('--canvas-collage-handle-foreground', '#ffffff');
 
 // ── Magic AI Scanner ─────────────────────────────────────────────────────────
@@ -117,10 +117,10 @@ export const scannerParticleB = () => css('--canvas-scanner-particle-b', '#38bdf
 export const scannerParticleC = () => css('--canvas-scanner-particle-c', '#c084fc');
 
 // ── Document Scanner ─────────────────────────────────────────────────────────
-export const docScannerPrimary = () => css('--canvas-doc-scanner-primary', '#6366f1');
-export const docScannerHover = () => css('--canvas-doc-scanner-hover', '#818cf8');
-export const docScannerDark = () => css('--canvas-doc-scanner-dark', '#312e81');
-export const docScannerInner = () => css('--canvas-doc-scanner-inner', '#4f46e5');
+export const docScannerPrimary = () => css('--canvas-doc-scanner-primary', '#2563eb');
+export const docScannerHover = () => css('--canvas-doc-scanner-hover', '#3b82f6');
+export const docScannerDark = () => css('--canvas-doc-scanner-dark', '#1e3a8a');
+export const docScannerInner = () => css('--canvas-doc-scanner-inner', '#1d4ed8');
 export const docScannerLoupe = () => css('--canvas-doc-scanner-loupe', '#ef4444');
 
 // ── Preview Backgrounds (refine-bg-dialog) ───────────────────────────────────

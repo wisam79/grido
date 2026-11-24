@@ -154,7 +154,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                   className="shrink-0 animate-spin text-muted-foreground"
                 />
               ) : (
-                <Sparkle size={15} weight="fill" className="shrink-0 text-amber-500" />
+                <Sparkle size={15} weight="fill" className="shrink-0 text-warning" />
               )}
               <span>{isDetecting ? 'جاري الكشف ...' : 'كشف تلقائي'}</span>
             </Button>
@@ -179,7 +179,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-md border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-8 rounded-md border-success/40 bg-success/10 hover:bg-success/20 text-success text-xs font-bold flex items-center justify-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   onClick={onSplitIdCards}
                   disabled={isDetecting}
                 >
@@ -194,9 +194,9 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
 
       {/* 🔹 2. قائمة المستندات المتعددة المكتشفة (تظهر عند المسح المتعدد أو عند وجود أكثر من مستند) */}
       {isMultiActive && (
-        <div className="space-y-2 bg-emerald-950/15 dark:bg-emerald-950/25 p-2.5 rounded-md border border-emerald-500/30 animate-in fade-in-50 duration-200">
+        <div className="space-y-2 bg-success/10 p-2.5 rounded-md border border-success/30 animate-in fade-in-50 duration-200">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <Label className="text-xs font-bold text-success flex items-center gap-1.5">
               <FileText size={15} weight="duotone" className="shrink-0" />
               <span>المستندات المكتشفة ({detectedDocs.length})</span>
             </Label>
@@ -205,7 +205,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
+                  className="h-5 px-1.5 text-micro font-bold text-success hover:bg-success/20 cursor-pointer"
                   onClick={onSelectAllDocs}
                   disabled={isDetecting}
                 >
@@ -218,7 +218,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer flex items-center gap-0.5"
+                      className="h-5 px-1.5 text-micro font-bold text-success hover:bg-success/20 cursor-pointer flex items-center gap-0.5"
                       onClick={onAddDocument}
                       disabled={isDetecting}
                     >
@@ -309,7 +309,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 <Sparkle
                   size={14}
                   weight={filterMode === 'magic' ? 'fill' : 'duotone'}
-                  className="shrink-0 text-amber-400"
+                  className="shrink-0 text-warning"
                 />
                 <span>ذكي</span>
               </Button>
@@ -384,7 +384,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 <Lightning
                   size={14}
                   weight={filterMode === 'sharpen' ? 'fill' : 'duotone'}
-                  className="shrink-0 text-cyan-500"
+                  className="shrink-0 text-info"
                 />
                 <span>شحذ</span>
               </Button>

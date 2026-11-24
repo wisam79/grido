@@ -713,7 +713,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
                 متابعة التحرير
               </AlertDialogCancel>
               <AlertDialogAction
-                className="cursor-pointer rounded-md h-8 text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="cursor-pointer rounded-md h-8 text-xs font-bold bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover"
                 onClick={() => {
                   finishNudgeBurst();
                   setDiscardConfirmOpen(false);

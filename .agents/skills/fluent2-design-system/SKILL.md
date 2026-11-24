@@ -118,8 +118,11 @@ description: دليل ونظام تصميم Microsoft Fluent 2 الشامل لت
 
 - `text-control` = 12px / 18px للتسميات والحقول؛ تبقى `xs/mini/micro` للسياقات المتخصصة، بلا تكبير شامل. مسجّل في `frontend/src/lib/utils.ts` لـ tailwind-merge.
 - `bg-primary-action` و`hover:bg-primary-action-hover` للأزرار التعبوية مع `text-primary-foreground`؛ `text-primary` و`border-primary` للتمييز، لا `bg-primary` الخام مع نص أبيض.
+- `bg-destructive-action` و`hover:bg-destructive-action-hover` لأزرار الحذف/الإلغاء التعبوية مع `text-destructive-foreground`؛ `text-destructive` و`border-destructive` للتحذير والنصوص، لا `bg-destructive` الخام مع نص أبيض (تحقيق تباين `>= 4.5:1` في الوضعين الفاتح والداكن).
+- توكنز الحالة الدلالية `--success` / `--warning` / `--info` / `--destructive` مع `*-foreground` المربوطة في `@theme inline` تُستخدم بدل ألوان Tailwind الخام (`emerald`/`amber`/`rose`/`sky`/`indigo`/`violet`/`cyan`).
 - `border-control-border` للحقول، و`border-border` للفواصل.
 - `bg-preview-surface` لمعاينات المكتبات، لا للمستند أو SVG المصدر.
+- شعار `GridoBrandMark` موحّد الألوان مع أزرق الهوية (`#3b82f6` / `#2563eb` / `#1d4ed8` / `#60a5fa`) عبر شاشة الإقلاع وشاشة القفل وشريط المحرر وصفحة الهبوط/الإدارة.
 
 الحد الافتراضي 1px؛ حلقة التركيز:
 

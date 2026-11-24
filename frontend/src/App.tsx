@@ -11,6 +11,7 @@ import { AccountLicenseModal } from '@/components/editor/dialogs/account-license
 import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
 import { TemplatePanel } from '@/components/editor/panels/template-panel';
 import { DesktopMenuBar } from '@/components/editor/system/desktop-menu-bar';
+import { GridoBrandMark } from '@/components/editor/system/grido-brand-mark';
 import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
 import { QuitSaveFailedDialog } from '@/components/editor/system/quit-save-failed-dialog';
 import { StartupSplash } from '@/components/editor/system/startup-splash';
@@ -221,7 +222,7 @@ export default function App() {
         ) : (
           <div
             className={cn(
-              'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background',
+              'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden bg-background',
             )}
             dir="rtl"
             data-file-drop-target="true"
@@ -251,8 +252,8 @@ export default function App() {
                 <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
                   <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0" />
-                      <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
+                      <GridoBrandMark size={18} />
+                      <h1 className="text-xs font-black text-foreground tracking-wide flex items-center gap-1.5">
                         <span>GRIDO</span>
                         <span className="sr-only">Grido Studio | استوديو الهوية</span>
                       </h1>
@@ -429,7 +430,7 @@ export default function App() {
               }
               floatingFeedback={
                 activeOperation && (!isInlineAiOperation || panelsHook.isZenMode) ? (
-                  <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 pointer-events-auto">
+                  <div className="absolute top-4 end-4 z-(--z-quick-bar) animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 pointer-events-auto">
                     <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
                     <span className="text-xs font-bold text-foreground truncate max-w-xs">
                       {activeOperation.title}

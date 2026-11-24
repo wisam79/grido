@@ -561,7 +561,7 @@ export const EditorCanvas = React.memo(
                     >
                       <div
                         className={`transition-colors ${
-                          lockUserGuides ? 'bg-amber-500/70' : 'bg-primary'
+                          lockUserGuides ? 'bg-warning/70' : 'bg-primary'
                         } ${
                           isH
                             ? 'w-full h-[1px] group-hover:h-[2px]'
@@ -571,8 +571,10 @@ export const EditorCanvas = React.memo(
                       {/* شارة القياس عند التحويم */}
                       <div
                         className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
-                          lockUserGuides ? 'bg-amber-600' : 'bg-primary'
-                        } text-white font-mono text-micro font-bold shadow-fluent-8 z-(--z-canvas-guides) pointer-events-none ${
+                          lockUserGuides
+                            ? 'bg-warning text-warning-foreground'
+                            : 'bg-primary-action text-primary-foreground'
+                        } font-mono text-micro font-bold shadow-fluent-8 z-(--z-canvas-guides) pointer-events-none ${
                           isH ? 'left-3 -top-5' : 'top-3 left-2'
                         }`}
                       >

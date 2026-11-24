@@ -552,7 +552,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className={cn(
                   'relative overflow-hidden h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isRemovingBg &&
-                    'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
+                    'bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover border-transparent',
                 )}
                 onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
               >
@@ -641,7 +641,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className={cn(
                   'relative overflow-hidden h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isFraming &&
-                    'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
+                    'bg-destructive-action text-destructive-foreground hover:bg-destructive-action-hover border-transparent',
                 )}
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >

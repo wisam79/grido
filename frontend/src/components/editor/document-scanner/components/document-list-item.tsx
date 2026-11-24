@@ -37,8 +37,8 @@ export const DocumentListItem = React.memo(function DocumentListItem({
       className={cn(
         'min-h-8 px-2 py-1 flex items-center justify-between gap-1 rounded-md transition-colors border text-xs select-none group focus-within:border-primary focus-visible:outline-none',
         isActive
-          ? 'bg-emerald-600/25 border-emerald-500 text-foreground font-bold shadow-xs'
-          : 'bg-background/40 border-emerald-500/20 text-foreground hover:bg-emerald-500/10',
+          ? 'bg-success/20 border-success text-foreground font-bold shadow-xs'
+          : 'bg-background/40 border-success/25 text-foreground hover:bg-success/10',
       )}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -50,8 +50,8 @@ export const DocumentListItem = React.memo(function DocumentListItem({
           className={cn(
             'w-7 h-7 rounded flex items-center justify-center border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             isSelected
-              ? 'bg-emerald-500 border-emerald-400 text-white shadow-2xs'
-              : 'border-muted-foreground/40 bg-background/60 hover:border-emerald-400',
+              ? 'bg-success border-success text-success-foreground shadow-2xs'
+              : 'border-muted-foreground/40 bg-background/60 hover:border-success',
           )}
           title={isSelected ? 'إلغاء التضمين' : 'تضمين في الإدراج'}
         >

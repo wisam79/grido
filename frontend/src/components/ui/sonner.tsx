@@ -21,25 +21,22 @@ const Toaster = ({ offset = 20, style, ...props }: ToasterProps) => {
       style={{ zIndex: 'var(--z-toast)', ...style }}
       offset={offset}
       icons={{
-        success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="fill" />,
-        error: <XCircle className="w-4 h-4 text-rose-500 shrink-0" weight="fill" />,
-        warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="fill" />,
-        info: <Info className="w-4 h-4 text-primary shrink-0" weight="fill" />,
+        success: <CheckCircle className="w-4 h-4 text-success shrink-0" weight="fill" />,
+        error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="fill" />,
+        warning: <WarningCircle className="w-4 h-4 text-warning shrink-0" weight="fill" />,
+        info: <Info className="w-4 h-4 text-info shrink-0" weight="fill" />,
         loading: <Spinner size={15} className="w-4 h-4 text-primary" />,
       }}
       toastOptions={{
         classNames: {
-          /* التنسيق البصري الموحد (الحبة العائمة) يعيش في index.css — هنا الأصناف الوظيفية فقط */
-          toast: 'group toast font-sans transition-all duration-150',
-          title:
-            'text-xs font-medium text-foreground tracking-normal font-sans whitespace-normal break-words',
-          description: 'text-xs text-muted-foreground font-sans mt-0.5',
+          /* التنسيق البصري الموحد للحبة العائمة يعيش في index.css — هنا الأصناف الوظيفية فقط */
+          toast: 'group toast font-sans',
+          title: 'font-sans tracking-normal',
+          description: 'font-sans mt-0.5',
           actionButton:
-            'group-[.toast]:bg-primary-action group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary-action-hover text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
+            'group-[.toast]:bg-primary-action group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary-action-hover text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
           cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
-          closeButton:
-            'group-[.toast]:text-muted-foreground/60 group-[.toast]:hover:text-foreground group-[.toast]:border-none group-[.toast]:rounded-full transition-colors p-0.5',
+            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
         },
       }}
       {...props}

@@ -441,8 +441,8 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
               )}
 
               {mappedFieldCount === 0 && (
-                <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/30">
-                  <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-warning/10 border border-warning/30">
+                  <WarningCircle className="w-4 h-4 text-warning shrink-0" weight="duotone" />
                   <p className="text-mini font-semibold text-foreground/90">
                     اربط عموداً واحداً على الأقل لتوليد البطاقات
                   </p>

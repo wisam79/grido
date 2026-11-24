@@ -516,7 +516,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     title="النزيف الخارجي"
                   >
                     <span className="flex items-center gap-1.5 text-control font-medium text-muted-foreground">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                       النزيف
                     </span>
                     <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
@@ -542,7 +542,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     title="منطقة الأمان"
                   >
                     <span className="flex items-center gap-1.5 text-control font-medium text-muted-foreground">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                       الأمان
                     </span>
                     <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
@@ -569,19 +569,19 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   dir="rtl"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-0.5 border-b-2 border-rose-500 border-dashed shrink-0" />
+                    <span className="w-3 h-0.5 border-b-2 border-destructive border-dashed shrink-0" />
                     <span className="text-muted-foreground">
                       <strong className="text-foreground">النزيف:</strong> تمديد الخلفية.
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-0.5 bg-blue-500 shrink-0" />
+                    <span className="w-3 h-0.5 bg-info shrink-0" />
                     <span className="text-muted-foreground">
                       <strong className="text-foreground">القص:</strong> الحد الفعلي.
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-0.5 border-b-2 border-emerald-500 border-dashed shrink-0" />
+                    <span className="w-3 h-0.5 border-b-2 border-success border-dashed shrink-0" />
                     <span className="text-muted-foreground">
                       <strong className="text-foreground">الأمان:</strong> إبقاء المحتوى بالداخل.
                     </span>

@@ -339,7 +339,7 @@ export function DocumentScannerDialog({
                   ماسح المستندات والبطاقات
                 </DialogTitle>
                 {detectedDocs.length > 1 ? (
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1 bg-success/10 text-success border border-success/25 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
                     كشف متعدد ({detectedDocs.length})
                   </span>
                 ) : (
@@ -397,12 +397,12 @@ export function DocumentScannerDialog({
                     </>
                   ) : detectedDocs.length > 1 ? (
                     <>
-                      <FileText size={13} weight="duotone" className="text-emerald-500 shrink-0" />
+                      <FileText size={13} weight="duotone" className="text-success shrink-0" />
                       <span>تم تحديد {detectedDocs.length} مستندات</span>
                     </>
                   ) : (
                     <>
-                      <Sparkle size={13} weight="fill" className="text-amber-500 shrink-0" />
+                      <Sparkle size={13} weight="fill" className="text-warning shrink-0" />
                       <span>اسحب الدبابيس للضبط</span>
                     </>
                   )}
@@ -610,7 +610,7 @@ export function DocumentScannerDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-md h-8 px-3.5 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="rounded-md h-8 px-3.5 text-xs font-bold gap-1.5 cursor-pointer border-success/60 bg-success/10 hover:bg-success/20 text-success shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() =>
                   processor.handleApplySelected(
                     detectedDocs.filter((d) => selectedDocIds.includes(d.id)),

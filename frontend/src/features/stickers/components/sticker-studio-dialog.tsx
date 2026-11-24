@@ -401,33 +401,33 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       onClick={() => void handleDownloadPng(600)}
                       className="cursor-pointer gap-2"
                     >
-                      <FilePng className="w-4 h-4 text-violet-500" weight="duotone" />
+                      <FilePng className="w-4 h-4 text-info" weight="duotone" />
                       <span>صورة PNG فائقة (600 DPI للمطابع)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
-                      <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />
+                      <FileSvg className="w-4 h-4 text-success" weight="duotone" />
                       <span>ملف SVG متجه</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleDownloadCutContour}
                       className="cursor-pointer gap-2"
                     >
-                      <Scissors className="w-4 h-4 text-pink-500" weight="duotone" />
+                      <Scissors className="w-4 h-4 text-destructive" weight="duotone" />
                       <span>SVG مع خط القص (CutContour)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleDownloadPureCutContour}
                       className="cursor-pointer gap-2"
                     >
-                      <Scissors className="w-4 h-4 text-fuchsia-500" weight="duotone" />
+                      <Scissors className="w-4 h-4 text-destructive" weight="duotone" />
                       <span>خط القص فقط للمقصات (Plotter)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
-                      <Copy className="w-4 h-4 text-amber-500" weight="duotone" />
+                      <Copy className="w-4 h-4 text-warning" weight="duotone" />
                       <span>نسخ صورة</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopySvgCode} className="cursor-pointer gap-2">
-                      <Code className="w-4 h-4 text-indigo-500" weight="duotone" />
+                      <Code className="w-4 h-4 text-primary" weight="duotone" />
                       <span>نسخ SVG</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

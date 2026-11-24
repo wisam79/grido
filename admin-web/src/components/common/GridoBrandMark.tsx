@@ -36,14 +36,14 @@ export function GridoBrandMark({
           x2="65%"
           y2="35%"
         >
-          <stop offset="0%" stopColor="#0055e8" />
-          <stop offset="100%" stopColor="#0037a6" />
+          <stop offset="0%" stopColor="#2563eb" />
+          <stop offset="100%" stopColor="#1d4ed8" />
         </linearGradient>
       </defs>
       <g clipPath={`url(#${clipId})`}>
         <path
           d="M40 30H960V315H415A80 80 0 0 0 335 395V480L40 775Z"
-          fill="#0068ff"
+          fill="#3b82f6"
         />
         <path
           d="M40 775L335 480L800 945A8 8 0 0 1 794 955H40Z"
@@ -52,13 +52,13 @@ export function GridoBrandMark({
         <path
           d="M40 775L335 480L800 945"
           fill="none"
-          stroke="#3388ff"
+          stroke="#60a5fa"
           strokeWidth="3"
           opacity="0.7"
         />
         <path
           d="M512 460H960V910L928 910L504 476A10 10 0 0 1 512 460Z"
-          fill="#0068ff"
+          fill="#3b82f6"
         />
       </g>
     </svg>

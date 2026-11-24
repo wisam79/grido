@@ -184,7 +184,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                       toast.success('تمت الاستعادة');
                     }}
                     aria-label="استعادة الصورة الأصلية"
-                    className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-warning hover:bg-warning/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
                     <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
                   </Button>

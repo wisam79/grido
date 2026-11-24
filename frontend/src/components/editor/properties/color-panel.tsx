@@ -643,7 +643,7 @@ export function ColorWheelPicker({
             aria-label="نسخ اللون"
           >
             {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
+              <Check className="w-3.5 h-3.5 text-success" weight="bold" />
             ) : (
               <Copy className="w-3.5 h-3.5" weight="regular" />
             )}

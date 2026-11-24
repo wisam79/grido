@@ -718,8 +718,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             {colorSpace === 'cmyk' && (
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
-                <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
+              <div className="p-2.5 bg-warning/10 border border-warning/20 rounded-md text-xs text-warning flex items-start gap-2">
+                <Warning className="text-warning shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="font-medium">
                   CMYK لمطابع الأوفست — قد يختلف التباين عن المعاينة.
                 </span>

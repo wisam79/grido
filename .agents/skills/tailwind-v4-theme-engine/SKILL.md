@@ -27,11 +27,11 @@ description: معايير وهندسة محرك التنسيق والتصميم 
 جميع التوكنز التابعة لنظام تصميم Grido Studio (المستوحاة من Fluent 2) تُدرج داخل بلوك `@theme` في `frontend/src/index.css`:
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@theme {
+@theme inline {
   /* الخطوط */
-  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', 'Readex Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* مؤشرات الطبقات الصارمة (Z-Index Scales) */
   --z-panel: 40;
@@ -47,9 +47,21 @@ description: معايير وهندسة محرك التنسيق والتصميم 
   --z-dialog-popover: 2500;
   --z-toast: 3000;
 
-  /* توكنز الألوان المعيارية */
+  /* توكنز الألوان المعيارية والدلالية */
   --color-primary: var(--primary);
+  --color-primary-action: var(--primary-action);
+  --color-primary-action-hover: var(--primary-action-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-action: var(--destructive-action);
+  --color-destructive-action-hover: var(--destructive-action-hover);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }

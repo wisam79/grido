@@ -285,7 +285,7 @@ export const GradientPicker = ({
               <div className="space-y-2 pt-1 border-t border-border/40 w-full max-w-full overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-mini font-bold text-foreground flex items-center gap-1">
-                    <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
+                    <Sparkle className="w-3.5 h-3.5 text-warning" weight="duotone" />
                     <span>تدرجات جاهزة</span>
                   </span>
                   <span className="text-mini text-muted-foreground font-semibold tabular-nums">

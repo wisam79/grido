@@ -283,8 +283,8 @@ export function ToolbarFileOps() {
               {isPhoneBridgeRunning && (
                 <>
                   <span className="absolute top-1.5 start-1.5 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
                   </span>
                   {phoneBridgeReceivedCount > 0 && (
                     <span className="absolute -bottom-1 -end-1 bg-muted border border-border text-foreground px-1 rounded-full font-mono text-2xs font-bold leading-none">
@@ -356,7 +356,7 @@ export function ToolbarFileOps() {
             <AlertDialogCancel className="font-cairo h-8 rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClearCanvas}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 rounded-md"
+              className="bg-destructive-action hover:bg-destructive-action-hover text-destructive-foreground font-cairo h-8 rounded-md"
             >
               مسح
             </AlertDialogAction>

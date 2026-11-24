@@ -170,7 +170,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={ungroupSelectedElements}
               aria-label="فك التجميع"
-              className="coarse-touch-target h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-colors cursor-pointer"
+              className="coarse-touch-target h-8 w-8 p-0 text-warning hover:bg-warning/10 rounded-md transition-colors cursor-pointer"
             >
               <LinkBreak className="w-4 h-4" />
             </Button>

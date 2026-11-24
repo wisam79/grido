@@ -300,7 +300,7 @@ func main() {
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
 		BackgroundType:     application.BackgroundTypeTranslucent,
-		BackgroundColour:   application.NewRGBA(24, 24, 27, 255), // مطابقة لون bg-background الفحمي لمنع ظهور فراغ أسود أثناء التوسيع والتكبير
+		BackgroundColour:   application.NewRGBA(20, 20, 20, 255), // مطابقة لون bg-background الفحمي (#141414) لمنع ظهور فراغ أسود أثناء التوسيع والتكبير
 		Windows: application.WindowsWindow{
 			BackdropType:                      application.Mica,
 			DisableFramelessWindowDecorations: false,

@@ -126,7 +126,7 @@ ${report.stack_trace}
         onInteractOutside={blockImplicitDismiss}
       >
         <DialogHeader className="space-y-3 text-center sm:text-start">
-          <div className="mx-auto sm:mx-0 w-12 h-12 bg-amber-500/10 text-amber-500 dark:bg-amber-400/15 dark:text-amber-400 rounded-full flex items-center justify-center shrink-0">
+          <div className="mx-auto sm:mx-0 w-12 h-12 bg-warning/10 text-warning rounded-full flex items-center justify-center shrink-0">
             <WarningOctagon className="w-6 h-6" />
           </div>
           <div>
@@ -163,8 +163,8 @@ ${report.stack_trace}
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-emerald-500 font-bold">تم النسخ</span>
+                  <Check className="w-3.5 h-3.5 text-success" />
+                  <span className="text-success font-bold">تم النسخ</span>
                 </>
               ) : (
                 <>

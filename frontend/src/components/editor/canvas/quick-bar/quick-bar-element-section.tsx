@@ -309,7 +309,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     toast.success('تمت الاستعادة');
                   }}
                   aria-label="استعادة الصورة الأصلية"
-                  className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  className="h-7 w-7 p-0 rounded-md text-warning hover:bg-warning/10"
                 >
                   <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
                 </Button>

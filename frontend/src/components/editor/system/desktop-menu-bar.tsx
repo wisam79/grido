@@ -752,7 +752,7 @@ export function DesktopMenuBar() {
 
           <DropdownMenuItem
             onClick={handleRequestEmptyMediaTrash}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-rose-500 hover:text-rose-600 dark:text-rose-400"
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-destructive hover:text-destructive"
           >
             <Trash className="w-4 h-4" />
             <span className="font-medium flex-1">إفراغ سلة وسائط التطبيق</span>
@@ -837,7 +837,7 @@ export function DesktopMenuBar() {
                 e.preventDefault();
                 handleConfirmEmptyTrash();
               }}
-              className="cursor-pointer rounded-md h-8 text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
+              className="cursor-pointer rounded-md h-8 text-xs font-semibold bg-destructive-action hover:bg-destructive-action-hover text-destructive-foreground gap-1.5"
             >
               <Trash className="w-4 h-4" />
               <span>{isClearingTrash ? 'جاري الإفراغ ...' : 'إفراغ نهائي'}</span>

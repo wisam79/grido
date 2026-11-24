@@ -1,8 +1,10 @@
 import { useId } from 'react';
 
 import { Button } from '@/components/ui/button';
-import type { AppInitializationStatus } from '@/hooks/use-app-bootstrap';
 
+import { GRIDO_BRAND_GEOMETRY } from './grido-brand-mark';
+
+import type { AppInitializationStatus } from '@/hooks/use-app-bootstrap';
 import './startup-splash.css';
 
 interface StartupSplashProps {
@@ -13,6 +15,7 @@ interface StartupSplashProps {
 
 export function StartupSplash({ status = 'checking', onRetry, onClose }: StartupSplashProps) {
   const logoId = useId();
+  const { clipRect, colors } = GRIDO_BRAND_GEOMETRY;
   const needsAttention = status === 'slow' || status === 'error';
   const message =
     status === 'error'
@@ -23,7 +26,7 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
 
   return (
     <main
-      className="startup-splash font-cairo select-none"
+      className="startup-splash select-none"
       data-status={status}
       dir="rtl"
       aria-labelledby="startup-splash-title"
@@ -62,7 +65,7 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
           {/* هندسة SVG المورّدة واحدة للأجزاء وقناع اللمعة؛ بلا خلفية سوداء. */}
           <svg
             className="startup-splash__mark"
-            viewBox="0 0 1000 1000"
+            viewBox={GRIDO_BRAND_GEOMETRY.viewBox}
             width={96}
             height={96}
             aria-hidden="true"
@@ -70,11 +73,17 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
           >
             <defs>
               <clipPath id={`${logoId}-clip`}>
-                <rect x="40" y="30" width="920" height="925" rx="175" />
+                <rect
+                  x={clipRect.x}
+                  y={clipRect.y}
+                  width={clipRect.width}
+                  height={clipRect.height}
+                  rx={clipRect.rx}
+                />
               </clipPath>
               <linearGradient id={`${logoId}-fold`} x1="15%" y1="85%" x2="65%" y2="35%">
-                <stop offset="0%" stopColor="#0055e8" />
-                <stop offset="100%" stopColor="#0037a6" />
+                <stop offset="0%" stopColor={colors.foldStart} />
+                <stop offset="100%" stopColor={colors.foldEnd} />
               </linearGradient>
               <linearGradient id={`${logoId}-sheen`}>
                 <stop offset="0%" stopColor="#fff" stopOpacity="0" />
@@ -83,26 +92,26 @@ export function StartupSplash({ status = 'checking', onRetry, onClose }: Startup
               </linearGradient>
               <path
                 id={`${logoId}-body`}
-                d="M40 30H960V315H415A80 80 0 0 0 335 395V480L40 775Z"
-                fill="#0068ff"
+                d={GRIDO_BRAND_GEOMETRY.bodyPath}
+                fill={colors.primaryFace}
               />
               <path
                 id={`${logoId}-fold-shape`}
-                d="M40 775L335 480L800 945A8 8 0 0 1 794 955H40Z"
+                d={GRIDO_BRAND_GEOMETRY.foldPath}
                 fill={`url(#${logoId}-fold)`}
               />
               <path
                 id={`${logoId}-fold-edge`}
-                d="M40 775L335 480L800 945"
+                d={GRIDO_BRAND_GEOMETRY.foldEdgePath}
                 fill="none"
-                stroke="#3388ff"
+                stroke={colors.foldEdge}
                 strokeWidth="3"
                 opacity="0.7"
               />
               <path
                 id={`${logoId}-arm`}
-                d="M512 460H960V910L928 910L504 476A10 10 0 0 1 512 460Z"
-                fill="#0068ff"
+                d={GRIDO_BRAND_GEOMETRY.armPath}
+                fill={colors.primaryFace}
               />
               <clipPath id={`${logoId}-silhouette`}>
                 <use href={`#${logoId}-body`} />

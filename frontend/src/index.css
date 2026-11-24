@@ -11,15 +11,14 @@
     'IBM Plex Sans Arabic', 'Readex Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     sans-serif;
   /* ملاحظة: كان المقصود خط monospace حقيقي للقراءات الرقمية والأكواد عبر 'IBM Plex Mono'،
-     لكنه لم يُشحن أبداً في حزمة الخطوط المحلية (offline-fonts.css تشحن 12 عائلة عربية فقط
+     لكنه لم يُشحن أبداً في حزمة الخطوط المحلية (offline-fonts.css تشحن 17 عائلة خط محلية
      ولا يوجد لها @font-face ولا ملف woff2). لذلك كان كل .font-mono يسقط على خط نظام أجنبي
      (Consolas / Cascadia Mono) بمقاسات واتساع مختلفين عن بقية الواجهة، فتظهر الأرقام أكبر وغير
      متناسقة. الحل: عائلة الواجهة نفسها + أرقام جدولية (tabular-nums) تحفظ اصطفاف الأعمدة الرقمية. */
   --font-mono:
     'IBM Plex Sans Arabic', 'Readex Pro', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas',
     monospace;
-  --font-cairo: 'IBM Plex Sans Arabic', 'Readex Pro', sans-serif;
-  --font-tajawal: 'IBM Plex Sans Arabic', 'Readex Pro', sans-serif;
+  --font-cairo: 'IBM Plex Sans Arabic', 'Readex Pro', 'Cairo', system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -34,6 +33,9 @@
   --color-preview-surface: var(--preview-surface);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-action: var(--destructive-action);
+  --color-destructive-action-hover: var(--destructive-action-hover);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-accent-active: var(--accent-active); /* سطح التحديد المحايد الموحد */
@@ -148,8 +150,6 @@
 }
 
 :root {
-  --font-cairo: 'IBM Plex Sans Arabic', 'Readex Pro', 'Cairo', 'Inter', system-ui, sans-serif;
-  --font-tajawal: 'IBM Plex Sans Arabic', 'Readex Pro', 'Tajawal', 'Inter', system-ui, sans-serif;
   /* حواف سطح مكتب حادة (6px أساس) بدل 8px — البطاقات المستديرة الكبيرة
      إشارة بصرية ويب/جوال، بينما أدوات ويندوز 11 تستخدم 4–6px. */
   --radius: 0.375rem;
@@ -170,25 +170,27 @@
   --secondary: rgba(239, 246, 255, 0.85); /* Soft blue secondary tint */
   --secondary-foreground: #1e40af;
   --muted: #eef1f6; /* Tier 1: مسارات التحكم الغائرة الموحدة */
-  --muted-foreground: #64748b;
-  --muted-foreground-hover: #475569; /* نص فوق سطح hover أفتح (أغمق في الوضع الفاتح) */
+  --muted-foreground: #475569; /* 6.69:1 على #eef1f6 و7.58:1 على #ffffff */
+  --muted-foreground-hover: #334155; /* نص فوق سطح hover */
   --accent: rgba(239, 246, 255, 0.85);
   --accent-foreground: #1e40af;
   /* سطح «العنصر النشط» المحايد — للتحديد/التفعيل في المفاتيح والألسنة والأيقونات،
      بينما يبقى الأزرق (--primary) حصرياً للأوامر التعبوية والإجراءات القابلة للتنفيذ. */
   --accent-active: rgba(15, 23, 42, 0.08); /* Slate-900 @ 8% فوق الأسطح البيضاء */
-  --destructive: #dc2626;
+  --destructive: #b91c1c; /* 5.71:1 كنص فوق #eef1f6 و6.47:1 فوق #ffffff */
+  --destructive-action: #dc2626; /* 4.83:1 للأزرار التعبوية مع نص أبيض */
+  --destructive-action-hover: #b91c1c;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0; /* Crisp clean border */
   --input: #ffffff;
   --ring: #3b82f6;
 
-  /* توكنز الحالة الدلالية (Light) */
-  --success: #16a34a;
+  /* توكنز الحالة الدلالية (Light) — محققة >= 4.5:1 فوق الأسطح ومع النص الأبيض */
+  --success: #166534;
   --success-foreground: #ffffff;
-  --warning: #d97706;
+  --warning: #92400e;
   --warning-foreground: #ffffff;
-  --info: #2563eb;
+  --info: #1d4ed8;
   --info-foreground: #ffffff;
   /* سطح «الرسم الغائر» للحاويات التي تستضيف معاينة محتوى (الماسح، المعاينات) */
   --canvas-stage: #0b1220;
@@ -221,10 +223,10 @@
   --canvas-gradient-end: #8b5cf6;
   --canvas-collage-cut: #94a3b8;
   --canvas-collage-end-cut: #3b82f6;
-  --canvas-collage-selection-primary: #0078d4;
+  --canvas-collage-selection-primary: #2563eb;
   --canvas-collage-selection-secondary: #60a5fa;
-  --canvas-collage-selection-shadow: #0078d4;
-  --canvas-collage-handle: #0078d4;
+  --canvas-collage-selection-shadow: #2563eb;
+  --canvas-collage-handle: #2563eb;
   --canvas-collage-handle-foreground: #ffffff;
   /* 🖨️ خانة الكولاج الفارغة تُرسم *داخل الورقة*، والورقة مستند أبيض في الثيمين.
      لذلك تتبع هذه الرموز الورقةَ لا الثيم (قيمة واحدة في الفاتح والداكن):
@@ -243,10 +245,10 @@
   --canvas-scanner-particle-a: #e0e7ff;
   --canvas-scanner-particle-b: #38bdf8;
   --canvas-scanner-particle-c: #c084fc;
-  --canvas-doc-scanner-primary: #6366f1;
-  --canvas-doc-scanner-hover: #818cf8;
-  --canvas-doc-scanner-dark: #312e81;
-  --canvas-doc-scanner-inner: #4f46e5;
+  --canvas-doc-scanner-primary: #2563eb;
+  --canvas-doc-scanner-hover: #3b82f6;
+  --canvas-doc-scanner-dark: #1e3a8a;
+  --canvas-doc-scanner-inner: #1d4ed8;
   --canvas-doc-scanner-loupe: #ef4444;
   --canvas-preview-white: #ffffff;
   --canvas-preview-black: #09090b;
@@ -283,25 +285,22 @@
   --print-margin-line: rgba(0, 0, 0, 0.25);
 
   /* Fluent 2 Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.12), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.08);
   --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0, 0, 0, 0.15), 0 0.6px 1.8px 0 rgba(0, 0, 0, 0.1);
   --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.18), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.12);
   --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0, 0, 0, 0.22), 0 2.4px 7.2px 0 rgba(0, 0, 0, 0.16);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0, 0, 0, 0.26), 0 4.2px 12.6px 0 rgba(0, 0, 0, 0.2);
-  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0, 0, 0, 0.3), 0 9.6px 28.8px 0 rgba(0, 0, 0, 0.24);
 }
 
 .dark {
   color-scheme: dark;
   /* Grido Studio Pure Neutral Charcoal Identity for Windows 11 Fluent:
-     1. مساحة العمل الكلية (Workspace Canvas): #141414 شبه شفافة للميكا
-     2. خلفية الألواح والأشرطة (Sidebars Base): #1A1A1A شبه شفافة للأكريليك
+     1. مساحة العمل الكلية (Workspace Canvas): #141414
+     2. خلفية الألواح والأشرطة (Sidebars Base): #1A1A1A
      3. أسطح البطاقات البارزة (Cards & Panels): #242424
      4. الحقول الغائرة والممرات (Inputs & Inset): #171717
      5. الحدود والفواصل الدقيقة (Borders & Dividers): #333333
-     6. اللون المميز (Primary Accent): #3b82f6 (Vibrant Electric Blue)
+     6. اللون المميز (Primary Accent): #3b82f6 (Electric Blue) / #2563eb (Action)
   */
-  --background: #141414; /* Tier 1: خلفية مساحة العمل والحقول الغائرة الموحدة */
+  --background: #141414; /* Tier 1: خلفية مساحة العمل الموحدة */
   --foreground: #f5f5f5; /* High contrast crisp neutral white text */
   --card: #242424; /* Tier 3: أسطح البطاقات وعناصر التحكم البارزة الموحدة */
   --card-foreground: #f5f5f5;
@@ -315,18 +314,20 @@
   --preview-surface: #2a2b2f;
   --secondary: #242424; /* Tier 3: الأسطح التفاعلية الثانوية */
   --secondary-foreground: #f5f5f5;
-  --muted: #141414; /* Tier 1: الحقول والممرات الغائرة */
-  --muted-foreground: #a9afaf; /* Clear readable neutral secondary text — 4.6:1 على #141414 بدل 3.9:1 لـ A3A3A3 */
+  --muted: #171717; /* Tier 4: الحقول والممرات الغائرة المتميزة عن الخلفية */
+  --muted-foreground: #a9afaf; /* Clear readable neutral secondary text — 4.6:1+ */
   --muted-foreground-hover: #c9cfcf; /* نص فوق سطح hover أفتح — 6.6:1 على #1A1A1A */
   --accent: #242424; /* Tier 3: Secondary hover and accents */
   --accent-foreground: #f5f5f5; /* نص محايد عالي التباين — الأزرق لم يعد لوناً للحالة */
   /* سطح «العنصر النشط» المحايد — يطابق نهج ويندوز 11: بطاقة فحمية أفتح من الخلفية
      بحد رقيق، بلا أي لون. */
   --accent-active: rgba(255, 255, 255, 0.09); /* White @ 9% فوق الفحمي */
-  --destructive: #ef4444;
+  --destructive: #f87171; /* 5.61:1 كنص فوق #242424 و6.66:1 فوق #141414 */
+  --destructive-action: #dc2626; /* 4.83:1 للأزرار التعبوية مع نص أبيض */
+  --destructive-action-hover: #b91c1c;
   --destructive-foreground: #ffffff;
-  --border: #2b2b2b; /* الحدود والفواصل الرمادية المحايدة الدقيقة */
-  --input: #141414; /* Tier 1: Inset inputs */
+  --border: #333333; /* الحدود والفواصل الرمادية المحايدة الدقيقة */
+  --input: #171717; /* Tier 4: Inset inputs */
   --ring: #3b82f6;
 
   /* توكنز الحالة الدلالية (Dark) */
@@ -346,7 +347,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #242424; /* Tier 3: أسطح البطاقات والقوائم النشطة */
   --sidebar-accent-foreground: #60a5fa;
-  --sidebar-border: #2b2b2b; /* الحدود والفواصل */
+  --sidebar-border: #333333; /* الحدود والفواصل */
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Dark) */
@@ -385,10 +386,10 @@
   --canvas-scanner-particle-a: #c7d2fe;
   --canvas-scanner-particle-b: #7dd3fc;
   --canvas-scanner-particle-c: #d8b4fe;
-  --canvas-doc-scanner-primary: #818cf8;
-  --canvas-doc-scanner-hover: #a5b4fc;
-  --canvas-doc-scanner-dark: #4f46e5;
-  --canvas-doc-scanner-inner: #6366f1;
+  --canvas-doc-scanner-primary: #60a5fa;
+  --canvas-doc-scanner-hover: #93c5fd;
+  --canvas-doc-scanner-dark: #1d4ed8;
+  --canvas-doc-scanner-inner: #2563eb;
   --canvas-doc-scanner-loupe: #f87171;
   --canvas-preview-white: #ffffff;
   --canvas-preview-black: #000000;
@@ -405,8 +406,7 @@
   --ruler-tick-major: #47474f;
   --ruler-tick-label-active: #d4d4d8;
 
-  /* Workspace Backdrop (Dark) — الخلفية الفحمية المطابقة لهوية الثيم
-     (البند 1 في تعريف الهوية أعلاه: مساحة العمل #141414 مخفّفة للميكا) */
+  /* Workspace Backdrop (Dark) — الخلفية الفحمية المطابقة لهوية الثيم */
   --workspace-bg: #141414;
   --workspace-grid-dot: rgba(255, 255, 255, 0.06);
   --workspace-glow: rgba(59, 130, 246, 0.05);
@@ -425,12 +425,9 @@
   --print-margin-line: rgba(15, 23, 42, 0.32);
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.3), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.2);
   --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0, 0, 0, 0.35), 0 0.6px 1.8px 0 rgba(0, 0, 0, 0.24);
   --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.4), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.28);
   --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0, 0, 0, 0.45), 0 2.4px 7.2px 0 rgba(0, 0, 0, 0.32);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0, 0, 0, 0.5), 0 4.2px 12.6px 0 rgba(0, 0, 0, 0.36);
-  --fluent-shadow-64: 0 40px 80px 0 rgba(0, 0, 0, 0.55), 0 8px 24px 0 rgba(0, 0, 0, 0.4);
 }
 
 @layer base {
@@ -487,7 +484,7 @@
       'Segoe UI',
       Roboto,
       sans-serif;
-    font-size: 15.5px;
+    font-size: var(--text-base);
     user-select: none;
     cursor: default;
     overscroll-behavior: none;
@@ -556,20 +553,11 @@
   }
 
   /* ── حلقة التركيز الموحّدة (H12 من تدقيق 2026-10-08) ─────────────────────
-     كان هناك نظامان متعارضان: قاعدة `outline` عامة أدناه، وكلاسات `ring-*`
-     التي تستخدمها ~50 مكوّناً. و`*:focus { outline: none }` كان يقتل الحدّ
-     الافتراضي للمتصفح فيسقط أي عنصر استخدم `focus:outline-none` بلا حلقة
-     (أزرار النافذة الثلاثة). القرار المعتمد: `ring-*` هو النظام الرسمي.
-     - أُزيلت قاعدة القتل `*:focus { outline: none }` — هي سبب الثغرة.
-     - تبقّت القاعدة أدناه كشبكة أمان للعناصر الأصلية النقية (input/select/
-       button خام) التي لا تحمل كلاسات ring، بنفس البصريات (2px + إزاحة 2px)
-       حتى لا يتبيّن فرق بين النظامين. */
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  button:focus-visible,
-  a:focus-visible,
-  [tabindex]:not([tabindex='-1']):focus-visible {
+     شبكة أمان للعناصر الأصلية النقية التي لا تحمل حلقة Tailwind (`focus-visible:ring-*`)
+     لتجنب رسم outline مزدوج فوق box-shadow. */
+  :where(input, textarea, select, button, a, [tabindex]:not([tabindex='-1'])):not(
+      [class*='focus-visible:ring']
+    ):focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
@@ -678,13 +666,11 @@
   }
 
   /* إخفاء شريط التمرير تماماً لمنع تشوهات Wails WebView2 */
-  .scrollbar-none,
-  .no-scrollbar {
+  .scrollbar-none {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
   }
-  .scrollbar-none::-webkit-scrollbar,
-  .no-scrollbar::-webkit-scrollbar {
+  .scrollbar-none::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
@@ -741,28 +727,16 @@
     paint-order: stroke fill markers;
   }
 
-  .font-cairo {
-    font-family: 'IBM Plex Sans Arabic', 'Readex Pro', 'Cairo', system-ui, sans-serif;
-  }
-  .font-tajawal {
-    font-family: 'IBM Plex Sans Arabic', 'Readex Pro', 'Tajawal', system-ui, sans-serif;
-  }
-  .glass-panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-  }
-
   /* ─── Fluent 2 Panel Motion (Spring Curve) ─────────────────── */
   /* حركة فتح/طي الألواح الجانبية بمنحنى الزنبرك المعتمد في Fluent 2
-     (cubic-bezier(0.1, 0.9, 0.2, 1)) — إحساس طبيعي وسلس مطابق لنوافذ ويندوز 11.
+     (cubic-bezier(0.1, 0.9, 0.2, 1)) بمدة 150ms متوافقة مع سطح المكتب.
      وضع reduced-motion يعطلها تلقائياً عبر القاعدة العامة أعلاه. */
   .fluent-panel-motion {
     transition:
-      width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      min-width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      max-width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
-      border-color 200ms cubic-bezier(0.1, 0.9, 0.2, 1);
-    will-change: width;
+      width 150ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      min-width 150ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      max-width 150ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      border-color 150ms cubic-bezier(0.1, 0.9, 0.2, 1);
   }
 
   /* أنيميشن طي الألواح الجانبية: تدرج لون الإطار إلى شفاف بدون قفزة في border-width */
@@ -772,8 +746,7 @@
   }
 
   .fluent-panel-content-motion {
-    transition: transform 200ms cubic-bezier(0.1, 0.9, 0.2, 1);
-    will-change: transform;
+    transition: transform 150ms cubic-bezier(0.1, 0.9, 0.2, 1);
   }
 
   /* تلاشي علوي خفيف فوق محتوى اللوح — إشارة بصرية هادئة لقابلية التمرير
@@ -789,22 +762,22 @@
 
   /* ─── Microsoft Fluent 2 Surface & Material System ─────────── */
   .fluent-acrylic {
-    background-color: var(--card);
+    background-color: color-mix(in srgb, var(--popover) 86%, transparent);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border: 1px solid var(--border);
   }
   .dark .fluent-acrylic {
-    background-color: var(--card);
+    background-color: color-mix(in srgb, var(--popover) 86%, transparent);
     border-color: var(--border);
   }
 
   .fluent-mica {
-    background-color: var(--background);
+    background-color: color-mix(in srgb, var(--background) 92%, transparent);
     border: 1px solid var(--border);
   }
   .dark .fluent-mica {
-    background-color: var(--background);
+    background-color: color-mix(in srgb, var(--background) 92%, transparent);
     border-color: var(--border);
   }
 
@@ -817,15 +790,10 @@
   }
 
   .fluent-smoke-backdrop {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.65);
   }
 
   /* ─── Microsoft Fluent 2 Elevation Shadows ─────────────────── */
-  .shadow-fluent-2 {
-    box-shadow: var(--fluent-shadow-2);
-  }
   .shadow-fluent-4 {
     box-shadow: var(--fluent-shadow-4);
   }
@@ -835,102 +803,38 @@
   .shadow-fluent-16 {
     box-shadow: var(--fluent-shadow-16);
   }
-  .shadow-fluent-28 {
-    box-shadow: var(--fluent-shadow-28);
-  }
-  .shadow-fluent-64 {
-    box-shadow: var(--fluent-shadow-64);
-  }
-
-  /* ─── Microsoft Fluent 2 Dual Focus Ring ──────────────────── */
-  .fluent-focus-ring {
-    outline: none !important;
-  }
-  .fluent-focus-ring:focus-visible {
-    outline: 2px solid var(--primary) !important;
-    outline-offset: 2px !important;
-  }
 
   /* ─── Fluent 2 Command Groups (Flat CommandBar Cluster) ─── */
   .fluent-command-group {
     @apply flex items-center gap-0.5;
   }
 
-  /* ─── Native Visual Depth & High-Contrast System (4-Tier Hierarchy) ─── */
-  .native-depth-sidebar {
-    background-color: var(--sidebar);
-    border-color: var(--sidebar-border);
+  /* Fluent 2 Wait UX: هيكل تحميل نابض — يُستخدم مع مكوّن Skeleton */
+  .fluent-shimmer {
+    background-image: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.12) 45%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.12) 55%,
+      transparent 80%
+    );
+    background-size: 200% 100%;
+    animation: fluent-shimmer 1.6s linear infinite;
   }
 
-  .dark .native-depth-sidebar {
-    background-color: var(--sidebar); /* Tier 2: الخلفية الثانوية للألواح */
-    border-color: var(--border); /* Tier 4: الحدود الفاصلة */
-  }
-
-  .native-card-elevated {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  .fluent-hover-lift {
     transition:
-      border-color 0.15s ease,
-      background-color 0.15s ease;
+      transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 150ms ease;
   }
-
-  .dark .native-card-elevated {
-    background-color: var(--card); /* Tier 3: أسطح البطاقات البارزة */
-    border-color: var(--border); /* Tier 4: الحدود */
-    box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.35);
+  .fluent-hover-lift:hover {
+    transform: translateY(-1.5px);
+    box-shadow: var(--fluent-shadow-4);
   }
-
-  .native-inset-box {
-    background-color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .dark .native-inset-box {
-    background-color: var(--background); /* Tier 1: الحاويات الغائرة وحقول الإدخال */
-    border-color: var(--border); /* Tier 4: الحدود */
-    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.45);
-  }
-
-  .native-header-elevated {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-  }
-
-  /* R24: توسيع منطقة النقر إلى 44px دون تغيير الحجم البصري المدمج (28-32px).
-     أضف `touch-hit-44 relative` لأي زر أيقوني مدمج — يبقى المظهر Figma-like
-     لكن الإمساك بالفأرة/اللمس يصبح 44×44 عبر طبقة شبحية. */
-  .touch-hit-44 {
-    position: relative;
-  }
-  .touch-hit-44::after {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .checkerboard {
-    background-image:
-      linear-gradient(45deg, oklch(0.9 0 0) 25%, transparent 25%),
-      linear-gradient(-45deg, oklch(0.9 0 0) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, oklch(0.9 0 0) 75%),
-      linear-gradient(-45deg, transparent 75%, oklch(0.9 0 0) 75%);
-    background-size: 16px 16px;
-    background-position:
-      0 0,
-      0 8px,
-      8px -8px,
-      -8px 0px;
-  }
-  .dark .checkerboard {
-    background-image:
-      linear-gradient(45deg, oklch(0.25 0 0) 25%, transparent 25%),
-      linear-gradient(-45deg, oklch(0.25 0 0) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, oklch(0.25 0 0) 75%),
-      linear-gradient(-45deg, transparent 75%, oklch(0.25 0 0) 75%);
+  .fluent-hover-lift:active {
+    transform: translateY(0px) scale(0.98);
   }
 }
 
@@ -1017,7 +921,7 @@
   overflow: hidden !important;
   min-height: 38px !important;
   padding: 8px 14px !important;
-  border-radius: var(--radius-lg) !important; /* 10px — متوافق مع سلم حواف Fluent 2 (4/6/10px) */
+  border-radius: var(--radius-lg) !important; /* 6px — متوافق مع سلم حواف Fluent 2 (4/6/10px) */
   background: var(--card) !important;
   color: var(--foreground) !important;
   box-shadow: var(--fluent-shadow-16) !important;
@@ -1068,17 +972,17 @@
   }
 }
 
-/* زر الإغلاق بنمط Fluent 2 */
+/* زر الإغلاق بنمط Fluent 2 — يحترم الاتجاه المنطقي وحد النقر الأدنى 28px */
 [data-sonner-toast] [data-close-button] {
   position: relative !important;
   left: auto !important;
   right: auto !important;
   top: auto !important;
   transform: none !important;
-  margin-right: auto !important;
-  margin-left: 0 !important;
-  width: 18px !important;
-  height: 18px !important;
+  margin-inline-start: auto !important;
+  margin-inline-end: 0 !important;
+  width: 28px !important;
+  height: 28px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
@@ -1087,7 +991,7 @@
   border-radius: 6px !important;
   background: transparent !important;
   color: var(--muted-foreground) !important;
-  opacity: 0.5 !important;
+  opacity: 0.7 !important;
   transition: all 0.15s ease !important;
 }
 
@@ -1097,30 +1001,30 @@
   color: var(--foreground) !important;
 }
 
-/* إضاءة ولمسات الحالة الدلالية لـ Fluent 2 */
+/* إضاءة ولمسات الحالة الدلالية لـ Fluent 2 — مرتبطة بتوكنز الثيم */
 [data-sonner-toast][data-type='success'] {
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  background: color-mix(in srgb, var(--card) 94%, #10b981 6%) !important;
+  border-color: color-mix(in srgb, var(--success) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--card) 94%, var(--success) 6%) !important;
 }
 
 [data-sonner-toast][data-type='error'] {
-  border-color: rgba(244, 63, 94, 0.4) !important;
-  background: color-mix(in srgb, var(--card) 92%, #f43f5e 8%) !important;
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--card) 92%, var(--destructive) 8%) !important;
 }
 
 [data-sonner-toast][data-type='warning'] {
-  border-color: rgba(245, 158, 11, 0.35) !important;
-  background: color-mix(in srgb, var(--card) 94%, #f59e0b 6%) !important;
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--card) 94%, var(--warning) 6%) !important;
 }
 
 [data-sonner-toast][data-type='info'] {
-  border-color: rgba(59, 130, 246, 0.35) !important;
-  background: color-mix(in srgb, var(--card) 94%, #3b82f6 6%) !important;
+  border-color: color-mix(in srgb, var(--info) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--card) 94%, var(--info) 6%) !important;
 }
 
 [data-sonner-toast][data-type='loading'] {
-  border-color: rgba(99, 102, 241, 0.35) !important;
-  background: color-mix(in srgb, var(--card) 94%, #6366f1 6%) !important;
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--card) 94%, var(--primary) 6%) !important;
 }
 
 /* سطح مساحة العمل — كل قيمه من رموز الثيم في :root و .dark (لا قيم صلبة هنا)،
@@ -1142,68 +1046,9 @@
   overscroll-behavior: contain;
 }
 
-/* رسومات متحركة خفيفة لتحسين تجربة المستخدم دون التأثير على الأداء */
-@keyframes slide-fade-in-rtl {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-fade-in-ltr {
-  from {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.animate-panel-left {
-  animation: slide-fade-in-ltr 0.12s ease-out forwards;
-  will-change: transform, opacity;
-}
-
-.animate-panel-right {
-  animation: slide-fade-in-rtl 0.12s ease-out forwards;
-  will-change: transform, opacity;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.1s ease-out forwards;
-  will-change: opacity;
-}
-
 /* ==========================================================================
    تأثيرات المايكرو أنيميشن القياسية بنظام Microsoft Fluent 2
-   (Fluent 2 Micro-Animations, Spring Physics & AI Shimmer Aura)
    ========================================================================== */
-
-@keyframes fluent-pop-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
 @keyframes fluent-shimmer {
   0% {
@@ -1212,104 +1057,4 @@
   100% {
     background-position: 200% 0;
   }
-}
-
-/* Fluent 2 Wait UX: هيكل تحميل نابض — يُستخدم مع مكوّن Skeleton */
-.fluent-shimmer {
-  background-image: linear-gradient(
-    100deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.12) 45%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.12) 55%,
-    transparent 80%
-  );
-  background-size: 200% 100%;
-  animation: fluent-shimmer 1.6s linear infinite;
-}
-
-@keyframes fluent-pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0);
-  }
-}
-
-@keyframes fluent-scan-laser {
-  0% {
-    transform: translateY(0%);
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateY(100%);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0%);
-    opacity: 0.8;
-  }
-}
-
-/* فئات المايكرو أنيميشن المتقدمة */
-.fluent-pop {
-  animation: fluent-pop-in 100ms ease-out forwards;
-  will-change: transform, opacity;
-}
-
-.fluent-press {
-  transition:
-    transform 120ms cubic-bezier(0.1, 0.9, 0.2, 1),
-    box-shadow 150ms ease,
-    background-color 150ms ease;
-}
-.fluent-press:hover {
-  transform: translateY(-0.5px);
-}
-.fluent-press:active {
-  transform: translateY(0.5px) scale(0.96);
-}
-
-.fluent-hover-lift {
-  transition:
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 150ms ease;
-}
-.fluent-hover-lift:hover {
-  transform: translateY(-1.5px);
-  box-shadow: var(--fluent-shadow-4);
-}
-.fluent-hover-lift:active {
-  transform: translateY(0px) scale(0.98);
-}
-
-/* حركة عينات الألوان والشرائح */
-.fluent-swatch {
-  transition:
-    transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 150ms ease;
-}
-.fluent-swatch:hover {
-  transform: scale(1.12);
-  z-index: 10;
-}
-.fluent-swatch:active {
-  transform: scale(0.94);
-}
-
-/* تأثير التكبير البسيط عند التفاعل مع الأزرار */
-.interactive-btn {
-  transition:
-    transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1),
-    background-color 0.15s ease,
-    opacity 0.15s ease;
-}
-.interactive-btn:hover {
-  transform: translateY(-0.5px) scale(1.015);
-}
-.interactive-btn:active {
-  transform: translateY(0.5px) scale(0.96);
 }
