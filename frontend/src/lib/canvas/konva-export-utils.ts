@@ -6,6 +6,7 @@ import {
   getCapturedOriginal,
   getDisplaySource,
   getOriginalForDisplayedElement,
+  registerDisplayOwnership,
 } from './display-image';
 
 import type { CaptureOriginalLease } from './display-image';
@@ -139,7 +140,7 @@ interface KonvaImageNodeLike {
 export interface UpgradedImageRecord {
   node: KonvaImageNodeLike;
   image: CanvasImageSource;
-  crop?: { x: number; y: number; width: number; height: number };
+  crop?: CropRect;
 }
 
 function getSourceDimensions(src: CanvasImageSource): { width: number; height: number } {
@@ -150,29 +151,127 @@ function getSourceDimensions(src: CanvasImageSource): { width: number; height: n
   };
 }
 
-/**
- * يجلب الأصول الكاملة الغائبة عن الخريطة قبل الترقية المتزامنة — عناصر العرض
- * المشتقة (2048px من Go، ملكية الصور) لا تحمل أصلها في الخريطة الضعيفة، فيُجلب
- * هنا انتظاراً عبر getOriginalForDisplayedElement (كاش وعد ومنع تكرار داخل
- * display-image). captureStageBlob غير متزامنة أصلاً فالانتظار ممكن؛ الفشل
- * الفردي لا يوقف الالتقاط — العقدة تبقى على مشتقها (fallback كامل).
- */
+interface RequiredCaptureImage {
+  root: Konva.Node;
+  node: Konva.Image;
+}
+
+function assertCaptureImageSource(
+  source: CanvasImageSource | undefined | null,
+  nodeId: string,
+): asserts source is CanvasImageSource {
+  const dimensions = source
+    ? source instanceof HTMLImageElement
+      ? { width: source.naturalWidth, height: source.naturalHeight }
+      : source instanceof HTMLVideoElement
+        ? { width: source.videoWidth, height: source.videoHeight }
+        : getSourceDimensions(source)
+    : { width: 0, height: 0 };
+  if (
+    !Number.isFinite(dimensions.width) ||
+    !Number.isFinite(dimensions.height) ||
+    dimensions.width <= 0 ||
+    dimensions.height <= 0 ||
+    (source instanceof HTMLImageElement && !source.complete) ||
+    (source instanceof HTMLVideoElement && source.readyState < 2)
+  ) {
+    throw new Error(`Required capture image "${nodeId}" is not ready`);
+  }
+}
+
+function resolveRequiredCaptureImages(
+  stage: Konva.Stage,
+  nodeIds?: Iterable<string>,
+): Map<string, RequiredCaptureImage> {
+  const images = new Map<string, RequiredCaptureImage>();
+  for (const nodeId of nodeIds ?? []) {
+    const root = nodeId ? stage.findOne<Konva.Node>(`#${nodeId}`) : undefined;
+    const node =
+      root?.getClassName() === 'Image'
+        ? (root as Konva.Image)
+        : root && 'findOne' in root
+          ? (root as Konva.Group).findOne<Konva.Image>('Image')
+          : undefined;
+    if (!root || !node || node.getClassName() !== 'Image' || node.getStage() !== stage) {
+      throw new Error(`Required capture image "${nodeId}" is missing`);
+    }
+    if (!node.isVisible()) {
+      throw new Error(`Required capture image "${nodeId}" is not visible`);
+    }
+    assertCaptureImageSource(node.image(), nodeId);
+    images.set(nodeId, { root, node });
+  }
+  return images;
+}
+
+function recheckRequiredCaptureImages(
+  stage: Konva.Stage,
+  required: Map<string, RequiredCaptureImage>,
+): void {
+  const current = resolveRequiredCaptureImages(stage, required.keys());
+  for (const [nodeId, image] of required) {
+    const found = current.get(nodeId)!;
+    if (found.root !== image.root || found.node !== image.node) {
+      throw new Error(`Required capture image "${nodeId}" changed during capture`);
+    }
+  }
+}
+
+async function decodeCaptureImage(source: CanvasImageSource, nodeId: string): Promise<void> {
+  if (source instanceof HTMLImageElement && typeof source.decode === 'function') {
+    await source.decode();
+  }
+  assertCaptureImageSource(source, nodeId);
+}
+
+/** Preloads through the existing ownership/lease cache; required images never fall back. */
 export async function preloadImagesForFullResolution(
   stage: Konva.Stage,
   lease: CaptureOriginalLease,
+  requireImageNodeIds?: Iterable<string>,
 ): Promise<void> {
-  try {
+  const preload = async () => {
+    const required = resolveRequiredCaptureImages(stage, requireImageNodeIds);
+    const requiredNodes = new Map(Array.from(required, ([id, { node }]) => [node, id]));
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
-    const jobs: Promise<HTMLImageElement | null>[] = [];
+    const jobs: Promise<unknown>[] = [];
     for (const node of nodes) {
+      const nodeId = requiredNodes.get(node as Konva.Image);
       const current = node.image();
-      if (current instanceof HTMLImageElement) {
-        jobs.push(getOriginalForDisplayedElement(current, lease));
+      const source =
+        nodeId === undefined
+          ? current
+          : (getDisplaySource(current as HTMLCanvasElement) ?? current);
+      if (source instanceof HTMLImageElement) {
+        const load = async () => {
+          if (nodeId !== undefined) {
+            // Idempotent: a derivative keeps its registered original URL. Ordinary
+            // originals gain self-ownership so null means a real preload failure.
+            registerDisplayOwnership(source, source.currentSrc || source.src);
+          }
+          const original = await getOriginalForDisplayedElement(source, lease);
+          if (nodeId !== undefined) {
+            assertCaptureImageSource(original, nodeId);
+            await decodeCaptureImage(original, nodeId);
+          }
+        };
+        jobs.push(
+          nodeId !== undefined || requireImageNodeIds === undefined
+            ? load()
+            : load().catch((err) => logger.warn('Failed to preload full resolution source', err)),
+        );
       }
     }
     await Promise.all(jobs);
-  } catch (err) {
-    logger.warn('Failed to preload full resolution sources for capture', err);
+  };
+  if (requireImageNodeIds !== undefined) {
+    await preload();
+  } else {
+    try {
+      await preload();
+    } catch (err) {
+      logger.warn('Failed to preload full resolution sources for capture', err);
+    }
   }
 }
 
@@ -191,73 +290,106 @@ export async function preloadImagesForFullResolution(
 export function upgradeImagesToFullResolution(
   stage: Konva.Stage,
   lease: CaptureOriginalLease,
+  requireImageNodeIds?: Iterable<string>,
 ): UpgradedImageRecord[] {
   const restored: UpgradedImageRecord[] = [];
+  const required = resolveRequiredCaptureImages(stage, requireImageNodeIds);
+  const requiredNodes = new Map(Array.from(required, ([id, { node }]) => [node, id]));
+  let completed = false;
   try {
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
     for (const node of nodes) {
-      const current = node.image();
-      let source = getDisplaySource(current as HTMLCanvasElement | null);
-      if ((!source || source === current) && current instanceof HTMLImageElement) {
-        source = getCapturedOriginal(current, lease);
-      }
-      if (source && current !== source) {
-        const record: UpgradedImageRecord = { node, image: current as CanvasImageSource };
-        const curDims = getSourceDimensions(current as CanvasImageSource);
-        const srcDims = getSourceDimensions(source);
-        const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
-        const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
-        if (
-          cw > 0 &&
-          ch > 0 &&
-          curDims.width > 0 &&
-          curDims.height > 0 &&
-          srcDims.width > 0 &&
-          srcDims.height > 0 &&
-          typeof node.cropX === 'function' &&
-          typeof node.cropY === 'function' &&
-          typeof node.cropWidth === 'function' &&
-          typeof node.cropHeight === 'function'
-        ) {
-          const cx = node.cropX();
-          const cy = node.cropY();
-          record.crop = { x: cx, y: cy, width: cw, height: ch };
-          const sx = srcDims.width / curDims.width;
-          const sy = srcDims.height / curDims.height;
-          node.cropX(Math.round(cx * sx));
-          node.cropY(Math.round(cy * sy));
-          node.cropWidth(Math.round(cw * sx));
-          node.cropHeight(Math.round(ch * sy));
+      const nodeId = requiredNodes.get(node as Konva.Image);
+      try {
+        const current = node.image();
+        let source = getDisplaySource(current as HTMLCanvasElement | null);
+        if (nodeId !== undefined && source) {
+          source = getCapturedOriginal(source, lease) ?? source;
         }
-        restored.push(record);
-        node.image(source);
+        if ((!source || source === current) && current instanceof HTMLImageElement) {
+          source = getCapturedOriginal(current, lease);
+        }
+        if (nodeId !== undefined) {
+          if (current instanceof HTMLImageElement && !source) {
+            throw new Error(`Required capture image "${nodeId}" original is missing`);
+          }
+          assertCaptureImageSource(source ?? current, nodeId);
+        }
+        if (source && current !== source) {
+          const record: UpgradedImageRecord = { node, image: current as CanvasImageSource };
+          // Register restoration before the first crop/image setter can throw.
+          restored.push(record);
+          const curDims = getSourceDimensions(current as CanvasImageSource);
+          const srcDims = getSourceDimensions(source);
+          const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
+          const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
+          if (
+            cw > 0 &&
+            ch > 0 &&
+            curDims.width > 0 &&
+            curDims.height > 0 &&
+            srcDims.width > 0 &&
+            srcDims.height > 0 &&
+            typeof node.cropX === 'function' &&
+            typeof node.cropY === 'function' &&
+            typeof node.cropWidth === 'function' &&
+            typeof node.cropHeight === 'function'
+          ) {
+            const cx = node.cropX();
+            const cy = node.cropY();
+            record.crop = { x: cx, y: cy, width: cw, height: ch };
+            const sx = srcDims.width / curDims.width;
+            const sy = srcDims.height / curDims.height;
+            node.cropX(Math.round(cx * sx));
+            node.cropY(Math.round(cy * sy));
+            node.cropWidth(Math.round(cw * sx));
+            node.cropHeight(Math.round(ch * sy));
+          }
+          node.image(source);
+        }
+      } catch (err) {
+        if (nodeId !== undefined || requireImageNodeIds === undefined) throw err;
+        logger.warn('Failed to upgrade image node to full resolution', err);
       }
     }
     if (restored.length > 0) stage.batchDraw();
+    completed = true;
   } catch (err) {
+    if (required.size > 0) throw err;
     logger.warn('Failed to upgrade image nodes to full resolution', err);
+  } finally {
+    // On strict rejection the outer transaction never receives these records.
+    if (!completed && required.size > 0) restoreImageNodes(restored);
   }
   return restored;
 }
 
 export function restoreImageNodes(restored: UpgradedImageRecord[]): void {
   for (const item of restored) {
-    try {
-      item.node.image(item.image);
-      if (
-        item.crop &&
-        typeof item.node.cropX === 'function' &&
-        typeof item.node.cropY === 'function' &&
-        typeof item.node.cropWidth === 'function' &&
-        typeof item.node.cropHeight === 'function'
-      ) {
-        item.node.cropX(item.crop.x);
-        item.node.cropY(item.crop.y);
-        item.node.cropWidth(item.crop.width);
-        item.node.cropHeight(item.crop.height);
+    const restorations: Array<() => void> = [() => item.node.image(item.image)];
+    if (item.crop) {
+      const crop = item.crop;
+      restorations.push(
+        () => {
+          item.node.cropX?.(crop.x);
+        },
+        () => {
+          item.node.cropY?.(crop.y);
+        },
+        () => {
+          item.node.cropWidth?.(crop.width);
+        },
+        () => {
+          item.node.cropHeight?.(crop.height);
+        },
+      );
+    }
+    for (const restore of restorations) {
+      try {
+        restore();
+      } catch {
+        // A destroyed node/setter must not skip other image/crop restorations.
       }
-    } catch {
-      // تجاهل عقدة دُمّرت أثناء الالتقاط
     }
   }
 }
@@ -314,107 +446,122 @@ export async function swapNodeImagesForCapture(
   overrides: Array<{ nodeId: string; src: string }>,
   timeoutMs = 8000,
   signal?: AbortSignal,
+  requireImageNodeIds?: Iterable<string>,
 ): Promise<() => void> {
-  const applied: Array<{ node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect }> =
-    [];
+  const applied: UpgradedImageRecord[] = [];
   const loaded = new Map<string, HTMLImageElement>();
+  const required = resolveRequiredCaptureImages(stage, requireImageNodeIds);
+  const requiredNodes = new Set(Array.from(required.values(), ({ node }) => node));
+  const findImage = (nodeId: string) => {
+    const found = stage.findOne(`#${nodeId}`) as unknown as
+      (KonvaImageNodeLike & { findOne?: (sel: string) => unknown }) | null;
+    return (
+      found && typeof found.image !== 'function' && typeof found.findOne === 'function'
+        ? found.findOne('Image')
+        : found
+    ) as KonvaImageNodeLike | null;
+  };
+  const isRequiredOverride = (nodeId: string) =>
+    required.size > 0 &&
+    (required.has(nodeId) || requiredNodes.has(findImage(nodeId) as Konva.Image));
+  const jobs = new Map<string, Promise<HTMLImageElement>>();
 
   await Promise.all(
     overrides.map(async ({ nodeId, src }) => {
-      if (!nodeId || !src || loaded.has(src)) return;
-      try {
-        const img = await raceDeadline(
-          loadImageElement(src, signal),
-          'readiness',
-          timeoutMs,
-          signal,
-        );
+      const requiredOverride = isRequiredOverride(nodeId);
+      if (!nodeId || !src) {
+        if (requiredOverride)
+          throw new Error(`Required capture image "${nodeId}" override is missing`);
+        return;
+      }
+      const load = async () => {
+        let job = jobs.get(src);
+        if (!job) {
+          job = raceDeadline(loadImageElement(src, signal), 'readiness', timeoutMs, signal);
+          jobs.set(src, job);
+        }
+        const img = await job;
+        if (requiredOverride) {
+          await raceDeadline(decodeCaptureImage(img, nodeId), 'readiness', timeoutMs, signal);
+        }
         loaded.set(src, img);
-      } catch (e) {
-        if (signal?.aborted || e instanceof CaptureStageTimeoutError) throw e;
-        // فشل تحميل بديل واحد لا يوقف الالتقاط — تبقى العقدة على مصدرها
-        logger.warn('Failed to preload upgraded print image:', src, e);
+      };
+      if (requiredOverride) {
+        await load();
+      } else {
+        try {
+          await load();
+        } catch (e) {
+          if (signal?.aborted || e instanceof CaptureStageTimeoutError) throw e;
+          // Default callers retain their current source after an optional failure.
+          logger.warn('Failed to preload upgraded print image:', src, e);
+        }
       }
     }),
   );
+  if (signal?.aborted) throw abortError(signal);
+  recheckRequiredCaptureImages(stage, required);
 
-  for (const { nodeId, src } of overrides) {
-    const image = loaded.get(src);
-    if (!image) continue;
-    try {
-      const found = stage.findOne(`#${nodeId}`) as unknown as
-        (KonvaImageNodeLike & { findOne?: (sel: string) => unknown }) | null;
-      const node = (found &&
-      typeof found.image !== 'function' &&
-      typeof found.findOne === 'function'
-        ? found.findOne('Image')
-        : found) as unknown as KonvaImageNodeLike | null;
-      if (!node || typeof node.image !== 'function') continue;
-      const current = node.image() as CanvasImageSource;
-      const record: { node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect } = {
-        node,
-        image: current,
-      };
-      // إعادة قياس القصّة بنسبة newDims/oldDims تماماً كمنطق
-      // upgradeImagesToFullResolution أعلاه — راستر الطباعة أكبر من المصدر
-      // الذي حُسبت عليه قصّة coverCrop بفضاء نسخة العرض، وبلا ذلك يظل
-      // إطار القص القديم عالقاً في الزاوية العلوية للمكبَّر.
-      const oldDims = getSourceDimensions(current);
-      const newDims = getSourceDimensions(image);
-      const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
-      const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
-      if (
-        cw > 0 &&
-        ch > 0 &&
-        oldDims.width > 0 &&
-        oldDims.height > 0 &&
-        newDims.width > 0 &&
-        newDims.height > 0 &&
-        typeof node.cropX === 'function' &&
-        typeof node.cropY === 'function' &&
-        typeof node.cropWidth === 'function' &&
-        typeof node.cropHeight === 'function'
-      ) {
-        const cx = node.cropX();
-        const cy = node.cropY();
-        record.crop = { x: cx, y: cy, width: cw, height: ch };
-        const sx = newDims.width / oldDims.width;
-        const sy = newDims.height / oldDims.height;
-        node.cropX(Math.round(cx * sx));
-        node.cropY(Math.round(cy * sy));
-        node.cropWidth(Math.round(cw * sx));
-        node.cropHeight(Math.round(ch * sy));
-      }
-      applied.push(record);
-      node.image(image);
-    } catch (e) {
-      logger.warn('Failed to swap node image for capture:', nodeId, e);
-    }
-  }
-  if (applied.length > 0) stage.batchDraw();
-
-  return () => {
-    for (const item of applied) {
+  const restore = () => {
+    restoreImageNodes([...applied].reverse());
+    if (applied.length > 0) stage.batchDraw();
+  };
+  let completed = false;
+  try {
+    for (const { nodeId, src } of overrides) {
+      const requiredOverride = isRequiredOverride(nodeId);
+      const image = loaded.get(src);
+      if (!image) continue;
       try {
-        item.node.image(item.image);
-        if (
-          item.crop &&
-          typeof item.node.cropX === 'function' &&
-          typeof item.node.cropY === 'function' &&
-          typeof item.node.cropWidth === 'function' &&
-          typeof item.node.cropHeight === 'function'
-        ) {
-          item.node.cropX(item.crop.x);
-          item.node.cropY(item.crop.y);
-          item.node.cropWidth(item.crop.width);
-          item.node.cropHeight(item.crop.height);
+        const node = findImage(nodeId);
+        if (!node || typeof node.image !== 'function') {
+          if (requiredOverride) throw new Error(`Required capture image "${nodeId}" is missing`);
+          continue;
         }
-      } catch {
-        // تجاهل عقدة دُمّرت أثناء الالتقاط
+        const current = node.image() as CanvasImageSource;
+        if (requiredOverride) assertCaptureImageSource(image, nodeId);
+        const record: UpgradedImageRecord = { node, image: current };
+        // Keep rollback reachable even if a crop/image setter throws midway.
+        applied.push(record);
+        const oldDims = getSourceDimensions(current);
+        const newDims = getSourceDimensions(image);
+        const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
+        const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
+        if (
+          cw > 0 &&
+          ch > 0 &&
+          oldDims.width > 0 &&
+          oldDims.height > 0 &&
+          newDims.width > 0 &&
+          newDims.height > 0 &&
+          typeof node.cropX === 'function' &&
+          typeof node.cropY === 'function' &&
+          typeof node.cropWidth === 'function' &&
+          typeof node.cropHeight === 'function'
+        ) {
+          const cx = node.cropX();
+          const cy = node.cropY();
+          record.crop = { x: cx, y: cy, width: cw, height: ch };
+          const sx = newDims.width / oldDims.width;
+          const sy = newDims.height / oldDims.height;
+          node.cropX(Math.round(cx * sx));
+          node.cropY(Math.round(cy * sy));
+          node.cropWidth(Math.round(cw * sx));
+          node.cropHeight(Math.round(ch * sy));
+        }
+        node.image(image);
+      } catch (e) {
+        if (requiredOverride) throw e;
+        logger.warn('Failed to swap node image for capture:', nodeId, e);
       }
     }
     if (applied.length > 0) stage.batchDraw();
-  };
+    completed = true;
+    return restore;
+  } finally {
+    // A rejected helper cannot return its restore closure to the outer transaction.
+    if (!completed) restore();
+  }
 }
 
 function getScreenPixelRatio(node: CachedImageNode): number {
@@ -667,6 +814,8 @@ export interface CaptureStageOptions {
   hiddenNodeIds?: Iterable<string>;
   /** التقاط هذه العقد وأبنائها فقط؛ تُحل العقد وتُعزل وتُستعاد الرؤية داخل قفل المسرح. */
   includeNodeIds?: Iterable<string>;
+  /** Opt-in fail-closed Images (or image Group roots); pass element image.id with includeNodeIds. */
+  requireImageNodeIds?: Iterable<string>;
   signal?: AbortSignal;
   queueTimeoutMs?: number;
   readinessTimeoutMs?: number;
@@ -682,8 +831,12 @@ const DEFAULT_TO_BLOB_TIMEOUT_MS = 30_000;
 async function waitForCaptureReadiness(
   stage: Konva.Stage,
   readiness: CaptureStageOptions['readiness'],
+  required: Map<string, RequiredCaptureImage>,
 ): Promise<void> {
   const jobs: Promise<unknown>[] = [];
+  for (const [nodeId, { node }] of required) {
+    jobs.push(decodeCaptureImage(node.image()!, nodeId));
+  }
   if (readiness?.fonts && typeof document !== 'undefined' && document.fonts?.ready) {
     jobs.push(document.fonts.ready);
   }
@@ -735,22 +888,29 @@ export async function captureStageBlob(
       let cachedNodes: ExportCacheNode[] = [];
 
       try {
+        // Materialize one-shot iterables only after acquiring the Stage lock.
+        const requiredIds = options.requireImageNodeIds
+          ? Array.from(options.requireImageNodeIds)
+          : undefined;
+        const requiredImages = resolveRequiredCaptureImages(stage, requiredIds);
         await raceDeadline(
-          waitForCaptureReadiness(stage, options.readiness),
+          waitForCaptureReadiness(stage, options.readiness, requiredImages),
           'readiness',
           readinessTimeoutMs,
           options.signal,
         );
         if (options.useFullResolution) {
           await raceDeadline(
-            preloadImagesForFullResolution(stage, lease),
+            preloadImagesForFullResolution(stage, lease, requiredIds),
             'readiness',
             readinessTimeoutMs,
             options.signal,
           );
         }
+        if (options.signal?.aborted) throw abortError(options.signal);
+        recheckRequiredCaptureImages(stage, requiredImages);
         upgradedImages = options.useFullResolution
-          ? upgradeImagesToFullResolution(stage, lease)
+          ? upgradeImagesToFullResolution(stage, lease, requiredIds)
           : [];
         if (options.imageOverrides?.length) {
           restoreOverrides = await swapNodeImagesForCapture(
@@ -758,6 +918,7 @@ export async function captureStageBlob(
             options.imageOverrides,
             readinessTimeoutMs,
             options.signal,
+            requiredIds,
           );
         }
         cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
@@ -774,6 +935,9 @@ export async function captureStageBlob(
             const outputWidth = Math.ceil(width * targetPixelRatio);
             const outputHeight = Math.ceil(height * targetPixelRatio);
             assertExportablePixels(outputWidth, outputHeight);
+            if (options.signal?.aborted) throw abortError(options.signal);
+            // React may unmount/replace the required child while originals/overrides load.
+            recheckRequiredCaptureImages(stage, requiredImages);
             const exportCanvas = captureRect
               ? stage.toCanvas({ ...captureRect, pixelRatio: targetPixelRatio })
               : stage.toCanvas({ pixelRatio: targetPixelRatio });
@@ -791,12 +955,21 @@ export async function captureStageBlob(
         );
       } finally {
         try {
-          stage.position(prevPos);
-          stage.scale(prevScale);
-          restoreOverrides?.();
-          restoreImageNodes(upgradedImages);
-          restoreScreenCache(cachedNodes);
-          stage.batchDraw();
+          for (const restore of [
+            () => stage.position(prevPos),
+            () => stage.scale(prevScale),
+            () => restoreOverrides?.(),
+            () => restoreImageNodes(upgradedImages),
+            () => restoreScreenCache(cachedNodes),
+            () => stage.batchDraw(),
+          ]) {
+            try {
+              restore();
+            } catch (err) {
+              // A destroyed Stage/node must not prevent the remaining restorations.
+              logger.warn('Failed to restore stage capture state', err);
+            }
+          }
         } finally {
           lease.release();
           const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;

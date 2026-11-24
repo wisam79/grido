@@ -233,19 +233,9 @@ Windows: application.WindowsWindow{
 ```
 
 ### 4.2 السحب والإفلات الأصلي (Native File Drag & Drop)
-```go
-mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
-    ctx := e.Context()
-    if ctx == nil {
-        return
-    }
-    files := ctx.DroppedFiles()
-    processed, _ := app.mediaSvc.ProcessMultipleOpenedFiles(files)
-    mainWindow.EmitEvent("native-file-drop", map[string]any{
-        "images": processed,
-    })
-})
-```
+مصدر التنفيذ في `main.go` و`native_image_drop.go`: تُقرأ الإحداثيات من `ctx.DropTargetDetails().X/Y` (CSS/webview pixels؛ تُحذف عند غياب التفاصيل)، ويُرسل `native-file-drop` بمرحلة `start` ومعرّف `dropId` **قبل** معالجة الوسائط، ثم `complete` بنفس المعرّف و`images` حتى عند الفشل أو الفراغ. لا تُستخدم getters غير موجودة مثل `ctx.X()`.
+
+يُوجّه المستهلك `frontend/src/hooks/use-app-bootstrap.ts` الحدث إلى `frontend/src/lib/canvas/native-image-drop.ts` ومالك الكانفاس في `use-image-drop.ts`: تثبيت الهدف وجلسة المستند عند البداية، والتحقق عند الإكمال، وتنظيف الطلبات عند فك التركيب. الرسالة المرحلية بلا مالك تُستهلك ولا تُدرج في مستند أحدث؛ رسالة `images` القديمة فقط تبقى متوافقة مع fallback المحروس. `stopPropagation` يمنع تكرار إفلات المتصفح على Windows، ولا يغني عن المسار الأصلي على macOS/Linux. عقد الأحداث إضافي ولا يغير تواقيع ربطات RPC.
 
 ### 4.3 الإشعارات التفاعلية وصينية النظام (Notifications & System Tray)
 ```go

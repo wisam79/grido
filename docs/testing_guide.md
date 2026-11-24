@@ -2,6 +2,44 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات إفلات الصورة داخل شكل وتقنيع التحديد (`FF-04`) — 2026-11-24
+
+- **النطاق:** الأهلية وpatch التعبئة المشترك، Hit-Testing وهدف البداية، معاملة تعبئة الشكل/استهلاك الصورة وUndo، ملكية bitmap الفعلية وشاهد راستر الملصق، `requireImageNodeIds` والتحميل/الاستعادة الصارمين داخل قفل الالتقاط، طلب Wails المترابط وfallback القديم، والكولاج المتزامن وحفظ المصدر في overflow عند تعارضه مع تحرير أحدث.
+- **آخر نتائج الملفات المنفردة (لا تُجمع إعادات التشغيل):**
+
+| ملف Vitest | آخر نتيجة |
+| --- | --- |
+| `src/lib/store/element-slice-merge.test.ts` | 110/110 PASS |
+| `test/image-shape-drop.test.tsx` | 27/27 PASS |
+| `test/native-image-drop.test.ts` | 17/17 PASS |
+| `test/konva-capture-selection.test.ts` | 39/39 PASS، بلا أخطاء غير ملتقطة |
+| `test/use-image-drop.test.ts` | 5/5 PASS |
+| `test/image-node.test.tsx` | 16/16 PASS |
+| `test/image-inplace-crop.test.tsx` | 13/13 PASS |
+| `test/freeform-double-click-crop.test.tsx` | 12/12 PASS |
+| `test/project-serializer.test.ts` | 31/31 PASS |
+| `test/shape-pattern.test.ts` | 8/8 PASS |
+| `test/collage-slice.test.ts` | 99/99 PASS |
+| `test/App.test.tsx` | 29/29 PASS |
+| `test/ui-compliance.test.ts` | 57/57 PASS |
+| `test/use-sticker-display-raster.test.ts` | 7/7 PASS |
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+go test -v -run TestNativeImageDrop C:/projects/grido/native_image_drop.go C:/projects/grido/native_image_drop_test.go
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend run format:check
+gofmt -l main.go native_image_drop.go native_image_drop_test.go
+node scripts/docs-gate.mjs --strict-refs
+```
+
+- **Go والتحقق الخفيف:** اختبارات `TestNativeImageDropSequenceAndCoordinates` و`TestNativeImageDropAlwaysCompletesEmptyOrFailedProcessing` (جميع الحالات الفرعية) و`TestNativeImageDropCompletesOnProcessorPanic` و`TestNativeImageDropIDsAreUniqueAcrossConcurrentRequests` **PASS** عبر ملفَي helper فقط. `typecheck` و`lint` و`format:check` و`git diff --check` **PASS**، و`gofmt -l` بلا مخرجات. هذا لا يثبت بناء `main.go` أو تشغيل Wails/OS فعلياً؛ واجهات RPC المعرضة لم تتغير ولم تُولّد ربطات جديدة.
+- **الإخفاقات المرحلية محفوظة:** مُنع typecheck عند تضييق union الرسالة بـ`'phase' in payload` ثم صُحّح إلى phase صريح، وعند fixture ملصق ناقص ثم استُكملت حقوله. أوقف lint قراءة ref أثناء render وتحذيرات refs في cleanup؛ صُحّحت الحالة وتنظيف المراجع دون تعطيل القواعد. فشل استدعاء ESLint مباشر من الجذر لغياب config، واستُخدم أمر npm الصحيح. ملف الالتقاط مرّ بتأكيداته أولاً لكن Vitest أفشل التشغيل بسبب ثلاثة رسوم RAF لكاش محاكى؛ وُضع stub للـ Layer قبل الإنشاء وأُعيد الملف فنجح **39/39 مع exit0 بلا unhandled errors**. ظهرت بعض تحذيرات React `act` وWails/Canvas jsdom وسجلات أخطاء مقصودة لاختبارات الفشل؛ لا تُعد قبولاً بصرياً.
+- **الجرد والحدود:** أُضيف ملفا `image-shape-drop.test.tsx` و`native-image-drop.test.ts` فقط، فأعاد docs-gate العداد **192 بدلاً من190** وحُدّثت الخريطة وفق الأمر؛ بقية192/32/69/6 عدادات ملفات وليست أعداد نجاح. اختبار Go الجديد في الجذر خارج عداد `internal` المقصود. لا full suite/coverage أو Playwright أو بناء Wails محلي، ولا CI/commit/push لهذا البند قبل الموافقة. محاكاة Hit-Testing والطلبات وعقد Go ليست اختبار إفلات OS فعلياً؛ سياسة pattern2048 وقبول الطابعة منفصلان.
+
+- **البوابة النهائية:** إعادة `node scripts/docs-gate.mjs --strict-refs` **PASS** بالجرد192/32/69/6 وinventory20/assertions53، و`git diff --check` **PASS**؛ `changelog-collect` أكد إضافة fragment واحد (5→6). لا ملفات staged؛ مصفوفة توثيق الالتزام تُعاد بعد الموافقة، وCI يبقى معلقاً للدفع المأذون.
+
 ## اعتماد `FF-03` السحابي بعد إذن الرفع — 2026-11-23
 
 - الالتزام `1666c3cfab2c1b3be6eb30d0c54b336e5c14754f` مرفوع على `main`. نجح [CI الكامل `45244058336`](https://github.com/wisam79/grido/actions/runs/45244058336) بتشغيل `gh workflow run ci.yml --ref main -f force_full=true` ومراقبته بـ `gh run watch ... --exit-status`. وظائف الخلفية/السباقات والتغطية/Modal/الإدارة/Windows/التوثيق وأجزاء Chromium الأربعة وبوابة `Full CI gate (zero skipped required jobs)` جميعها `success`.

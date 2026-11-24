@@ -120,6 +120,10 @@ export interface CollageSlice {
     assignments: { slotId: string; src: string }[],
     lastEditedSrc?: string | null,
     pendingImages?: string[],
+    /** Receipt-time import ownership; checked again after asynchronous aspect measurements. */
+    isActive?: () => boolean,
+    /** Preserve edits made to a target while a drop measures replacement images. */
+    preserveSlotEdits?: boolean,
   ) => Promise<void>;
   moveSlotContentsBatch: (assignments: { slotId: string; sourceSlotId: string }[]) => void;
   /** Reusable image pool, persisted separately from the unplaced overflow. */
@@ -973,7 +977,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     get().pushHistory();
   },
 
-  setSlotImagesBatch: async (assignments, lastEditedSrc, pendingImages) => {
+  setSlotImagesBatch: async (
+    assignments,
+    lastEditedSrc,
+    pendingImages,
+    isActive,
+    preserveSlotEdits = false,
+  ) => {
+    if (isActive && !isActive()) return;
     if (assignments.length === 0 && !pendingImages?.length) return;
     const stateAtStart = get();
     const previousBySlot = new Map(
@@ -1012,6 +1023,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       ];
     });
     if (aspectChecks.length > 0) await Promise.all(aspectChecks);
+    if (isActive && !isActive()) return;
     if (get().projectId !== projectId || get().history[0] !== stateAtStart.history[0]) return;
     const currentById = new Map(get().slots.map((slot) => [slot.id, slot] as const));
     const validAssignments = applicableAssignments.filter((assignment) => {
@@ -1020,6 +1032,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         previous &&
         get().projectId === projectId &&
         replacementEpochBySlot.get(assignment.slotId) === epochs.get(assignment.slotId) &&
+        (!preserveSlotEdits || currentById.get(assignment.slotId) === previous) &&
         currentById.get(assignment.slotId)?.imageSrc === previous.imageSrc
       );
     });

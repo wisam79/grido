@@ -9,8 +9,12 @@ vi.mock('../wailsjs/go/main/App', () => ({
   SaveImageFromBase64: vi.fn((base64: string) => Promise.resolve(`saved-${base64.slice(0, 15)}`)),
 }));
 
-vi.mock('../src/lib/canvas/image-dimensions', () => ({
+vi.mock('../src/lib/canvas/image-dimensions', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../src/lib/canvas/image-dimensions')>()),
   resolveImageAspectRatio: vi.fn(() => Promise.resolve(1.5)),
+  resolveBatchImageAspectRatios: vi.fn((sources: string[]) =>
+    Promise.resolve(new Map(sources.map((source) => [source, 1.5]))),
+  ),
 }));
 
 describe('useImageDrop Hook Tests', () => {

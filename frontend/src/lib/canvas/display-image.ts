@@ -194,6 +194,15 @@ function getRegisteredOriginalSrc(
   return displayOwnership.get(displayElement) ?? null;
 }
 
+/** Identifies the bitmap actually rendered, never the source merely requested by React. */
+export function getDisplayImageOriginalSrc(
+  source: HTMLImageElement | HTMLCanvasElement | null | undefined,
+): string | null {
+  const image = source instanceof HTMLImageElement ? source : getDisplaySource(source);
+  if (!image) return null;
+  return getRegisteredOriginalSrc(image) || image.currentSrc || image.src || null;
+}
+
 // كاش وعود جلب الأصول: نداءان متزامنان لنفس الرابط يفكّان ترميزه مرة واحدة.
 // يبقى الوعد مشتركاً فقط أثناء التحميل؛ كل التقاط يحتفظ بالأصل في lease مستقل
 // حتى لا يستطيع انتهاء التقاط مسرح أن يحرر أصول مسرح آخر يعمل بالتوازي.

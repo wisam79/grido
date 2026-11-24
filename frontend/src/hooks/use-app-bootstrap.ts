@@ -11,7 +11,11 @@ import {
 import { clearAutoSave } from '@/hooks/use-autosave';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
-import { addImageFromSrc } from '@/lib/canvas/load-image';
+import { addImageFromSrc, loadImageAspect } from '@/lib/canvas/load-image';
+import {
+  dispatchNativeImageDrop,
+  type NativeImageDropPayload,
+} from '@/lib/canvas/native-image-drop';
 import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
@@ -208,6 +212,8 @@ export function useAppBootstrap(): AppBootstrapState {
   // 2. السحب والإفلات المباشر للملفات من سطح المكتب (native-file-drop)
   // 3. استئناف النظام من وضع السكون (app:resume)
   useEffect(() => {
+    let mounted = true;
+    const activeDropGuards = new Set<() => void>();
     let unbindFileOpened: (() => void) | undefined;
     let unbindFileDrop: (() => void) | undefined;
     let unbindResume: (() => void) | undefined;
@@ -227,43 +233,73 @@ export function useAppBootstrap(): AppBootstrapState {
           }
         });
 
-        unbindFileDrop = EventsOn(
-          'native-file-drop',
-          async (data: { x?: number; y?: number; images: string[] }) => {
-            if (!data || !data.images || data.images.length === 0) return;
-            try {
-              const images = data.images;
-              const store = useEditorStore.getState();
+        unbindFileDrop = EventsOn('native-file-drop', async (data: NativeImageDropPayload) => {
+          if (!mounted || !data) return;
+          let unbindGuard: (() => void) | undefined;
+          try {
+            if (dispatchNativeImageDrop(data)) return;
+            if (!('images' in data) || !data.images?.length) return;
+            const images = data.images;
+            const store = useEditorStore.getState();
+            const session = getDocumentSession();
+            const { mode, canvasWidth, canvasHeight } = store;
+            let invalidated = false;
+            const isActive = () => {
+              const current = useEditorStore.getState();
+              return (
+                mounted &&
+                !invalidated &&
+                getDocumentSession() === session &&
+                current.mode === mode &&
+                current.canvasWidth === canvasWidth &&
+                current.canvasHeight === canvasHeight
+              );
+            };
+            // A mode/size change also invalidates a request if later switched back.
+            unbindGuard = useEditorStore.subscribe(() => {
+              if (!isActive()) invalidated = true;
+            });
+            activeDropGuards.add(unbindGuard);
 
-              if (store.mode === 'collage') {
-                const targetSlotId =
-                  store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
-                    ? store.selectedId
-                    : null;
-                const plan = buildCollageInsertPlan(store.slots, images, {
-                  targetSlotId,
-                  scope: targetSlotId ? 'target' : 'empty',
-                });
-                await store.setSlotImagesBatch(plan.assignments, images[0] || null);
-                if (plan.remaining.length > 0) store.appendPendingCollageImages(plan.remaining);
-              } else {
-                if (images.length === 1) {
-                  await addImageFromSrc(images[0]);
-                } else {
-                  const aspectMap = await resolveBatchImageAspectRatios(images);
-                  const items = images.map((src) => ({
-                    src,
-                    aspectRatio: aspectMap.get(src) || 1,
-                  }));
-                  store.addImageElementsBatch(items);
-                }
-              }
-            } catch (err) {
-              logger.error('Failed to process native file drop:', err);
-              toast.error(toErrorMessage(err, 'تعذّر إدراج الصور المسحوبة'));
+            if (mode === 'collage') {
+              const targetSlotId =
+                store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
+                  ? store.selectedId
+                  : null;
+              const plan = buildCollageInsertPlan(store.slots, images, {
+                targetSlotId,
+                scope: targetSlotId ? 'target' : 'empty',
+              });
+              await store.setSlotImagesBatch(
+                plan.assignments,
+                images[0] || null,
+                plan.remaining,
+                isActive,
+                true,
+              );
+            } else if (images.length === 1) {
+              const aspectRatio = await loadImageAspect(images[0]);
+              if (!isActive()) return;
+              useEditorStore.getState().addImageElement(images[0], aspectRatio);
+            } else {
+              const aspectMap = await resolveBatchImageAspectRatios(images);
+              if (!isActive()) return;
+              const items = images.map((src) => ({
+                src,
+                aspectRatio: aspectMap.get(src) || 1,
+              }));
+              useEditorStore.getState().addImageElementsBatch(items);
             }
-          },
-        );
+          } catch (err) {
+            logger.error('Failed to process native file drop:', err);
+            if (mounted) toast.error(toErrorMessage(err, 'تعذّر إدراج الصور المسحوبة'));
+          } finally {
+            if (unbindGuard) {
+              unbindGuard();
+              activeDropGuards.delete(unbindGuard);
+            }
+          }
+        });
 
         unbindResume = EventsOn('app:resume', () => {
           void checkLicenseStatus();
@@ -274,6 +310,9 @@ export function useAppBootstrap(): AppBootstrapState {
     }
 
     return () => {
+      mounted = false;
+      for (const unbindGuard of activeDropGuards) unbindGuard();
+      activeDropGuards.clear();
       unbindFileOpened?.();
       unbindFileDrop?.();
       unbindResume?.();

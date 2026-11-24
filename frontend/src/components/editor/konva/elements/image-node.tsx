@@ -57,6 +57,10 @@ export const URLImage = React.memo(function URLImage({
     baseImage: image,
   });
   const shown = stickerImage ?? displayImage ?? image;
+  const stickerRenderSource = React.useMemo(
+    () => (stickerImage && image ? { source: stickerImage, baseImage: image } : undefined),
+    [stickerImage, image],
+  );
   const hasAnimatedRef = React.useRef(false);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
@@ -356,6 +360,7 @@ export const URLImage = React.memo(function URLImage({
           <KonvaImage
             ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
             image={shown as unknown as HTMLImageElement}
+            gridoStickerRenderSource={stickerRenderSource}
             cropX={coverCrop?.cropX}
             cropY={coverCrop?.cropY}
             cropWidth={coverCrop?.cropWidth}

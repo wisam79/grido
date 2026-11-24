@@ -210,7 +210,10 @@ export const EditorCanvas = React.memo(
       useUserGuides(innerRef, displayW, displayH, printMode, elements);
 
     // 🧭 منطق إسقاط الصور (كان مضمّناً في هذا الملف)
-    const { isLoading, setIsLoading, handleDragOver, handleDrop } = useImageDrop(innerRef);
+    const { isLoading, setIsLoading, handleDragOver, handleDrop } = useImageDrop(
+      innerRef,
+      !printMode,
+    );
 
     const widthMM = useMemo(() => {
       if (mode === 'single' && template) return template.widthMM;

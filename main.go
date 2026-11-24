@@ -415,14 +415,17 @@ func main() {
 				validPaths = append(validPaths, p)
 			}
 		}
-		if len(validPaths) == 0 {
-			return
+		var coordinates *nativeImageDropCoordinates
+		if target := ctx.DropTargetDetails(); target != nil {
+			coordinates = &nativeImageDropCoordinates{X: target.X, Y: target.Y}
 		}
-		processed, err := appInstance.mediaSvc.ProcessMultipleOpenedFiles(validPaths)
-		if err == nil && len(processed) > 0 {
-			wailsApp.Event.Emit("native-file-drop", map[string]any{
-				"images": processed,
-			})
+		if err := processNativeImageDrop(
+			validPaths,
+			coordinates,
+			appInstance.mediaSvc.ProcessMultipleOpenedFiles,
+			func(payload any) { wailsApp.Event.Emit("native-file-drop", payload) },
+		); err != nil {
+			slog.Error("Failed to process native file drop", "error", err)
 		}
 	})
 

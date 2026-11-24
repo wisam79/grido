@@ -12,8 +12,10 @@ import type {
   BatchImageItem,
   ElementCross,
   ElementSlice,
+  ImageShapeMaskResult,
   MergeResult,
   RasterizeResult,
+  ShapeImageFillResult,
   TextPresetType,
 } from './types';
 import type { StateCreator } from 'zustand';
@@ -22,8 +24,10 @@ export type {
   BatchImageItem,
   ElementCross,
   ElementSlice,
+  ImageShapeMaskResult,
   MergeResult,
   RasterizeResult,
+  ShapeImageFillResult,
   TextPresetType,
 };
 export {

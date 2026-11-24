@@ -12,8 +12,18 @@
  * حدود معلنة: حدود الأشكال (stroke) لا تُحوَّل إلى تعبئة قبل الدمج، فتُطبَّق
  * على المحيط الخارجي للنتيجة — وهي نفس النتيجة التي يتوقعها المستخدم من شكل واحد.
  */
+import {
+  computeStickerCoverRasterSize,
+  prepareStickerExportOverrides,
+} from '@/features/stickers/lib/print-rerasterize';
 import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
+import { getDisplayImageOriginalSrc, getDisplaySource } from '@/lib/canvas/display-image';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
+import {
+  buildShapeImageFillPatch,
+  getImageShapePair,
+  isFillableImageShape,
+} from '@/lib/canvas/image-shape-fill';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { mergePaths } from '@/lib/canvas/path-boolean';
 import { shapeElementToSegments } from '@/lib/canvas/shape-to-path';
@@ -21,11 +31,20 @@ import { assertExportablePixels } from '@/lib/export/export-limits';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
+import { CanvasElementSchema } from '@/lib/schema';
+import { canArrangeSelection } from '@/lib/selection-properties';
 
 import { normalizeSelection } from './types';
 import { uid } from '../../../utils';
 
-import type { ElementCross, ElementSlice, MergeResult, RasterizeResult } from './types';
+import type {
+  ElementCross,
+  ElementSlice,
+  ImageShapeMaskResult,
+  MergeResult,
+  RasterizeResult,
+  ShapeImageFillResult,
+} from './types';
 import type { CanvasElement, ImageElement, ShapeElement } from '../../types';
 import type { BooleanOp } from '@/lib/canvas/path-boolean';
 import type { CubicSeg } from '@/lib/canvas/path-geometry';
@@ -76,6 +95,119 @@ function isRasterizeStale(
   return survivingCount !== sourceRefs.size;
 }
 
+/** Shared URI schema, with the additional nonempty requirement for an actual fill. */
+function isValidFillSource(src: string): boolean {
+  return (
+    typeof src === 'string' &&
+    !!src.trim() &&
+    CanvasElementSchema.shape.fillImageSrc.safeParse(src).success
+  );
+}
+
+function hasLockedParticipant(elements: readonly CanvasElement[], ids: readonly string[]): boolean {
+  const groups = new Set(
+    elements.filter((el) => ids.includes(el.id) && el.groupId).map((el) => el.groupId),
+  );
+  return elements.some(
+    (el) => el.locked && (ids.includes(el.id) || (!!el.groupId && groups.has(el.groupId))),
+  );
+}
+
+/** Resolve the rendered photo itself, not an empty frame/group that could capture blank pixels. */
+function liveImageNode(stage: Konva.Stage, id: string): Konva.Image | null {
+  const root = stage.findOne(`#${id}`);
+  if (!root || root.getStage() !== stage || !root.isVisible()) return null;
+  const node = root.getClassName() === 'Image' ? root : (root as Konva.Group).findOne?.('Image');
+  if (!node || node.getClassName() !== 'Image' || node.getStage() !== stage || !node.isVisible())
+    return null;
+  const image = (node as Konva.Image).image();
+  if (image instanceof HTMLImageElement)
+    return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+      ? (node as Konva.Image)
+      : null;
+  return image instanceof HTMLCanvasElement && image.width > 0 && image.height > 0
+    ? (node as Konva.Image)
+    : null;
+}
+
+/** Compare the bitmap's actual original URI, not a desired-src attr refreshed during render. */
+function imageSourceMatchesElement(node: Konva.Image, element: ImageElement): boolean {
+  const source = node.image();
+  if (!(source instanceof HTMLImageElement) && !(source instanceof HTMLCanvasElement)) return false;
+  const matches = (src: string | null): boolean => {
+    if (!src) return false;
+    try {
+      return (
+        new URL(src, document.baseURI).href === new URL(element.imageSrc, document.baseURI).href
+      );
+    } catch {
+      return false;
+    }
+  };
+  const originalSrc = getDisplayImageOriginalSrc(source);
+  if (originalSrc) return matches(originalSrc);
+  if (!element.stickerSource || !(source instanceof HTMLCanvasElement)) return false;
+  // Generated sticker canvases deliberately are not displayOwnership entries: capture must
+  // not swap their vector-generated pixels back to the low-resolution insertion PNG.
+  const witness: unknown = node.getAttr?.('gridoStickerRenderSource');
+  if (
+    !witness ||
+    typeof witness !== 'object' ||
+    !('source' in witness) ||
+    !('baseImage' in witness) ||
+    witness.source !== source
+  )
+    return false;
+  const base = witness.baseImage;
+  return (
+    base instanceof HTMLImageElement &&
+    base.complete &&
+    base.naturalWidth > 0 &&
+    base.naturalHeight > 0 &&
+    matches(getDisplayImageOriginalSrc(base))
+  );
+}
+
+/** Native, unedited photos need no re-encoding; a framed/edited photo must bake the rendered recipe. */
+function needsImageCapture(
+  image: ImageElement,
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+): boolean {
+  const full = getDisplaySource(source as HTMLCanvasElement) ?? source;
+  const size = full as HTMLImageElement | HTMLCanvasElement;
+  const sw = 'naturalWidth' in size ? size.naturalWidth : size.width;
+  const sh = 'naturalHeight' in size ? size.naturalHeight : size.height;
+  const framed = Math.abs((image.width * width) / (image.height * height) / (sw / sh) - 1) > 0.001;
+  return (
+    framed ||
+    !!image.originalImageSrc ||
+    !!image.stickerSource ||
+    (image.maskShape !== undefined && image.maskShape !== 'none') ||
+    (image.cropZoom ?? 1) !== 1 ||
+    (image.cropPanX ?? 0) !== 0 ||
+    (image.cropPanY ?? 0) !== 0 ||
+    (image.filter ?? 'none') !== 'none' ||
+    (image.brightness ?? 100) !== 100 ||
+    (image.contrast ?? 100) !== 100 ||
+    (image.saturation ?? 100) !== 100 ||
+    (image.blur ?? 0) !== 0 ||
+    !!image.flipX ||
+    !!image.flipY ||
+    image.rotation !== 0 ||
+    image.opacity !== 1 ||
+    !!image.bgColor ||
+    (image.cornerRadius ?? 0) !== 0 ||
+    ((image.shadowOpacity ?? 0) > 0 &&
+      (!!image.shadowColor ||
+        (image.shadowBlur ?? 0) !== 0 ||
+        (image.shadowOffsetX ?? 0) !== 0 ||
+        (image.shadowOffsetY ?? 0) !== 0)) ||
+    (!!image.globalCompositeOperation && image.globalCompositeOperation !== 'source-over')
+  );
+}
+
 /** خصائص الطلاء والمؤثرات التي تنتقل من الطبقة الأمامية إلى الشكل المدموج */
 function inheritPaint(front: ShapeElement): Partial<ShapeElement> {
   return {
@@ -124,8 +256,186 @@ export const createElementMergeSlice: StateCreator<
   ElementCross,
   [],
   [],
-  Pick<ElementSlice, 'mergeSelectedShapes' | 'rasterizeSelected'>
-> = (set, get) => ({
+  Pick<
+    ElementSlice,
+    | 'mergeSelectedShapes'
+    | 'rasterizeSelected'
+    | 'fillShapeWithImage'
+    | 'maskSelectedImageWithShape'
+  >
+> = (set, get, api) => ({
+  fillShapeWithImage: (id, src, expected): ShapeImageFillResult => {
+    const state = get();
+    if (state.mode !== 'single') return 'wrong-mode';
+    if (!isValidFillSource(src)) return 'invalid-source';
+    const shape = state.elements.find((element) => element.id === id);
+    if (expected && shape !== expected) return 'stale';
+    if (hasLockedParticipant(state.elements, [id])) return 'locked';
+    if (!isFillableImageShape(shape) || !canArrangeSelection(state.elements, [id]))
+      return 'unsupported';
+    const patch = buildShapeImageFillPatch(src);
+    if (
+      Object.entries(patch).every(([key, value]) =>
+        Object.is(shape[key as keyof ShapeElement], value),
+      )
+    )
+      return 'unchanged';
+    set({
+      elements: state.elements.map((element) =>
+        element === shape ? { ...shape, ...patch } : element,
+      ),
+    });
+    get().pushHistory();
+    return 'ok';
+  },
+
+  maskSelectedImageWithShape: async (stage): Promise<ImageShapeMaskResult> => {
+    const state = get();
+    const { elements, selectedIds, canvasWidth, canvasHeight } = state;
+    if (state.mode !== 'single') return 'wrong-mode';
+    if (selectedIds.length !== 2 || selectedIds[0] === selectedIds[1])
+      return 'need-image-and-shape';
+    if (hasLockedParticipant(elements, selectedIds)) return 'locked';
+    const pair = getImageShapePair(elements, selectedIds);
+    if (!pair) return 'need-image-and-shape';
+    const { image, shape } = pair;
+    if (!isValidFillSource(image.imageSrc)) return 'invalid-source';
+    if (!stage) return 'no-stage';
+    if (![canvasWidth, canvasHeight].every((size) => Number.isFinite(size) && size > 0))
+      return 'failed';
+
+    const initialSession = getDocumentSession();
+    const initialProjectId = (state as { projectId?: string | null }).projectId ?? null;
+    const sourceRefs = new Map<string, CanvasElement>([
+      [image.id, image],
+      [shape.id, shape],
+    ]);
+    let node: Konva.Image | null;
+    try {
+      node = liveImageNode(stage, image.id);
+      if (node && !imageSourceMatchesElement(node, image)) return 'failed';
+    } catch {
+      return 'failed';
+    }
+    if (!node) return 'failed';
+    const source = node.image()!;
+    let invalidated = false;
+    const stateIsStale = (latest: ElementCross) =>
+      isRasterizeStale(
+        latest,
+        initialSession,
+        initialProjectId,
+        canvasWidth,
+        canvasHeight,
+        sourceRefs,
+      ) || !canArrangeSelection(latest.elements, [...sourceRefs.keys()]);
+    const stale = () => invalidated || stateIsStale(get());
+    const sourceStillReady = () =>
+      liveImageNode(stage, image.id) === node &&
+      node.image() === source &&
+      imageSourceMatchesElement(node, image);
+    // Endpoint comparisons alone miss single→collage→single and size→old-size roundtrips.
+    // Latch every invalidating store transition until this operation finishes.
+    const unsubscribe = api.subscribe((latest, previous) => {
+      // Previous also detects a transition reverted synchronously by an earlier listener.
+      if (!invalidated && (stateIsStale(latest) || stateIsStale(previous))) invalidated = true;
+    });
+    try {
+      let imageSrc = image.imageSrc;
+
+      try {
+        if (needsImageCapture(image, source, canvasWidth, canvasHeight)) {
+          const root = stage.findOne(`#${image.id}`)!;
+          // Include frame/mask/background/shadow, but no other element or paper background.
+          // World bounds remain independent of the editor's current pan/zoom.
+          const rect = root.getClientRect({ relativeTo: stage });
+          if (
+            ![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) ||
+            rect.width <= 0 ||
+            rect.height <= 0
+          )
+            return 'failed';
+          const targetRatio = Math.max(
+            1,
+            (shape.width * canvasWidth) / rect.width,
+            (shape.height * canvasHeight) / rect.height,
+          );
+          try {
+            assertExportablePixels(
+              Math.ceil(rect.width * targetRatio),
+              Math.ceil(rect.height * targetRatio),
+            );
+          } catch {
+            return 'too-large';
+          }
+          const overrides = image.stickerSource
+            ? await prepareStickerExportOverrides({
+                elements: [image],
+                canvasWidth: canvasWidth * targetRatio,
+                canvasHeight: canvasHeight * targetRatio,
+                stageRef: stage,
+              })
+            : null;
+          let blob: Blob | null;
+          try {
+            if (stale()) return 'stale';
+            if (!sourceStillReady()) return 'failed';
+            if (
+              image.stickerSource &&
+              !overrides?.imageOverrides.some((item) => item.nodeId === image.id)
+            ) {
+              const current = source as HTMLImageElement | HTMLCanvasElement;
+              const sw = 'naturalWidth' in current ? current.naturalWidth : current.width;
+              const sh = 'naturalHeight' in current ? current.naturalHeight : current.height;
+              const target = computeStickerCoverRasterSize(
+                image.width * canvasWidth * targetRatio,
+                image.height * canvasHeight * targetRatio,
+                sw / sh,
+              );
+              // Preparation is deliberately tolerant for other export callers. Masking is not:
+              // consuming an undersized sticker when its rerasterization failed loses its source.
+              if (!target || sw < target.width * 0.95 || sh < target.height * 0.95) return 'failed';
+            }
+            blob = await captureStageBlob(stage, targetRatio, 'image/png', undefined, rect, {
+              useFullResolution: true,
+              includeNodeIds: [image.id],
+              requireImageNodeIds: [image.id],
+              readiness: { images: true },
+              imageOverrides: overrides?.imageOverrides,
+            });
+          } finally {
+            overrides?.dispose();
+          }
+          if (stale()) return 'stale';
+          if (!blob || blob.size === 0 || !sourceStillReady()) return 'failed';
+          imageSrc = await uploadRasterBlob(blob);
+        }
+        if (stale()) return 'stale';
+        if (!sourceStillReady()) return 'failed';
+        if (!isValidFillSource(imageSrc)) return 'invalid-source';
+      } catch (error) {
+        if (stale()) return 'stale';
+        logger.error('Image/shape mask capture failed', error);
+        return 'failed';
+      }
+
+      // Preserve every target property except its image fill. Consume the source atomically,
+      // never its local file; history retains the complete ImageElement and previous shape.
+      const latest = get();
+      const patch = buildShapeImageFillPatch(imageSrc);
+      set({
+        elements: latest.elements
+          .filter((element) => element.id !== image.id)
+          .map((element) => (element === shape ? { ...shape, ...patch } : element)),
+        ...normalizeSelection(shape.id),
+      });
+      get().pushHistory();
+      return 'ok';
+    } finally {
+      unsubscribe();
+    }
+  },
+
   mergeSelectedShapes: (op: BooleanOp): MergeResult => {
     const { selectedIds, elements, canvasWidth, canvasHeight } = get();
     if (selectedIds.length < 2) return 'need-two-shapes';

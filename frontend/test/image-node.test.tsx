@@ -12,6 +12,7 @@ import type { ImageElement } from '../src/lib/store/types';
 
 const rendered = vi.hoisted(() => ({
   source: null as HTMLImageElement | null,
+  sticker: null as HTMLCanvasElement | null,
   imageProps: {} as Record<string, unknown>,
   shapeProps: {} as Record<string, unknown>,
   node: null as unknown,
@@ -20,7 +21,9 @@ vi.mock('@/hooks/use-async-image', () => ({ useAsyncImage: () => [rendered.sourc
 vi.mock('@/hooks/use-display-image', () => ({
   useDisplayImage: (image: HTMLImageElement) => getDisplayImage(image),
 }));
-vi.mock('@/hooks/use-sticker-display-raster', () => ({ useStickerDisplayRaster: () => null }));
+vi.mock('@/hooks/use-sticker-display-raster', () => ({
+  useStickerDisplayRaster: () => rendered.sticker,
+}));
 vi.mock('@/hooks/use-filter-cache', () => ({ useFilterCache: () => vi.fn() }));
 vi.mock('@/hooks/use-konva-drag', () => ({
   useKonvaDrag: () => ({ onDragStart: vi.fn(), onDragEnd: vi.fn() }),
@@ -46,6 +49,8 @@ beforeEach(() => {
   paints = [];
   rendered.imageProps = {};
   rendered.shapeProps = {};
+  rendered.sticker = null;
+  rendered.node = null;
   rendered.source = new Image();
   Object.defineProperties(rendered.source, {
     naturalWidth: { value: 4096 },
@@ -72,7 +77,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderImage(maskShape: MaskShape = 'circle') {
+function renderImage(maskShape: MaskShape = 'circle', patch: Partial<ImageElement> = {}) {
   const element: ImageElement = {
     id: 'photo',
     type: 'image',
@@ -88,6 +93,7 @@ function renderImage(maskShape: MaskShape = 'circle') {
     shadowOpacity: 0.5,
     shadowColor: '#000000',
     shadowBlur: 5,
+    ...patch,
   };
   const props: ElementProps = {
     element,
@@ -123,6 +129,34 @@ function drawCaster(pixelRatio = 1) {
 }
 
 describe('image shadow caster lifetime and capture source', () => {
+  it('ties an active sticker raster to its actual base bitmap and clears the witness for ordinary photos', () => {
+    const sticker = document.createElement('canvas');
+    sticker.width = 1200;
+    sticker.height = 600;
+    rendered.sticker = sticker;
+    const view = renderImage('none', {
+      stickerSource: {
+        templateId: 'badge',
+        params: {
+          fields: {},
+          primaryColor: '#000000',
+          secondaryColor: '#ffffff',
+          backgroundColor: '#ffffff',
+          isTransparent: false,
+        },
+        svg: '<svg/>',
+      },
+    });
+    expect(rendered.imageProps.gridoStickerRenderSource).toEqual({
+      source: sticker,
+      baseImage: rendered.source,
+    });
+    view.unmount();
+    rendered.sticker = null;
+    const ordinary = renderImage('none');
+    expect(rendered.imageProps.gridoStickerRenderSource).toBeUndefined();
+    ordinary.unmount();
+  });
   it('keeps a usable editor bitmap through StrictMode replay without reallocating it per draw', () => {
     rendered.node = null;
     const view = renderImage();

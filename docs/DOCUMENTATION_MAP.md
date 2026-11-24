@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-11-23 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
+**آخر تحديث:** 2026-11-24 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
 
 ---
 
@@ -38,6 +38,10 @@
 | `promo/remotion/README.md`    | دليل الفيديو المحلي: المعاينة، مصادر التسجيل والصوت، القص، وحدود النشر — داخل `promo/` المستثنى من Git                                                                                                             | عند تغيير إخراج الفيديو أو مصادره أو توقيته؛ لا يجعل إضافته في الجرد الأصول قابلة للتوزيع |
 
 > 📌 **مجرد وجود المستند يعني الالتزام بتحديثه.** البوابة تفحص أن كل ملف في `docs/*.md` وكل مجلد فرعي تحت `docs/` مُدرَج في هذا الجدول.
+
+**إنجاز `FF-04` المحلي (إفلات الصورة داخل الشكل وتقنيع التحديد) — 2026-11-24:** أُضيف مصدر الأهلية والتعبئة [`image-shape-fill.ts`](../frontend/src/lib/canvas/image-shape-fill.ts) ووسيط [`native-image-drop.ts`](../frontend/src/lib/canvas/native-image-drop.ts) وعقد Go في [`native_image_drop.go`](../native_image_drop.go)، مع [`fragment واحد`](../changelog/fragments/20261124-canvas-ff04-image-shape-drop-mask.md). تزامنت الخارطة وسجل الميزات ودليلَا المطور والاختبار وREADME ومرجع مهارة Wails. أعاد `node scripts/docs-gate.mjs --strict-refs` في الجولة الأولية **192 Vitest / 32 E2E / 69 Go / 6 مستندات جذرية** وفشل لانحراف190→192 فقط؛ حُدّث البلوك بإضافة ملفَي اختبار مستقلين (جرد لا حالات). اجتازت14 ملفات Vitest متأثرة منفردة، وhelper Go المستهدف والفحوص الخفيفة؛ الأوامر والنتائج والإخفاقات المرحلية في `docs/testing_guide.md`. لا تغيير عداد Go الداخلي رغم اختبار الجذر الجديد، ولا full suite/Playwright/build محلي أو commit/push/CI لهذا البند. لا ملفات staged؛ مصفوفة commit/fragment تُعاد عند اعتماد الالتزام.
+
+**النتيجة النهائية المحلية لـ `FF-04` — 2026-11-24:** `node scripts/docs-gate.mjs --strict-refs` **PASS** بالجرد **192/32/69/6** وinventory **20** وassertions **53**، مع `git diff --check` **PASS** و`changelog-collect` يعرض **6 fragments** مقابل5 عند الاستئناف (إضافة واحدة فقط). السكيمة ومراجع fragment تُفحص مستقلاً، وتُعاد مصفوفة staged قبل الالتزام؛ لا staged/commit/push أو CI لهذا البند حتى الإذن.
 
 **اعتماد `FF-03` السحابي بعد موافقة المالك — 2026-11-23:** رُفع الالتزام `1666c3cf` على `main` بعد اجتياز فحص staged commit/fragment وخطافات lint-staged وبوابة الدفع. [CI الكامل `45244058336`](https://github.com/wisam79/grido/actions/runs/45244058336) **success** مع جميع وظائف بوابته المطلوبة، و[CI الاعتيادي `45243991321`](https://github.com/wisam79/grido/actions/runs/45243991321) (المحاولة2) **success** بما فيه WebKit. `gh run view` يثبت SHA نفسه في التشغيلين، وسجل وظيفة الواجهة في الكامل يثبت **2690 ناجحة + 1 متخطاة عبر190 ملفاً**؛ الأوامر ونطاق التغطية والقبول في `docs/testing_guide.md`. لا تغير جرد190/32/69/6 أو إضافة fragment ثانٍ، ولا full suite/Playwright محلي. السجل المحلي أدناه محفوظ باعتباره مرحلة ما قبل إذن الرفع؛ لم تعد مصفوفة staged أو CI معلّقة.
 
@@ -130,7 +134,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=190
+vitest_test_files=192
 e2e_spec_files=32
 go_test_files=69
 docs_files=6
