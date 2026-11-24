@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => {
     loadImageAspect: vi.fn(async (_src: string) => 1.5),
     resolveBatchImageAspectRatios: vi.fn(async (_images: string[]) => new Map<string, number>()),
     buildCollageInsertPlan: vi.fn(),
+    ensureSlotCompatibleSources: vi.fn(async (srcs: readonly string[]) => [...srcs]),
     loggerError: vi.fn(),
     toastError: vi.fn(),
   };
@@ -59,6 +60,9 @@ vi.mock('@/lib/canvas/image-dimensions', () => ({
 }));
 vi.mock('@/lib/canvas/collage-insert', () => ({
   buildCollageInsertPlan: mocks.buildCollageInsertPlan,
+}));
+vi.mock('@/lib/io/svg-slot-compat', () => ({
+  ensureSlotCompatibleSources: mocks.ensureSlotCompatibleSources,
 }));
 vi.mock('@/lib/store/slices/license-slice', () => ({
   isLicenseCheckInvalidatedError: () => false,
@@ -291,6 +295,8 @@ describe('bootstrap native image drop routing and legacy freshness', () => {
     const hook = await mountBootstrap();
     const images = ['new-photo', 'overflow-photo'];
     const pending = hook.receive({ images });
+    // Let ensureSlotCompatibleSources resolve before asserting synchronous calls.
+    await act(async () => {});
     expect(mocks.buildCollageInsertPlan).toHaveBeenCalledWith(mocks.state.slots, images, {
       targetSlotId: 'selected-slot',
       scope: 'target',
