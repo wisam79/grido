@@ -48,10 +48,11 @@ export const URLImage = React.memo(function URLImage({
   const displayImage = useDisplayImage(image);
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
-  // ترقية متجهة حيّة للملصقات المرفقة: عند التكبير نعيد تصيير الـ SVG بالمقاس الجديد
-  // حتى لا يتبكسل الراستر الابتدائي (50mm@300DPI ≈ 591px) على المسرح أو عند الزوم.
+  // ترقية متجهة حيّة للملصقات المرفقة والشعارات المتجهة المستوردة (.svg)
   const stickerImage = useStickerDisplayRaster({
     stickerSource: element.stickerSource,
+    imageSrc: element.imageSrc,
+    svgTintColor: element.svgTintColor,
     nodeW,
     nodeH,
     baseImage: image,
@@ -116,7 +117,7 @@ export const URLImage = React.memo(function URLImage({
   // 🛡️ cornerRadius داخل المفتاح: الخاصية تُطبَّق على العقدة المُخزَّنة
   // (`node.cache()`)، فبدونها يظل القص الزاوي القديم مرسوماً في البيت ماپ
   // حتى يُجبر تغيير الحجم أو الزوم إعادة بناء الكاش (H2 من تدقيق 2026-10-08).
-  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${cornerRadius}`;
+  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${cornerRadius}_${element.svgTintColor || ''}`;
   const hasFilters = filters.length > 0;
 
   const recacheFilters = useFilterCache({

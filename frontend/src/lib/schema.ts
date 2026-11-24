@@ -7,6 +7,7 @@ import {
 } from '@/lib/export/export-primitives';
 
 import { MASK_SHAPES } from './canvas/mask-geometry';
+import { sanitizeSvgDataUrl, sanitizeSvgTintColor } from './canvas/svg-logo';
 import { sanitizeText } from './canvas/text-helpers';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
 import { sanitizeSvgMarkup } from './utils';
@@ -50,6 +51,18 @@ export function stripDangerousJsonKeys(input: unknown, depth = 10): unknown {
 
 const safeUriStringSchema = z.string().refine(isSafeImageUri, {
   message: 'Unsafe URI scheme',
+});
+
+const safeImageSrcSchema = safeUriStringSchema.transform((val, ctx) => {
+  if (/^data:image\/svg\+xml\b/i.test(val.trim())) {
+    const clean = sanitizeSvgDataUrl(val);
+    if (!clean) {
+      ctx.addIssue({ code: 'custom', message: 'Invalid or unsafe SVG data URI' });
+      return z.NEVER;
+    }
+    return clean;
+  }
+  return val;
 });
 
 const StickerSourceLayoutOverrideSchema = z.object({
@@ -127,8 +140,8 @@ export const CanvasElementSchema = z.object({
   locked: z.boolean().optional(),
   visible: z.boolean().optional(),
 
-  imageSrc: safeUriStringSchema.optional(),
-  originalImageSrc: safeUriStringSchema.optional(),
+  imageSrc: safeImageSrcSchema.optional(),
+  originalImageSrc: safeImageSrcSchema.optional(),
   cropZoom: z
     .number()
     .finite()
@@ -165,6 +178,11 @@ export const CanvasElementSchema = z.object({
         })
         .optional(),
     })
+    .optional(),
+  svgTintColor: z
+    .string()
+    .max(120)
+    .transform((val) => sanitizeSvgTintColor(val))
     .optional(),
 
   text: z
@@ -237,7 +255,7 @@ export const CanvasElementSchema = z.object({
   fillRadialGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
 
   // تعبئة صور الأشكال (fillType='image') — تُسقط عند الحفظ دون إعلانها هنا
-  fillImageSrc: safeUriStringSchema.optional(),
+  fillImageSrc: safeImageSrcSchema.optional(),
   fillImageFit: z.enum(['stretch', 'cover', 'contain', 'tile']).optional(),
   fillImageScale: z.number().finite().optional(),
   fillImageRotation: z.number().finite().optional(),

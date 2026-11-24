@@ -1,5 +1,11 @@
 import { createLogger } from '@/lib/logger';
 
+import {
+  decodeSvgDataUrl,
+  isSvgImageSource,
+  loadSanitizedSvgMarkup,
+  parseSvgDimensions,
+} from './svg-logo';
 import { GetImageDimensions, GetBatchImageDimensions } from '../../../wailsjs/go/main/App';
 import { getExifOrientation } from '../io/exif-utils';
 
@@ -118,7 +124,21 @@ export async function resolveImageDimensions(
     }
   }
 
-  // 2. محاولة فك الأبعاد السريعة عبر createImageBitmap (الأداء الأقصى في المتصفح مع مراعاة EXIF)
+  // 2. قياس الأبعاد المتجهة الدقيقة لمصادر SVG دون المرور عبر createImageBitmap
+  if (isSvgImageSource(src)) {
+    const markup = src.trim().startsWith('data:')
+      ? decodeSvgDataUrl(src)
+      : await loadSanitizedSvgMarkup(src);
+    if (markup) {
+      const svgDims = parseSvgDimensions(markup);
+      if (svgDims) {
+        rememberDimensions(src, svgDims.width, svgDims.height);
+        return svgDims;
+      }
+    }
+  }
+
+  // 3. محاولة فك الأبعاد السريعة عبر createImageBitmap (الأداء الأقصى في المتصفح مع مراعاة EXIF)
   // فقط للمصادر الموجودة في الذاكرة/المشتقة من blob: أي مصدر شبكي أو ملفي كامل
   // كان يُنزَّل بالكامل ويُنسخ في الذاكرة لمجرد قراءة الأبعاد (ذروة لا مبرر لها).
   const isInMemorySource = src.startsWith('data:') || src.startsWith('blob:');

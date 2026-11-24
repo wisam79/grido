@@ -16,6 +16,7 @@ import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { CANVAS_VIEW_TRANSFORM_EVENT, clientToLocal } from '@/lib/canvas/viewport-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
+import { ensureSlotCompatibleSource } from '@/lib/io/svg-slot-compat';
 import { isAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
 
@@ -290,7 +291,8 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     try {
       const [b64] = await openImageFileDialog(false);
       if (b64) {
-        const srcToUse = await persistPickedImage(b64);
+        const persisted = await persistPickedImage(b64);
+        const srcToUse = await ensureSlotCompatibleSource(persisted);
         setSlotImage(selectedSlot.id, srcToUse);
         if (isAutoFillGridEnabled()) {
           fillAllSlots(srcToUse, selectedSlot.id);

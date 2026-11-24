@@ -11,6 +11,7 @@ import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { DEFAULT_DPI, formatGuideMeasurement, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
+import { ensureSlotCompatibleSource } from '@/lib/io/svg-slot-compat';
 import { createLogger } from '@/lib/logger';
 import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { wailsIsDesktop } from '@/lib/wails-env';
@@ -331,7 +332,8 @@ export const EditorCanvas = React.memo(
                 logger.error('Failed to save image locally:', e);
               }
             }
-            useEditorStore.getState().setSlotImage(slotId, srcToUse);
+            const slotSrc = await ensureSlotCompatibleSource(srcToUse);
+            useEditorStore.getState().setSlotImage(slotId, slotSrc);
           }
         } catch (err) {
           logger.error('Open file error:', err);

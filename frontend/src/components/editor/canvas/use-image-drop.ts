@@ -12,9 +12,11 @@ import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { isDropFillableImageShape } from '@/lib/canvas/image-shape-fill';
 import { registerNativeImageDropHandler } from '@/lib/canvas/native-image-drop';
 import { useStageRef } from '@/lib/canvas/stage-context';
+import { sanitizeSvgDataUrl } from '@/lib/canvas/svg-logo';
 import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
+import { ensureSlotCompatibleSources } from '@/lib/io/svg-slot-compat';
 import { createLogger } from '@/lib/logger';
 
 import type { NativeImageDropPayload } from '@/lib/canvas/native-image-drop';
@@ -269,27 +271,30 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>, enabled
       if (!isCurrent(context)) return;
       const state = useEditorStore.getState();
       if (context.mode === 'collage') {
+        const slotSources = await ensureSlotCompatibleSources(sources);
+        if (!isCurrent(context)) return;
+        const freshState = useEditorStore.getState();
         if (context.slotId) {
           const previous = context.slots.find((slot) => slot.id === context.slotId);
-          const current = state.slots.find((slot) => slot.id === context.slotId);
+          const current = freshState.slots.find((slot) => slot.id === context.slotId);
           if (current !== previous) {
             // Another request edited this exact target. Keep this import as
             // overflow, rather than overwriting it or discarding valid files.
-            await state.setSlotImagesBatch([], null, sources, () => isCurrent(context));
+            await freshState.setSlotImagesBatch([], null, slotSources, () => isCurrent(context));
             return;
           }
         }
-        const plan = buildCollageInsertPlan(state.slots, sources, {
+        const plan = buildCollageInsertPlan(freshState.slots, slotSources, {
           targetSlotId: context.slotId,
           scope: context.slotId ? 'target' : 'empty',
           repeat:
             !context.slotId &&
             isBakedCollageLayout(context.collageTemplate) &&
-            sources.length === 1,
+            slotSources.length === 1,
         });
-        await state.setSlotImagesBatch(
+        await freshState.setSlotImagesBatch(
           plan.assignments,
-          sources[0],
+          slotSources[0],
           plan.remaining,
           () => isCurrent(context),
           true,
@@ -406,8 +411,8 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>, enabled
       if (event.dataTransfer?.files?.length) event.stopPropagation?.();
       clearDropTargetHighlight();
       if (!enabled || !active.current) return;
-      const files = Array.from(event.dataTransfer?.files || []).filter((file) =>
-        file.type.startsWith('image/'),
+      const files = Array.from(event.dataTransfer?.files || []).filter(
+        (file) => file.type.startsWith('image/') || /\.svg$/i.test(file.name),
       );
       if (!files.length) return;
       const context = captureDrop(event.clientX, event.clientY);
@@ -432,7 +437,15 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>, enabled
               }
               // Browser preview compatibility if the desktop media service is absent.
               try {
-                return await blobToDataUrl(file);
+                const rawUrl = await blobToDataUrl(file);
+                if (
+                  /^data:image\/svg\+xml\b/i.test(rawUrl) ||
+                  file.type === 'image/svg+xml' ||
+                  /\.svg$/i.test(file.name)
+                ) {
+                  return sanitizeSvgDataUrl(rawUrl);
+                }
+                return rawUrl;
               } catch (error) {
                 if (controller.signal.aborted) throw error;
                 logger.warn('Failed to read dropped image:', file.name, error);

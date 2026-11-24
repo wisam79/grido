@@ -109,6 +109,8 @@ export interface ImageElement extends BaseCanvasElement {
   bgColor?: string;
   /** مصدر قالب الملصق إن كان العنصر أُدرج من استوديو الملصقات */
   stickerSource?: StickerElementSource;
+  /** صبغة تلوين غير هدّامة للشعارات المتجهة المستوردة (.svg) */
+  svgTintColor?: string;
   /** قناع قص متجهات للصورة */
   maskShape?: MaskShape;
   /** تكبير الكادر غير الهدّام داخل الإطار (1..4، افتراضي 1) */

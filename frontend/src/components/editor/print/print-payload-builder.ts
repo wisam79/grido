@@ -230,6 +230,8 @@ export interface SinglePayloadContext {
   imageDimensions?: ReadonlyMap<string, { width: number; height: number }>;
   /** استبدال مصادر الملصقات المُرقّاة بدقة الطباعة (من ensureStickerPrintResolution) */
   stickerSrcMap?: ReadonlyMap<string, string>;
+  /** استبدال مصادر المتجهات حسب معرف العنصر — يدعم تعدد ألوان شعار SVG واحد */
+  stickerElementSrcMap?: ReadonlyMap<string, string>;
 }
 
 export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<BuiltItems | null> {
@@ -247,6 +249,7 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     printCutLineStyle,
     imageDimensions,
     stickerSrcMap,
+    stickerElementSrcMap,
   } = ctx;
 
   if (!stage) return null;
@@ -301,13 +304,15 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     // راستر إدراجها الصغير. استبدال صور العقد مؤقتاً بالمصادر المُرقّاة —
     // الند التلو لعذر upgradeImagesToFullResolution — مع استعادة فورية.
     const nodeOverrides =
-      stickerSrcMap && stickerSrcMap.size > 0
+      (stickerElementSrcMap && stickerElementSrcMap.size > 0) ||
+      (stickerSrcMap && stickerSrcMap.size > 0)
         ? elements
-            .filter(
-              (el): el is ImageElement =>
-                el.type === 'image' && !!el.imageSrc && stickerSrcMap.has(el.imageSrc),
-            )
-            .map((el) => ({ nodeId: el.id, src: stickerSrcMap.get(el.imageSrc)! }))
+            .filter((el): el is ImageElement => el.type === 'image' && !!el.imageSrc)
+            .flatMap((el) => {
+              const overrideSrc =
+                stickerElementSrcMap?.get(el.id) ?? stickerSrcMap?.get(el.imageSrc!);
+              return overrideSrc ? [{ nodeId: el.id, src: overrideSrc }] : [];
+            })
         : [];
     const capturedBlob = await captureStageBlob(
       stage,

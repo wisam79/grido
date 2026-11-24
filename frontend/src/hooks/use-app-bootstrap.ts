@@ -18,6 +18,7 @@ import {
 } from '@/lib/canvas/native-image-drop';
 import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
+import { ensureSlotCompatibleSources } from '@/lib/io/svg-slot-compat';
 import { createLogger } from '@/lib/logger';
 import {
   isLicenseCheckInvalidatedError,
@@ -262,17 +263,21 @@ export function useAppBootstrap(): AppBootstrapState {
             activeDropGuards.add(unbindGuard);
 
             if (mode === 'collage') {
+              const slotImages = await ensureSlotCompatibleSources(images);
+              if (!isActive()) return;
+              const liveStore = useEditorStore.getState();
               const targetSlotId =
-                store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
-                  ? store.selectedId
+                liveStore.selectedId &&
+                liveStore.slots.some((slot) => slot.id === liveStore.selectedId)
+                  ? liveStore.selectedId
                   : null;
-              const plan = buildCollageInsertPlan(store.slots, images, {
+              const plan = buildCollageInsertPlan(liveStore.slots, slotImages, {
                 targetSlotId,
                 scope: targetSlotId ? 'target' : 'empty',
               });
-              await store.setSlotImagesBatch(
+              await liveStore.setSlotImagesBatch(
                 plan.assignments,
-                images[0] || null,
+                slotImages[0] || null,
                 plan.remaining,
                 isActive,
                 true,

@@ -149,7 +149,7 @@ function scrubSvgElement(el: Element): void {
       el.removeAttribute(attr.name);
       continue;
     }
-    if (name === 'style' && SVG_STYLE_EXTERNAL_URL.test(attr.value)) {
+    if (SVG_STYLE_EXTERNAL_URL.test(stripWhitespaceAndControlChars(attr.value))) {
       el.removeAttribute(attr.name);
     }
   }

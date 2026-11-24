@@ -164,24 +164,95 @@ type uploadSpec struct {
 	limit        int64
 	limitMessage string
 	extFor       func(detectedMime string) string
+	allowSVG     bool
 }
 
 // saveUploadedImage يقرأ الجسم كصورة، يرفض ما يتجاوز spec.limit، ويكتبه
 // ذرّياً في spec.dir. عند الفشل يكتب رد HTTP المناسب ويعيد ok=false.
 func saveUploadedImage(w http.ResponseWriter, r *http.Request, spec uploadSpec) (string, bool) {
+	var uploadBody io.Reader = r.Body
+	var uploadedFilename string
+	contentType := strings.ToLower(r.Header.Get("Content-Type"))
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		mr, err := r.MultipartReader()
+		if err != nil {
+			http.Error(w, "Invalid multipart upload", http.StatusBadRequest)
+			return "", false
+		}
+		var filePart io.ReadCloser
+		for {
+			part, partErr := mr.NextPart()
+			if partErr == io.EOF {
+				break
+			}
+			if partErr != nil {
+				http.Error(w, "Failed to read multipart part", http.StatusBadRequest)
+				return "", false
+			}
+			if part.FileName() != "" || part.FormName() == "file" {
+				uploadedFilename = part.FileName()
+				filePart = part
+				break
+			}
+			_ = part.Close()
+		}
+		if filePart == nil {
+			http.Error(w, "Missing uploaded file part", http.StatusBadRequest)
+			return "", false
+		}
+		defer filePart.Close()
+		uploadBody = filePart
+	}
+
 	// +1 بايت: القارئ الأول كان يقصّ عند الحد تماماً فيخفي التجاوز عن العدّ اللاحق.
-	limitReader := io.LimitReader(r.Body, spec.limit+1)
-	sniffBuf := make([]byte, 512)
+	limitReader := io.LimitReader(uploadBody, spec.limit+1)
+	sniffBuf := make([]byte, 4096)
 	n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-	if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+	if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF && sniffErr != io.EOF {
 		http.Error(w, "Failed to read upload body", http.StatusBadRequest)
 		return "", false
 	}
 	sniffBuf = sniffBuf[:n]
-	detectedMime := http.DetectContentType(sniffBuf)
-	if !strings.HasPrefix(detectedMime, "image/") {
+	if len(sniffBuf) == 0 {
 		http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
 		return "", false
+	}
+	detectedMime := http.DetectContentType(sniffBuf)
+	isRasterImage := strings.HasPrefix(detectedMime, "image/")
+	isSVG := !isRasterImage && spec.allowSVG &&
+		(service.LooksLikeSVG(sniffBuf) || strings.EqualFold(filepath.Ext(uploadedFilename), ".svg"))
+	if !isRasterImage && !isSVG {
+		http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+		return "", false
+	}
+
+	if isSVG {
+		svgCap := int64(service.MaxSVGFileSize)
+		if spec.limit < svgCap {
+			svgCap = spec.limit
+		}
+		combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+		rawSVG, err := io.ReadAll(io.LimitReader(combined, svgCap+1))
+		if err != nil {
+			http.Error(w, "Failed to read uploaded SVG", http.StatusInternalServerError)
+			return "", false
+		}
+		if int64(len(rawSVG)) > svgCap {
+			http.Error(w, spec.limitMessage, http.StatusRequestEntityTooLarge)
+			return "", false
+		}
+		cleanSVG, sanitizeErr := service.SanitizeSVGBytes(rawSVG)
+		if sanitizeErr != nil {
+			http.Error(w, "Invalid or unsafe SVG content", http.StatusBadRequest)
+			return "", false
+		}
+		filename := fmt.Sprintf("%s%d.svg", spec.prefix, time.Now().UnixNano())
+		absPath := filepath.Join(spec.dir, filename)
+		if err := utils.AtomicWriteFile(absPath, cleanSVG, 0o644); err != nil {
+			http.Error(w, "Failed to save SVG file", http.StatusInternalServerError)
+			return "", false
+		}
+		return filename, true
 	}
 
 	filename := fmt.Sprintf("%s%d%s", spec.prefix, time.Now().UnixNano(), spec.extFor(detectedMime))
@@ -543,6 +614,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			limit:        service.MaxFileSize,
 			limitMessage: "Uploaded media exceeds size limit",
 			extFor:       deps.MediaSvc.GetExtensionFromMime,
+			allowSVG:     true,
 		})
 		if !ok {
 			return

@@ -2,6 +2,7 @@ import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas
 import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
+import { ensureSlotCompatibleSource } from '@/lib/io/svg-slot-compat';
 import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 import { parseSanitizedCanvasElements } from '@/lib/schema';
@@ -144,15 +145,17 @@ export async function pasteFromClipboardOrStore(
 
           if (!canCommit()) return false;
           if (localPath) {
-            const { mode, selectedId, slots, setSlotImage } = readState();
+            const { mode, selectedId, slots } = readState();
             if (mode === 'collage') {
+              const slotPath = await ensureSlotCompatibleSource(localPath);
+              if (!canCommit()) return false;
               let targetSlotId = selectedId;
               if (!targetSlotId) {
                 const emptySlot = slots.find((s) => !s.imageSrc);
                 if (emptySlot) targetSlotId = emptySlot.id;
                 else if (slots.length > 0) targetSlotId = slots[0].id;
               }
-              if (targetSlotId) setSlotImage(targetSlotId, localPath);
+              if (targetSlotId) readState().setSlotImage(targetSlotId, slotPath);
             } else {
               const resolvedAspect = aspect ?? (await resolveImageAspectRatio(localPath));
               if (!canCommit()) return false;

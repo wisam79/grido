@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -158,6 +159,80 @@ func TestAssetHandler_UploadPrintImage_RejectsNonImage(t *testing.T) {
 	}
 	if len(entries) != 0 {
 		t.Errorf("expected no files written for a rejected upload, found %d", len(entries))
+	}
+}
+
+func TestAssetHandler_UploadMedia_SanitizesSVGAndPrintRejectsSVG(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	token := "test-session-token-12345"
+	mediaSvc := service.NewMediaService()
+	handler := NewAssetHandler(AssetServerDeps{
+		SessionToken: token,
+		MediaSvc:     mediaSvc,
+	})
+
+	svgBody := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><script>alert(1)</script><rect width="400" height="200" fill="#2563eb" onload="alert(2)"/></svg>`
+
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, err := mw.CreateFormFile("file", "brand-logo.svg")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := fw.Write([]byte(svgBody)); err != nil {
+		t.Fatalf("write form file: %v", err)
+	}
+	_ = mw.Close()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/upload-media", &body)
+	req.Host = "localhost:9245"
+	req.Header.Set("Origin", "http://localhost:9245")
+	req.Header.Set(service.LocalApiSessionHeader, token)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 uploading svg to /api/upload-media, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Status      string  `json:"status"`
+		ImageSrc    string  `json:"imageSrc"`
+		Width       int     `json:"width"`
+		Height      int     `json:"height"`
+		AspectRatio float64 `json:"aspectRatio"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if !strings.HasSuffix(resp.ImageSrc, ".svg") {
+		t.Fatalf("expected .svg imageSrc, got %q", resp.ImageSrc)
+	}
+	if resp.Width != 1024 || resp.Height != 512 || resp.AspectRatio != 2.0 {
+		t.Fatalf("unexpected svg dims: %+v", resp)
+	}
+	savedPath := filepath.Join(mediaSvc.GetMediaDir(), strings.TrimPrefix(resp.ImageSrc, "/local-image/"))
+	savedBytes, err := os.ReadFile(savedPath)
+	if err != nil {
+		t.Fatalf("read saved svg: %v", err)
+	}
+	lower := strings.ToLower(string(savedBytes))
+	if strings.Contains(lower, "<script") || strings.Contains(lower, "onload") {
+		t.Fatalf("uploaded svg was not sanitized: %s", string(savedBytes))
+	}
+
+	// /api/upload-print-image must reject SVG (only raster PNG/JPEG print uploads allowed)
+	printReq := httptest.NewRequest(http.MethodPost, "/api/upload-print-image", strings.NewReader(svgBody))
+	printReq.Host = "localhost:9245"
+	printReq.Header.Set("Origin", "http://localhost:9245")
+	printReq.Header.Set(service.LocalApiSessionHeader, token)
+	printRec := httptest.NewRecorder()
+	handler.ServeHTTP(printRec, printReq)
+	if printRec.Code != http.StatusBadRequest {
+		t.Fatalf("expected /api/upload-print-image to reject SVG with 400, got %d", printRec.Code)
 	}
 }
 

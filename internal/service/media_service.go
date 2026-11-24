@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -188,6 +187,32 @@ func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, er
 		return ImageDimensions{}, err
 	}
 
+	if strings.EqualFold(filepath.Ext(resolved), ".svg") {
+		f, err := os.Open(resolved)
+		if err != nil {
+			return ImageDimensions{}, fmt.Errorf("open svg file: %w", err)
+		}
+		defer f.Close()
+
+		raw, err := io.ReadAll(io.LimitReader(f, MaxSVGFileSize+1))
+		if err != nil {
+			return ImageDimensions{}, fmt.Errorf("read svg file: %w", err)
+		}
+		if int64(len(raw)) > MaxSVGFileSize {
+			return ImageDimensions{}, fmt.Errorf("svg file exceeds max size (%d bytes)", MaxSVGFileSize)
+		}
+		w, h, ok := ParseSVGDimensions(raw)
+		if !ok {
+			return ImageDimensions{}, fmt.Errorf("decode svg dimensions: missing width/height/viewBox")
+		}
+		return ImageDimensions{
+			Width:       w,
+			Height:      h,
+			Orientation: 1,
+			IsRotated:   false,
+		}, nil
+	}
+
 	f, err := os.Open(resolved)
 	if err != nil {
 		return ImageDimensions{}, fmt.Errorf("open image file: %w", err)
@@ -294,6 +319,41 @@ func (s *MediaService) GetExtensionFromMime(mimeType string) string {
 	}
 }
 
+func copySanitizedSVGToMedia(srcFile *os.File, destPath string, fileSize int64) error {
+	if fileSize > MaxSVGFileSize {
+		return fmt.Errorf("svg file too large: %d bytes (max %d)", fileSize, MaxSVGFileSize)
+	}
+	if _, err := srcFile.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("seek svg file: %w", err)
+	}
+	raw, err := io.ReadAll(io.LimitReader(srcFile, MaxSVGFileSize+1))
+	if err != nil {
+		return fmt.Errorf("read svg file: %w", err)
+	}
+	if int64(len(raw)) > MaxSVGFileSize {
+		return fmt.Errorf("svg file too large: %d bytes (max %d)", len(raw), MaxSVGFileSize)
+	}
+	cleanSVG, err := SanitizeSVGBytes(raw)
+	if err != nil {
+		return fmt.Errorf("sanitize svg: %w", err)
+	}
+	_ = srcFile.Close()
+
+	af, err := utils.CreateAtomic(destPath, 0o644)
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
+	}
+	defer af.Abort()
+
+	if _, err := af.Write(cleanSVG); err != nil {
+		return fmt.Errorf("write sanitized svg: %w", err)
+	}
+	if err := af.Commit(); err != nil {
+		return fmt.Errorf("finalize media file: %w", err)
+	}
+	return nil
+}
+
 func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	stat, err := os.Stat(filePath)
 	if err != nil {
@@ -309,23 +369,33 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	}
 	defer srcFile.Close()
 
-	buf := make([]byte, 512)
+	buf := make([]byte, 4096)
 	n, err := srcFile.Read(buf)
 	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("read file header: %w", err)
 	}
 
 	detectedType := http.DetectContentType(buf[:n])
-	if !strings.HasPrefix(detectedType, "image/") {
+	isRasterImage := strings.HasPrefix(detectedType, "image/")
+	isSVG := !isRasterImage && (strings.EqualFold(filepath.Ext(filePath), ".svg") || LooksLikeSVG(buf[:n]))
+	if !isRasterImage && !isSVG {
 		return "", fmt.Errorf("invalid file type: %s (expected image)", detectedType)
+	}
+
+	mediaDir := s.GetMediaDir()
+	if isSVG {
+		newName := fmt.Sprintf("img_%d.svg", time.Now().UnixNano())
+		newPath := filepath.Join(mediaDir, newName)
+		if err := copySanitizedSVGToMedia(srcFile, newPath, stat.Size()); err != nil {
+			return "", err
+		}
+		return "/local-image/" + newName, nil
 	}
 
 	_, err = srcFile.Seek(0, io.SeekStart)
 	if err != nil {
 		return "", fmt.Errorf("seek file: %w", err)
 	}
-
-	mediaDir := s.GetMediaDir()
 
 	// Prevent extension bypass by enforcing extension from MIME type
 	ext := s.GetExtensionFromMime(detectedType)
@@ -399,7 +469,7 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 			}
 			defer srcFile.Close()
 
-			buf := make([]byte, 512)
+			buf := make([]byte, 4096)
 			n, err := srcFile.Read(buf)
 			if err != nil && err != io.EOF {
 				mu.Lock()
@@ -410,11 +480,27 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 			}
 
 			detectedType := http.DetectContentType(buf[:n])
-			if !strings.HasPrefix(detectedType, "image/") {
+			isRasterImage := strings.HasPrefix(detectedType, "image/")
+			isSVG := !isRasterImage && (strings.EqualFold(filepath.Ext(filePath), ".svg") || LooksLikeSVG(buf[:n]))
+			if !isRasterImage && !isSVG {
 				mu.Lock()
 				skippedNames = append(skippedNames, filepath.Base(filePath))
 				mu.Unlock()
 				slog.Warn("Skipped file in multi-select: not an image", "file", filepath.Base(filePath), "detected", detectedType)
+				return nil
+			}
+
+			if isSVG {
+				newName := fmt.Sprintf("img_%d_%d.svg", time.Now().UnixNano(), i)
+				newPath := filepath.Join(mediaDir, newName)
+				if err := copySanitizedSVGToMedia(srcFile, newPath, stat.Size()); err != nil {
+					mu.Lock()
+					skippedNames = append(skippedNames, filepath.Base(filePath))
+					mu.Unlock()
+					slog.Warn("Skipped svg in multi-select: sanitize/write error", "file", filepath.Base(filePath), "error", err)
+					return nil
+				}
+				results[i] = "/local-image/" + newName
 				return nil
 			}
 
@@ -501,13 +587,11 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	isDetectedImage := strings.HasPrefix(detected, "image/")
 
 	head := decoded
-	if len(head) > 512 {
-		head = head[:512]
+	if len(head) > 4096 {
+		head = head[:4096]
 	}
-	// SVG مشروع: يكتشفه net/http كنص/xml — نقبله فقط إن كان وسم SVG فعلياً
-	looksLikeSvg := strings.Contains(declared, "svg") &&
-		(bytes.Contains(head, []byte("<svg")) || bytes.Contains(head, []byte("<SVG")) ||
-			bytes.Contains(head, []byte("<?xml")))
+	// SVG مشروع: يكتشفه net/http كنص/xml — نقبله فقط إن كان وسم SVG فعلياً ونعقّمه قبل الحفظ
+	looksLikeSvg := strings.Contains(declared, "svg") && LooksLikeSVG(head)
 
 	switch {
 	case !strings.HasPrefix(declared, "image/"):
@@ -522,6 +606,14 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	ext := s.GetExtensionFromMime(mimeType)
 	if isDetectedImage {
 		ext = s.GetExtensionFromMime(detected)
+	}
+	if looksLikeSvg {
+		cleanSVG, sanitizeErr := SanitizeSVGBytes(decoded)
+		if sanitizeErr != nil {
+			return "", fmt.Errorf("invalid svg payload: %w", sanitizeErr)
+		}
+		decoded = cleanSVG
+		ext = ".svg"
 	}
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
@@ -549,6 +641,7 @@ func (s *MediaService) ProcessDirectoryImages(dirPath string) ([]string, error) 
 		".gif":  true,
 		".tiff": true,
 		".tif":  true,
+		".svg":  true,
 	}
 
 	var imagePaths []string

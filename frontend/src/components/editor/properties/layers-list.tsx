@@ -52,6 +52,7 @@ import {
   ArrowDown,
   FolderSimple,
 } from '@/components/ui/icons';
+import { isSvgImageSource } from '@/lib/canvas/svg-logo';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useEditorStore } from '@/lib/editor-store';
 import {
@@ -123,9 +124,11 @@ function getLayerLabel(el: CanvasElement, layerNumber: number): string {
 
 function getLayerSubLabel(el: CanvasElement): string {
   if (el.type === 'image') {
+    if (el.stickerSource) return 'ملصق';
+    if (isSvgImageSource(el.imageSrc)) return 'شعار SVG';
     const w = Math.round(el.width * 100);
     const h = Math.round(el.height * 100);
-    return el.stickerSource ? 'ملصق' : `صورة · ${w}×${h}`;
+    return `صورة · ${w}×${h}`;
   }
   if (el.type === 'text') {
     const fam = (el as TextElement).fontFamily?.split(',')[0]?.trim() || 'نص';
@@ -553,6 +556,7 @@ const SortableLayerItem = React.memo(
     prev.el.height === next.el.height &&
     (prev.el as ImageElement).imageSrc === (next.el as ImageElement).imageSrc &&
     (prev.el as ImageElement).stickerSource === (next.el as ImageElement).stickerSource &&
+    (prev.el as ImageElement).svgTintColor === (next.el as ImageElement).svgTintColor &&
     (prev.el as TextElement).text === (next.el as TextElement).text &&
     (prev.el as TextElement).fontFamily === (next.el as TextElement).fontFamily &&
     (prev.el as TextElement).fontSize === (next.el as TextElement).fontSize &&

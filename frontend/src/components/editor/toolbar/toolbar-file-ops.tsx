@@ -23,6 +23,7 @@ import {
 } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { ensureSlotCompatibleSources } from '@/lib/io/svg-slot-compat';
 import { createLogger } from '@/lib/logger';
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
@@ -115,8 +116,6 @@ export function ToolbarFileOps() {
       if (b64s && b64s.length > 0) {
         const freshState = useEditorStore.getState();
         const freshMode = freshState.mode;
-        const freshSlots = freshState.slots;
-        const freshSelectedId = freshState.selectedId;
 
         const isWailsDesktop = wailsIsDesktop();
 
@@ -138,28 +137,31 @@ export function ToolbarFileOps() {
             localPaths = b64s;
           }
 
+          const slotPaths = await ensureSlotCompatibleSources(localPaths);
+          const afterConvertState = useEditorStore.getState();
           const targetSlotId =
-            freshSelectedId && freshSlots.some((slot) => slot.id === freshSelectedId)
-              ? freshSelectedId
+            afterConvertState.selectedId &&
+            afterConvertState.slots.some((slot) => slot.id === afterConvertState.selectedId)
+              ? afterConvertState.selectedId
               : null;
-          const plan = buildCollageInsertPlan(freshSlots, localPaths, {
+          const plan = buildCollageInsertPlan(afterConvertState.slots, slotPaths, {
             targetSlotId,
             scope: targetSlotId ? 'target' : 'empty',
           });
           if (plan.assignments.length > 0) {
-            await freshState.setSlotImagesBatch(
+            await afterConvertState.setSlotImagesBatch(
               plan.assignments,
               plan.assignments[plan.assignments.length - 1].src,
             );
           }
           if (plan.remaining.length > 0) {
-            freshState.appendPendingCollageImages(plan.remaining);
+            afterConvertState.appendPendingCollageImages(plan.remaining);
             toast.info(`أُدرجت ${plan.assignments.length} · بقيت ${plan.remaining.length} صورة`);
           } else if (plan.assignments.length > 1) {
             toast.success(`أُدرجت ${plan.assignments.length} صورة في الخانات`);
           } else if (plan.assignments.length === 0) {
             toast.info('لا توجد خانات فارغة — بقيت الصور في قائمة التعبئة');
-            freshState.appendPendingCollageImages(localPaths);
+            afterConvertState.appendPendingCollageImages(slotPaths);
           }
         } else {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة

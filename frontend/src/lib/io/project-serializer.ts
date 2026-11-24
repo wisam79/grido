@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { sanitizeSvgDataUrl, sanitizeSvgTintColor } from '@/lib/canvas/svg-logo';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
 import { createLogger } from '@/lib/logger';
 import { ProjectSchema } from '@/lib/schema';
@@ -205,6 +206,17 @@ export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
           if (typeof svg === 'string') {
             (src as Record<string, unknown>).svg = sanitizeSvgMarkup(svg);
           }
+        }
+        for (const uriKey of ['imageSrc', 'originalImageSrc', 'fillImageSrc'] as const) {
+          const rawUri = (el as Record<string, unknown>)[uriKey];
+          if (typeof rawUri === 'string' && /^data:image\/svg\+xml\b/i.test(rawUri.trim())) {
+            const cleanUri = sanitizeSvgDataUrl(rawUri);
+            if (cleanUri) (el as Record<string, unknown>)[uriKey] = cleanUri;
+          }
+        }
+        const rawTint = (el as Record<string, unknown>).svgTintColor;
+        if (typeof rawTint === 'string') {
+          (el as Record<string, unknown>).svgTintColor = sanitizeSvgTintColor(rawTint);
         }
       }
     }

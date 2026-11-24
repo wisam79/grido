@@ -1,5 +1,6 @@
 import { isElementFullyOutsideCanvas } from '@/lib/canvas/element-geometry';
 import { resolveBatchImageDimensions } from '@/lib/canvas/image-dimensions';
+import { isSvgImageSource } from '@/lib/canvas/svg-logo';
 import { MM_PER_INCH } from '@/lib/canvas/units';
 import { computeImageCrop } from '@/lib/export/export-primitives';
 
@@ -94,6 +95,9 @@ export function runFreeformPreflight(input: FreeformPreflightInput): FreeformPre
       });
       continue;
     }
+
+    // المصادر المتجهة (SVG) تُعاد راسترتها بدقة الطباعة الكاملة فلا تُطلق تحذير دقة منخفضة
+    if (isSvgImageSource(src)) continue;
 
     const widthMM = el.width * canvasWidthMM;
     const heightMM = el.height * canvasHeightMM;

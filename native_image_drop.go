@@ -32,7 +32,7 @@ type nativeImageDropComplete struct {
 // الامتدادات في ثلاثة مواضع (حظر ازدواجية المنطق).
 func isImageFilePath(path string) bool {
 	switch strings.ToLower(filepath.Ext(path)) {
-	case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+	case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg":
 		return true
 	default:
 		return false

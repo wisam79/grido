@@ -176,11 +176,11 @@ func TestNativeImageDropSkipsEmptyOrNonImagePaths(t *testing.T) {
 	var received []string
 	var payloads []any
 	err := processNativeImageDrop(
-		[]string{"notes.txt", "photo.JPG", "doc.pdf", "art.webp"},
+		[]string{"notes.txt", "photo.JPG", "doc.pdf", "art.webp", "logo.svg"},
 		nil,
 		func(paths []string) ([]string, error) {
 			received = append([]string(nil), paths...)
-			return []string{"/local-image/photo.jpg", "/local-image/art.webp"}, nil
+			return []string{"/local-image/photo.jpg", "/local-image/art.webp", "/local-image/logo.svg"}, nil
 		},
 		func(payload any) {
 			payloads = append(payloads, payload)
@@ -189,7 +189,7 @@ func TestNativeImageDropSkipsEmptyOrNonImagePaths(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	wantPaths := []string{"photo.JPG", "art.webp"}
+	wantPaths := []string{"photo.JPG", "art.webp", "logo.svg"}
 	if !reflect.DeepEqual(received, wantPaths) {
 		t.Fatalf("filtered paths = %v, want %v", received, wantPaths)
 	}

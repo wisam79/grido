@@ -35,6 +35,7 @@ import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { buildMaskPath, MASK_SHAPES, maskPathToSvg } from '@/lib/canvas/mask-geometry';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { isSvgImageSource, sanitizeSvgTintColor } from '@/lib/canvas/svg-logo';
 import { useEditorStore } from '@/lib/editor-store';
 import { hasCustomImageCrop } from '@/lib/export/export-primitives';
 import { getDocumentSession } from '@/lib/io/document-session';
@@ -316,6 +317,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   const _isLicenseActive = useEditorStore((state) => state.isLicenseActive());
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
+  const svgTintDirtyRef = useRef(false);
+  const isImportedSvg = !element.stickerSource && isSvgImageSource(element.imageSrc);
+
+  useEffect(() => {
+    svgTintDirtyRef.current = false;
+  }, [element.id]);
 
   const handleScannerSave = async (processedResult: string | string[]) => {
     const session = getDocumentSession();
@@ -401,6 +408,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       if (finalPath) {
         onUpdate(targetElementId, {
           imageSrc: finalPath,
+          svgTintColor: undefined,
           cropZoom: undefined,
           cropPanX: undefined,
           cropPanY: undefined,
@@ -471,12 +479,68 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         </FluentSection>
       )}
 
+      {isImportedSvg && (
+        <FluentSection title="لون الشعار">
+          <div className="space-y-1.5">
+            <ColorField
+              color={element.svgTintColor ?? 'transparent'}
+              onChange={(val) => {
+                const live = useEditorStore.getState().elements.find((el) => el.id === element.id);
+                if (!live || live.type !== 'image' || live.locked) return;
+                const nextTint = sanitizeSvgTintColor(val);
+                if ((live.svgTintColor ?? undefined) === nextTint) return;
+                svgTintDirtyRef.current = true;
+                onUpdate(element.id, { svgTintColor: nextTint });
+              }}
+              onCommit={(val) => {
+                const live = useEditorStore.getState().elements.find((el) => el.id === element.id);
+                if (!live || live.type !== 'image' || live.locked) {
+                  svgTintDirtyRef.current = false;
+                  return;
+                }
+                const nextTint = sanitizeSvgTintColor(val);
+                const changed =
+                  svgTintDirtyRef.current || (live.svgTintColor ?? undefined) !== nextTint;
+                svgTintDirtyRef.current = false;
+                if (!changed) return;
+                if ((live.svgTintColor ?? undefined) !== nextTint) {
+                  onUpdate(element.id, { svgTintColor: nextTint });
+                }
+                useEditorStore.getState().pushHistory();
+              }}
+              className="w-full"
+              ariaLabel="لون الشعار"
+            />
+            {Boolean(element.svgTintColor) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full h-8 rounded-md border-border/80 hover:bg-muted transition-colors duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs text-muted-foreground hover:text-foreground shadow-2xs"
+                onClick={() => {
+                  const live = useEditorStore
+                    .getState()
+                    .elements.find((el) => el.id === element.id);
+                  if (!live || live.type !== 'image' || live.locked || !live.svgTintColor) return;
+                  svgTintDirtyRef.current = false;
+                  onUpdate(element.id, { svgTintColor: undefined });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                <ArrowCounterClockwise className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                <span>استعادة اللون الأصلي</span>
+              </Button>
+            )}
+          </div>
+        </FluentSection>
+      )}
+
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
       <FluentSection
-        key={`ai-${element.id}-${Boolean(element.stickerSource)}`}
+        key={`ai-${element.id}-${Boolean(element.stickerSource)}-${isImportedSvg}`}
         title="أدوات الذكاء الاصطناعي"
         collapsible
-        defaultOpen={!element.stickerSource}
+        defaultOpen={!element.stickerSource && !isImportedSvg}
       >
         <div className="grid grid-cols-2 gap-1.5">
           {/* 1. عزل الخلفية */}
@@ -738,6 +802,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   onUpdate(element.id, {
                     imageSrc: element.originalImageSrc,
                     originalImageSrc: undefined,
+                    svgTintColor: undefined,
                     bgColor: 'transparent',
                     cropZoom: undefined,
                     cropPanX: undefined,

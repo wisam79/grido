@@ -2,6 +2,20 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات استيراد وتلوين الشعارات المتجهة (`FF-06`) — 2026-11-24
+
+- **النطاق:** تعقيم وقياس أبعاد `.svg` في Go والواجهة، تضمين قواعد `<style>`، تلوين `applySvgLogoTint` مع حماية `<mask>` و`<clipPath>`، ثبات تصيير `useStickerDisplayRaster` (`forceRaster` + تثبيت `sourceIdentity`)، خريطة `elementSrcMap` في `print-rerasterize.ts` للطباعة `300+ DPI`، تحييد المسار السريع وتحذيرات الدقة الوهمية، وقسم «لون الشعار» مع استعادة اللون الأصلي و`Ctrl+Z` واحدة.
+- **النتائج المثبتة منفردة ومتسلسلة (دون full suite أو Playwright أو بناء Wails محلي):**
+  - Go: `TestNativeImageDrop` (5 دوال + فرعية **PASS**)، `./internal/service` (8 اختبارات SVG/Media **PASS**)، `./internal/server` (4 اختبارات Upload **PASS**)، `./internal/repository` (`TestCollectReferencedImages_RegexSafetyNet` **PASS**)، و`gofmt -l` بلا مخرجات.
+  - Vitest بعد آخر تعديل كود/تنسيق: `test/svg-logo-tint.test.tsx` **7/7 PASS**، `test/use-sticker-display-raster.test.ts` **7/7 PASS**، `src/lib/store/element-slice-merge.test.ts` **111/111 PASS**.
+  - Vitest المستهدفة في الجلسة (لم يتغيّر سلوك مصادرها عند تنسيق Prettier): `test/element-properties-tabs.test.tsx` **74/74 PASS**، `test/svg-safety.test.ts` **9/9 PASS**، `test/single-print-composition.test.ts` **39/39 PASS**، `test/freeform-cover-preflight.test.ts` **4/4 PASS**، `test/project-serializer.test.ts` **31/31 PASS**، `test/ui-compliance.test.ts` **57/57 PASS**.
+  - `typecheck` + `lint` (`--max-warnings 0`) + `format:check` + `node scripts/docs-gate.mjs --strict-refs` + `git diff --check`: **PASS** (قيد انتظار إذن الكومت والدفع).
+
+```bash
+npm --prefix frontend run test -- test/svg-logo-tint.test.tsx --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check
+```
+
 ## اختبارات تهذيب الواجهة السياقية والشريط السريع (`FF-05`) — 2026-11-24
 
 - **النطاق:** أولوية «استوديو الملصقات» وطيّ أدوات الـ AI في `ImageStyleProperties` مع نسخ SVG الصريح والمولَّد لـ VDP، وإجراءات اللحظة (`تعديل الملصق` / `ضبط الكادر` / `قنّع بالشكل`) في `CanvasQuickBar` بالالتزام الكامل لقاعدة الأيقونات فقط (`h-7 w-7` وصفر حروف عربية مرئية) وإعادة استخدام `useImageShapeMaskAction` في قائمة السياق.

@@ -588,3 +588,77 @@ func TestMediaService_GetStorageStats_WithTrash(t *testing.T) {
 		t.Errorf("expected trash bytes %d, got %d", expectedTrashBytes, stats.TrashTotalBytes)
 	}
 }
+
+func TestMediaService_SanitizeAndProcessSVG(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	svc := NewMediaService()
+
+	dirtySVG := `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" onload="alert(1)">
+  <script>alert("xss")</script>
+  <foreignObject><div xmlns="http://www.w3.org/1999/xhtml"><script>evil()</script></div></foreignObject>
+  <style>.cls-1{fill:#112233;}</style>
+  <rect class="cls-1" width="200" height="100" onclick="alert(2)"/>
+  <image href="https://evil.example/leak.png" width="10" height="10"/>
+  <a href="javascript:alert(3)"><circle cx="50" cy="50" r="20"/></a>
+</svg>`
+
+	tmpDir := t.TempDir()
+	svgFile := filepath.Join(tmpDir, "logo.svg")
+	if err := os.WriteFile(svgFile, []byte(dirtySVG), 0o644); err != nil {
+		t.Fatalf("write svg: %v", err)
+	}
+
+	localPath, err := svc.ProcessOpenedFile(svgFile)
+	if err != nil {
+		t.Fatalf("ProcessOpenedFile svg failed: %v", err)
+	}
+	if !strings.HasPrefix(localPath, "/local-image/") || !strings.HasSuffix(localPath, ".svg") {
+		t.Fatalf("expected /local-image/*.svg, got %q", localPath)
+	}
+
+	savedPath := filepath.Join(svc.GetMediaDir(), strings.TrimPrefix(localPath, "/local-image/"))
+	savedBytes, err := os.ReadFile(savedPath)
+	if err != nil {
+		t.Fatalf("read saved svg: %v", err)
+	}
+	lowerSaved := strings.ToLower(string(savedBytes))
+	for _, forbidden := range []string{"<script", "<foreignobject", "onload", "onclick", "javascript:", "evil.example"} {
+		if strings.Contains(lowerSaved, forbidden) {
+			t.Fatalf("sanitized svg must not contain %q; got:\n%s", forbidden, string(savedBytes))
+		}
+	}
+	if !strings.Contains(lowerSaved, ".cls-1{fill:#112233;}") {
+		t.Fatalf("expected safe inline style rule to remain; got:\n%s", string(savedBytes))
+	}
+
+	dims, err := svc.GetImageDimensions(localPath)
+	if err != nil {
+		t.Fatalf("GetImageDimensions svg failed: %v", err)
+	}
+	if dims.Width != 1024 || dims.Height != 512 {
+		t.Fatalf("expected normalized 1024x512 svg dimensions, got %dx%d", dims.Width, dims.Height)
+	}
+}
+
+func TestMediaService_SVGRejectsEntitiesAndHTML(t *testing.T) {
+	if _, err := SanitizeSVGBytes([]byte(`<!DOCTYPE svg [<!ENTITY xxe "evil">]><svg>&xxe;</svg>`)); err == nil {
+		t.Fatal("expected <!ENTITY declaration to be rejected")
+	}
+	if _, err := SanitizeSVGBytes([]byte(`<!DOCTYPE html><html><body><svg></svg></body></html>`)); err == nil {
+		t.Fatal("expected HTML root document to be rejected")
+	}
+	if _, err := SanitizeSVGBytes([]byte(`<svg><style>@import url(https://evil.example/a.css);</style><rect width="10" height="10"/></svg>`)); err != nil {
+		t.Fatalf("expected valid svg with unsafe style to be sanitized without error, got %v", err)
+	} else {
+		clean, _ := SanitizeSVGBytes([]byte(`<svg><style>@import url(https://evil.example/a.css);</style><rect width="10" height="10"/></svg>`))
+		if strings.Contains(strings.ToLower(string(clean)), "<style") {
+			t.Fatalf("expected unsafe <style> with @import to be stripped, got %s", string(clean))
+		}
+	}
+
+	w, h, ok := ParseSVGDimensions([]byte(`<svg width="40mm" height="20mm"></svg>`))
+	if !ok || w != 1024 || h != 512 {
+		t.Fatalf("expected mm dimensions normalized to 1024x512, got %dx%d (ok=%v)", w, h, ok)
+	}
+}

@@ -8,6 +8,7 @@
 
 import { blobToDataUrl, canvasToBlob } from '@/lib/canvas/canvas-blob';
 import { injectPngDpiBlob } from '@/lib/canvas/png-dpi';
+import { ensureSvgRasterDimensions } from '@/lib/canvas/svg-logo';
 import { registerObjectUrl } from '@/lib/io/object-url-registry';
 
 import { assertRasterBudget } from './export-limits';
@@ -60,7 +61,8 @@ export async function rasterizeSvgToCanvas(
   const budget = assertRasterBudget(width, height);
   await ensureFontsReady(fontFamilies).catch(() => null);
 
-  const portableSvg = await embedStickerFonts(svgString, fontFamilies ?? []);
+  const embeddedSvg = await embedStickerFonts(svgString, fontFamilies ?? []);
+  const portableSvg = ensureSvgRasterDimensions(embeddedSvg, budget.width, budget.height);
   const svgBlob = new Blob([portableSvg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
   const img = new Image();

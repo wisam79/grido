@@ -198,7 +198,7 @@ func (a *App) SaveAiUsageLogs(jsonData string) error {
 
 func (a *App) OpenFile() (string, error) {
 	filePath, err := service.NewWailsRuntimeBridge().OpenFileDialog("Select an Image", []domain.FileFilter{
-		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
+		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp;*.svg)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp;*.svg"},
 	})
 	if err != nil {
 		return "", fmt.Errorf("open dialog: %w", err)
@@ -211,7 +211,7 @@ func (a *App) OpenFile() (string, error) {
 
 func (a *App) OpenMultipleFiles() ([]string, error) {
 	filePaths, err := service.NewWailsRuntimeBridge().OpenFilesDialog("Select Images", []domain.FileFilter{
-		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
+		{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp;*.svg)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp;*.svg"},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("open multiple dialog: %w", err)

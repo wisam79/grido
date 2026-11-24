@@ -8,6 +8,7 @@
 // الصور تستخدم object-fit: cover داخل مستطيلها، والقلب حول المحور الأوسط، والزوايا
 // المستديرة تُقصّ — أي عنصر خارج هذه المجموعة يعيد التوجيه إلى مسار الالتقاط.
 
+import { isSvgImageSource } from '@/lib/canvas/svg-logo';
 import { hasCustomImageCrop } from '@/lib/export/export-primitives';
 
 import type { CanvasElement, ImageElement } from '@/lib/store/types';
@@ -113,6 +114,9 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
   for (const el of visible) {
     if (el.type !== 'image') {
       return fail(`عنصر غير صورة (${el.type})`);
+    }
+    if (isSvgImageSource(el.imageSrc)) {
+      return fail('شعار SVG متجه (يتطلب مسار التقاط Konva بدقة كاملة)');
     }
     if (!el.imageSrc || !el.imageSrc.startsWith(LOCAL_IMAGE_PREFIX)) {
       return fail('مصدر الصورة غير قابل للقراءة في الخدمة');

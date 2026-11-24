@@ -1,3 +1,4 @@
+import { sanitizeSvgDataUrl } from '@/lib/canvas/svg-logo';
 import { createLogger } from '@/lib/logger';
 
 import {
@@ -48,7 +49,20 @@ async function readFilesAsDataUrls(files: File[], errorMessage: string): Promise
         reader.onerror = rej;
         reader.readAsDataURL(file);
       });
-      dataUrls.push(dataUrl);
+      if (
+        /^data:image\/svg\+xml\b/i.test(dataUrl) ||
+        file.type === 'image/svg+xml' ||
+        /\.svg$/i.test(file.name)
+      ) {
+        const cleanSvgUrl = sanitizeSvgDataUrl(dataUrl);
+        if (!cleanSvgUrl) {
+          logger.warn('Rejected unsafe or invalid SVG file:', file.name);
+          continue;
+        }
+        dataUrls.push(cleanSvgUrl);
+      } else {
+        dataUrls.push(dataUrl);
+      }
     } catch (e) {
       logger.error(errorMessage, e);
     }
@@ -82,7 +96,7 @@ export async function openImageFileDialog(multiple = false): Promise<string[]> {
   }
 
   // بيئة المتصفح العادي (Browser Mode Only)
-  const files = await pickBrowserFiles({ multiple, accept: 'image/*' });
+  const files = await pickBrowserFiles({ multiple, accept: 'image/*,.svg' });
   return readFilesAsDataUrls(files, 'Failed to read file:');
 }
 
@@ -138,7 +152,7 @@ export async function openDirectoryImageDialog(): Promise<string[]> {
   const files = await pickBrowserFiles({
     multiple: true,
     directory: true,
-    filter: (file) => file.type.startsWith('image/'),
+    filter: (file) => file.type.startsWith('image/') || /\.svg$/i.test(file.name),
   });
   return readFilesAsDataUrls(files, 'Failed to read directory file:');
 }

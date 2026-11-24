@@ -12,6 +12,13 @@
  * (عناصر بدوران/ظل/تدرج) يُصيّر الكانفس كما هو، فتبقى تحذيرات preflight
  * هي الغلاف الأمين هناك.
  */
+import {
+  applySvgLogoTint,
+  isSvgImageSource,
+  loadSanitizedSvgMarkup,
+  parseSvgAspectRatio,
+  sanitizeSvgTintColor,
+} from '@/lib/canvas/svg-logo';
 import { MM_PER_INCH } from '@/lib/canvas/units';
 import { computeSlotCrop } from '@/lib/export/export-primitives';
 import { createLogger } from '@/lib/logger';
@@ -45,17 +52,42 @@ export interface StickerReRasterOptions {
 export interface StickerReRasterResult {
   /** استبدال المصادر: القديم → الجديد المرفوع */
   srcMap: Map<string, string>;
+  /** استبدال المصادر حسب معرف العنصر — يدعم تعدد ألوان صبغة نفس شعار SVG في الورقة الواحدة */
+  elementSrcMap: Map<string, string>;
   /** أبعاد المصادر الجديدة مفتاحية بالمصدر القديم — لتغذية preflight بعد الترقية */
   newDimensions: Map<string, { width: number; height: number }>;
   /** ملاحظات تُعرض للمستخدم مع تحذيرات preflight */
   notes: string[];
 }
 
-/** مصدر ملصق قابل للمعالجة من عنصر صورة */
-function stickerSourceOf(el: CanvasElement): StickerElementSource | null {
+type VectorPrintTarget =
+  | { kind: 'sticker'; source: StickerElementSource; imageSrc: string }
+  | { kind: 'svg-logo'; imageSrc: string; svgTintColor?: string };
+
+/** مصدر ملصق أو شعار SVG مستورد قابل للترقية المتجهة */
+function vectorTargetOf(el: CanvasElement): VectorPrintTarget | null {
   if (el.type !== 'image' || el.visible === false || !el.imageSrc) return null;
-  const source = (el as ImageElement).stickerSource;
-  return source && source.templateId ? source : null;
+  const img = el as ImageElement;
+  if (img.stickerSource?.templateId) {
+    return { kind: 'sticker', source: img.stickerSource, imageSrc: img.imageSrc };
+  }
+  if (isSvgImageSource(img.imageSrc)) {
+    return {
+      kind: 'svg-logo',
+      imageSrc: img.imageSrc,
+      svgTintColor: sanitizeSvgTintColor(img.svgTintColor),
+    };
+  }
+  return null;
+}
+
+async function resolveSvgLogoMarkup(
+  imageSrc: string,
+  svgTintColor?: string,
+): Promise<string | null> {
+  const raw = await loadSanitizedSvgMarkup(imageSrc);
+  if (!raw) return null;
+  return svgTintColor ? applySvgLogoTint(raw, svgTintColor) : raw;
 }
 
 /**
@@ -87,6 +119,7 @@ export async function ensureStickerPrintResolution(
   options: StickerReRasterOptions,
 ): Promise<StickerReRasterResult> {
   const srcMap = new Map<string, string>();
+  const elementSrcMap = new Map<string, string>();
   const newDimensions = new Map<string, { width: number; height: number }>();
   const notes: string[] = [];
   const minDpi = options.minDpi ?? 250;
@@ -97,105 +130,154 @@ export async function ensureStickerPrintResolution(
     !Number.isFinite(options.targetDpi) ||
     options.targetDpi <= 0
   ) {
-    return { srcMap, newDimensions, notes };
+    return { srcMap, elementSrcMap, newDimensions, notes };
   }
 
-  // 1) جمع المقاس المطلوب لكل مصدر مع الحفاظ على نسبة المصدر الأصلية (cover)
+  // 1) جمع المقاس المطلوب لكل متجه/لون صبغة مع الحفاظ على نسبة المصدر الأصلية (cover)
   interface Needed {
+    oldSrc: string;
     widthMM: number;
     heightMM: number;
-    sourceAspect: number;
-    source: StickerElementSource;
+    sourceAspect?: number;
+    target: VectorPrintTarget;
+    elementIds: string[];
   }
-  const neededBySrc = new Map<string, Needed>();
+  const neededByVariant = new Map<string, Needed>();
 
   for (const el of elements) {
-    const source = stickerSourceOf(el);
-    if (!source) continue;
-    const src = (el as ImageElement).imageSrc!;
+    const target = vectorTargetOf(el);
+    if (!target) continue;
+    const src = target.imageSrc;
 
     const widthMM = el.width * options.canvasWidthMM;
     const heightMM = el.height * options.canvasHeightMM;
     if (!(widthMM > 0) || !(heightMM > 0)) continue;
 
     const dims = options.imageDimensions?.get(src);
-    if (!dims || !(dims.width > 0) || !(dims.height > 0)) continue;
+    if (target.kind === 'sticker') {
+      if (!dims || !(dims.width > 0) || !(dims.height > 0)) continue;
+      const crop = computeSlotCrop(dims, widthMM, heightMM, {});
+      const dpiX = crop.sw / (widthMM / MM_PER_INCH);
+      const dpiY = crop.sh / (heightMM / MM_PER_INCH);
+      const effectiveDpi = Math.min(dpiX, dpiY);
+      if (!Number.isFinite(effectiveDpi) || effectiveDpi >= minDpi) continue;
+    } else {
+      const hasTint = Boolean(target.svgTintColor);
+      if (!hasTint) {
+        if (!dims || !(dims.width > 0) || !(dims.height > 0)) continue;
+        const crop = computeSlotCrop(dims, widthMM, heightMM, {});
+        const dpiX = crop.sw / (widthMM / MM_PER_INCH);
+        const dpiY = crop.sh / (heightMM / MM_PER_INCH);
+        const effectiveDpi = Math.min(dpiX, dpiY);
+        if (Number.isFinite(effectiveDpi) && effectiveDpi >= minDpi) continue;
+      }
+    }
 
-    const crop = computeSlotCrop(dims, widthMM, heightMM, {});
-    const dpiX = crop.sw / (widthMM / MM_PER_INCH);
-    const dpiY = crop.sh / (heightMM / MM_PER_INCH);
-    const effectiveDpi = Math.min(dpiX, dpiY);
-    if (!Number.isFinite(effectiveDpi) || effectiveDpi >= minDpi) continue;
-
-    const existing = neededBySrc.get(src);
+    const variantKey =
+      target.kind === 'svg-logo' ? `svg::${src}::${target.svgTintColor ?? ''}` : `sticker::${src}`;
+    const sourceAspect =
+      dims && dims.width > 0 && dims.height > 0 ? dims.width / dims.height : undefined;
+    const existing = neededByVariant.get(variantKey);
     if (!existing) {
-      neededBySrc.set(src, {
+      neededByVariant.set(variantKey, {
+        oldSrc: src,
         widthMM,
         heightMM,
-        sourceAspect: dims.width / dims.height,
-        source,
+        sourceAspect,
+        target,
+        elementIds: [el.id],
       });
     } else {
-      neededBySrc.set(src, {
-        widthMM: Math.max(existing.widthMM, widthMM),
-        heightMM: Math.max(existing.heightMM, heightMM),
-        sourceAspect: existing.sourceAspect,
-        source: existing.source,
-      });
+      existing.widthMM = Math.max(existing.widthMM, widthMM);
+      existing.heightMM = Math.max(existing.heightMM, heightMM);
+      if (!existing.elementIds.includes(el.id)) {
+        existing.elementIds.push(el.id);
+      }
     }
   }
 
-  if (neededBySrc.size === 0) {
-    return { srcMap, newDimensions, notes };
+  if (neededByVariant.size === 0) {
+    return { srcMap, elementSrcMap, newDimensions, notes };
   }
 
-  // 2) إعادة التصيير والرفع — مصدر واحد مرة واحدة مع حفظ نسبة أبعاد المصدر الأصلية
-  let upgraded = 0;
-  for (const [oldSrc, need] of neededBySrc) {
+  // 2) إعادة التصيير والرفع — كل صيغة متجهة/صبغة مرة واحدة مع حفظ نسبة أبعاد المصدر الأصلية
+  let upgradedStickers = 0;
+  let upgradedSvgLogos = 0;
+  for (const need of neededByVariant.values()) {
     try {
-      const svg = await resolveStickerSvg(need.source);
+      const svg =
+        need.target.kind === 'sticker'
+          ? await resolveStickerSvg(need.target.source)
+          : await resolveSvgLogoMarkup(need.target.imageSrc, need.target.svgTintColor);
       if (!svg) {
-        notes.push('ملصق بلا مصدر متجه قابل لإعادة التصيير — تُطبع دقته الحالية');
+        if (need.target.kind === 'sticker') {
+          notes.push('ملصق بلا مصدر متجه قابل لإعادة التصيير — تُطبع دقته الحالية');
+        }
         continue;
       }
 
       const rawTarget = computeTargetRasterPx(need.widthMM, need.heightMM, options.targetDpi);
       if (!rawTarget) {
-        notes.push('مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية');
+        notes.push(
+          need.target.kind === 'sticker'
+            ? 'مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية'
+            : 'مقاس طباعة الشعار يتجاوز ميزانية الراستر — تُطبع دقته الحالية',
+        );
         continue;
       }
       const rawAspect = rawTarget.width / rawTarget.height;
+      const resolvedAspect = need.sourceAspect ?? parseSvgAspectRatio(svg) ?? rawAspect;
       const target =
-        Math.abs(need.sourceAspect - rawAspect) > 0.01
-          ? computeStickerCoverRasterSize(rawTarget.width, rawTarget.height, need.sourceAspect)
+        Math.abs(resolvedAspect - rawAspect) > 0.01
+          ? computeStickerCoverRasterSize(rawTarget.width, rawTarget.height, resolvedAspect)
           : rawTarget;
       if (!target) {
-        notes.push('مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية');
+        notes.push(
+          need.target.kind === 'sticker'
+            ? 'مقاس طباعة الملصق يتجاوز ميزانية الراستر — تُطبع دقته الحالية'
+            : 'مقاس طباعة الشعار يتجاوز ميزانية الراستر — تُطبع دقته الحالية',
+        );
         continue;
       }
 
-      const fontFamily = need.source.params?.fontFamily || 'Cairo';
-      const blob = await renderSvgToPngBlob(svg, target.width, target.height, [fontFamily]);
+      const fontFamilies =
+        need.target.kind === 'sticker'
+          ? [need.target.source.params?.fontFamily || 'Cairo']
+          : undefined;
+      const blob = await renderSvgToPngBlob(svg, target.width, target.height, fontFamilies);
       const newSrc = await options.upload(blob);
 
-      srcMap.set(oldSrc, newSrc);
-      newDimensions.set(oldSrc, target);
-      upgraded++;
+      for (const elId of need.elementIds) {
+        elementSrcMap.set(elId, newSrc);
+      }
+      if (!srcMap.has(need.oldSrc)) {
+        srcMap.set(need.oldSrc, newSrc);
+      }
+      newDimensions.set(need.oldSrc, target);
+      if (need.target.kind === 'sticker') upgradedStickers++;
+      else upgradedSvgLogos++;
     } catch (err) {
-      // فشل ترقية ملصق لا يُسقط الطباعة — يبقى على مصدره مع بقاء تحذير preflight
-      logger.error('Sticker re-rasterization failed:', oldSrc, err);
+      // فشل ترقية ملصق/شعار لا يُسقط الطباعة — يبقى على مصدره مع بقاء تحذير preflight
+      logger.error('Vector/Sticker re-rasterization failed:', need.oldSrc, err);
     }
   }
 
-  if (upgraded > 0) {
+  if (upgradedStickers > 0) {
     notes.push(
-      upgraded === 1
+      upgradedStickers === 1
         ? 'أُعيدت راسترة ملصق واحد بدقة الطباعة الكاملة'
-        : `أُعيدت راسترة ${upgraded} ملصقات بدقة الطباعة الكاملة`,
+        : `أُعيدت راسترة ${upgradedStickers} ملصقات بدقة الطباعة الكاملة`,
+    );
+  }
+  if (upgradedSvgLogos > 0 && upgradedStickers === 0) {
+    notes.push(
+      upgradedSvgLogos === 1
+        ? 'أُعيدت راسترة شعار SVG واحد بدقة الطباعة الكاملة'
+        : `أُعيدت راسترة ${upgradedSvgLogos} شعارات SVG بدقة الطباعة الكاملة`,
     );
   }
 
-  return { srcMap, newDimensions, notes };
+  return { srcMap, elementSrcMap, newDimensions, notes };
 }
 
 /** SVG الجاهز من الإدراج أولاً، وإلا إعادة التوليد من القالب والمعاملات المحفوظة (تزامني) */
@@ -301,8 +383,8 @@ export async function prepareStickerExportOverrides(options: {
   const createdUrls: string[] = [];
 
   for (const el of elements) {
-    const source = stickerSourceOf(el);
-    if (!source) continue;
+    const targetInfo = vectorTargetOf(el);
+    if (!targetInfo) continue;
 
     const boxW = el.width * canvasWidth;
     const boxH = el.height * canvasHeight;
@@ -315,18 +397,29 @@ export async function prepareStickerExportOverrides(options: {
     const target = computeStickerCoverRasterSize(boxW, boxH, aspect);
     if (!target) continue;
 
-    // إن كان المسرح يحمل أصلاً راستر ملصق يغطي الحجم المطلوب بهامش 5% فلا داعي لإعادة البناء
-    if (curDims.width >= target.width * 0.95 && curDims.height >= target.height * 0.95) {
+    const requiresFreshTintRender =
+      targetInfo.kind === 'svg-logo' && Boolean(targetInfo.svgTintColor);
+    // إن كان المسرح يحمل أصلاً راستر ملصق/شعار غير ملوّن يغطي الحجم المطلوب بهامش 5% فلا داعي لإعادة البناء
+    if (
+      !requiresFreshTintRender &&
+      curDims.width >= target.width * 0.95 &&
+      curDims.height >= target.height * 0.95
+    ) {
       continue;
     }
 
-    const svg = resolveStickerSvgSync(source);
+    const svg =
+      targetInfo.kind === 'sticker'
+        ? resolveStickerSvgSync(targetInfo.source)
+        : await resolveSvgLogoMarkup(targetInfo.imageSrc, targetInfo.svgTintColor);
     if (!svg) continue;
 
     try {
       const fontFamily =
-        typeof source.params?.fontFamily === 'string' && source.params.fontFamily.trim()
-          ? [source.params.fontFamily.trim()]
+        targetInfo.kind === 'sticker' &&
+        typeof targetInfo.source.params?.fontFamily === 'string' &&
+        targetInfo.source.params.fontFamily.trim()
+          ? [targetInfo.source.params.fontFamily.trim()]
           : undefined;
       const blob = await renderSvgToPngBlob(svg, target.width, target.height, fontFamily);
       const blobUrl = URL.createObjectURL(blob);
@@ -334,7 +427,7 @@ export async function prepareStickerExportOverrides(options: {
       imageOverrides.push({ nodeId: el.id, src: blobUrl });
       srcOverrides.set(el.id, blobUrl);
     } catch (err) {
-      logger.warn('Failed to re-rasterize enlarged sticker for canvas export:', el.id, err);
+      logger.warn('Failed to re-rasterize enlarged vector/sticker for canvas export:', el.id, err);
     }
   }
 

@@ -119,7 +119,7 @@ type slotJSONStruct struct {
 	OriginalImageSrc string `json:"originalImageSrc"`
 }
 
-var mediaFilenameRegex = regexp.MustCompile(`(?i)(?:/local-image/|/Media/|\\Media\\)?([a-zA-Z0-9_\-\.]+\.(?:png|jpg|jpeg|webp|bmp|gif|tiff|tif))`)
+var mediaFilenameRegex = regexp.MustCompile(`(?i)(?:/local-image/|/Media/|\\Media\\)?([a-zA-Z0-9_\-\.]+\.(?:png|jpg|jpeg|webp|bmp|gif|tiff|tif|svg))`)
 
 // extractImagesFromText يستخرج أي أسماء ملفات صور من النصوص الخام كشبكة أمان عامة لمنع فقدان الصور
 func extractImagesFromText(rawText string, referenced map[string]bool) {

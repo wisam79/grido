@@ -27,6 +27,7 @@ import {
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { mergePaths } from '@/lib/canvas/path-boolean';
 import { shapeElementToSegments } from '@/lib/canvas/shape-to-path';
+import { isSvgImageSource } from '@/lib/canvas/svg-logo';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
@@ -130,6 +131,10 @@ function liveImageNode(stage: Konva.Stage, id: string): Konva.Image | null {
     : null;
 }
 
+function hasVectorSvgRender(element: ImageElement): boolean {
+  return Boolean(element.stickerSource || isSvgImageSource(element.imageSrc));
+}
+
 /** Compare the bitmap's actual original URI, not a desired-src attr refreshed during render. */
 function imageSourceMatchesElement(node: Konva.Image, element: ImageElement): boolean {
   const source = node.image();
@@ -146,7 +151,7 @@ function imageSourceMatchesElement(node: Konva.Image, element: ImageElement): bo
   };
   const originalSrc = getDisplayImageOriginalSrc(source);
   if (originalSrc) return matches(originalSrc);
-  if (!element.stickerSource || !(source instanceof HTMLCanvasElement)) return false;
+  if (!hasVectorSvgRender(element) || !(source instanceof HTMLCanvasElement)) return false;
   // Generated sticker canvases deliberately are not displayOwnership entries: capture must
   // not swap their vector-generated pixels back to the low-resolution insertion PNG.
   const witness: unknown = node.getAttr?.('gridoStickerRenderSource');
@@ -182,7 +187,7 @@ function needsImageCapture(
   const framed = Math.abs((image.width * width) / (image.height * height) / (sw / sh) - 1) > 0.001;
   return (
     framed ||
-    !!image.stickerSource ||
+    hasVectorSvgRender(image) ||
     (image.maskShape !== undefined && image.maskShape !== 'none') ||
     (image.cropZoom ?? 1) !== 1 ||
     (image.cropPanX ?? 0) !== 0 ||
@@ -367,7 +372,7 @@ export const createElementMergeSlice: StateCreator<
           } catch {
             return 'too-large';
           }
-          const overrides = image.stickerSource
+          const overrides = hasVectorSvgRender(image)
             ? await prepareStickerExportOverrides({
                 elements: [image],
                 canvasWidth: canvasWidth * targetRatio,
@@ -380,7 +385,7 @@ export const createElementMergeSlice: StateCreator<
             if (stale()) return 'stale';
             if (!sourceStillReady()) return 'failed';
             if (
-              image.stickerSource &&
+              hasVectorSvgRender(image) &&
               !overrides?.imageOverrides.some((item) => item.nodeId === image.id)
             ) {
               const current = source as HTMLImageElement | HTMLCanvasElement;

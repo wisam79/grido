@@ -6,6 +6,13 @@ import {
 } from '@/features/stickers/lib/print-rerasterize';
 import { rasterizeSvgToCanvas } from '@/features/stickers/lib/svg-rasterizer';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import {
+  applySvgLogoTint,
+  isSvgImageSource,
+  loadSanitizedSvgMarkup,
+  peekCachedSvgMarkup,
+  sanitizeSvgTintColor,
+} from '@/lib/canvas/svg-logo';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 
@@ -19,6 +26,7 @@ const STICKER_CACHE_MAX_ENTRIES = 24;
 const STICKER_CACHE_MAX_BYTES = 128 * 1024 * 1024;
 const UPGRADE_HYSTERESIS = 1.05;
 const RASTER_DEBOUNCE_MS = 60;
+const TINT_DEBOUNCE_MS = 16;
 const ZOOM_DEBOUNCE_MS = 120;
 
 interface CacheEntry {
@@ -92,40 +100,84 @@ export function clearStickerDisplayCache(): void {
 
 export interface UseStickerDisplayRasterOptions {
   stickerSource?: StickerElementSource;
+  imageSrc?: string;
+  svgTintColor?: string;
   nodeW: number;
   nodeH: number;
   baseImage?: HTMLImageElement | null;
 }
 
 /**
- * useStickerDisplayRaster — ترقية متجهة حيّة للملصقات على Konva Stage.
+ * useStickerDisplayRaster — ترقية متجهة حيّة للملصقات والشعارات المستوردة (.svg) على Konva Stage.
  *
- * عند تكبير أي ملصق على الكانفس (أو تكبير العرض فوق دقة الـ PNG الابتدائي)،
+ * عند تكبير أي ملصق/شعار SVG على الكانفس (أو عند تطبيق لون صبغة `svgTintColor`)،
  * يعيد تصيير المتجه SVG مباشرةً إلى HTMLCanvasElement بالمقاس المطلوب حتى
- * يظل الملصق حاداً بلا أي بكسلّة، مع كاش LRU رتيب (التصغير لا يعيد الرسم)
- * وحارس ضد التحديثات العرقية والعمل أثناء الإيماءة النشطة.
+ * يظل حاداً بلا أي بكسلّة، مع كاش LRU رتيب وتثبيت آخر إطار ملوّن أثناء السحب
+ * لمنع الوميض وحاجز الإيماءة النشطة.
  */
 export function useStickerDisplayRaster({
   stickerSource,
+  imageSrc,
+  svgTintColor,
   nodeW,
   nodeH,
   baseImage,
 }: UseStickerDisplayRasterOptions): HTMLCanvasElement | null {
+  const [loadedSvg, setLoadedSvg] = useState<{ src: string; markup: string } | null>(null);
+  const svgSourceToFetch =
+    !stickerSource && imageSrc && isSvgImageSource(imageSrc) ? imageSrc : null;
+
+  useEffect(() => {
+    if (!svgSourceToFetch) return;
+    if (peekCachedSvgMarkup(svgSourceToFetch)) return;
+    let cancelled = false;
+    void loadSanitizedSvgMarkup(svgSourceToFetch).then((markup) => {
+      if (!cancelled && markup) {
+        setLoadedSvg({ src: svgSourceToFetch, markup });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [svgSourceToFetch]);
+
   const resolved = useMemo(() => {
-    if (!stickerSource) return null;
-    const svg = resolveStickerSvgSync(stickerSource);
-    if (!svg) return null;
-    const fontFamily =
-      typeof stickerSource.params?.fontFamily === 'string' && stickerSource.params.fontFamily.trim()
-        ? stickerSource.params.fontFamily.trim()
-        : '';
-    const key = `${svg.length}:${fnv1a32(svg)}:${fontFamily}`;
+    if (stickerSource) {
+      const svg = resolveStickerSvgSync(stickerSource);
+      if (!svg) return null;
+      const fontFamily =
+        typeof stickerSource.params?.fontFamily === 'string' &&
+        stickerSource.params.fontFamily.trim()
+          ? stickerSource.params.fontFamily.trim()
+          : '';
+      const key = `sticker:${svg.length}:${fnv1a32(svg)}:${fontFamily}`;
+      return {
+        key,
+        sourceIdentity: `sticker:${stickerSource.templateId}`,
+        svg,
+        fontFamilies: fontFamily ? [fontFamily] : undefined,
+        forceRaster: false,
+      };
+    }
+
+    if (!svgSourceToFetch) return null;
+    const rawMarkup =
+      peekCachedSvgMarkup(svgSourceToFetch) ??
+      (loadedSvg?.src === svgSourceToFetch ? loadedSvg.markup : null);
+    if (!rawMarkup) return null;
+
+    const safeTint = sanitizeSvgTintColor(svgTintColor);
+    const forceRaster = Boolean(safeTint);
+    const svg = safeTint ? applySvgLogoTint(rawMarkup, safeTint) : rawMarkup;
+    const key = `svg:${svgSourceToFetch}:${safeTint ?? 'orig'}:${svg.length}:${fnv1a32(svg)}`;
     return {
       key,
+      sourceIdentity: `svg:${svgSourceToFetch}`,
       svg,
-      fontFamilies: fontFamily ? [fontFamily] : undefined,
+      fontFamilies: undefined,
+      forceRaster,
     };
-  }, [stickerSource]);
+  }, [stickerSource, svgSourceToFetch, loadedSvg, svgTintColor]);
 
   const [zoomMultiplier, setZoomMultiplier] = useState<number>(() => {
     const z = useEditorStore.getState()?.canvasZoom ?? 1;
@@ -151,17 +203,27 @@ export function useStickerDisplayRaster({
   }, [resolved]);
 
   const [rasterState, setRasterState] = useState<{
+    sourceIdentity: string;
     key: string;
     canvas: HTMLCanvasElement;
   } | null>(() => {
     if (!resolved) return null;
     const cached = peekCache(resolved.key);
-    return cached ? { key: resolved.key, canvas: cached } : null;
+    return cached
+      ? { sourceIdentity: resolved.sourceIdentity, key: resolved.key, canvas: cached }
+      : null;
   });
 
   const cachedForKey = resolved ? peekCache(resolved.key) : null;
   const activeCanvas = resolved
-    ? (cachedForKey ?? (rasterState?.key === resolved.key ? rasterState.canvas : null))
+    ? (cachedForKey ??
+      (resolved.forceRaster
+        ? rasterState?.sourceIdentity === resolved.sourceIdentity
+          ? rasterState.canvas
+          : null
+        : rasterState?.key === resolved.key
+          ? rasterState.canvas
+          : null))
     : null;
 
   const baseW = baseImage ? baseImage.naturalWidth || baseImage.width || 0 : 0;
@@ -181,10 +243,16 @@ export function useStickerDisplayRaster({
   useEffect(() => {
     if (!resolved || !target) return;
 
-    const currentW = Math.max(baseW, cachedForKey?.width ?? 0);
-    const currentH = Math.max(baseH, cachedForKey?.height ?? 0);
+    const currentW = resolved.forceRaster
+      ? (cachedForKey?.width ?? 0)
+      : Math.max(baseW, cachedForKey?.width ?? 0);
+    const currentH = resolved.forceRaster
+      ? (cachedForKey?.height ?? 0)
+      : Math.max(baseH, cachedForKey?.height ?? 0);
     const needsUpgrade =
-      target.width > currentW * UPGRADE_HYSTERESIS || target.height > currentH * UPGRADE_HYSTERESIS;
+      (resolved.forceRaster && !cachedForKey) ||
+      target.width > currentW * UPGRADE_HYSTERESIS ||
+      target.height > currentH * UPGRADE_HYSTERESIS;
 
     if (!needsUpgrade) {
       if (cachedForKey) promoteCache(resolved.key);
@@ -194,6 +262,8 @@ export function useStickerDisplayRaster({
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let unsubscribeInteraction: (() => void) | null = null;
+    const debounceMs =
+      resolved.forceRaster && !cachedForKey ? TINT_DEBOUNCE_MS : RASTER_DEBOUNCE_MS;
 
     const runRasterize = async () => {
       if (cancelled) return;
@@ -207,7 +277,11 @@ export function useStickerDisplayRaster({
         if (cancelled) return;
         writeCache(resolved.key, canvas);
         const best = promoteCache(resolved.key) ?? canvas;
-        setRasterState({ key: resolved.key, canvas: best });
+        setRasterState({
+          sourceIdentity: resolved.sourceIdentity,
+          key: resolved.key,
+          canvas: best,
+        });
       } catch (err) {
         if (!cancelled) {
           logger.warn('Live sticker raster upgrade failed:', err);
@@ -224,7 +298,7 @@ export function useStickerDisplayRaster({
       }
       timer = setTimeout(() => {
         void runRasterize();
-      }, RASTER_DEBOUNCE_MS);
+      }, debounceMs);
     };
 
     const interaction = useCanvasInteraction.getState();
@@ -252,7 +326,13 @@ export function useStickerDisplayRaster({
   }, [resolved, target, baseW, baseH, cachedForKey]);
 
   if (!resolved) return null;
-  if (activeCanvas && baseW > 0 && activeCanvas.width <= baseW && activeCanvas.height <= baseH) {
+  if (
+    activeCanvas &&
+    !resolved.forceRaster &&
+    baseW > 0 &&
+    activeCanvas.width <= baseW &&
+    activeCanvas.height <= baseH
+  ) {
     return null;
   }
   return activeCanvas;

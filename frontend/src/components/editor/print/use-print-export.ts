@@ -434,6 +434,7 @@ export function usePrintExport({
       attempt: number,
       stickerSrcMap?: ReadonlyMap<string, string>,
       imageDimensions?: ReadonlyMap<string, { width: number; height: number }>,
+      stickerElementSrcMap?: ReadonlyMap<string, string>,
     ): Promise<BuiltItems | null> => {
       const stage = stageRef.current;
       if (!stage) {
@@ -456,6 +457,7 @@ export function usePrintExport({
           printCutLineStyle,
           imageDimensions,
           stickerSrcMap,
+          stickerElementSrcMap,
         });
       } catch (e) {
         if (attempt !== attemptRef.current) return null;
@@ -515,6 +517,7 @@ export function usePrintExport({
         // Konva مؤقتاً (swapNodeImagesForCapture) — إذ أغلب الكانفسات الواقعية
         // غير مؤهلة للمسار السريع وكانت الملصقات تُطبع من راستر إدراجها.
         let stickerSrcMap: ReadonlyMap<string, string> | undefined;
+        let stickerElementSrcMap: ReadonlyMap<string, string> | undefined;
         let freeformImageDimensions:
           ReadonlyMap<string, { width: number; height: number }> | undefined;
         let collageImageDimensions:
@@ -556,6 +559,7 @@ export function usePrintExport({
             if (upgradedSrc) dims.set(upgradedSrc, upgraded);
           }
           stickerSrcMap = reraster.srcMap;
+          stickerElementSrcMap = reraster.elementSrcMap;
           freeformImageDimensions = dims;
 
           const preflight = runFreeformPreflight({
@@ -615,7 +619,12 @@ export function usePrintExport({
         const built =
           mode === 'collage'
             ? await buildItems(collageImageDimensions)
-            : await buildSingleItems(attempt, stickerSrcMap, freeformImageDimensions);
+            : await buildSingleItems(
+                attempt,
+                stickerSrcMap,
+                freeformImageDimensions,
+                stickerElementSrcMap,
+              );
         // الإلغاء أثناء الالتقاط/الرفع يمنع بدء طلب جديد أو تحرير حالة جولة أحدث.
         if (attempt !== attemptRef.current) return;
         if (!built) {
