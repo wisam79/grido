@@ -1,11 +1,12 @@
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { CanvasOverlayHost } from '../src/components/editor/canvas/canvas-overlay-host';
 import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
 import { QuickBarElementSection } from '../src/components/editor/canvas/quick-bar/quick-bar-element-section';
 import { QuickBarSlotSection } from '../src/components/editor/canvas/quick-bar/quick-bar-slot-section';
+import { REEDIT_STICKER_EVENT } from '../src/components/editor/dialogs/sticker-reedit-bus';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import {
   useCanvasInteraction,
@@ -13,10 +14,18 @@ import {
 } from '../src/lib/canvas/canvas-interaction-store';
 import { useEditorStore } from '../src/lib/editor-store';
 
+const originalMaskAction = useEditorStore.getState().maskSelectedImageWithShape;
+
 describe('CanvasQuickBar Component Tests', () => {
   beforeEach(() => {
+    useEditorStore.setState({ maskSelectedImageWithShape: originalMaskAction });
     useEditorStore.getState().reset();
     resetCanvasInteraction();
+  });
+
+  afterEach(() => {
+    useEditorStore.setState({ maskSelectedImageWithShape: originalMaskAction });
+    vi.restoreAllMocks();
   });
 
   it.each(['element', 'slot'] as const)(
@@ -217,11 +226,12 @@ describe('CanvasQuickBar Component Tests', () => {
     });
 
   /**
-   * 🎯 نطاق هذا الشريط: موضع العنصر على الورقة (أمام/خلف، تدوير، قلب، مقارنة).
-   * أما خصائص العنصر (تكرار، حذف، محاذاة، تجميع، مرشحات، أدوات AI) فموطنها
-   * الشريط العلوي — وهذه الاختبارات تحرس الحدّ بين السطحين فلا يعود التكرار.
+   * 🎯 نطاق هذا الشريط: موضع العنصر على الورقة وإجراءات السياق السريعة اللحظية
+   * (ضبط الكادر / تعديل الملصق، أمام/خلف، تدوير، قلب، مقارنة).
+   * أما خصائص العنصر الثقيلة (تكرار، حذف، محاذاة، تجميع، مرشحات، أدوات AI)
+   * فموطنها الشريط العلوي واللوح الجانبي.
    */
-  it('renders only placement actions for a single image element', () => {
+  it('renders only placement + in-place crop actions for a single image element', () => {
     selectSingleImage();
 
     render(
@@ -230,8 +240,9 @@ describe('CanvasQuickBar Component Tests', () => {
       </TooltipProvider>,
     );
 
-    // أربع إجراءات موضع + زر إغلاق الشريط
-    expect(screen.getAllByRole('button')).toHaveLength(5);
+    // ضبط الكادر + أربع إجراءات موضع + زر إغلاق الشريط
+    expect(screen.getAllByRole('button')).toHaveLength(6);
+    expect(screen.getByLabelText('ضبط الكادر')).toBeInTheDocument();
   });
 
   /**
@@ -506,5 +517,183 @@ describe('CanvasQuickBar Component Tests', () => {
       editBtn.click();
     });
     expect(useEditorStore.getState().editingTextId).toBe('txt-1');
+  });
+
+  it('triggers in-place crop from QuickBar for unlocked regular photos and hides bar while cropping (FF-05)', () => {
+    selectSingleImage();
+
+    const { rerender, container } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    const cropBtn = screen.getByLabelText('ضبط الكادر');
+    expect(cropBtn).toBeEnabled();
+    act(() => {
+      fireEvent.click(cropBtn);
+    });
+    expect(useCanvasInteraction.getState().croppingElementId).toBe('el-1');
+
+    rerender(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+    expect(container.firstChild).toBeNull();
+
+    act(() => {
+      useCanvasInteraction.getState().setCroppingElementId(null);
+      useEditorStore.getState().updateElement('el-1', { locked: true });
+    });
+    rerender(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.getByLabelText('ضبط الكادر')).toBeDisabled();
+  });
+
+  it('shows icon-only تعديل الملصق instead of ضبط الكادر for sticker elements and dispatches re-edit event (FF-05)', () => {
+    useEditorStore.setState({
+      mode: 'single',
+      selectedId: 'sticker-1',
+      selectedIds: ['sticker-1'],
+      elements: [
+        {
+          id: 'sticker-1',
+          type: 'image',
+          x: 0.2,
+          y: 0.2,
+          width: 0.3,
+          height: 0.3,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          imageSrc: 'sticker.png',
+          stickerSource: {
+            templateId: 'label-1',
+            params: {
+              fields: { title: 'ملصق' },
+              primaryColor: '#111111',
+              secondaryColor: '#ffffff',
+              backgroundColor: '#ffffff',
+              isTransparent: false,
+            },
+            svg: '<svg><rect width="10" height="10"/></svg>',
+          },
+        },
+      ],
+    });
+
+    const listener = vi.fn();
+    window.addEventListener(REEDIT_STICKER_EVENT, listener);
+    try {
+      const { rerender } = render(
+        <TooltipProvider>
+          <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+        </TooltipProvider>,
+      );
+
+      const bar = screen.getByTestId('canvas-quick-bar');
+      expect(bar.textContent ?? '').not.toMatch(/[\u0621-\u064A]/);
+      for (const btn of screen.getAllByRole('button')) {
+        expect(btn.className).toContain('h-7');
+        expect(btn.className).toContain('w-7');
+      }
+
+      const reeditBtn = screen.getByLabelText('تعديل الملصق');
+      expect(screen.queryByLabelText('ضبط الكادر')).not.toBeInTheDocument();
+      fireEvent.click(reeditBtn);
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect((listener.mock.calls[0][0] as CustomEvent).detail).toEqual({ elementId: 'sticker-1' });
+
+      act(() => {
+        useEditorStore.getState().updateElement('sticker-1', { locked: true });
+      });
+      rerender(
+        <TooltipProvider>
+          <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+        </TooltipProvider>,
+      );
+      expect(screen.getByLabelText('تعديل الملصق')).toBeDisabled();
+    } finally {
+      window.removeEventListener(REEDIT_STICKER_EVENT, listener);
+    }
+  });
+
+  it('shows قنّع بالشكل on multi-selection only for a valid unlocked image + fillable shape pair (FF-05)', async () => {
+    const maskAction = vi.fn(async () => 'ok' as const);
+    useEditorStore.setState({
+      mode: 'single',
+      selectedId: 'photo-1',
+      selectedIds: ['photo-1', 'shape-1'],
+      maskSelectedImageWithShape: maskAction,
+      elements: [
+        {
+          id: 'photo-1',
+          type: 'image',
+          x: 0.1,
+          y: 0.1,
+          width: 0.3,
+          height: 0.3,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          imageSrc: 'photo.png',
+        },
+        {
+          id: 'shape-1',
+          type: 'shape',
+          shape: 'ellipse',
+          fill: '#123456',
+          x: 0.2,
+          y: 0.2,
+          width: 0.3,
+          height: 0.3,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 2,
+        },
+      ],
+    });
+
+    const { rerender } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    const bar = screen.getByTestId('canvas-quick-bar');
+    expect(bar.textContent ?? '').not.toMatch(/[\u0621-\u064A]/);
+    const maskBtn = screen.getByLabelText('قنّع بالشكل');
+    expect(maskBtn.className).toContain('h-7');
+    expect(maskBtn.className).toContain('w-7');
+
+    await act(async () => {
+      fireEvent.click(maskBtn);
+    });
+    await waitFor(() => expect(maskAction).toHaveBeenCalledTimes(1));
+
+    // خط غير قابل للتعبئة أو عنصر مقفل أو صورتان معاً لا تُظهر زر التقنيع
+    act(() => {
+      useEditorStore.getState().updateElement('shape-1', { shape: 'line' });
+    });
+    rerender(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByLabelText('قنّع بالشكل')).not.toBeInTheDocument();
+
+    act(() => {
+      useEditorStore.getState().updateElement('shape-1', { shape: 'ellipse', locked: true });
+    });
+    rerender(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByLabelText('قنّع بالشكل')).not.toBeInTheDocument();
   });
 });

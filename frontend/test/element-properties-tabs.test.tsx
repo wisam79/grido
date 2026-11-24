@@ -1,8 +1,17 @@
-import { act, render, renderHook, screen, fireEvent, within } from '@testing-library/react';
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { REEDIT_STICKER_EVENT } from '../src/components/editor/dialogs/sticker-reedit-bus';
 import { ShadowGlowSection } from '../src/components/editor/properties/element/shared/shadow-glow-section';
 import { ElementArrangeTab } from '../src/components/editor/properties/element/tabs/arrange-tab';
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
@@ -13,6 +22,7 @@ import { FontSizeField } from '../src/components/editor/properties/panels/text/f
 import { TextEffectsTab } from '../src/components/editor/properties/panels/text/text-effects-tab';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
+import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
 import { useKeyboardShortcuts } from '../src/hooks/use-keyboard-shortcuts';
 import { buildMaskPath, maskPathToSvg } from '../src/lib/canvas/mask-geometry';
 import { useEditorStore } from '../src/lib/editor-store';
@@ -1275,5 +1285,163 @@ describe('ShadowGlowSection default shadow activation', () => {
       shadowColor: '#112233',
       shadowBlur: 1,
     });
+  });
+});
+
+describe('ImageStyleProperties — contextual sticker priority and AI auto-collapse (FF-05)', () => {
+  const sampleTemplate = ALL_STICKER_TEMPLATES[0];
+  const makePhoto = (patch: Partial<ImageElement> = {}): ImageElement => ({
+    id: 'ff05-img',
+    type: 'image',
+    imageSrc: 'photo.png',
+    x: 0.1,
+    y: 0.1,
+    width: 0.3,
+    height: 0.3,
+    rotation: 0,
+    opacity: 1,
+    zIndex: 1,
+    ...patch,
+  });
+
+  const makeSticker = (withExplicitSvg: boolean): ImageElement =>
+    makePhoto({
+      id: 'ff05-sticker',
+      imageSrc: 'sticker.png',
+      stickerSource: {
+        templateId: sampleTemplate.id,
+        params: {
+          fields: Object.fromEntries(sampleTemplate.fields.map((f) => [f.id, f.defaultValue])),
+          primaryColor: sampleTemplate.defaultColors.primary,
+          secondaryColor: sampleTemplate.defaultColors.secondary,
+          backgroundColor: sampleTemplate.defaultColors.background,
+          isTransparent: false,
+        },
+        ...(withExplicitSvg
+          ? { svg: '<svg xmlns="http://www.w3.org/2000/svg"><circle r="5"/></svg>' }
+          : {}),
+      },
+    });
+
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders استوديو الملصقات above collapsed AI tools for stickers and keeps AI expanded for regular photos', () => {
+    const sticker = makeSticker(true);
+    const photo = makePhoto();
+    useEditorStore.setState({ elements: [sticker, photo] });
+
+    const { rerender } = render(
+      <div dir="rtl">
+        <TooltipProvider>
+          <ImageStyleProperties element={sticker} onUpdate={vi.fn()} />
+        </TooltipProvider>
+      </div>,
+    );
+
+    const stickerHeading = screen.getByText('استوديو الملصقات');
+    const aiToggle = screen.getByRole('button', { name: 'أدوات الذكاء الاصطناعي' });
+    expect(
+      stickerHeading.compareDocumentPosition(aiToggle) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(aiToggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: /ترميم الوجه/ })).not.toBeInTheDocument();
+
+    // يمكن للمستخدم توسيع قسم الـ AI يدوياً إذا أراد
+    fireEvent.click(aiToggle);
+    expect(aiToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /ترميم الوجه/ })).toBeInTheDocument();
+
+    // عند الانتقال إلى صورة عادية: تختفي بطاقة الملصق ويكون قسم الـ AI مفتوحاً افتراضياً
+    rerender(
+      <div dir="rtl">
+        <TooltipProvider>
+          <ImageStyleProperties element={photo} onUpdate={vi.fn()} />
+        </TooltipProvider>
+      </div>,
+    );
+    expect(screen.queryByText('استوديو الملصقات')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'أدوات الذكاء الاصطناعي' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /ترميم الوجه/ })).toBeInTheDocument();
+
+    // وعند العودة من صورة عادية إلى ملصق يُعاد طيّ أدوات الـ AI تلقائياً
+    rerender(
+      <div dir="rtl">
+        <TooltipProvider>
+          <ImageStyleProperties element={sticker} onUpdate={vi.fn()} />
+        </TooltipProvider>
+      </div>,
+    );
+    expect(screen.getByRole('button', { name: 'أدوات الذكاء الاصطناعي' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('dispatches sticker re-edit and copies SVG for both explicit SVG and template-rebuilt VDP stickers', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const originalClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    const explicitSticker = makeSticker(true);
+    const vdpSticker = makeSticker(false);
+    useEditorStore.setState({ elements: [explicitSticker] });
+
+    const listener = vi.fn();
+    window.addEventListener(REEDIT_STICKER_EVENT, listener);
+    try {
+      const { rerender } = render(
+        <div dir="rtl">
+          <TooltipProvider>
+            <ImageStyleProperties element={explicitSticker} onUpdate={vi.fn()} />
+          </TooltipProvider>
+        </div>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'تعديل الملصق' }));
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect((listener.mock.calls[0][0] as CustomEvent).detail).toEqual({
+        elementId: explicitSticker.id,
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'نسخ SVG' }));
+      await waitFor(() =>
+        expect(writeText).toHaveBeenCalledWith(explicitSticker.stickerSource!.svg),
+      );
+
+      // ملصق VDP بدون حقل svg مخزَّن يعيد توليد الـ SVG من القالب
+      writeText.mockClear();
+      useEditorStore.setState({ elements: [vdpSticker] });
+      rerender(
+        <div dir="rtl">
+          <TooltipProvider>
+            <ImageStyleProperties element={vdpSticker} onUpdate={vi.fn()} />
+          </TooltipProvider>
+        </div>,
+      );
+
+      const copyBtn = screen.getByRole('button', { name: 'نسخ SVG' });
+      expect(copyBtn).toBeEnabled();
+      fireEvent.click(copyBtn);
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(writeText.mock.calls[0][0]).toContain('<svg');
+    } finally {
+      window.removeEventListener(REEDIT_STICKER_EVENT, listener);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: originalClipboard,
+        configurable: true,
+      });
+    }
   });
 });

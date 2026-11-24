@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -18,11 +17,14 @@ import {
   Sticker,
   Code,
 } from '@/components/ui/icons';
-import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
+import {
+  canCopyStickerSvg,
+  copyStickerSvgWithFeedback,
+} from '@/features/stickers/lib/clipboard-utils';
+import { useImageShapeMaskAction } from '@/hooks/use-image-shape-mask-action';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { getImageShapePair } from '@/lib/canvas/image-shape-fill';
-import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { getDocumentSession } from '@/lib/io/document-session';
@@ -75,7 +77,6 @@ export function ElementMenuSection({
     sendToBack,
     elements,
     selectedIds,
-    maskSelectedImageWithShape,
   } = useEditorStore(
     useShallow((state) => ({
       copySelectedElements: state.copySelectedElements,
@@ -88,7 +89,6 @@ export function ElementMenuSection({
       sendToBack: state.sendToBack,
       elements: state.elements,
       selectedIds: state.selectedIds,
-      maskSelectedImageWithShape: state.maskSelectedImageWithShape,
     })),
   );
 
@@ -104,16 +104,7 @@ export function ElementMenuSection({
   const lockableItemClassName = `${menuItemClassName} disabled:opacity-40 disabled:pointer-events-none`;
   const lockableSpinnerClassName = `${menuItemSpinnerClassName} disabled:pointer-events-none`;
   const imageShapePair = getImageShapePair(elements, targetSelectionIds);
-  const stageRef = useStageRef();
-  const [isMasking, setIsMasking] = useState(false);
-  const maskingRef = useRef(false);
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const { isMasking, triggerMaskImageWithShape } = useImageShapeMaskAction(onClose);
 
   return (
     <div className="space-y-1">
@@ -124,30 +115,7 @@ export function ElementMenuSection({
           tabIndex={-1}
           className={lockableSpinnerClassName}
           disabled={isMasking}
-          onClick={async () => {
-            if (maskingRef.current) return;
-            const live = useEditorStore.getState();
-            if (!getImageShapePair(live.elements, live.selectedIds)) return;
-            maskingRef.current = true;
-            setIsMasking(true);
-            try {
-              const result = await maskSelectedImageWithShape(stageRef.current);
-              if (!mountedRef.current) return;
-              if (result === 'ok') {
-                toast.success('تم تقنيع الصورة بالشكل');
-                onClose();
-              } else {
-                toast.error(
-                  result === 'too-large'
-                    ? 'مساحة الصورة أكبر من حد الالتقاط الآمن'
-                    : 'تعذّر تقنيع الصورة؛ تحقق من جاهزية الصورة والتحديد',
-                );
-              }
-            } finally {
-              maskingRef.current = false;
-              if (mountedRef.current) setIsMasking(false);
-            }
-          }}
+          onClick={() => void triggerMaskImageWithShape()}
         >
           {isMasking ? <Spinner size={14} /> : <Crop size={14} weight="regular" />}
           <span>قنّع الصورة بهذا الشكل</span>
@@ -175,17 +143,14 @@ export function ElementMenuSection({
               <span className="truncate">تعديل الملصق</span>
             </button>
 
-            {imgEl.stickerSource.svg && (
+            {canCopyStickerSvg(imgEl.stickerSource) && (
               <button
                 role="menuitem"
                 tabIndex={-1}
                 className={menuItemClassName}
                 onClick={() => {
                   handleAction(() => {
-                    void copySvgCodeToClipboard(imgEl.stickerSource!.svg!).then((ok) => {
-                      if (ok) toast.success('نُسخ SVG المتجه');
-                      else toast.error('تعذر نسخ SVG');
-                    });
+                    void copyStickerSvgWithFeedback(imgEl.stickerSource);
                   });
                 }}
               >

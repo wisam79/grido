@@ -2,6 +2,24 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات تهذيب الواجهة السياقية والشريط السريع (`FF-05`) — 2026-11-24
+
+- **النطاق:** أولوية «استوديو الملصقات» وطيّ أدوات الـ AI في `ImageStyleProperties` مع نسخ SVG الصريح والمولَّد لـ VDP، وإجراءات اللحظة (`تعديل الملصق` / `ضبط الكادر` / `قنّع بالشكل`) في `CanvasQuickBar` بالالتزام الكامل لقاعدة الأيقونات فقط (`h-7 w-7` وصفر حروف عربية مرئية) وإعادة استخدام `useImageShapeMaskAction` في قائمة السياق.
+- **النتائج المثبتة منفردة ومتسلسلة بعد آخر تعديل كود (دون full suite أو Playwright أو بناء Wails محلي):**
+  - `test/canvas-quick-bar.test.tsx`: **22/22 PASS**
+  - `test/element-properties-tabs.test.tsx`: **74/74 PASS**
+  - `test/image-shape-drop.test.tsx`: **33/33 PASS**
+  - `test/freeform-double-click-crop.test.tsx`: **12/12 PASS**
+  - `test/bg-worker.test.tsx`: **5/5 PASS**
+  - `test/sticker-templates.test.ts`: **16/16 PASS**
+  - `test/ui-compliance.test.ts`: **57/57 PASS**
+  - `typecheck` + `lint` (`--max-warnings 0`) + `format:check`: **PASS** (قيد انتظار إذن الكومت والدفع).
+
+```bash
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check
+```
+
 ## اختبارات تنقيح ملاحظات `FF-04` — 2026-11-24
 
 - **النطاق:** تصفية غير الصور قبل أحداث Go في `TestNativeImageDropSkipsEmptyOrNonImagePaths`، إزالة إعادة ترميز `originalImageSrc` في `needsImageCapture`، أهلية `isDropFillableImageShape` للمجموعات المقفلة/الجزئية، Undo واحدة للإفلات المتعدد عبر `skipHistory`، ودورة حياة إبراز التحويم (`dragOver` / `dragLeave` / `drop` / native `start` / `dragend` / `blur` / disable / unmount) ورسم `CanvasDropTargetHighlight` عبر محاكاة `react-konva` بدون زيادة عدد ملفات الاختبار (`192/32/69/6`).

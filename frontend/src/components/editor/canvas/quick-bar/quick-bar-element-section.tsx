@@ -2,6 +2,7 @@ import React from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
+import { requestStickerReedit } from '@/components/editor/dialogs/sticker-reedit-bus';
 import { Button } from '@/components/ui/button';
 import {
   ArrowUp,
@@ -12,11 +13,15 @@ import {
   Eye,
   TextT,
   ArrowsInLineHorizontal,
+  Sticker,
+  FrameCorners,
 } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getQuarterTurnRotationPatch } from '@/lib/canvas/element-geometry';
 import { useEditorStore } from '@/lib/editor-store';
+import { hasCustomImageCrop } from '@/lib/export/export-primitives';
 import { cn } from '@/lib/utils';
 
 import { QuickBarGroup } from './quick-bar-group';
@@ -126,6 +131,72 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                   : 'ملاءمة الصندوق للنص'}
               </TooltipContent>
             </Tooltip>
+          </QuickBarGroup>
+          <Separator orientation="vertical" className="h-3 bg-border/40" />
+        </>
+      )}
+
+      {/* إجراء سياقي فوري للصور والملصقات: تعديل الملصق أو ضبط الكادر الموضعي */}
+      {element.type === 'image' && Boolean(element.stickerSource || element.imageSrc) && (
+        <>
+          <QuickBarGroup>
+            {element.stickerSource ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLocked}
+                    onClick={() => {
+                      const live = useEditorStore
+                        .getState()
+                        .elements.find((el) => el.id === element.id);
+                      if (!live || live.type !== 'image' || live.locked || !live.stickerSource)
+                        return;
+                      requestStickerReedit(live.id);
+                    }}
+                    aria-label="تعديل الملصق"
+                    className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10"
+                  >
+                    <Sticker className="w-3.5 h-3.5" weight="duotone" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">تعديل الملصق (نقر مزدوج)</TooltipContent>
+              </Tooltip>
+            ) : (
+              (() => {
+                const hasCustomCrop = hasCustomImageCrop(element);
+                return (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLocked}
+                        onClick={() => {
+                          const live = useEditorStore
+                            .getState()
+                            .elements.find((el) => el.id === element.id);
+                          if (!live || live.type !== 'image' || live.locked) return;
+                          useCanvasInteraction.getState().setCroppingElementId(live.id);
+                        }}
+                        aria-label="ضبط الكادر"
+                        className={cn(
+                          'h-7 w-7 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground',
+                          hasCustomCrop && 'bg-primary/10 text-primary',
+                        )}
+                      >
+                        <FrameCorners
+                          className="w-3.5 h-3.5"
+                          weight={hasCustomCrop ? 'fill' : 'bold'}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">ضبط الكادر داخل الإطار</TooltipContent>
+                  </Tooltip>
+                );
+              })()
+            )}
           </QuickBarGroup>
           <Separator orientation="vertical" className="h-3 bg-border/40" />
         </>

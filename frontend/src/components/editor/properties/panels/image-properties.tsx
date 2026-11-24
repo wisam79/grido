@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
+import { requestStickerReedit } from '@/components/editor/dialogs/sticker-reedit-bus';
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
@@ -17,8 +18,14 @@ import {
   ArrowClockwise,
   X,
   Scan,
+  Sticker,
+  Code,
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  canCopyStickerSvg,
+  copyStickerSvgWithFeedback,
+} from '@/features/stickers/lib/clipboard-utils';
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useFaceFrame } from '@/hooks/use-face-frame';
@@ -413,8 +420,64 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-150">
+      {element.stickerSource && (
+        <FluentSection title="استوديو الملصقات">
+          <div className="grid grid-cols-2 gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  disabled={Boolean(element.locked)}
+                  className="h-9 rounded-md bg-primary-action hover:bg-primary-action-hover text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 px-2.5 cursor-pointer shadow-2xs"
+                  onClick={() => {
+                    const live = useEditorStore
+                      .getState()
+                      .elements.find((el) => el.id === element.id);
+                    if (!live || live.type !== 'image' || live.locked || !live.stickerSource)
+                      return;
+                    requestStickerReedit(live.id);
+                  }}
+                >
+                  <Sticker className="w-4 h-4 shrink-0" weight="fill" />
+                  <span>تعديل الملصق</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">فتح القالب ونصوصه في استوديو الملصقات</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canCopyStickerSvg(element.stickerSource)}
+                  className="h-9 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 text-foreground font-semibold text-xs flex items-center justify-center gap-1.5 px-2.5 cursor-pointer shadow-2xs"
+                  onClick={() => {
+                    const live = useEditorStore
+                      .getState()
+                      .elements.find((el) => el.id === element.id);
+                    const source =
+                      live && live.type === 'image' ? live.stickerSource : element.stickerSource;
+                    void copyStickerSvgWithFeedback(source);
+                  }}
+                >
+                  <Code className="w-4 h-4 text-primary shrink-0" weight="regular" />
+                  <span>نسخ SVG</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">نسخ كود SVG المتجه للحافظة</TooltipContent>
+            </Tooltip>
+          </div>
+        </FluentSection>
+      )}
+
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
-      <FluentSection title="أدوات الذكاء الاصطناعي" collapsible defaultOpen={true}>
+      <FluentSection
+        key={`ai-${element.id}-${Boolean(element.stickerSource)}`}
+        title="أدوات الذكاء الاصطناعي"
+        collapsible
+        defaultOpen={!element.stickerSource}
+      >
         <div className="grid grid-cols-2 gap-1.5">
           {/* 1. عزل الخلفية */}
           <Tooltip>
