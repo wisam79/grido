@@ -104,6 +104,14 @@ export function isFillableImageShape(element: CanvasElement | undefined): elemen
   return !!element.svgPath?.trim() && hasClosedPathFill(element.svgPath);
 }
 
+/** Drop/hover eligibility also respects group completeness and locked group siblings. */
+export function isDropFillableImageShape(
+  elements: readonly CanvasElement[],
+  element: CanvasElement | undefined,
+): element is ShapeElement {
+  return isFillableImageShape(element) && canArrangeSelection(elements, [element.id]);
+}
+
 /** Replace the image recipe, not the target's identity, vector geometry or styling. */
 export function buildShapeImageFillPatch(src: string): Partial<ShapeElement> {
   return {

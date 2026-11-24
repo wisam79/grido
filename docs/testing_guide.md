@@ -2,6 +2,19 @@
 
 دليل شامل ومفصل لنظام الاختبارات المتكامل في **Grido Studio**، يغطي طبقات الهرم الاختباري الثلاث (Backend Go، Frontend Vitest، و Playwright E2E مع Wails v3 Mock Bridge)، وطرق تشغيلها وصيانتها وإضافة حالات اختبار جديدة.
 
+## اختبارات تنقيح ملاحظات `FF-04` — 2026-11-24
+
+- **النطاق:** تصفية غير الصور قبل أحداث Go في `TestNativeImageDropSkipsEmptyOrNonImagePaths`، إزالة إعادة ترميز `originalImageSrc` في `needsImageCapture`، أهلية `isDropFillableImageShape` للمجموعات المقفلة/الجزئية، Undo واحدة للإفلات المتعدد عبر `skipHistory`، ودورة حياة إبراز التحويم (`dragOver` / `dragLeave` / `drop` / native `start` / `dragend` / `blur` / disable / unmount) ورسم `CanvasDropTargetHighlight` عبر محاكاة `react-konva` بدون زيادة عدد ملفات الاختبار (`192/32/69/6`).
+- **النتائج المثبتة منفردة (دون جمع إعادات التشغيل ودون full suite أو Playwright أو بناء Wails محلي):**
+  - Go: `TestNativeImageDropSequenceAndCoordinates` و`TestNativeImageDropAlwaysCompletesEmptyOrFailedProcessing` (4 فرعية) و`TestNativeImageDropCompletesOnProcessorPanic` و`TestNativeImageDropIDsAreUniqueAcrossConcurrentRequests` و`TestNativeImageDropSkipsEmptyOrNonImagePaths` (3 فرعية) **PASS**، و`gofmt -l` بلا مخرجات.
+  - Vitest: `src/lib/store/element-slice-merge.test.ts` **111/111 PASS**، `test/image-shape-drop.test.tsx` **33/33 PASS**، `test/use-image-drop.test.ts` **5/5 PASS**، `test/native-image-drop.test.ts` **17/17 PASS**، `test/shape-pattern.test.ts` **8/8 PASS**، `test/canvas-viewport-bounds.test.ts` **23/23 PASS**، `test/ui-compliance.test.ts` **57/57 PASS**؛ مع `typecheck` و`lint` و`format:check` **PASS** (قيد انتظار إذن الكومت والدفع).
+
+```bash
+go test -v -run TestNativeImageDrop C:/projects/grido/native_image_drop.go C:/projects/grido/native_image_drop_test.go
+node C:/projects/grido/frontend/node_modules/vitest/vitest.mjs run <file> --root C:/projects/grido/frontend --config C:/projects/grido/frontend/vitest.config.ts --maxWorkers=1 --no-file-parallelism --coverage.enabled=false
+npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run format:check
+```
+
 ## اعتماد `FF-04` السحابي بعد إذن الرفع — 2026-11-24
 
 - رُفع الالتزام `92e26b8312ba73d36738ac2babb81dc85b8107f5` إلى `main` بعد اجتياز مصفوفة staged commit/fragment والخطافات وبوابة الدفع. نجح [CI الاعتيادي `45383702556`](https://github.com/wisam79/grido/actions/runs/45383702556) بما فيه الواجهة والخلفية وبناء Windows وأجزاء Chromium الأربعة وWebKit؛ ثم شُغّل `gh workflow run ci.yml --ref main -f force_full=true` ونجح [CI الكامل `45384798172`](https://github.com/wisam79/grido/actions/runs/45384798172) بكل وظائف بوابة `Full CI gate (zero skipped required jobs)` المطلوبة، ومنها السباقات والتغطية والإدارة وModal وتقرير الطباعة. تحقق `gh run view` من SHA المطابق، و`gh run watch ... --exit-status` انتهى بالنجاح للتشغيلين.

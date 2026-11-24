@@ -71,7 +71,7 @@ func TestNativeImageDropAlwaysCompletesEmptyOrFailedProcessing(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var payloads []any
-			err := processNativeImageDrop(nil, nil,
+			err := processNativeImageDrop([]string{"photo.png"}, nil,
 				func([]string) ([]string, error) { return test.images, test.err },
 				func(payload any) { payloads = append(payloads, payload) })
 			if !errors.Is(err, test.err) {
@@ -103,7 +103,7 @@ func TestNativeImageDropCompletesOnProcessorPanic(t *testing.T) {
 				t.Fatal("processor panic should not be swallowed")
 			}
 		}()
-		_ = processNativeImageDrop(nil, nil,
+		_ = processNativeImageDrop([]string{"photo.png"}, nil,
 			func([]string) ([]string, error) { panic("processor panic") },
 			func(payload any) { payloads = append(payloads, payload) })
 	}()
@@ -118,7 +118,7 @@ func TestNativeImageDropIDsAreUniqueAcrossConcurrentRequests(t *testing.T) {
 	var wg sync.WaitGroup
 	for range count {
 		wg.Go(func() {
-			_ = processNativeImageDrop(nil, nil,
+			_ = processNativeImageDrop([]string{"photo.png"}, nil,
 				func([]string) ([]string, error) { return nil, nil },
 				func(payload any) {
 					if start, ok := payload.(nativeImageDropStart); ok {
@@ -135,6 +135,66 @@ func TestNativeImageDropIDsAreUniqueAcrossConcurrentRequests(t *testing.T) {
 			t.Fatalf("duplicate or empty request ID: %q", id)
 		}
 		seen[id] = true
+	}
+}
+
+func TestNativeImageDropSkipsEmptyOrNonImagePaths(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		paths []string
+	}{
+		{name: "nil paths"},
+		{name: "empty paths", paths: []string{}},
+		{name: "non-image paths", paths: []string{"notes.txt", "doc.pdf"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			var payloads []any
+			err := processNativeImageDrop(
+				test.paths,
+				&nativeImageDropCoordinates{X: 10, Y: 20},
+				func([]string) ([]string, error) {
+					called = true
+					return nil, nil
+				},
+				func(payload any) {
+					payloads = append(payloads, payload)
+				},
+			)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if called {
+				t.Fatal("process must not be called when no valid image paths are dropped")
+			}
+			if len(payloads) != 0 {
+				t.Fatalf("must not emit start/complete payloads without image paths: %v", payloads)
+			}
+		})
+	}
+
+	var received []string
+	var payloads []any
+	err := processNativeImageDrop(
+		[]string{"notes.txt", "photo.JPG", "doc.pdf", "art.webp"},
+		nil,
+		func(paths []string) ([]string, error) {
+			received = append([]string(nil), paths...)
+			return []string{"/local-image/photo.jpg", "/local-image/art.webp"}, nil
+		},
+		func(payload any) {
+			payloads = append(payloads, payload)
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	wantPaths := []string{"photo.JPG", "art.webp"}
+	if !reflect.DeepEqual(received, wantPaths) {
+		t.Fatalf("filtered paths = %v, want %v", received, wantPaths)
+	}
+	if len(payloads) != 2 {
+		t.Fatalf("got %d payloads, want start and complete", len(payloads))
 	}
 }
 

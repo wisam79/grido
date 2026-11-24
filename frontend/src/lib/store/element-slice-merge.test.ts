@@ -14,6 +14,7 @@ import { getDisplayImage, registerDisplayOwnership } from '../canvas/display-ima
 import {
   buildShapeImageFillPatch,
   getImageShapePair,
+  isDropFillableImageShape,
   isFillableImageShape,
 } from '../canvas/image-shape-fill';
 import { captureStageBlob } from '../canvas/konva-export-utils';
@@ -466,6 +467,28 @@ describe('element-slice merge', () => {
       expect(
         isFillableImageShape({ ...shape, shape: 'path', svgPath: 'M0 0 L10 0 L10 10 Z' }),
       ).toBe(true);
+      expect(isDropFillableImageShape([image, shape], shape)).toBe(true);
+      expect(
+        isDropFillableImageShape([image, { ...shape, locked: true }], { ...shape, locked: true }),
+      ).toBe(false);
+      expect(
+        isDropFillableImageShape(
+          [
+            { ...image, groupId: 'pair-group', locked: false },
+            { ...shape, groupId: 'pair-group', locked: false },
+          ],
+          { ...shape, groupId: 'pair-group', locked: false },
+        ),
+      ).toBe(false);
+      expect(
+        isDropFillableImageShape(
+          [
+            { ...image, groupId: 'pair-group', locked: true },
+            { ...shape, groupId: 'pair-group', locked: false },
+          ],
+          { ...shape, groupId: 'pair-group', locked: false },
+        ),
+      ).toBe(false);
       expect(getImageShapePair([image, shape], [shape.id, image.id])).toEqual({ image, shape });
       for (const ids of [
         [image.id],
@@ -526,7 +549,17 @@ describe('element-slice merge', () => {
       const current = useEditorStore.getState();
       expect(current.fillShapeWithImage(shape.id, '/local-image/new.png')).toBe('unchanged');
       expect(useEditorStore.getState()).toBe(current);
-      current.undo();
+      expect(
+        current.fillShapeWithImage(shape.id, '/local-image/skip-history.png', undefined, {
+          skipHistory: true,
+        }),
+      ).toBe('ok');
+      expect(byId(shape.id)).toEqual({
+        ...shape,
+        ...buildShapeImageFillPatch('/local-image/skip-history.png'),
+      });
+      expect(useEditorStore.getState().history).toHaveLength(historyLength + 1);
+      useEditorStore.getState().undo();
       expect(byId(shape.id)).toEqual(shape);
     });
 
@@ -576,6 +609,23 @@ describe('element-slice merge', () => {
       expect(state.elements).toEqual([{ ...shape, ...buildShapeImageFillPatch(image.imageSrc) }]);
       expect(state.selectedIds).toEqual([shape.id]);
       expect(state.selectedId).toBe(shape.id);
+      expect(state.history).toHaveLength(historyLength + 1);
+      expect(captureStageBlob).not.toHaveBeenCalled();
+      expect(uploadMediaBlob).not.toHaveBeenCalled();
+      state.undo();
+      expect(byId(image.id)).toEqual(image);
+      expect(byId(shape.id)).toEqual(shape);
+    });
+
+    it('reuses plain photo src directly even when originalImageSrc backup is present', async () => {
+      const { image, shape, stage } = seedPair({
+        originalImageSrc: '/local-image/raw-before-crop.png',
+      });
+      const historyLength = useEditorStore.getState().history.length;
+      await expect(useEditorStore.getState().maskSelectedImageWithShape(stage)).resolves.toBe('ok');
+      const state = useEditorStore.getState();
+      expect(state.elements).toEqual([{ ...shape, ...buildShapeImageFillPatch(image.imageSrc) }]);
+      expect(state.selectedIds).toEqual([shape.id]);
       expect(state.history).toHaveLength(historyLength + 1);
       expect(captureStageBlob).not.toHaveBeenCalled();
       expect(uploadMediaBlob).not.toHaveBeenCalled();

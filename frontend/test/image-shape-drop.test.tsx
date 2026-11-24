@@ -3,10 +3,89 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ElementMenuSection } from '../src/components/editor/canvas/context-menu/element-menu-section';
 import { useImageDrop } from '../src/components/editor/canvas/use-image-drop';
+import { CanvasDropTargetHighlight } from '../src/components/editor/konva/layers/konva-overlay-layer';
+import {
+  resetCanvasInteraction,
+  useCanvasInteraction,
+} from '../src/lib/canvas/canvas-interaction-store';
 import { dispatchNativeImageDrop } from '../src/lib/canvas/native-image-drop';
 import { useEditorStore } from '../src/lib/editor-store';
 import type { CanvasElement, ShapeElement } from '../src/lib/store/types';
 import type Konva from 'konva';
+
+vi.mock('react-konva', () => ({
+  Layer: ({ children, ...props }: Record<string, unknown>) => (
+    <div data-konva="Layer" data-name={props.name ? String(props.name) : undefined}>
+      {children as React.ReactNode}
+    </div>
+  ),
+  Group: ({ children, name, listening }: Record<string, unknown>) => (
+    <div
+      data-konva="Group"
+      data-name={name ? String(name) : undefined}
+      data-listening={String(listening)}
+    >
+      {children as React.ReactNode}
+    </div>
+  ),
+  Ellipse: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Ellipse"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  Path: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Path"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+      data-path={String(props.data ?? '')}
+    />
+  ),
+  Rect: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Rect"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  Star: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Star"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  RegularPolygon: (props: Record<string, unknown>) => (
+    <div
+      data-konva="RegularPolygon"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  Ring: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Ring"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  Arc: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Arc"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+  Wedge: (props: Record<string, unknown>) => (
+    <div
+      data-konva="Wedge"
+      data-listening={String(props.listening)}
+      data-stroke-scale-enabled={String(props.strokeScaleEnabled)}
+    />
+  ),
+}));
 
 const mocks = vi.hoisted(() => ({
   stageRef: { current: null as Konva.Stage | null },
@@ -53,6 +132,26 @@ function installStage(hitId: string | null, point = { x: 75, y: 100 }) {
   } as unknown as Konva.Stage;
   return { setPointersPositions, getIntersection, point };
 }
+function dragOver(
+  overrides: Partial<{
+    clientX: number;
+    clientY: number;
+    types: string[];
+    items: Array<{ kind: string; type: string }>;
+  }> = {},
+) {
+  return {
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+    clientX: overrides.clientX ?? 500,
+    clientY: overrides.clientY ?? 350,
+    dataTransfer: {
+      types: overrides.types ?? ['Files'],
+      items: overrides.items ?? [{ kind: 'file', type: 'image/png' }],
+      dropEffect: 'none',
+    },
+  } as unknown as React.DragEvent;
+}
 function drop(files = [new File(['photo'], 'photo.png', { type: 'image/png' })]) {
   return {
     preventDefault: vi.fn(),
@@ -76,6 +175,7 @@ function deferred<T>() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetCanvasInteraction();
   useEditorStore.setState({ maskSelectedImageWithShape: originalMaskAction });
   useEditorStore.getState().reset();
   mocks.stageRef.current = null;
@@ -88,6 +188,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  resetCanvasInteraction();
   useEditorStore.setState({ maskSelectedImageWithShape: originalMaskAction });
   vi.restoreAllMocks();
 });
@@ -168,33 +269,70 @@ describe('FF-04 browser shape drops', () => {
     },
   );
 
-  it('fills the target with the first readable image and keeps remaining files when one read fails', async () => {
-    seed();
-    installStage('frame');
-    mocks.upload.mockImplementation(async (file: File) => {
-      if (file.name === 'failed.png') throw new Error('upload failed');
-      return { imageSrc: `/local-image/${file.name}` };
-    });
-    vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (this: FileReader) {
-      queueMicrotask(() => this.dispatchEvent(new ProgressEvent('error')));
-    });
-    const { result } = renderHook(() => useImageDrop({ current: null }));
-    const files = ['failed.png', 'a.png', 'b.png', 'c.png'].map(
-      (name) => new File(['photo'], name, { type: 'image/png' }),
-    );
-    await act(async () => {
-      await result.current.handleDrop(drop(files));
-    });
-    const elements = useEditorStore.getState().elements;
-    expect(elements.find((element) => element.id === 'frame')?.fillImageSrc).toBe(
-      '/local-image/a.png',
-    );
-    expect(
-      elements.filter((element) => element.type === 'image').map((element) => element.imageSrc),
-    ).toEqual(['/local-image/b.png', '/local-image/c.png']);
-  });
+  it.each([
+    {
+      files: ['failed.png', 'a.png', 'b.png', 'c.png'],
+      overflow: ['/local-image/b.png', '/local-image/c.png'],
+    },
+    { files: ['a.png', 'b.png'], overflow: ['/local-image/b.png'] },
+  ])(
+    'fills the target with the first readable image, inserts overflow, and undoes all in one step ($overflow.length overflow)',
+    async ({ files: fileNames, overflow }) => {
+      seed();
+      installStage('frame');
+      mocks.upload.mockImplementation(async (file: File) => {
+        if (file.name === 'failed.png') throw new Error('upload failed');
+        return { imageSrc: `/local-image/${file.name}` };
+      });
+      vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (
+        this: FileReader,
+      ) {
+        queueMicrotask(() => this.dispatchEvent(new ProgressEvent('error')));
+      });
+      const initialHistory = useEditorStore.getState().history.length;
+      const { result } = renderHook(() => useImageDrop({ current: null }));
+      const files = fileNames.map((name) => new File(['photo'], name, { type: 'image/png' }));
+      await act(async () => {
+        await result.current.handleDrop(drop(files));
+      });
+      const elements = useEditorStore.getState().elements;
+      expect(elements.find((element) => element.id === 'frame')?.fillImageSrc).toBe(
+        '/local-image/a.png',
+      );
+      expect(
+        elements.filter((element) => element.type === 'image').map((element) => element.imageSrc),
+      ).toEqual(overflow);
+      expect(useEditorStore.getState().history).toHaveLength(initialHistory + 1);
+      act(() => useEditorStore.getState().undo());
+      const undone = useEditorStore.getState().elements;
+      expect(undone.find((element) => element.id === 'frame')?.fillImageSrc).toBeUndefined();
+      expect(undone.filter((element) => element.type === 'image')).toHaveLength(0);
+    },
+  );
 
-  it.each(['document', 'target', 'lock', 'dimensions', 'mode'] as const)(
+  it.each([true, false])(
+    'falls back to canvas image insertion when dropping onto a grouped shape (lockedSibling=%s)',
+    async (lockedSibling) => {
+      seed([
+        makeShape({ id: 'behind', zIndex: 1 }),
+        makeShape({ id: 'front', zIndex: 2, groupId: 'grp' }),
+        makeShape({ id: 'sibling', zIndex: 3, groupId: 'grp', locked: lockedSibling, x: 0.8 }),
+      ]);
+      installStage('front');
+      const { result } = renderHook(() => useImageDrop({ current: null }));
+      await act(async () => {
+        await result.current.handleDrop(drop());
+      });
+      const elements = useEditorStore.getState().elements;
+      expect(elements.find((element) => element.id === 'front')?.fillImageSrc).toBeUndefined();
+      expect(elements.find((element) => element.id === 'behind')?.fillImageSrc).toBeUndefined();
+      expect(
+        elements.filter((element) => element.type === 'image').map((element) => element.imageSrc),
+      ).toEqual(['/local-image/photo.png']);
+    },
+  );
+
+  it.each(['document', 'target', 'lock', 'group', 'dimensions', 'mode'] as const)(
     'rejects a stale %s while upload is pending',
     async (change) => {
       seed();
@@ -211,7 +349,14 @@ describe('FF-04 browser shape drops', () => {
         if (change === 'document') state.reset();
         else if (change === 'dimensions') state.setCanvasSize(800, 600);
         else if (change === 'mode') state.setMode('collage');
-        else state.updateElement('frame', change === 'lock' ? { locked: true } : { x: 0.2 });
+        else if (change === 'group') {
+          useEditorStore.setState((current) => ({
+            elements: [
+              ...current.elements.map((el) => (el.id === 'frame' ? { ...el, groupId: 'grp' } : el)),
+              makeShape({ id: 'sibling', groupId: 'grp', x: 0.8 }),
+            ],
+          }));
+        } else state.updateElement('frame', change === 'lock' ? { locked: true } : { x: 0.2 });
       });
       const before = useEditorStore.getState().elements;
       await act(async () => {
@@ -598,5 +743,139 @@ describe('FF-04 contextual image/shape action', () => {
     expect(
       screen.queryByRole('menuitem', { name: 'قنّع الصورة بهذا الشكل' }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('FF-04 dragOver target highlight lifecycle and overlay rendering', () => {
+  it('tracks fillable hovered shapes on dragOver and clears on invalid targets, dragLeave, drop, native start, window events, disable and unmount', async () => {
+    seed([
+      makeShape(),
+      makeShape({ id: 'line-shape', shape: 'line' }),
+      makeShape({ id: 'locked-shape', locked: true }),
+      makeShape({ id: 'grouped-shape', groupId: 'grp' }),
+      makeShape({ id: 'grouped-sibling', groupId: 'grp', x: 0.8 }),
+    ]);
+    installStage('frame');
+    const { result, rerender, unmount } = renderHook(
+      ({ enabled }) => useImageDrop({ current: null }, enabled),
+      {
+        initialProps: { enabled: true },
+      },
+    );
+
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+
+    act(() =>
+      result.current.handleDragOver(dragOver({ items: [{ kind: 'file', type: 'text/plain' }] })),
+    );
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+
+    for (const badId of ['line-shape', 'locked-shape', 'grouped-shape', null] as const) {
+      act(() => result.current.handleDragOver(dragOver()));
+      expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+      installStage(badId);
+      act(() => result.current.handleDragOver(dragOver()));
+      expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+      installStage('frame');
+    }
+
+    act(() => result.current.handleDragOver(dragOver()));
+    act(() => useEditorStore.getState().setMode('collage'));
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+    act(() => useEditorStore.getState().setMode('single'));
+
+    // Child-node dragLeave must not clear the highlight; leaving the viewport container must clear it.
+    const container = document.createElement('div');
+    const child = document.createElement('div');
+    const outside = document.createElement('div');
+    container.appendChild(child);
+
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+    act(() =>
+      result.current.handleDragLeave({
+        currentTarget: container,
+        relatedTarget: child,
+      } as unknown as React.DragEvent),
+    );
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+    act(() =>
+      result.current.handleDragLeave({
+        currentTarget: container,
+        relatedTarget: outside,
+      } as unknown as React.DragEvent),
+    );
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+
+    // Clearing via drop, native drop start, window dragend/blur, disable, and unmount.
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+    await act(async () => {
+      await result.current.handleDrop(
+        drop([new File(['text'], 'notes.txt', { type: 'text/plain' })]),
+      );
+    });
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+
+    act(() => result.current.handleDragOver(dragOver()));
+    act(() => {
+      dispatchNativeImageDrop({ phase: 'start', dropId: 'clear-on-native' });
+      dispatchNativeImageDrop({ phase: 'complete', dropId: 'clear-on-native', images: [] });
+    });
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+
+    for (const eventName of ['dragend', 'blur'] as const) {
+      act(() => result.current.handleDragOver(dragOver()));
+      expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+      act(() => {
+        window.dispatchEvent(new Event(eventName));
+      });
+      expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+    }
+
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+    rerender({ enabled: false });
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+
+    rerender({ enabled: true });
+    act(() => result.current.handleDragOver(dragOver()));
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBe('frame');
+    unmount();
+    expect(useCanvasInteraction.getState().dropTargetShapeId).toBeNull();
+  });
+
+  it('renders non-listening scaled-stroke CanvasDropTargetHighlight for ellipse/path/rect and nothing when invalid', () => {
+    seed([
+      makeShape({ id: 'ellipse-target', shape: 'ellipse' }),
+      makeShape({ id: 'path-target', shape: 'path', svgPath: 'M0 0 L10 0 L10 10 Z' }),
+      makeShape({ id: 'rect-target', shape: 'rect', radius: 12 }),
+      makeShape({ id: 'locked-target', locked: true }),
+      makeShape({ id: 'grouped-target', groupId: 'grp' }),
+      makeShape({ id: 'grouped-sibling', groupId: 'grp', x: 0.8 }),
+    ]);
+
+    const { container } = render(<CanvasDropTargetHighlight />);
+    expect(container.firstChild).toBeNull();
+
+    for (const [id, expectedShape] of [
+      ['ellipse-target', 'Ellipse'],
+      ['path-target', 'Path'],
+      ['rect-target', 'Rect'],
+    ] as const) {
+      act(() => useCanvasInteraction.getState().setDropTargetShapeId(id));
+      const group = container.querySelector('[data-name="drop-target-highlight"]');
+      const primitive = container.querySelector(`[data-konva="${expectedShape}"]`);
+      expect(group).toHaveAttribute('data-listening', 'false');
+      expect(primitive).toHaveAttribute('data-listening', 'false');
+      expect(primitive).toHaveAttribute('data-stroke-scale-enabled', 'false');
+    }
+
+    for (const invalidId of ['missing-target', 'locked-target', 'grouped-target', null]) {
+      act(() => useCanvasInteraction.getState().setDropTargetShapeId(invalidId));
+      expect(container.firstChild).toBeNull();
+    }
   });
 });

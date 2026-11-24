@@ -182,7 +182,6 @@ function needsImageCapture(
   const framed = Math.abs((image.width * width) / (image.height * height) / (sw / sh) - 1) > 0.001;
   return (
     framed ||
-    !!image.originalImageSrc ||
     !!image.stickerSource ||
     (image.maskShape !== undefined && image.maskShape !== 'none') ||
     (image.cropZoom ?? 1) !== 1 ||
@@ -264,7 +263,7 @@ export const createElementMergeSlice: StateCreator<
     | 'maskSelectedImageWithShape'
   >
 > = (set, get, api) => ({
-  fillShapeWithImage: (id, src, expected): ShapeImageFillResult => {
+  fillShapeWithImage: (id, src, expected, options): ShapeImageFillResult => {
     const state = get();
     if (state.mode !== 'single') return 'wrong-mode';
     if (!isValidFillSource(src)) return 'invalid-source';
@@ -285,7 +284,7 @@ export const createElementMergeSlice: StateCreator<
         element === shape ? { ...shape, ...patch } : element,
       ),
     });
-    get().pushHistory();
+    if (!options?.skipHistory) get().pushHistory();
     return 'ok';
   },
 

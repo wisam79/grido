@@ -233,7 +233,7 @@ Windows: application.WindowsWindow{
 ```
 
 ### 4.2 السحب والإفلات الأصلي (Native File Drag & Drop)
-مصدر التنفيذ في `main.go` و`native_image_drop.go`: تُقرأ الإحداثيات من `ctx.DropTargetDetails().X/Y` (CSS/webview pixels؛ تُحذف عند غياب التفاصيل)، ويُرسل `native-file-drop` بمرحلة `start` ومعرّف `dropId` **قبل** معالجة الوسائط، ثم `complete` بنفس المعرّف و`images` حتى عند الفشل أو الفراغ. لا تُستخدم getters غير موجودة مثل `ctx.X()`.
+مصدر التنفيذ في `main.go` و`native_image_drop.go`: تُقرأ الإحداثيات من `ctx.DropTargetDetails().X/Y` (CSS/webview pixels؛ تُحذف عند غياب التفاصيل)، ويُصفّي `processNativeImageDrop` المسارات عبر `isImageFilePath` متخطياً إطلاق `start`/`complete` بالكامل عند خلوها من صور صالحة؛ وعند وجود صور يُرسل `native-file-drop` بمرحلة `start` ومعرّف `dropId` **قبل** معالجة الوسائط، ثم `complete` بنفس المعرّف و`images` حتى عند الفشل أو الفراغ. لا تُستخدم getters غير موجودة مثل `ctx.X()`.
 
 يُوجّه المستهلك `frontend/src/hooks/use-app-bootstrap.ts` الحدث إلى `frontend/src/lib/canvas/native-image-drop.ts` ومالك الكانفاس في `use-image-drop.ts`: تثبيت الهدف وجلسة المستند عند البداية، والتحقق عند الإكمال، وتنظيف الطلبات عند فك التركيب. الرسالة المرحلية بلا مالك تُستهلك ولا تُدرج في مستند أحدث؛ رسالة `images` القديمة فقط تبقى متوافقة مع fallback المحروس. `stopPropagation` يمنع تكرار إفلات المتصفح على Windows، ولا يغني عن المسار الأصلي على macOS/Linux. عقد الأحداث إضافي ولا يغير تواقيع ربطات RPC.
 

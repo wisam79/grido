@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -409,18 +408,12 @@ func main() {
 		if len(paths) == 0 {
 			return
 		}
-		var validPaths []string
-		for _, p := range paths {
-			if isImageFilePath(p) {
-				validPaths = append(validPaths, p)
-			}
-		}
 		var coordinates *nativeImageDropCoordinates
 		if target := ctx.DropTargetDetails(); target != nil {
 			coordinates = &nativeImageDropCoordinates{X: target.X, Y: target.Y}
 		}
 		if err := processNativeImageDrop(
-			validPaths,
+			paths,
 			coordinates,
 			appInstance.mediaSvc.ProcessMultipleOpenedFiles,
 			func(payload any) { wailsApp.Event.Emit("native-file-drop", payload) },
@@ -656,18 +649,6 @@ func isDevMode() bool {
 func isDevAssetHost(host string) bool {
 	switch strings.ToLower(strings.TrimSpace(host)) {
 	case "localhost:9245", "127.0.0.1:9245", "[::1]:9245":
-		return true
-	default:
-		return false
-	}
-}
-
-// isImageFilePath يفحص امتدادات الصور المدعومة — مصدر وحيد لكل مداخل فتح
-// الصور (وسائط CLI، إطلاق مثيل ثانٍ، السحب والإفلات) لمنع تفرّع قوائم
-// الامتدادات في ثلاثة مواضع (حظر ازدواجية المنطق).
-func isImageFilePath(path string) bool {
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
 		return true
 	default:
 		return false

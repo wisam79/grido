@@ -210,7 +210,7 @@ export const EditorCanvas = React.memo(
       useUserGuides(innerRef, displayW, displayH, printMode, elements);
 
     // 🧭 منطق إسقاط الصور (كان مضمّناً في هذا الملف)
-    const { isLoading, setIsLoading, handleDragOver, handleDrop } = useImageDrop(
+    const { isLoading, setIsLoading, handleDragOver, handleDragLeave, handleDrop } = useImageDrop(
       innerRef,
       !printMode,
     );
@@ -451,6 +451,7 @@ export const EditorCanvas = React.memo(
             onMouseMove={handleWorkspaceMouseMove}
             onMouseLeave={handleWorkspaceMouseLeave}
             onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
             {/* 1. مسرح Konva يملأ مساحة العرض بنسبة 100% */}

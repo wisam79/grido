@@ -1,12 +1,16 @@
 import React from 'react';
-import { Layer, Rect } from 'react-konva';
+import { Group as KonvaGroup, Layer, Rect } from 'react-konva';
 
+import { transformerPrimary, useCanvasColors } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { isDropFillableImageShape } from '@/lib/canvas/image-shape-fill';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
 import { isCornerAnchor, oppositeCornerAnchor } from '@/lib/canvas/transform-anchors';
 import { useEditorStore } from '@/lib/editor-store';
 
 import { EditorTransformer } from '../elements/editor-transformer';
+import { FillableShapeGeometry } from '../elements/fillable-shape-geometry';
 
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
 import type { CanvasElement, TextElement } from '@/lib/editor-store';
@@ -36,6 +40,88 @@ interface KonvaOverlayLayerProps {
   setActiveGuides: (guides: SnapGuide[]) => void;
   marqueeRectRef: React.RefObject<Konva.Rect | null>;
 }
+
+interface CanvasDropTargetHighlightProps {
+  sortedElements?: CanvasElement[];
+  elementsById?: ReadonlyMap<string, CanvasElement>;
+  canvasWidth?: number;
+  canvasHeight?: number;
+}
+
+/**
+ * إبراز هدف الإفلات على طبقة الأدوات العلوية دون تلويث طبقة التصميم أو التصدير.
+ * يعيد استخدام FillableShapeGeometry ليطابق محيط الشكل المقصود بدقة أثناء السحب.
+ */
+export const CanvasDropTargetHighlight = React.memo(function CanvasDropTargetHighlight({
+  sortedElements,
+  elementsById,
+  canvasWidth,
+  canvasHeight,
+}: CanvasDropTargetHighlightProps) {
+  useCanvasColors();
+  const dropTargetShapeId = useCanvasInteraction((s) => s.dropTargetShapeId);
+  const storeElements = useEditorStore((s) => (sortedElements ? null : s.elements));
+  const storeCanvasWidth = useEditorStore((s) => (canvasWidth !== undefined ? 0 : s.canvasWidth));
+  const storeCanvasHeight = useEditorStore((s) =>
+    canvasHeight !== undefined ? 0 : s.canvasHeight,
+  );
+
+  const elements = sortedElements ?? storeElements ?? [];
+  const cw = canvasWidth ?? storeCanvasWidth;
+  const ch = canvasHeight ?? storeCanvasHeight;
+
+  if (!dropTargetShapeId || cw <= 0 || ch <= 0) return null;
+  const target = elementsById
+    ? elementsById.get(dropTargetShapeId)
+    : elements.find((el) => el.id === dropTargetShapeId);
+  if (!isDropFillableImageShape(elements, target)) return null;
+
+  const w = target.width * cw;
+  const h = target.height * ch;
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+
+  const pathBounds = target.shape === 'path' ? getSvgPathBounds(target.svgPath || '') : null;
+
+  return (
+    <KonvaGroup
+      name="drop-target-highlight"
+      listening={false}
+      x={target.x * cw}
+      y={target.y * ch}
+      width={w}
+      height={h}
+      rotation={target.rotation}
+    >
+      <KonvaGroup
+        listening={false}
+        x={w / 2}
+        y={h / 2}
+        offsetX={w / 2}
+        offsetY={h / 2}
+        scaleX={target.flipX === true ? -1 : 1}
+        scaleY={target.flipY === true ? -1 : 1}
+        width={w}
+        height={h}
+      >
+        <FillableShapeGeometry
+          element={target}
+          w={w}
+          h={h}
+          pathBounds={pathBounds}
+          visualProps={{
+            listening: false,
+            perfectDrawEnabled: false,
+            fill: 'rgba(0, 120, 212, 0.14)',
+            stroke: transformerPrimary(),
+            strokeWidth: 2.5,
+            strokeScaleEnabled: false,
+            dash: [7, 4],
+          }}
+        />
+      </KonvaGroup>
+    </KonvaGroup>
+  );
+});
 
 /**
  * 🛠️ طبقة الأدوات والتفاعل العلوية المستقلة (Dedicated Interaction & Tools Overlay Layer).
@@ -230,6 +316,12 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
           onTransformEnd={handleTransformEnd}
         />
       )}
+      <CanvasDropTargetHighlight
+        sortedElements={sortedElements}
+        elementsById={elementsById}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+      />
       <Rect
         ref={marqueeRectRef as unknown as React.Ref<Konva.Rect>}
         visible={false}

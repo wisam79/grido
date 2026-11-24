@@ -27,11 +27,14 @@ export interface CanvasInteractionState {
   croppingElementId: string | null;
   /** أفعال تأكيد/إلغاء جلسة ضبط الكادر النشطة (تُستدعى من لوحة المفاتيح أو الكانفاس) */
   cropSessionActions: CropSessionActions | null;
+  /** معرّف الشكل القابل للتعبئة المُحوم فوقه أثناء سحب ملفات */
+  dropTargetShapeId: string | null;
   setIsDragging: (isDragging: boolean) => void;
   setIsTransforming: (isTransforming: boolean) => void;
   setActiveGuides: (activeGuides: SnapGuide[]) => void;
   setCroppingElementId: (id: string | null) => void;
   setCropSessionActions: (actions: CropSessionActions | null) => void;
+  setDropTargetShapeId: (id: string | null) => void;
 }
 
 export const useCanvasInteraction = create<CanvasInteractionState>((set) => ({
@@ -40,6 +43,7 @@ export const useCanvasInteraction = create<CanvasInteractionState>((set) => ({
   activeGuides: [],
   croppingElementId: null,
   cropSessionActions: null,
+  dropTargetShapeId: null,
   setIsDragging: (isDragging) => set({ isDragging }),
   setIsTransforming: (isTransforming) => set({ isTransforming }),
   setActiveGuides: (activeGuides) => set({ activeGuides }),
@@ -49,6 +53,8 @@ export const useCanvasInteraction = create<CanvasInteractionState>((set) => ({
       cropSessionActions: id === null ? null : state.cropSessionActions,
     })),
   setCropSessionActions: (actions) => set({ cropSessionActions: actions }),
+  setDropTargetShapeId: (id) =>
+    set((state) => (state.dropTargetShapeId === id ? state : { dropTargetShapeId: id })),
 }));
 
 /**
@@ -62,5 +68,6 @@ export function resetCanvasInteraction(): void {
     activeGuides: [],
     croppingElementId: null,
     cropSessionActions: null,
+    dropTargetShapeId: null,
   });
 }

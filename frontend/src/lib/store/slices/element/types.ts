@@ -107,7 +107,12 @@ export interface ElementSlice {
   mergeSelectedShapes: (op: BooleanOp) => MergeResult;
   /** تسطيح التحديد — أي مزيج صور/نصوص/أشكال — إلى عنصر صورة واحد بدقة الورقة */
   rasterizeSelected: (stage: Konva.Stage | null) => Promise<RasterizeResult>;
-  fillShapeWithImage: (id: string, src: string, expected?: ShapeElement) => ShapeImageFillResult;
+  fillShapeWithImage: (
+    id: string,
+    src: string,
+    expected?: ShapeElement,
+    options?: { skipHistory?: boolean },
+  ) => ShapeImageFillResult;
   maskSelectedImageWithShape: (stage: Konva.Stage | null) => Promise<ImageShapeMaskResult>;
   /** اسم طبقة مخصص يظهر في لوحة الطبقات ويُحفظ مع المستند */
   renameElement: (id: string, name: string) => void;
