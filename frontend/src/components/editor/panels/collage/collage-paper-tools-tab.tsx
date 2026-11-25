@@ -10,6 +10,7 @@ import { CaretLeft, Minus, Plus } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 /* ═══════════════════════════════════════════════════════════════
    أداة الورق والقص — وصول سريع من الشريط الجانبي لكل ما يخص
@@ -133,7 +134,9 @@ export function CollagePaperToolsTab() {
         {/* تنقل للوحـة الخصائص — خطوط القص وسماكتها ولونها هناك بلا تكرار */}
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-properties-panel'))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openPropertiesPanel))
+          }
           title="فتح لوحة الخصائص"
           className="flex h-8 w-full items-center gap-2 rounded-md border border-border/60 bg-card/45 px-2.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-accent/60 hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         >

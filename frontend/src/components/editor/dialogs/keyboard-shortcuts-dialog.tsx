@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Keyboard, ArrowUp, ArrowDown, Sparkle } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 interface ShortcutItem {
   label: string;
@@ -29,9 +30,9 @@ export function KeyboardShortcutsDialog() {
     // `hooks/use-keyboard-shortcuts.ts` (يملك كل المفاتيح العامة ويحرس الحقول
     // النصية). هنا يبقى مستمع الحدث فقط — بلا مالك ثانٍ للمفاتيح.
     const handleOpenEvent = () => setOpen(true);
-    window.addEventListener('grido:open-shortcuts', handleOpenEvent);
+    window.addEventListener(WORKSPACE_EVENTS.openShortcuts, handleOpenEvent);
     return () => {
-      window.removeEventListener('grido:open-shortcuts', handleOpenEvent);
+      window.removeEventListener(WORKSPACE_EVENTS.openShortcuts, handleOpenEvent);
     };
   }, []);
 

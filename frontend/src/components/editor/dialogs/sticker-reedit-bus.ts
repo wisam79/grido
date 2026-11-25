@@ -1,3 +1,4 @@
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 /**
  * حدث إعادة تحرير الملصق — تطلقه قائمة السياق أو النقر المزدوج على الكانفس لعنصر يحمل
  * `stickerSource`، ويلتقطه StickerStudioHost (مالك حالة نافذة الاستوديو)
@@ -8,7 +9,7 @@ export interface ReeditStickerEventDetail {
   elementId: string;
 }
 
-export const REEDIT_STICKER_EVENT = 'grido:reedit-sticker-element';
+export const REEDIT_STICKER_EVENT = WORKSPACE_EVENTS.reeditStickerElement;
 
 /** مُطلق مساعد لقائمة السياق */
 export const requestStickerReedit = (elementId: string) => {

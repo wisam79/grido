@@ -1007,7 +1007,6 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 }
 
 func calculatePrinterPlanGeometry(metrics deviceMetrics, paperWidthMM, paperHeightMM float64) (printableWidthMM, printableHeightMM, offsetXMM, offsetYMM, scale float64) {
-	const mmPerInch = 25.4
 	if metrics.DPIX > 0 {
 		printableWidthMM = float64(metrics.PrintableWidth) / float64(metrics.DPIX) * mmPerInch
 		offsetXMM = float64(metrics.MarginLeft) / float64(metrics.DPIX) * mmPerInch
@@ -1307,7 +1306,6 @@ func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32
 	// حين يختلف تقريب الطابعة عن DPI التصميم.
 	if !req.Borderless && req.PaperWidthMM > 0 && req.PaperHeightMM > 0 &&
 		metrics.DPIX > 0 && metrics.DPIY > 0 && metrics.PrintableWidth > 0 && metrics.PrintableHeight > 0 {
-		const mmPerInch = 25.4
 		printableWMM := float64(metrics.PrintableWidth) / float64(metrics.DPIX) * mmPerInch
 		printableHMM := float64(metrics.PrintableHeight) / float64(metrics.DPIY) * mmPerInch
 		scaleW := (float64(destW) / float64(metrics.DPIX) * mmPerInch) / req.PaperWidthMM

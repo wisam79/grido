@@ -22,12 +22,10 @@ import {
 } from '@/components/ui/icons';
 import { normalizeArabicQuery } from '@/features/stickers/lib/sticker-text';
 import { assetFavoriteId, useAssetFavorites } from '@/lib/asset-favorites';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 import type { CollagePresetCategory } from './collage-preset-data';
 import type { CollageTemplate } from '@/lib/templates';
-
-const FOCUS_RING =
-  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
   cells,

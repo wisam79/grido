@@ -31,6 +31,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 interface RailSettingsMenuProps {
   className?: string;
@@ -69,11 +70,11 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
   const isLicenseActive = isLicenseActiveFn();
 
   const handleToggleLeft = () => {
-    window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
+    window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleLeftSidebar));
   };
 
   const handleToggleRight = () => {
-    window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
+    window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleRightSidebar));
   };
 
   return (
@@ -185,7 +186,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-in'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomIn))}
           className="flex items-center justify-between cursor-pointer py-1.5 px-2.5 rounded-md group text-xs font-medium hover:bg-accent/70 focus:bg-accent/70 transition-colors"
         >
           <div className="flex items-center gap-2.5">
@@ -203,7 +204,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-out'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomOut))}
           className="flex items-center justify-between cursor-pointer py-1.5 px-2.5 rounded-md group text-xs font-medium hover:bg-accent/70 focus:bg-accent/70 transition-colors"
         >
           <div className="flex items-center gap-2.5">
@@ -214,7 +215,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:ui-zoom-reset'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomReset))}
           className="flex items-center justify-between cursor-pointer py-1.5 px-2.5 rounded-md group text-xs font-medium hover:bg-accent/70 focus:bg-accent/70 transition-colors"
         >
           <div className="flex items-center gap-2.5">

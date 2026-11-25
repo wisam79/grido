@@ -1,6 +1,7 @@
-import { CURATED_PALETTES } from '../constants';
-import { pickDifferentOption, pickDifferentPalette } from '../lib/color-derivation';
+import { pickDifferentOption } from '../lib/color-derivation';
 import { COMPOSER_ICONS } from '../lib/composer-icons';
+import { selectField, textField } from '../lib/field-builders';
+import { randomOptionId, randomizeSurfaceParams } from '../lib/randomize-params';
 import {
   composeStampV2Svg,
   resolveStampV2CutShape,
@@ -18,74 +19,37 @@ import type { StickerField, StickerParams, StickerTemplate } from '../types';
  * مع الإبقاء التام على نصوص المستخدم المكتوبة دون تعديل.
  */
 function randomizeStampParams(current: StickerParams): StickerParams {
-  const nextShape = pickDifferentOption(
-    STAMP_SHAPE_OPTIONS,
-    { id: (current.fields.shape as StampShapeId) || 'rosette', label: '' },
-    (a, b) => a.id === b.id,
-  ).id;
-  const nextIcon = COMPOSER_ICONS[Math.floor(Math.random() * COMPOSER_ICONS.length)].id;
-  const nextDecor = STAMP_DECOR_OPTIONS[Math.floor(Math.random() * STAMP_DECOR_OPTIONS.length)].id;
-  const palette = pickDifferentPalette(CURATED_PALETTES, current.primaryColor);
-
-  return {
-    ...current,
-    fields: {
-      ...current.fields,
-      shape: nextShape,
-      icon: nextIcon,
-      decor: nextDecor,
-    },
-    primaryColor: palette.primary,
-    secondaryColor: palette.secondary,
-    backgroundColor: palette.background,
-    isTransparent: false,
-  };
+  return randomizeSurfaceParams(current, {
+    shape: pickDifferentOption(
+      STAMP_SHAPE_OPTIONS,
+      { id: (current.fields.shape as StampShapeId) || 'rosette', label: '' },
+      (a, b) => a.id === b.id,
+    ).id,
+    icon: randomOptionId(COMPOSER_ICONS),
+    decor: randomOptionId(STAMP_DECOR_OPTIONS),
+  });
 }
 
 function createComposerFields(defaults: ComposeStampV2Defaults): StickerField[] {
   return [
-    {
-      id: 'shape',
-      label: 'شكل الختم',
-      type: 'select',
-      presentation: 'shape-grid',
-      defaultValue: defaults.shape,
-      options: STAMP_SHAPE_OPTIONS.map((s) => ({ value: s.id, label: s.label })),
-    },
-    {
-      id: 'icon',
-      label: 'الأيقونة',
-      type: 'select',
-      presentation: 'icon-grid',
-      defaultValue: defaults.icon,
-      options: STAMP_ICON_FIELD_OPTIONS,
-    },
-    {
-      id: 'decor',
-      label: 'الزخرفة',
-      type: 'select',
-      presentation: 'pills',
-      defaultValue: defaults.decor,
-      options: STAMP_DECOR_OPTIONS.map((d) => ({ value: d.id, label: d.label })),
-    },
-    {
-      id: 'topText',
-      label: 'النص العلوي',
-      type: 'text',
-      defaultValue: defaults.topText,
-    },
-    {
-      id: 'mainText',
-      label: 'العنوان الرئيسي',
-      type: 'text',
-      defaultValue: defaults.mainText,
-    },
-    {
-      id: 'subText',
-      label: 'الشريط السفلي',
-      type: 'text',
-      defaultValue: defaults.subText,
-    },
+    selectField(
+      'shape',
+      'شكل الختم',
+      'shape-grid',
+      defaults.shape,
+      STAMP_SHAPE_OPTIONS.map((s) => ({ value: s.id, label: s.label })),
+    ),
+    selectField('icon', 'الأيقونة', 'icon-grid', defaults.icon, STAMP_ICON_FIELD_OPTIONS),
+    selectField(
+      'decor',
+      'الزخرفة',
+      'pills',
+      defaults.decor,
+      STAMP_DECOR_OPTIONS.map((d) => ({ value: d.id, label: d.label })),
+    ),
+    textField('topText', 'النص العلوي', defaults.topText),
+    textField('mainText', 'العنوان الرئيسي', defaults.mainText),
+    textField('subText', 'الشريط السفلي', defaults.subText),
   ];
 }
 

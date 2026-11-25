@@ -16,14 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { pxToMm } from '@/lib/canvas/units';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from '@/lib/templates';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 import { usePanelFooterPortal } from '../panel-footer-portal';
 import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
 import type { PhotoGridType, GridAlignment } from './collage-grid-math';
 import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
 
-const FOCUS_RING =
-  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 type CollapseKey = 'dims' | 'photoSize' | 'align';
 const COLLAPSE_PREF_KEY = 'grido-collage-grid-collapse';
 

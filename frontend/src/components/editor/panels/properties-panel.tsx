@@ -9,6 +9,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { getSelectionElements } from '@/lib/selection-properties';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import { PanelShell } from './panel-shell';
 import { CollageSettings } from '../properties/collage-settings';
@@ -57,8 +58,9 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
 
   useEffect(() => {
     const showCollageSettings = () => setGeneralTab('collage');
-    window.addEventListener('grido:open-properties-panel', showCollageSettings);
-    return () => window.removeEventListener('grido:open-properties-panel', showCollageSettings);
+    window.addEventListener(WORKSPACE_EVENTS.openPropertiesPanel, showCollageSettings);
+    return () =>
+      window.removeEventListener(WORKSPACE_EVENTS.openPropertiesPanel, showCollageSettings);
   }, []);
 
   let panelTitle = 'الخصائص';

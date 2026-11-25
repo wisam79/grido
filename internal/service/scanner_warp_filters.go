@@ -54,18 +54,6 @@ func lumShift10(r, g, b uint8) int {
 	return (306*int(r) + 601*int(g) + 117*int(b)) >> 10
 }
 
-// jsRoundF يكافئ Math.round في JS ثم كتابة في Uint8ClampedArray (قصّ 0..255).
-func jsRoundF(x float64) uint8 {
-	v := math.Floor(x + 0.5)
-	if v < 0 {
-		return 0
-	}
-	if v > 255 {
-		return 255
-	}
-	return uint8(v)
-}
-
 // applyScannerMagicFilter منقولة من applyMagicColorFilter: تبييض الخلفية
 // وتمديد النطاق الديناميكي مع حماية الألوان المشبعة.
 func applyScannerMagicFilter(ctx context.Context, img *image.NRGBA) error {
@@ -133,9 +121,9 @@ func applyScannerMagicFilter(ctx context.Context, img *image.NRGBA) error {
 				b *= 0.82
 			}
 
-			pix[idx] = jsRoundF(r)
-			pix[idx+1] = jsRoundF(g)
-			pix[idx+2] = jsRoundF(b)
+			pix[idx] = jsRound(r)
+			pix[idx+1] = jsRound(g)
+			pix[idx+2] = jsRound(b)
 			pix[idx+3] = 255
 		}
 	}
@@ -153,7 +141,7 @@ func applyScannerOtsuFilter(ctx context.Context, img *image.NRGBA) error {
 	gray := make([]uint8, w*h)
 	for i := 0; i < w*h; i++ {
 		idx := i * 4
-		gray[i] = jsRoundF(0.299*float64(pix[idx]) + 0.587*float64(pix[idx+1]) + 0.114*float64(pix[idx+2]))
+		gray[i] = jsRound(0.299*float64(pix[idx]) + 0.587*float64(pix[idx+1]) + 0.114*float64(pix[idx+2]))
 	}
 
 	// الصورة التكاملية (uint64 يستوعب مجموع 255*w*h دائماً — يكافئ اختيار
@@ -250,7 +238,7 @@ func applyScannerGrayscaleFilter(ctx context.Context, img *image.NRGBA) error {
 				lum *= 0.85
 			}
 
-			finalVal := jsRoundF(lum)
+			finalVal := jsRound(lum)
 			pix[idx] = finalVal
 			pix[idx+1] = finalVal
 			pix[idx+2] = finalVal
@@ -303,7 +291,7 @@ func applyScannerSharpenFilter(ctx context.Context, img *image.NRGBA) error {
 			for c := 0; c < 3; c++ {
 				val := float64(src[idx+c])*centerWeight +
 					(float64(src[idxUp+c])+float64(src[idxDown+c])+float64(src[idxLeft+c])+float64(src[idxRight+c]))*neighborWeight
-				pix[idx+c] = jsRoundF(val)
+				pix[idx+c] = jsRound(val)
 			}
 			pix[idx+3] = 255
 		}
@@ -338,9 +326,9 @@ func applyScannerDeyellowFilter(ctx context.Context, img *image.NRGBA) error {
 				b = math.Min(255, b+yellowDiff*0.92)
 			}
 
-			pix[idx] = jsRoundF(math.Min(255, float64(r)))
-			pix[idx+1] = jsRoundF(math.Min(255, float64(g)))
-			pix[idx+2] = jsRoundF(b)
+			pix[idx] = jsRound(math.Min(255, float64(r)))
+			pix[idx+1] = jsRound(math.Min(255, float64(g)))
+			pix[idx+2] = jsRound(b)
 			pix[idx+3] = 255
 		}
 	}

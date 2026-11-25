@@ -10,6 +10,8 @@ import {
   EXPORT_TIMEOUT_MS,
 } from '@/components/editor/print/print-transport';
 
+import { createAbortHelpers } from '@/lib/abort';
+
 import { exportCanvas } from './export-canvas';
 
 import type Konva from 'konva';
@@ -25,14 +27,7 @@ export interface CmykPrintRequestParams {
   format: CmykFormat;
 }
 
-function abortError(signal?: AbortSignal): Error {
-  if (signal?.reason instanceof Error) return signal.reason;
-  return new DOMException('تم إلغاء تصدير CMYK', 'AbortError');
-}
-
-function throwIfAborted(signal?: AbortSignal): void {
-  if (signal?.aborted) throw abortError(signal);
-}
+const { abortError, throwIfAborted } = createAbortHelpers('تم إلغاء تصدير CMYK');
 
 function createJobId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

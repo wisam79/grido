@@ -1,4 +1,4 @@
-import { cornerBracketsMarkup, iconMarkup, starRowMarkup } from './svg-elements';
+import { badgePlateMarkup, cornerBracketsMarkup, iconMarkup, starRowMarkup } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -18,17 +18,11 @@ function iconBadge(
     strokeOpacity?: number;
   },
 ): string {
-  const boxSize = options?.boxSize ?? 26;
   const iconSize = options?.iconSize ?? 14;
-  const fill = options?.fill ?? color;
-  const fillOpacity = options?.fillOpacity ?? 0.12;
-  const strokeOpacity = options?.strokeOpacity ?? 0.24;
-  const role = colorRole ? ` data-color-role="${colorRole}"` : '';
-  const halfBox = boxSize / 2;
   const halfIcon = iconSize / 2;
 
   return (
-    `<rect x="${cx - halfBox}" y="${cy - halfBox}" width="${boxSize}" height="${boxSize}" rx="7" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${color}" stroke-opacity="${strokeOpacity}" stroke-width="1"${role}/>` +
+    badgePlateMarkup(cx, cy, color, colorRole, options) +
     iconMarkup(name, cx - halfIcon, cy - halfIcon, iconSize, color, colorRole)
   );
 }
@@ -41,15 +35,10 @@ function globeBadge(
   colorRole?: string,
   options?: { boxSize?: number; fill?: string; fillOpacity?: number; strokeOpacity?: number },
 ): string {
-  const boxSize = options?.boxSize ?? 26;
-  const fill = options?.fill ?? color;
-  const fillOpacity = options?.fillOpacity ?? 0.12;
-  const strokeOpacity = options?.strokeOpacity ?? 0.24;
   const role = colorRole ? ` data-color-role="${colorRole}"` : '';
-  const halfBox = boxSize / 2;
 
   return (
-    `<rect x="${cx - halfBox}" y="${cy - halfBox}" width="${boxSize}" height="${boxSize}" rx="7" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${color}" stroke-opacity="${strokeOpacity}" stroke-width="1"${role}/>` +
+    badgePlateMarkup(cx, cy, color, colorRole, options) +
     `<g fill="none" stroke="${color}"${role}>` +
     `<circle cx="${cx}" cy="${cy}" r="6.5" stroke-width="1.5"/>` +
     `<path d="M ${cx - 6.5},${cy} H ${cx + 6.5} M ${cx},${cy - 6.5} A 3.4,6.5 0 0,1 ${cx},${cy + 6.5} M ${cx},${cy - 6.5} A 3.4,6.5 0 0,0 ${cx},${cy + 6.5}" stroke-width="1.15"/>` +
@@ -65,15 +54,10 @@ function mailBadge(
   colorRole?: string,
   options?: { boxSize?: number; fill?: string; fillOpacity?: number; strokeOpacity?: number },
 ): string {
-  const boxSize = options?.boxSize ?? 26;
-  const fill = options?.fill ?? color;
-  const fillOpacity = options?.fillOpacity ?? 0.12;
-  const strokeOpacity = options?.strokeOpacity ?? 0.24;
   const role = colorRole ? ` data-color-role="${colorRole}"` : '';
-  const halfBox = boxSize / 2;
 
   return (
-    `<rect x="${cx - halfBox}" y="${cy - halfBox}" width="${boxSize}" height="${boxSize}" rx="7" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${color}" stroke-opacity="${strokeOpacity}" stroke-width="1"${role}/>` +
+    badgePlateMarkup(cx, cy, color, colorRole, options) +
     `<g fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round"${role}>` +
     `<rect x="${cx - 7}" y="${cy - 5}" width="14" height="10" rx="2" stroke-width="1.5"/>` +
     `<path d="M ${cx - 6.5},${cy - 4} L ${cx},${cy + 1} L ${cx + 6.5},${cy - 4}" stroke-width="1.4"/>` +

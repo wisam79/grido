@@ -1,11 +1,12 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 export interface StableViewportSize {
   w: number;
   h: number;
 }
 
-export const PANEL_TRANSITION_EVENT = 'grido:panel-transition';
+export const PANEL_TRANSITION_EVENT = WORKSPACE_EVENTS.panelTransition;
 
 export function notifyPanelTransition() {
   if (typeof window !== 'undefined') {

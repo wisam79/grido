@@ -6,8 +6,9 @@
  * كل القوالب (~83) دون تعديل كل ملف قالب على حدة.
  */
 
+import { MM_PER_INCH } from '@/lib/canvas/units';
+
 export const STICKER_DPI = 300;
-export const MM_PER_INCH = 25.4;
 
 const ARABIC_CHAR = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const ARABIC_STRONG = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;

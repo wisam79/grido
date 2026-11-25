@@ -38,6 +38,7 @@ import { useCanvasContext, useCollageViewFlags, useGridControls } from '@/lib/st
 import { ALL_PAPER_SIZES } from '@/lib/templates';
 import { useCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 export interface CanvasViewportDeckProps {
   isZenMode?: boolean;
@@ -236,7 +237,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           tooltip="إخفاء أو استعادة الألواح الجانبية لمساحة رؤية كاملة"
           shortcut="Ctrl+."
           active={isZenMode}
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleZenMode))}
           testId="canvas-zen-mode-toggle"
         />
       </div>
@@ -418,7 +419,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             label="اختصارات لوحة المفاتيح"
             tooltip="اختصارات لوحة المفاتيح"
             shortcut="Ctrl+/"
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}
+            onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openShortcuts))}
             testId="canvas-shortcuts"
           />
         </div>

@@ -19,6 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import { ModeSwitcher } from './mode-switcher';
 import { ToolbarFileOps } from './toolbar-file-ops';
@@ -106,7 +107,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               size="icon"
               data-testid="toolbar-tool-launcher"
               aria-label="لوحة الأدوات والأوامر"
-              onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openToolLauncher))
+              }
               className="coarse-touch-target h-8 w-8 p-0 text-foreground/80 hover:text-foreground hover:bg-accent cursor-pointer"
             >
               <Faders className="w-4 h-4" aria-hidden="true" />
@@ -201,7 +204,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 خيارات المستند
               </div>
               <DropdownMenuItem
-                onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openShortcuts))
+                }
                 className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-2">
@@ -210,7 +215,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))}
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.clearCanvasRequest))
+                }
                 className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <div className="flex items-center gap-2">

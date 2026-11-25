@@ -23,6 +23,7 @@ import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import { canArrangeSelection } from '@/lib/selection-properties';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 import { getSectionsForWorkflow } from '@/lib/workspace-tools';
 
 import type { CanvasElement } from '@/lib/editor-store';
@@ -77,7 +78,7 @@ export function useKeyboardShortcuts(enabled = true) {
         return;
       }
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-shortcuts'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openShortcuts));
     },
     { enableOnFormTags: false, ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -276,7 +277,7 @@ export function useKeyboardShortcuts(enabled = true) {
     (e) => {
       e.preventDefault();
       window.dispatchEvent(
-        new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+        new CustomEvent(WORKSPACE_EVENTS.openProjectsDialog, { detail: { tab: 'save' } }),
       );
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
@@ -287,7 +288,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+e',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-export-dialog'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openExportDialog));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -297,7 +298,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+p',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-print-dialog'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openPrintDialog));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -307,7 +308,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+o',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-file-dialog'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openFileDialog));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -317,7 +318,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+shift+o',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openBatchInsertDialog));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -327,7 +328,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+b',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleRightSidebar));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -337,7 +338,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+shift+b',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleLeftSidebar));
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction, enabled },
   );
@@ -359,9 +360,12 @@ export function useKeyboardShortcuts(enabled = true) {
     }
     const isCollage = mode === 'collage';
     window.dispatchEvent(
-      new CustomEvent(isCollage ? 'grido:select-collage-tab' : 'grido:select-studio-tab', {
-        detail: { tab: section.defaultTab },
-      }),
+      new CustomEvent(
+        isCollage ? WORKSPACE_EVENTS.selectCollageTab : WORKSPACE_EVENTS.selectStudioTab,
+        {
+          detail: { tab: section.defaultTab },
+        },
+      ),
     );
   };
   useHotkeys('alt+1', (e) => selectVisibleSectionByIndex(e, 0), tabGuard);
@@ -399,7 +403,7 @@ export function useKeyboardShortcuts(enabled = true) {
     'mod+k',
     (e) => {
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openToolLauncher));
     },
     tabGuard,
   );
@@ -410,7 +414,7 @@ export function useKeyboardShortcuts(enabled = true) {
     (e) => {
       if (shouldIgnoreCanvasAction(e)) return;
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'));
+      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleZenMode));
     },
     tabGuard,
   );
@@ -536,7 +540,7 @@ export function useKeyboardShortcuts(enabled = true) {
       if (isPlusKey) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        window.dispatchEvent(new CustomEvent('grido:ui-zoom-in'));
+        window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomIn));
         return;
       }
 
@@ -553,7 +557,7 @@ export function useKeyboardShortcuts(enabled = true) {
       if (isMinusKey) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        window.dispatchEvent(new CustomEvent('grido:ui-zoom-out'));
+        window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomOut));
         return;
       }
 
@@ -572,7 +576,7 @@ export function useKeyboardShortcuts(enabled = true) {
       if (isResetKey) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        window.dispatchEvent(new CustomEvent('grido:ui-zoom-reset'));
+        window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.uiZoomReset));
       }
     };
 

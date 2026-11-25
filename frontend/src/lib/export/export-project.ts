@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 
+import { createAbortHelpers } from '@/lib/abort';
 import { classifySaveResult } from '@/lib/io/save-result';
 import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
@@ -11,18 +12,7 @@ import { SaveFileDialog } from '../../../wailsjs/go/main/App';
 
 const logger = createLogger('export-project');
 
-function abortError(signal?: AbortSignal): Error {
-  if (signal?.reason instanceof Error) return signal.reason;
-  return new DOMException('تم إلغاء حفظ الملف', 'AbortError');
-}
-
-function throwIfAborted(signal?: AbortSignal): void {
-  if (signal?.aborted) throw abortError(signal);
-}
-
-function isAbortError(error: unknown, signal?: AbortSignal): boolean {
-  return signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError');
-}
+const { abortError, throwIfAborted, isAbortError } = createAbortHelpers('تم إلغاء حفظ الملف');
 
 function blobToDataURL(blob: Blob, signal?: AbortSignal): Promise<string> {
   throwIfAborted(signal);

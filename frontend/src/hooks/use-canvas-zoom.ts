@@ -1,5 +1,6 @@
 import { ZOOM_DEFAULT, canZoomIn, canZoomOut, isDefaultZoom, stepZoom } from '@/lib/canvas/zoom';
 import { useEditorStore } from '@/lib/editor-store';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 /**
  * use-canvas-zoom — أفعال الزوم الموحدة (كانت متناثرة نصاً متطابقاً في
@@ -16,8 +17,8 @@ import { useEditorStore } from '@/lib/editor-store';
  * `grido:fit-canvas-to-screen` — فتغيير وضع الملاءمة يمرّ من متجر واحد.
  */
 
-export const RESET_CANVAS_PAN_EVENT = 'grido:reset-canvas-pan';
-export const FLUSH_CANVAS_VIEW_EVENT = 'grido:flush-canvas-view';
+export const RESET_CANVAS_PAN_EVENT = WORKSPACE_EVENTS.resetCanvasPan;
+export const FLUSH_CANVAS_VIEW_EVENT = WORKSPACE_EVENTS.flushCanvasView;
 
 /** Buttons step from the live wheel target, not the last debounced store value. */
 function flushCanvasView(): void {

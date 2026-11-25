@@ -96,8 +96,12 @@ func parseColor(hex string) color.Color {
 	return color.RGBA{R: r, G: g, B: b, A: a}
 }
 
+// mmPerInch ثابت التحويل الوحيد للمليمتر داخل حزمة الطباعة (كان مكرراً كنص
+// صريح 25.4 في mmToPx وفي موضعين بـprinter_gdi_windows.go).
+const mmPerInch = 25.4
+
 func mmToPx(mm float64, dpi int) float64 {
-	return (mm * float64(dpi)) / 25.4
+	return (mm * float64(dpi)) / mmPerInch
 }
 
 // قيم خطوط القص مشتركة بين المعاينة (drawCutLines) وCMYK

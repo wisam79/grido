@@ -17,6 +17,7 @@ import { getDocumentSession } from '@/lib/io/document-session';
 import { createLogger } from '@/lib/logger';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { toErrorMessage } from '@/lib/wails-error';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import type { AiImageDimensions } from '@/lib/ai/ai-result-commit';
 
@@ -50,7 +51,7 @@ export function resetAiEnhanceQuota(): void {
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('grido:auth-logout', resetAiEnhanceQuota);
+  window.addEventListener(WORKSPACE_EVENTS.authLogout, resetAiEnhanceQuota);
 }
 
 // 🛡️ الحصة اليومية تُحسم في وحدة واحدة (`@/lib/ai/quota`): لقطة الخادم أولاً،

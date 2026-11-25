@@ -21,6 +21,7 @@ import {
   ADVANCED_PAPER_SIZES,
   CARD_AND_LABEL_SIZES,
 } from '@/lib/templates';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,9 +40,6 @@ import { cn } from '@/lib/utils';
 // أُبقي محدد الاتجاه كمصدر وحيد للتبديل، وحلّ محل الزر تكرار الميزة الغائبة
 // فعلاً: قفل نسبة الأبعاد (Aspect Ratio Lock).
 // ─────────────────────────────────────────────────────────────────────────────
-
-const FOCUS_RING =
-  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 const FIELD_SHELL =
   'flex min-w-0 items-center bg-input border border-control-border hover:border-foreground/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2.5 h-8 transition-colors duration-150';

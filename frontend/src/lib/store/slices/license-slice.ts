@@ -1,6 +1,7 @@
 import { aiUtcDayKey } from '@/lib/ai/quota';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import * as LicenseHandler from '../../../../wailsjs/go/handlers/LicenseHandler';
 import * as App from '../../../../wailsjs/go/main/App';
@@ -283,7 +284,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
               if (isSessionSupersededError(err)) {
                 if (epoch === licenseCheckEpoch) {
                   if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+                    window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.authLogout));
                   }
                   set({ user: null, aiUsageLogs: [], accountModalOpen: true });
                 }
@@ -397,7 +398,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     } finally {
       // #18 — مسح سجلات AI ولقطة الحصة الخادمية من الذاكرة عند الخروج لمنع تسريبها للجلسة التالية
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+        window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.authLogout));
       }
       set({ user: null, licenseLoading: false, aiUsageLogs: [] });
     }

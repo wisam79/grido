@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 import { useUiZoom } from '@/hooks/use-ui-zoom';
 import { useEditorStore } from '@/lib/editor-store';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 import {
   getDefaultStudioTab,
   isCollageTab,
@@ -119,8 +120,8 @@ export function useWorkspacePanels() {
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   useEffect(() => {
     const openLauncher = () => setIsLauncherOpen(true);
-    window.addEventListener('grido:open-tool-launcher', openLauncher);
-    return () => window.removeEventListener('grido:open-tool-launcher', openLauncher);
+    window.addEventListener(WORKSPACE_EVENTS.openToolLauncher, openLauncher);
+    return () => window.removeEventListener(WORKSPACE_EVENTS.openToolLauncher, openLauncher);
   }, []);
 
   // Wide drawer for templates (لوحة التبويب الأول في الشاشات الواسعة) —
@@ -308,8 +309,9 @@ export function useWorkspacePanels() {
 
   useEffect(() => {
     const handleOpenProperties = () => openPanel('properties');
-    window.addEventListener('grido:open-properties-panel', handleOpenProperties);
-    return () => window.removeEventListener('grido:open-properties-panel', handleOpenProperties);
+    window.addEventListener(WORKSPACE_EVENTS.openPropertiesPanel, handleOpenProperties);
+    return () =>
+      window.removeEventListener(WORKSPACE_EVENTS.openPropertiesPanel, handleOpenProperties);
   }, [openPanel]);
 
   const closeActivePanel = useCallback(() => {

@@ -23,6 +23,7 @@ import { flushAutoSave } from '@/hooks/use-autosave';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go/main/App';
 import { EventsOn, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
@@ -114,7 +115,7 @@ export function UpdateNotifier() {
     performCheck(false);
 
     const handleManualCheck = () => performCheck(true);
-    window.addEventListener('grido:check-updates', handleManualCheck);
+    window.addEventListener(WORKSPACE_EVENTS.checkUpdates, handleManualCheck);
 
     const handleProgress = (data: unknown) => {
       let val: number | null = null;
@@ -138,7 +139,7 @@ export function UpdateNotifier() {
     const unsubProgressMap = EventsOn('update:progress', handleProgress);
 
     return () => {
-      window.removeEventListener('grido:check-updates', handleManualCheck);
+      window.removeEventListener(WORKSPACE_EVENTS.checkUpdates, handleManualCheck);
       // 🛡️ إلغاء الاشتراك بدالة الإرجاع المُنظَّمة لكل EventsOn — لا بـ
       // EventsOff العام الذي يقتطع مستمِعين لا يملكها هذا المكوّن (وقد
       // يبقي مستمعاً معلّقاً على حدث آخر يشاركه الاسم).

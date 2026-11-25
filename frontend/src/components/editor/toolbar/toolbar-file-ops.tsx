@@ -27,6 +27,7 @@ import { ensureSlotCompatibleSources } from '@/lib/io/svg-slot-compat';
 import { createLogger } from '@/lib/logger';
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
@@ -95,15 +96,15 @@ export function ToolbarFileOps() {
     };
     // طلب المسح من قائمة «المزيد» في الشريط — نافذة التأكيد تبقى ملكاً لهذا المكوّن
     const clearCanvasRequest = () => setIsClearAlertOpen(true);
-    window.addEventListener('grido:open-projects-dialog', openProjects);
-    window.addEventListener('grido:open-batch-insert-dialog', openBatch);
-    window.addEventListener('grido:open-phone-bridge', openPhoneBridge);
-    window.addEventListener('grido:clear-canvas-request', clearCanvasRequest);
+    window.addEventListener(WORKSPACE_EVENTS.openProjectsDialog, openProjects);
+    window.addEventListener(WORKSPACE_EVENTS.openBatchInsertDialog, openBatch);
+    window.addEventListener(WORKSPACE_EVENTS.openPhoneBridge, openPhoneBridge);
+    window.addEventListener(WORKSPACE_EVENTS.clearCanvasRequest, clearCanvasRequest);
     return () => {
-      window.removeEventListener('grido:open-projects-dialog', openProjects);
-      window.removeEventListener('grido:open-batch-insert-dialog', openBatch);
-      window.removeEventListener('grido:open-phone-bridge', openPhoneBridge);
-      window.removeEventListener('grido:clear-canvas-request', clearCanvasRequest);
+      window.removeEventListener(WORKSPACE_EVENTS.openProjectsDialog, openProjects);
+      window.removeEventListener(WORKSPACE_EVENTS.openBatchInsertDialog, openBatch);
+      window.removeEventListener(WORKSPACE_EVENTS.openPhoneBridge, openPhoneBridge);
+      window.removeEventListener(WORKSPACE_EVENTS.clearCanvasRequest, clearCanvasRequest);
     };
   }, []);
 
@@ -217,8 +218,8 @@ export function ToolbarFileOps() {
   });
   useEffect(() => {
     const openFile = () => openFileRef.current();
-    window.addEventListener('grido:open-file-dialog', openFile);
-    return () => window.removeEventListener('grido:open-file-dialog', openFile);
+    window.addEventListener(WORKSPACE_EVENTS.openFileDialog, openFile);
+    return () => window.removeEventListener(WORKSPACE_EVENTS.openFileDialog, openFile);
   }, []);
 
   const confirmClearCanvas = () => {

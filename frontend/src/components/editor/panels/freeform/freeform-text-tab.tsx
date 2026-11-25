@@ -11,15 +11,13 @@ import {
   type TextPresetCatalogItem,
   type TextPresetType,
 } from '@/lib/templates';
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 const INSERT_PRESET_GROUPS = TEXT_INSERT_GROUPS.map((group) => ({
   ...group,
   items: INSERT_TEXT_PRESETS.filter((preset) => preset.group === group.id),
 }));
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 function PresetRow({
   preset,
@@ -60,7 +58,7 @@ function PresetRow({
         aria-label={preset.label}
         className={cn(
           'flex h-full min-w-0 flex-1 items-center rounded-sm px-2 text-start cursor-pointer',
-          focusRing,
+          FOCUS_RING,
         )}
       >
         {preset.config.curve ? (
@@ -116,7 +114,7 @@ function PresetRow({
           aria-label={`إدراج ${preset.label} كعنصر جديد`}
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-transparent text-muted-foreground transition-colors duration-150 hover:border-border/80 hover:bg-muted hover:text-foreground cursor-pointer',
-            focusRing,
+            FOCUS_RING,
           )}
         >
           <Plus className="w-3.5 h-3.5" weight="bold" />
@@ -179,7 +177,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
         onClick={handleAddPlain}
         className={cn(
           'flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-white/10 bg-primary-action px-3 text-control font-semibold text-primary-foreground shadow-2xs transition-colors duration-150 hover:bg-primary-action-hover cursor-pointer select-none',
-          focusRing,
+          FOCUS_RING,
         )}
       >
         <TextT className="w-4 h-4 shrink-0" weight="bold" />

@@ -1,23 +1,13 @@
 /**
  * منطقة النزيف (Bleed) وعلامات القص — تُطبق بعد التصدير وقبل التسليم.
  */
+import { createAbortHelpers } from '@/lib/abort';
 import { previewWhite, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { mmToPx } from '@/lib/canvas/units';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { MAX_BLEED_MM } from '@/lib/schema';
 
-function abortError(signal?: AbortSignal): Error {
-  if (signal?.reason instanceof Error) return signal.reason;
-  return new DOMException('تم إلغاء معالجة النزيف', 'AbortError');
-}
-
-function throwIfAborted(signal?: AbortSignal): void {
-  if (signal?.aborted) throw abortError(signal);
-}
-
-function isAbortError(error: unknown, signal?: AbortSignal): boolean {
-  return signal?.aborted === true || (error instanceof DOMException && error.name === 'AbortError');
-}
+const { abortError, throwIfAborted, isAbortError } = createAbortHelpers('تم إلغاء معالجة النزيف');
 
 export function assertValidBleedMM(bleedMM: number): void {
   if (!Number.isFinite(bleedMM) || bleedMM < 0 || bleedMM > MAX_BLEED_MM) {

@@ -66,6 +66,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import {
   GetMediaStorageStats,
@@ -287,7 +288,7 @@ export function DesktopMenuBar() {
       {/* 1. قائمة ملف (File) */}
       <MenuBarDropdown label="ملف">
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openFileDialog))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Image className="w-4 h-4 text-muted-foreground" />
@@ -295,7 +296,9 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openBatchInsertDialog))
+          }
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Images className="w-4 h-4 text-muted-foreground" />
@@ -303,7 +306,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-phone-bridge'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openPhoneBridge))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <DeviceMobileCamera className="w-4 h-4 text-muted-foreground" weight="duotone" />
@@ -323,7 +326,7 @@ export function DesktopMenuBar() {
         <DropdownMenuItem
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+              new CustomEvent(WORKSPACE_EVENTS.openProjectsDialog, { detail: { tab: 'save' } }),
             )
           }
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
@@ -337,7 +340,7 @@ export function DesktopMenuBar() {
         <DropdownMenuItem
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
+              new CustomEvent(WORKSPACE_EVENTS.openProjectsDialog, { detail: { tab: 'list' } }),
             )
           }
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
@@ -347,7 +350,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openExportDialog))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Export className="w-4 h-4 text-muted-foreground" />
@@ -355,7 +358,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openPrintDialog))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Printer className="w-4 h-4 text-muted-foreground" />
@@ -369,7 +372,7 @@ export function DesktopMenuBar() {
             // 🛡️ نفس قناة الشريط (`grido:clear-canvas-request`): المسار القديم
             // كان يستدعي reset() مباشرة فيتجاوز نافذة التأكيد ولا يمسح مسودة
             // الحفظ التلقائي — قائمة الشريط تُملكها ToolbarFileOps وحدها.
-            window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
+            window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.clearCanvasRequest))
           }
           className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
         >
@@ -505,7 +508,7 @@ export function DesktopMenuBar() {
       <MenuBarDropdown label="عرض">
         {/* مدخل لوحة الأدوات — نفس الحدث والاختصار والمصدر الوحيد (Ctrl+K) */}
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openToolLauncher))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <MagnifyingGlass className="w-4 h-4 text-muted-foreground" weight="duotone" />
@@ -605,7 +608,7 @@ export function DesktopMenuBar() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleRightSidebar))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <SidebarSimple className="w-4 h-4 text-muted-foreground" />
@@ -613,7 +616,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.toggleLeftSidebar))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
@@ -674,7 +677,9 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openBatchInsertDialog))
+          }
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Sparkle className="w-4 h-4" weight="duotone" />
@@ -683,7 +688,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openStickersDialog))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <SealCheck className="w-4 h-4" weight="duotone" />
@@ -712,7 +717,7 @@ export function DesktopMenuBar() {
       {/* 6. قائمة مساعدة (Help) */}
       <MenuBarDropdown label="مساعدة">
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openShortcuts))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Question className="w-4 h-4 text-muted-foreground" />
@@ -720,7 +725,7 @@ export function DesktopMenuBar() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => window.dispatchEvent(new CustomEvent('grido:check-updates'))}
+          onClick={() => window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.checkUpdates))}
           className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
           <Info className="w-4 h-4 text-muted-foreground" />

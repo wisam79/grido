@@ -44,6 +44,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -93,20 +94,20 @@ export default function App() {
         selectStudioTab(detail.tab);
       }
     };
-    window.addEventListener('grido:toggle-right-sidebar', handleToggleRight);
-    window.addEventListener('grido:open-properties-panel', handleOpenProperties);
-    window.addEventListener('grido:toggle-left-sidebar', handleToggleLeft);
-    window.addEventListener('grido:toggle-zen-mode', handleToggleZen);
-    window.addEventListener('grido:select-collage-tab', handleSelectCollageTab);
-    window.addEventListener('grido:select-studio-tab', handleSelectStudioTab);
+    window.addEventListener(WORKSPACE_EVENTS.toggleRightSidebar, handleToggleRight);
+    window.addEventListener(WORKSPACE_EVENTS.openPropertiesPanel, handleOpenProperties);
+    window.addEventListener(WORKSPACE_EVENTS.toggleLeftSidebar, handleToggleLeft);
+    window.addEventListener(WORKSPACE_EVENTS.toggleZenMode, handleToggleZen);
+    window.addEventListener(WORKSPACE_EVENTS.selectCollageTab, handleSelectCollageTab);
+    window.addEventListener(WORKSPACE_EVENTS.selectStudioTab, handleSelectStudioTab);
 
     return () => {
-      window.removeEventListener('grido:toggle-right-sidebar', handleToggleRight);
-      window.removeEventListener('grido:open-properties-panel', handleOpenProperties);
-      window.removeEventListener('grido:toggle-left-sidebar', handleToggleLeft);
-      window.removeEventListener('grido:toggle-zen-mode', handleToggleZen);
-      window.removeEventListener('grido:select-collage-tab', handleSelectCollageTab);
-      window.removeEventListener('grido:select-studio-tab', handleSelectStudioTab);
+      window.removeEventListener(WORKSPACE_EVENTS.toggleRightSidebar, handleToggleRight);
+      window.removeEventListener(WORKSPACE_EVENTS.openPropertiesPanel, handleOpenProperties);
+      window.removeEventListener(WORKSPACE_EVENTS.toggleLeftSidebar, handleToggleLeft);
+      window.removeEventListener(WORKSPACE_EVENTS.toggleZenMode, handleToggleZen);
+      window.removeEventListener(WORKSPACE_EVENTS.selectCollageTab, handleSelectCollageTab);
+      window.removeEventListener(WORKSPACE_EVENTS.selectStudioTab, handleSelectStudioTab);
     };
   }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab, openPanel]);
 
@@ -173,22 +174,22 @@ export default function App() {
       setPrintOpen(true);
     };
 
-    window.addEventListener('grido:toggle-theme', handleToggleTheme);
-    window.addEventListener('grido:open-account', handleOpenAccount);
-    window.addEventListener('grido:open-export-dialog', openExport);
-    window.addEventListener('grido:open-print-dialog', openPrint);
-    window.addEventListener('grido:ui-zoom-in', uiZoomIn);
-    window.addEventListener('grido:ui-zoom-out', uiZoomOut);
-    window.addEventListener('grido:ui-zoom-reset', uiZoomReset);
+    window.addEventListener(WORKSPACE_EVENTS.toggleTheme, handleToggleTheme);
+    window.addEventListener(WORKSPACE_EVENTS.openAccount, handleOpenAccount);
+    window.addEventListener(WORKSPACE_EVENTS.openExportDialog, openExport);
+    window.addEventListener(WORKSPACE_EVENTS.openPrintDialog, openPrint);
+    window.addEventListener(WORKSPACE_EVENTS.uiZoomIn, uiZoomIn);
+    window.addEventListener(WORKSPACE_EVENTS.uiZoomOut, uiZoomOut);
+    window.addEventListener(WORKSPACE_EVENTS.uiZoomReset, uiZoomReset);
 
     return () => {
-      window.removeEventListener('grido:toggle-theme', handleToggleTheme);
-      window.removeEventListener('grido:open-account', handleOpenAccount);
-      window.removeEventListener('grido:open-export-dialog', openExport);
-      window.removeEventListener('grido:open-print-dialog', openPrint);
-      window.removeEventListener('grido:ui-zoom-in', uiZoomIn);
-      window.removeEventListener('grido:ui-zoom-out', uiZoomOut);
-      window.removeEventListener('grido:ui-zoom-reset', uiZoomReset);
+      window.removeEventListener(WORKSPACE_EVENTS.toggleTheme, handleToggleTheme);
+      window.removeEventListener(WORKSPACE_EVENTS.openAccount, handleOpenAccount);
+      window.removeEventListener(WORKSPACE_EVENTS.openExportDialog, openExport);
+      window.removeEventListener(WORKSPACE_EVENTS.openPrintDialog, openPrint);
+      window.removeEventListener(WORKSPACE_EVENTS.uiZoomIn, uiZoomIn);
+      window.removeEventListener(WORKSPACE_EVENTS.uiZoomOut, uiZoomOut);
+      window.removeEventListener(WORKSPACE_EVENTS.uiZoomReset, uiZoomReset);
     };
   }, [toggleTheme, setAccountModalOpen, uiZoomIn, uiZoomOut, uiZoomReset]);
 
@@ -377,11 +378,15 @@ export default function App() {
 
             {/* شريط الأدوات */}
             <Toolbar
-              onPrint={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
-              onExport={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
+              onPrint={() =>
+                window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openPrintDialog))
+              }
+              onExport={() =>
+                window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openExportDialog))
+              }
               onSave={() =>
                 window.dispatchEvent(
-                  new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+                  new CustomEvent(WORKSPACE_EVENTS.openProjectsDialog, { detail: { tab: 'save' } }),
                 )
               }
             />
@@ -422,7 +427,7 @@ export default function App() {
                 <ErrorBoundary>
                   <EditorCanvas
                     onOpenFile={() =>
-                      window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))
+                      window.dispatchEvent(new CustomEvent(WORKSPACE_EVENTS.openFileDialog))
                     }
                     onOpenTemplates={() => panelsHook.openPanel('templates')}
                   />

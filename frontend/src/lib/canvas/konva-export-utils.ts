@@ -1,3 +1,4 @@
+import { createDomAbortHelpers } from '@/lib/abort';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { createLogger } from '@/lib/logger';
 
@@ -14,6 +15,8 @@ import type { CaptureOriginalLease } from './display-image';
 import type Konva from 'konva';
 
 const logger = createLogger('konva-export-utils');
+// رسالة إلغاء التقاط المرحلة ثابتة: المسار يلزمه DOMException لا signal.reason.
+const { abortError } = createDomAbortHelpers('Stage capture aborted');
 const activeStageCaptures = new WeakMap<object, number>();
 const stageCaptureTails = new WeakMap<object, Promise<void>>();
 
@@ -25,11 +28,6 @@ export class CaptureStageTimeoutError extends Error {
     super(`Stage capture ${phase} timed out after ${timeoutMs}ms`);
     this.name = 'CaptureStageTimeoutError';
   }
-}
-
-function abortError(signal?: AbortSignal): Error {
-  if (signal?.reason instanceof Error) return signal.reason;
-  return new DOMException('Stage capture aborted', 'AbortError');
 }
 
 function raceDeadline<T>(

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { FOCUS_RING } from '@/lib/ui/ui-compliance';
 import { cn } from '@/lib/utils';
 
 /**
@@ -8,9 +9,6 @@ import { cn } from '@/lib/utils';
  * وصف «تسمية + تحكم» بعمود تسمية ثابت يطابق `FluentSliderField` المضمَّن،
  * وخلية معاينة بصرية للتأثيرات.
  */
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 export function ToggleGroup({
   label,
@@ -63,7 +61,7 @@ export function ToggleItem({
       title={title ?? label}
       className={cn(
         'inline-flex h-7 min-w-0 flex-1 items-center justify-center rounded-sm text-xs transition-colors duration-150 cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50',
-        focusRing,
+        FOCUS_RING,
         active
           ? 'border border-border/80 bg-card font-semibold text-foreground shadow-2xs dark:border-white/10'
           : 'border border-transparent font-medium text-muted-foreground hover:bg-card/50 hover:text-foreground',
@@ -111,7 +109,7 @@ export function EffectTile({
       data-testid={testId}
       className={cn(
         'group/tile flex min-w-0 flex-col items-center gap-1 cursor-pointer select-none',
-        focusRing,
+        FOCUS_RING,
         'rounded-md',
       )}
     >

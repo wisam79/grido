@@ -22,6 +22,7 @@ import {
 import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
 import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
 import { useEditorStore } from '@/lib/editor-store';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import type { Icon } from '@/components/ui/icons';
 import type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
@@ -252,7 +253,7 @@ export const STUDIO_SECTIONS: WorkspaceSection<StudioSection, FreeformTab>[] = [
     testId: 'rail-studio-stickers',
     defaultTab: 'layers',
     tabs: [],
-    actionEvent: 'grido:open-stickers-dialog',
+    actionEvent: WORKSPACE_EVENTS.openStickersDialog,
   },
   {
     id: 'shapes',
@@ -401,7 +402,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'اختيار صورة من الجهاز',
     group: 'الملف',
     shortcut: 'Ctrl+O',
-    event: 'grido:open-file-dialog',
+    event: WORKSPACE_EVENTS.openFileDialog,
   },
   {
     id: 'batch-insert',
@@ -409,7 +410,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'اختيار عدة صور معاً',
     group: 'الملف',
     shortcut: 'Ctrl+Shift+O',
-    event: 'grido:open-batch-insert-dialog',
+    event: WORKSPACE_EVENTS.openBatchInsertDialog,
   },
   {
     id: 'projects',
@@ -417,7 +418,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'الحفظ والتحميل والمكتبة',
     group: 'الملف',
     shortcut: 'Ctrl+S',
-    event: 'grido:open-projects-dialog',
+    event: WORKSPACE_EVENTS.openProjectsDialog,
     detail: { tab: 'save' },
   },
   {
@@ -425,7 +426,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     title: 'مكتبة المشاريع',
     subtitle: 'تصفّح المشاريع المحفوظة',
     group: 'الملف',
-    event: 'grido:open-projects-dialog',
+    event: WORKSPACE_EVENTS.openProjectsDialog,
     detail: { tab: 'list' },
   },
   // — الإخراج —
@@ -435,7 +436,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'حفظ النتيجة بجودة عالية',
     group: 'الإخراج',
     shortcut: 'Ctrl+E',
-    event: 'grido:open-export-dialog',
+    event: WORKSPACE_EVENTS.openExportDialog,
   },
   {
     id: 'print',
@@ -443,7 +444,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'إعداد الورقة وخطوط القص',
     group: 'الإخراج',
     shortcut: 'Ctrl+P',
-    event: 'grido:open-print-dialog',
+    event: WORKSPACE_EVENTS.openPrintDialog,
   },
   // — العرض —
   {
@@ -452,7 +453,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'إظهار أو إخفاء قوالب/طبقات',
     group: 'العرض',
     shortcut: 'Ctrl+B',
-    event: 'grido:toggle-right-sidebar',
+    event: WORKSPACE_EVENTS.toggleRightSidebar,
   },
   {
     id: 'toggle-left-sidebar',
@@ -460,7 +461,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'إظهار أو إخفاء لوحة الخصائص',
     group: 'العرض',
     shortcut: 'Ctrl+Shift+B',
-    event: 'grido:toggle-left-sidebar',
+    event: WORKSPACE_EVENTS.toggleLeftSidebar,
   },
   {
     id: 'zen-mode',
@@ -468,7 +469,7 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     subtitle: 'إخفاء كل الألواح مؤقتاً',
     group: 'العرض',
     shortcut: 'Ctrl+.',
-    event: 'grido:toggle-zen-mode',
+    event: WORKSPACE_EVENTS.toggleZenMode,
   },
   // — النظام —
   {
@@ -476,28 +477,28 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     title: 'الاختصارات',
     subtitle: 'قائمة كاملة بلوحة المفاتيح',
     group: 'النظام',
-    event: 'grido:open-shortcuts',
+    event: WORKSPACE_EVENTS.openShortcuts,
   },
   {
     id: 'stickers',
     title: 'استوديو الملصقات',
     subtitle: 'أختام وشارات قابلة للتخصيص',
     group: 'النظام',
-    event: 'grido:open-stickers-dialog',
+    event: WORKSPACE_EVENTS.openStickersDialog,
   },
   {
     id: 'phone-bridge',
     title: 'جسر الهاتف',
     subtitle: 'استقبال صور مباشرة من الجوال',
     group: 'النظام',
-    event: 'grido:open-phone-bridge',
+    event: WORKSPACE_EVENTS.openPhoneBridge,
   },
   {
     id: 'check-updates',
     title: 'فحص التحديثات',
     subtitle: 'البحث عن إصدار أحدث',
     group: 'النظام',
-    event: 'grido:check-updates',
+    event: WORKSPACE_EVENTS.checkUpdates,
   },
   {
     id: 'toggle-theme',
@@ -506,14 +507,14 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     group: 'النظام',
     // مصدر الثيم الوحيد هو useTheme داخل App.tsx (صنف .dark + التفضيل المحفوظ)،
     // فاللوحة تُطلق الحدث ولا تملك نسخة ثانية من حالة الثيم.
-    event: 'grido:toggle-theme',
+    event: WORKSPACE_EVENTS.toggleTheme,
   },
   {
     id: 'account',
     title: 'الحساب والتراخيص',
     subtitle: 'المفتاح والاشتراك والاستخدام',
     group: 'النظام',
-    event: 'grido:open-account',
+    event: WORKSPACE_EVENTS.openAccount,
   },
 ];
 

@@ -1,5 +1,5 @@
-import { CURATED_PALETTES } from '../constants';
-import { pickDifferentOption, pickDifferentPalette } from '../lib/color-derivation';
+import { pickDifferentOption } from '../lib/color-derivation';
+import { selectField, textField } from '../lib/field-builders';
 import {
   composeParametricCardSvg,
   SURFACE_BACKGROUND_OPTIONS,
@@ -9,97 +9,57 @@ import {
   type ParametricCardDefaults,
   type SurfaceBackgroundId,
 } from '../lib/parametric-surfaces';
+import { randomOptionId, randomizeSurfaceParams } from '../lib/randomize-params';
 
 import type { StickerField, StickerParams, StickerTemplate } from '../types';
 
 function randomizeCardParams(current: StickerParams): StickerParams {
-  const nextBg = pickDifferentOption(
-    SURFACE_BACKGROUND_OPTIONS,
-    { id: (current.fields.bg as SurfaceBackgroundId) || 'aurora', label: '' },
-    (a, b) => a.id === b.id,
-  ).id;
-  const nextPattern =
-    SURFACE_PATTERN_OPTIONS[Math.floor(Math.random() * SURFACE_PATTERN_OPTIONS.length)].id;
-  const nextFrame =
-    SURFACE_FRAME_OPTIONS[Math.floor(Math.random() * SURFACE_FRAME_OPTIONS.length)].id;
-  const nextOrnament =
-    SURFACE_ORNAMENT_OPTIONS[Math.floor(Math.random() * SURFACE_ORNAMENT_OPTIONS.length)].id;
-  const palette = pickDifferentPalette(CURATED_PALETTES, current.primaryColor);
-
-  return {
-    ...current,
-    fields: {
-      ...current.fields,
-      bg: nextBg,
-      pattern: nextPattern,
-      frame: nextFrame,
-      ornament: nextOrnament,
-    },
-    primaryColor: palette.primary,
-    secondaryColor: palette.secondary,
-    backgroundColor: palette.background,
-    isTransparent: false,
-  };
+  return randomizeSurfaceParams(current, {
+    bg: pickDifferentOption(
+      SURFACE_BACKGROUND_OPTIONS,
+      { id: (current.fields.bg as SurfaceBackgroundId) || 'aurora', label: '' },
+      (a, b) => a.id === b.id,
+    ).id,
+    pattern: randomOptionId(SURFACE_PATTERN_OPTIONS),
+    frame: randomOptionId(SURFACE_FRAME_OPTIONS),
+    ornament: randomOptionId(SURFACE_ORNAMENT_OPTIONS),
+  });
 }
 
 function createCardFields(defaults: ParametricCardDefaults): StickerField[] {
   return [
-    {
-      id: 'bg',
-      label: 'الخلفية',
-      type: 'select',
-      presentation: 'pills',
-      defaultValue: defaults.bg,
-      options: SURFACE_BACKGROUND_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
-    },
-    {
-      id: 'pattern',
-      label: 'النمط الهندسي',
-      type: 'select',
-      presentation: 'pills',
-      defaultValue: defaults.pattern,
-      options: SURFACE_PATTERN_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
-    },
-    {
-      id: 'frame',
-      label: 'الإطار',
-      type: 'select',
-      presentation: 'pills',
-      defaultValue: defaults.frame,
-      options: SURFACE_FRAME_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
-    },
-    {
-      id: 'ornament',
-      label: 'الزخرفة',
-      type: 'select',
-      presentation: 'pills',
-      defaultValue: defaults.ornament,
-      options: SURFACE_ORNAMENT_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
-    },
-    {
-      id: 'badgeText',
-      label: 'شارة العنوان',
-      type: 'text',
-      defaultValue: defaults.badgeText,
-    },
-    {
-      id: 'title',
-      label: 'العنوان الرئيسي',
-      type: 'text',
-      defaultValue: defaults.title,
-    },
-    {
-      id: 'subtitle',
-      label: 'النص الفرعي',
-      type: 'text',
-      defaultValue: defaults.subtitle,
-    },
-    {
-      id: 'footer',
-      label: 'التذييل',
-      type: 'text',
-      defaultValue: defaults.footer,
-    },
+    selectField(
+      'bg',
+      'الخلفية',
+      'pills',
+      defaults.bg,
+      SURFACE_BACKGROUND_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
+    ),
+    selectField(
+      'pattern',
+      'النمط الهندسي',
+      'pills',
+      defaults.pattern,
+      SURFACE_PATTERN_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
+    ),
+    selectField(
+      'frame',
+      'الإطار',
+      'pills',
+      defaults.frame,
+      SURFACE_FRAME_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
+    ),
+    selectField(
+      'ornament',
+      'الزخرفة',
+      'pills',
+      defaults.ornament,
+      SURFACE_ORNAMENT_OPTIONS.map((o) => ({ value: o.id, label: o.label })),
+    ),
+    textField('badgeText', 'شارة العنوان', defaults.badgeText),
+    textField('title', 'العنوان الرئيسي', defaults.title),
+    textField('subtitle', 'النص الفرعي', defaults.subtitle),
+    textField('footer', 'التذييل', defaults.footer),
   ];
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { useEditorStore } from '@/lib/editor-store';
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 
 import { REEDIT_STICKER_EVENT, type ReeditStickerEventDetail } from './sticker-reedit-bus';
 
@@ -57,11 +58,11 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
       setIsOpen(true);
     };
 
-    window.addEventListener('grido:open-stickers-dialog', openHandler);
+    window.addEventListener(WORKSPACE_EVENTS.openStickersDialog, openHandler);
     window.addEventListener(REEDIT_STICKER_EVENT, reeditHandler);
 
     return () => {
-      window.removeEventListener('grido:open-stickers-dialog', openHandler);
+      window.removeEventListener(WORKSPACE_EVENTS.openStickersDialog, openHandler);
       window.removeEventListener(REEDIT_STICKER_EVENT, reeditHandler);
     };
   }, []);

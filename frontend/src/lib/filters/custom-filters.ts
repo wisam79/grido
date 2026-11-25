@@ -1,5 +1,7 @@
 import Konva from 'konva';
 
+import { clamp } from '@/lib/clamp';
+
 import {
   applyLuminanceThreshold,
   applyNearestPixelate,
@@ -35,11 +37,24 @@ export interface OrderedPrintFilterFn extends PixelFilterFn {
 }
 
 function clampUnit(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+  return clamp(Number.isFinite(value) ? value : 0, 0, 1);
 }
 
 function nonNegativeFactor(value: number, fallback: number): number {
   return Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
+/** عقدة Konva تحمل قارئات الخصائص التي يولّدها Factory.addGetterSetter. */
+type FilterNode = Konva.Node & {
+  getAttr?: (name: string) => unknown;
+  attrs?: Record<string, unknown>;
+};
+
+/** يقرأ خاصية عقدة من الدالة المولّدة أو getAttr/attrs دون افتراض قيمة. */
+function readNodeValue(node: FilterNode, prop: string): unknown {
+  const getter = (node as unknown as Record<string, unknown>)[prop];
+  if (typeof getter === 'function') return (getter as () => unknown).call(node);
+  return node.getAttr?.(prop) ?? node.attrs?.[prop];
 }
 
 /** Apply one canonical operation in-place using CSS/W3C byte-domain semantics. */
@@ -163,19 +178,10 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // تُقرأ الشدة بأمان من دالة sepiaRatio أو خاصية getAttr('sepiaRatio')
   // مع السقوط الآمن إلى 0 (بدل 1 الذي كان يطبق 100% سبيا قسرياً).
   (Konva.Filters as unknown as Record<string, unknown>).SepiaBlend = markPerPixelFilter(function (
-    this: Konva.Node & {
-      sepiaRatio?: () => number;
-      getAttr?: (name: string) => unknown;
-    },
+    this: FilterNode,
     imageData: ImageData,
   ) {
-    const raw =
-      typeof this.sepiaRatio === 'function'
-        ? this.sepiaRatio()
-        : (this.getAttr?.('sepiaRatio') ??
-          (this as unknown as { attrs?: { sepiaRatio?: number } }).attrs?.sepiaRatio ??
-          0);
-    const ratio = Math.max(0, Math.min(1, Number(raw) || 0));
+    const ratio = clamp(Number(readNodeValue(this, 'sepiaRatio')) || 0, 0, 1);
     if (!ratio || ratio <= 0) return;
     const d = imageData.data;
     for (let i = 0; i < d.length; i += 4) {
@@ -195,18 +201,10 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // يضاعف قنوات RGB بعامل B بدل الجمع الإزاحي (+15.3) في Konva.Filters.Brighten
   // الذي كان يحرق درجات البشرة ويفجر الهايلايتس إلى أبيض ناصع.
   (Konva.Filters as unknown as Record<string, unknown>).Brightness = markPerPixelFilter(function (
-    this: Konva.Node & {
-      brightness?: () => number;
-      getAttr?: (name: string) => unknown;
-    },
+    this: FilterNode,
     imageData: ImageData,
   ) {
-    const raw =
-      typeof this.brightness === 'function'
-        ? this.brightness()
-        : (this.getAttr?.('brightness') ??
-          (this as unknown as { attrs?: { brightness?: number } }).attrs?.brightness);
-    const b = Number(raw ?? 1);
+    const b = Number(readNodeValue(this, 'brightness') ?? 1);
     if (!Number.isFinite(b) || Math.abs(b - 1) < 0.001) return;
     const mult = Math.max(0, b);
     const d = imageData.data;
@@ -220,18 +218,10 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // 3) التباين الخطي القياسي — مطابق لـ CSS filter: contrast(C)
   // يطبّق التمدد الخطي حول المنتصف 0.5 دون تربيع العامل (Math.pow(..., 2))
   (Konva.Filters as unknown as Record<string, unknown>).Contrast = markPerPixelFilter(function (
-    this: Konva.Node & {
-      contrast?: () => number;
-      getAttr?: (name: string) => unknown;
-    },
+    this: FilterNode,
     imageData: ImageData,
   ) {
-    const raw =
-      typeof this.contrast === 'function'
-        ? this.contrast()
-        : (this.getAttr?.('contrast') ??
-          (this as unknown as { attrs?: { contrast?: number } }).attrs?.contrast);
-    const c = Number(raw ?? 0);
+    const c = Number(readNodeValue(this, 'contrast') ?? 0);
     if (!Number.isFinite(c) || Math.abs(c) < 0.001) return;
     const factor = Math.max(0, (c + 100) / 100);
     const d = imageData.data;
@@ -245,18 +235,10 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // 4) التشبع اللوني القياسي — مطابق لـ CSS filter: saturate(S)
   // يعتمد أوزان الإضاءة المعيارية Rec. 709 بدل مصفوفة NTSC القديمة
   (Konva.Filters as unknown as Record<string, unknown>).Saturation = markPerPixelFilter(function (
-    this: Konva.Node & {
-      saturation?: () => number;
-      getAttr?: (name: string) => unknown;
-    },
+    this: FilterNode,
     imageData: ImageData,
   ) {
-    const raw =
-      typeof this.saturation === 'function'
-        ? this.saturation()
-        : (this.getAttr?.('saturation') ??
-          (this as unknown as { attrs?: { saturation?: number } }).attrs?.saturation);
-    const s = Number(raw ?? 0);
+    const s = Number(readNodeValue(this, 'saturation') ?? 0);
     if (!Number.isFinite(s) || Math.abs(s) < 0.001) return;
     const mult = Math.max(0, s + 1);
     const d = imageData.data;
@@ -274,18 +256,8 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // 5) عتبة إضاءة على قناة واحدة مع الحفاظ على الشفافية. فلتر Konva المدمج
   // Threshold يطبّق العتبة على كل قناة RGBA مستقلة فتنقلب الألوان والشفافية.
   (Konva.Filters as unknown as Record<string, unknown>).LuminanceThreshold = markPerPixelFilter(
-    function (
-      this: Konva.Node & {
-        threshold?: () => number;
-        getAttr?: (name: string) => unknown;
-      },
-      imageData: ImageData,
-    ) {
-      const raw =
-        typeof this.threshold === 'function'
-          ? this.threshold()
-          : (this.getAttr?.('threshold') ??
-            (this as unknown as { attrs?: { threshold?: number } }).attrs?.threshold);
+    function (this: FilterNode, imageData: ImageData) {
+      const raw = readNodeValue(this, 'threshold');
       const level = Number.isFinite(Number(raw)) ? Number(raw) : THRESHOLD_LEVEL;
       applyLuminanceThreshold(imageData.data, level);
     },
@@ -295,17 +267,10 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // فلتر Konva المدمج Pixelate يجمع (يحسب المتوسط) بكسلات الكتلة بدل nearest-neighbor.
   // ⚠️ لا يُوسم لكل-بكسل: يقرأ عيّنات من كتل الجيران فهو يبقى تمريرة مستقلة.
   (Konva.Filters as unknown as Record<string, unknown>).NearestNeighborPixelate = function (
-    this: Konva.Node & {
-      pixelSize?: () => number;
-      getAttr?: (name: string) => unknown;
-    },
+    this: FilterNode,
     imageData: ImageData,
   ) {
-    const raw =
-      typeof this.pixelSize === 'function'
-        ? this.pixelSize()
-        : (this.getAttr?.('pixelSize') ??
-          (this as unknown as { attrs?: { pixelSize?: number } }).attrs?.pixelSize);
+    const raw = readNodeValue(this, 'pixelSize');
     const block = Number.isFinite(Number(raw)) ? Number(raw) : PIXELATE_BLOCK_PX;
     applyNearestPixelate(imageData.data, imageData.width, imageData.height, block);
   };

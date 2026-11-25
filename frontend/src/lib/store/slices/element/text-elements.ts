@@ -1,5 +1,6 @@
 import { fitTextGeometry } from '@/lib/canvas/text-fit';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
+import { clamp } from '@/lib/clamp';
 
 import { nextZIndex, normalizeSelection } from './types';
 import { TEXT_PRESETS } from '../../../templates';
@@ -14,10 +15,6 @@ const TEXT_CASCADE_STEP_X = 0.02;
 const TEXT_CASCADE_STEP_Y = 0.035;
 const TEXT_CASCADE_SLOTS = 8;
 
-function clampUnit(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 function resolveInsertedTextPosition(
   existingElements: readonly CanvasElement[],
   width: number,
@@ -25,12 +22,12 @@ function resolveInsertedTextPosition(
 ): { x: number; y: number } {
   const maxX = Math.max(TEXT_INSERT_MARGIN, 1 - width - TEXT_INSERT_MARGIN);
   const maxY = Math.max(TEXT_INSERT_MARGIN, 1 - height - TEXT_INSERT_MARGIN);
-  const baseX = clampUnit(0.5 - width / 2, TEXT_INSERT_MARGIN, maxX);
-  const baseY = clampUnit(0.5 - height / 2, TEXT_INSERT_MARGIN, maxY);
+  const baseX = clamp(0.5 - width / 2, TEXT_INSERT_MARGIN, maxX);
+  const baseY = clamp(0.5 - height / 2, TEXT_INSERT_MARGIN, maxY);
 
   for (let step = 0; step < TEXT_CASCADE_SLOTS; step += 1) {
-    const x = clampUnit(baseX + step * TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX);
-    const y = clampUnit(baseY + step * TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY);
+    const x = clamp(baseX + step * TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX);
+    const y = clamp(baseY + step * TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY);
     const collides = existingElements.some(
       (el) => Math.abs(el.x - x) < 0.015 && Math.abs(el.y - y) < 0.018,
     );
@@ -38,8 +35,8 @@ function resolveInsertedTextPosition(
   }
 
   return {
-    x: clampUnit(baseX + TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX),
-    y: clampUnit(baseY + TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY),
+    x: clamp(baseX + TEXT_CASCADE_STEP_X, TEXT_INSERT_MARGIN, maxX),
+    y: clamp(baseY + TEXT_CASCADE_STEP_Y, TEXT_INSERT_MARGIN, maxY),
   };
 }
 

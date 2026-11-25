@@ -1,12 +1,10 @@
 import { clampChroma, converter, formatHex, parse } from 'culori';
 
+import { clamp } from '@/lib/clamp';
+
 import { contrastRatio } from './sticker-a11y';
 
 const toOklch = converter('oklch');
-
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /**
  * يشتق لوناً متناغماً بإزاحة الإضاءة (Lightness) وتدرج التشبع في فضاء OKLCH
@@ -21,7 +19,7 @@ export function shiftLightnessHex(hex: string, deltaL: number, chromaScale = 1):
   const next = clampChroma(
     {
       ...oklch,
-      l: clampNumber((oklch.l ?? 0.5) + deltaL, 0.06, 0.96),
+      l: clamp((oklch.l ?? 0.5) + deltaL, 0.06, 0.96),
       c: Math.max(0, (oklch.c ?? 0) * chromaScale),
     },
     'oklch',

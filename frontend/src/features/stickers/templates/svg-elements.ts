@@ -191,6 +191,27 @@ export function starRowMarkup(
   return `<g fill="${fill}"${role}>${stars}</g>`;
 }
 
+/**
+ * لوحة خلفية مربعة بزوايا دائرية تُرسم خلف الأيقونات (هاتف/موقع/بريد).
+ * كانت هذه السلسلة نفسها مكرّرة في ثلاثة مُصنّعات أيقونات في business_cards.
+ */
+export function badgePlateMarkup(
+  cx: number,
+  cy: number,
+  color: string,
+  colorRole?: string,
+  options?: { boxSize?: number; fill?: string; fillOpacity?: number; strokeOpacity?: number },
+): string {
+  const boxSize = options?.boxSize ?? 26;
+  const fill = options?.fill ?? color;
+  const fillOpacity = options?.fillOpacity ?? 0.12;
+  const strokeOpacity = options?.strokeOpacity ?? 0.24;
+  const role = colorRole ? ` data-color-role="${colorRole}"` : '';
+  const halfBox = boxSize / 2;
+
+  return `<rect x="${cx - halfBox}" y="${cy - halfBox}" width="${boxSize}" height="${boxSize}" rx="7" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${color}" stroke-opacity="${strokeOpacity}" stroke-width="1"${role}/>`;
+}
+
 type IconRenderer = (fill: string) => string;
 
 const ICONS: Record<string, IconRenderer> = {

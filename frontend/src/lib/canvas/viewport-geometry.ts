@@ -1,9 +1,10 @@
+import { WORKSPACE_EVENTS } from '@/lib/workspace-events';
 import { CANVAS_FIT_PADDING, computeCanvasDisplay } from './fit';
 
 import type { CanvasDisplay, CanvasFitMode } from './fit';
 
 /** Canvas-owned transform notification for DOM overlays outside the paper. */
-export const CANVAS_VIEW_TRANSFORM_EVENT = 'grido:canvas-view-transform';
+export const CANVAS_VIEW_TRANSFORM_EVENT = WORKSPACE_EVENTS.canvasViewTransform;
 
 /** Shared pixel thickness of the four canvas viewport edge rails (rulers & scrollbars). */
 export const CANVAS_RAIL_THICKNESS = 20;

@@ -589,7 +589,9 @@ func warpPerspectiveBilinearContext(ctx context.Context, src *image.NRGBA, local
 	return dst, nil
 }
 
-// jsRound يطابق Math.round في JS (نصف الدرجة نحو +∞) — قيمنا غير سالبة هنا.
+// jsRound يطابق Math.round في JS (نصف الدرجة نحو +∞) ثم قصّ 0..255 كما تفعل
+// كتابة Uint8ClampedArray — قيمنا غير سالبة هنا. المصدر الوحيد للتقريب في مسار
+// استعدال المستند (كان jsRoundF نسخة مطابقة في scanner_warp_filters.go).
 func jsRound(x float64) uint8 {
 	v := math.Floor(x + 0.5)
 	if v < 0 {
