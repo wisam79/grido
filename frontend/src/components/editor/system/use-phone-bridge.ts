@@ -8,7 +8,7 @@ import {
 } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
-import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
+import { syncPhoneBridgeStatus, usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { GetPhoneBridgeStatus } from '../../../../wailsjs/go/main/App';
@@ -31,12 +31,7 @@ export function usePhoneBridgeListener() {
       GetPhoneBridgeStatus()
         .then((status) => {
           if (isSubscribed && status) {
-            usePhoneBridgeStore.getState().updateStatus({
-              isRunning: status.isRunning,
-              pairedDevice: status.pairedDevice,
-              receivedCount: status.receivedCount,
-              lastReceived: status.lastReceived,
-            });
+            syncPhoneBridgeStatus(status);
           }
         })
         .catch(() => {

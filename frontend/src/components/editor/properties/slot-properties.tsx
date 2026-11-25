@@ -46,7 +46,6 @@ import {
   getSlotRect,
   isBakedCollageLayout,
 } from '@/lib/canvas/collage-geometry';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { SLOT_MAX_ZOOM, SLOT_MIN_ZOOM } from '@/lib/export/export-primitives';
@@ -59,6 +58,7 @@ import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { ColorField, ColorPanel } from './color-panel';
+import { ButtonProgressBar, ImageFilterSliders } from './element/shared/image-filter-sliders';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import type { PhotoGridType } from '@/components/editor/panels/collage/collage-grid-math';
 
@@ -571,17 +571,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                             : 'إلغاء'
                           : 'عزل الخلفية'}
                       </span>
-                      {isRemovingBg && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
-                        >
-                          <span
-                            className="block h-full bg-destructive-foreground transition-[width] duration-300"
-                            style={{ width: `${Math.round(bgProgress)}%` }}
-                          />
-                        </span>
-                      )}
+                      {isRemovingBg && <ButtonProgressBar progress={bgProgress} />}
                     </Button>
                   </FluentTooltip>
 
@@ -629,15 +619,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                           : 'ترميم الوجه'}
                       </span>
                       {isEnhancing && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20"
-                        >
-                          <span
-                            className="block h-full bg-primary transition-[width] duration-300"
-                            style={{ width: `${Math.round(enhanceProgress)}%` }}
-                          />
-                        </span>
+                        <ButtonProgressBar progress={enhanceProgress} tone="primary" />
                       )}
                     </Button>
                   </FluentTooltip>
@@ -674,17 +656,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                             : 'إلغاء'
                           : 'تأطير الوجه'}
                       </span>
-                      {isFraming && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
-                        >
-                          <span
-                            className="block h-full bg-destructive-foreground transition-[width] duration-300"
-                            style={{ width: `${Math.round(frameProgress)}%` }}
-                          />
-                        </span>
-                      )}
+                      {isFraming && <ButtonProgressBar progress={frameProgress} />}
                     </Button>
                   </FluentTooltip>
                 </div>
@@ -915,53 +887,10 @@ export const SlotProperties = React.memo(function SlotProperties({
               </FluentSettingRow>
 
               <div className="space-y-2.5 pt-1">
-                <FluentSliderField
-                  label="السطوع"
-                  value={slot.brightness ?? 100}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="%"
-                  defaultValue={100}
-                  onChange={(v) => onUpdate(slot.id, { brightness: v })}
-                  onCommit={() => {
-                    useRenderQuality.getState().setIsDraggingFilter(false);
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-                />
-                <FluentSliderField
-                  label="التباين"
-                  value={slot.contrast ?? 100}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="%"
-                  defaultValue={100}
-                  onChange={(v) => onUpdate(slot.id, { contrast: v })}
-                  onCommit={() => {
-                    useRenderQuality.getState().setIsDraggingFilter(false);
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-                />
-                <FluentSliderField
-                  label="التشبع"
-                  value={slot.saturation ?? 100}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="%"
-                  defaultValue={100}
-                  onChange={(v) => onUpdate(slot.id, { saturation: v })}
-                  onCommit={() => {
-                    useRenderQuality.getState().setIsDraggingFilter(false);
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
-                  onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+                <ImageFilterSliders
+                  targetId={slot.id}
+                  values={slot}
+                  onPatch={(patch) => onUpdate(slot.id, patch)}
                 />
               </div>
             </FluentSection>

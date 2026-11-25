@@ -35,14 +35,14 @@ const ScrollBar = React.forwardRef<
       orientation === 'vertical' &&
         // عقد الاتجاه: border-s منطقي — شريط التمرير العمودي يتبع جهة النهاية
         // (يميناً في LTR ويساراً في RTL) تلقائياً بدل border-l الثابت.
-        'h-full w-2.5 border-s border-s-transparent p-[1px] bg-muted/20 dark:bg-muted/5',
+        'h-full w-1.5 border-s border-s-transparent p-px bg-transparent',
       orientation === 'horizontal' &&
-        'h-2.5 flex-col border-t border-t-transparent p-[1px] bg-muted/20 dark:bg-muted/5',
+        'h-1.5 flex-col border-t border-t-transparent p-px bg-transparent',
       className,
     )}
     {...props}
   >
-    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border/60 hover:bg-muted-foreground/60 transition-colors" />
+    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-foreground/15 hover:bg-foreground/30 transition-colors" />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ));
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;

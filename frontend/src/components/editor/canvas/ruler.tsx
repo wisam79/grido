@@ -127,7 +127,8 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       if (isLabel) {
         // الإرساء عند حدّ منطقة العرض لا عند حدّ الورقة، وإلّا انقلبت محاذاة
         // كل الأرقام الواقعة يمين الورقة وتظهر ملتصقة يسار موضعها.
-        const isNearEnd = x + 16 > viewportWidth;
+        const isNearEnd = x + 22 > viewportWidth;
+        const showLabelText = x >= 6 && x <= viewportWidth - 4;
         labels.push(
           <g key={`h-lbl-${idx}`}>
             <line
@@ -139,24 +140,26 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               className={isZero ? 'stroke-primary' : 'stroke-ruler-tick-major'}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
-            <text
-              x={isNearEnd ? x - 2 : x + (isZero ? 3 : 2)}
-              y={8.5}
-              textAnchor={isNearEnd ? 'end' : 'start'}
-              fontSize={8.5}
-              // هالة بلون سطح المسطرة تحافظ على مقروئية الرقم فوق خطوط التدريج
-              style={{ paintOrder: 'stroke' }}
-              strokeWidth={2}
-              strokeLinejoin="round"
-              className={cn(
-                'font-mono select-none tracking-tighter stroke-ruler-surface',
-                isZero
-                  ? 'fill-primary font-bold text-2xs'
-                  : 'fill-ruler-tick-label-active font-medium',
-              )}
-            >
-              {formatRulerNumber(u, unit)}
-            </text>
+            {showLabelText && (
+              <text
+                x={isNearEnd ? x - 2 : x + (isZero ? 3 : 2)}
+                y={8.5}
+                textAnchor={isNearEnd ? 'end' : 'start'}
+                fontSize={8.5}
+                // هالة بلون سطح المسطرة تحافظ على مقروئية الرقم فوق خطوط التدريج
+                style={{ paintOrder: 'stroke' }}
+                strokeWidth={2}
+                strokeLinejoin="round"
+                className={cn(
+                  'font-mono select-none tracking-tighter stroke-ruler-surface',
+                  isZero
+                    ? 'fill-primary font-bold text-2xs'
+                    : 'fill-ruler-tick-label-active font-medium',
+                )}
+              >
+                {formatRulerNumber(u, unit)}
+              </text>
+            )}
           </g>,
         );
       } else if (isMid) {
@@ -395,7 +398,11 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       const isMid = !isLabel && Math.abs(posMod - labelStep / 2) < subStep / 2 + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
       // نفس منطق المسطرة الأفقية: الإرساء عند حدّ منطقة العرض لا حدّ الورقة
-      const isNearEnd = y + 8 > viewportHeight;
+      const isNearEnd = y + 16 > viewportHeight;
+      const anchorY = isNearEnd ? y - 2 : y;
+      const showLabelText = isZero
+        ? y >= 0 && y <= viewportHeight - 12
+        : y >= 12 && y <= viewportHeight;
       if (isLabel) {
         labels.push(
           <g key={`v-lbl-${idx}`}>
@@ -408,36 +415,37 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               className={isZero ? 'stroke-primary' : 'stroke-ruler-tick-major'}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
-            {isZero ? (
-              <text
-                x={3}
-                y={y + 2}
-                fontSize={8.5}
-                style={{ paintOrder: 'stroke' }}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                className="font-mono select-none tracking-tighter stroke-ruler-surface fill-primary font-bold text-2xs"
-                textAnchor="start"
-                dominantBaseline="hanging"
-              >
-                0
-              </text>
-            ) : (
-              <text
-                x={5.5}
-                y={y}
-                fontSize={8.5}
-                style={{ paintOrder: 'stroke' }}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                className="font-mono select-none tracking-tighter stroke-ruler-surface fill-ruler-tick-label-active font-medium"
-                transform={`rotate(-90, 5.5, ${y})`}
-                textAnchor={isNearEnd ? 'start' : 'middle'}
-                dominantBaseline="middle"
-              >
-                {formatRulerNumber(u, unit)}
-              </text>
-            )}
+            {showLabelText &&
+              (isZero ? (
+                <text
+                  x={3}
+                  y={y + 2}
+                  fontSize={8.5}
+                  style={{ paintOrder: 'stroke' }}
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  className="font-mono select-none tracking-tighter stroke-ruler-surface fill-primary font-bold text-2xs"
+                  textAnchor="start"
+                  dominantBaseline="hanging"
+                >
+                  0
+                </text>
+              ) : (
+                <text
+                  x={5.5}
+                  y={anchorY}
+                  fontSize={8.5}
+                  style={{ paintOrder: 'stroke' }}
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  className="font-mono select-none tracking-tighter stroke-ruler-surface fill-ruler-tick-label-active font-medium"
+                  transform={`rotate(-90, 5.5, ${anchorY})`}
+                  textAnchor={isNearEnd ? 'start' : 'middle'}
+                  dominantBaseline="middle"
+                >
+                  {formatRulerNumber(u, unit)}
+                </text>
+              ))}
           </g>,
         );
       } else if (isMid) {

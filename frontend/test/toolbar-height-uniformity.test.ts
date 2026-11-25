@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
@@ -42,20 +42,14 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
     ).toEqual([]);
   });
 
-  it('يجب أن تستخدم مجموعة أدوات الذكاء الاصطناعي فئة fluent-command-group دون تداخل حاويات يضخم الارتفاع', () => {
-    const aiToolsContent = readFileSync(join(toolbarDir, 'toolbar-ai-tools.tsx'), 'utf-8');
-    expect(aiToolsContent).toContain('fluent-command-group');
-    expect(aiToolsContent).not.toContain('h-9');
-    expect(aiToolsContent).toContain('h-8');
-  });
-
-  it('يجب أن يخلو شريط أدوات التحديد من أدوات الذكاء الاصطناعي بعد نقلها للوح الخصائص', () => {
+  it('يجب أن يخلو شريط أدوات التحديد ومجلد الشريط من أزرار الذكاء الاصطناعي القديمة بعد نقلها للوح الخصائص', () => {
     const selectionToolsContent = readFileSync(
       join(toolbarDir, 'toolbar-selection-tools.tsx'),
       'utf-8',
     );
 
-    // التأكد من خلو شريط أدوات التحديد من أزرار الذكاء الاصطناعي بعد نقلها للوح الجانبي
+    // التأكد من حذف مكوّن الشريط القديم وخلو شريط أدوات التحديد من أي إشارة إليه
+    expect(existsSync(join(toolbarDir, 'toolbar-ai-tools.tsx'))).toBe(false);
     expect(selectionToolsContent).not.toContain('<AiToolsToolbarGroup />');
     expect(selectionToolsContent).not.toContain('AiToolsToolbarGroup');
   });

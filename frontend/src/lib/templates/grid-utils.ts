@@ -79,6 +79,16 @@ function resolveFixedGapScale(input: FixedGapScaleInput): { scale: number; final
   return { scale: scaleProportional, finalGap: gapMM * scaleProportional };
 }
 
+const PHYSICAL_CELL_SIZE_MAP: Record<string, { wMM: number; hMM: number }> = {
+  'iq-national-id': { wMM: 35, hMM: 45 },
+  passport: { wMM: 35, hMM: 45 },
+  'iq-civil-id': { wMM: 32, hMM: 40 },
+  id: { wMM: 35, hMM: 45 },
+  'iq-transactions': { wMM: 30, hMM: 40 },
+  visa: { wMM: 35, hMM: 45 },
+  'us-visa': { wMM: 51, hMM: 51 },
+};
+
 /**
  * يحدد مقاس الخلية الفيزيائية (مم) لنوع القالب — مصدر واحد تستخدمه مولّدات
  * الخلايا وحاسبة الهامش الأقصى وواجهة الشبكة المخصصة حتى لا تنحرف ثوابت
@@ -88,29 +98,33 @@ export function getPhysicalCellSizeMM(
   type: string,
   template?: Pick<CollageTemplate, 'id'>,
 ): { wMM: number; hMM: number } | null {
-  if (type === 'iq-national-id' || type === 'passport') {
-    return { wMM: 35, hMM: 45 };
-  }
-  if (type === 'iq-civil-id') {
-    return { wMM: 32, hMM: 40 };
-  }
   if (type === 'iq-general-id') {
     // قالب «المعاملات العامة» بالكتالوج أفقي 60×40، والبقية عمودية 40×60
     return template?.id === 'collage-iq-general' ? { wMM: 60, hMM: 40 } : { wMM: 40, hMM: 60 };
   }
-  if (type === 'id') {
-    return { wMM: 35, hMM: 45 };
-  }
-  if (type === 'iq-transactions') {
-    return { wMM: 30, hMM: 40 };
-  }
-  if (type === 'visa') {
-    return { wMM: 35, hMM: 45 };
-  }
-  if (type === 'us-visa') {
-    return { wMM: 51, hMM: 51 };
-  }
-  return null;
+  return PHYSICAL_CELL_SIZE_MAP[type] ?? null;
+}
+
+function resolveAlignedGridOrigin(
+  paperW: number,
+  paperH: number,
+  gridW: number,
+  gridH: number,
+  marginX: number,
+  marginY: number,
+  align: string,
+): { startX: number; startY: number } {
+  const startX = align.endsWith('-left')
+    ? marginX
+    : align.endsWith('-right')
+      ? paperW - marginX - gridW
+      : (paperW - gridW) / 2;
+  const startY = align.startsWith('top-')
+    ? marginY
+    : align.startsWith('bottom-')
+      ? paperH - marginY - gridH
+      : (paperH - gridH) / 2;
+  return { startX, startY };
 }
 
 /**
@@ -158,34 +172,15 @@ export function buildPhysicalGridCellsMM(
   const gridW = cols * finalCellW + (cols - 1) * finalGap;
   const gridH = rows * finalCellH + (rows - 1) * finalGap;
 
-  let startX = (paperW - gridW) / 2;
-  let startY = (paperH - gridH) / 2;
-
-  if (align === 'top-left') {
-    startX = marginX;
-    startY = marginY;
-  } else if (align === 'top-center') {
-    startX = (paperW - gridW) / 2;
-    startY = marginY;
-  } else if (align === 'top-right') {
-    startX = paperW - marginX - gridW;
-    startY = marginY;
-  } else if (align === 'center-left') {
-    startX = marginX;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'center-right') {
-    startX = paperW - marginX - gridW;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'bottom-left') {
-    startX = marginX;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-center') {
-    startX = (paperW - gridW) / 2;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-right') {
-    startX = paperW - marginX - gridW;
-    startY = paperH - marginY - gridH;
-  }
+  const { startX, startY } = resolveAlignedGridOrigin(
+    paperW,
+    paperH,
+    gridW,
+    gridH,
+    marginX,
+    marginY,
+    align,
+  );
 
   const cells = [];
   for (let r = 0; r < rows; r++) {
@@ -246,34 +241,15 @@ function getMixedCells(
   const gridW = finalLeftW + finalGap + finalRightW;
   const gridH = Math.max(finalLeftH, finalRightH);
 
-  let startX = (paperW - gridW) / 2;
-  let startY = (paperH - gridH) / 2;
-
-  if (align === 'top-left') {
-    startX = marginX;
-    startY = marginY;
-  } else if (align === 'top-center') {
-    startX = (paperW - gridW) / 2;
-    startY = marginY;
-  } else if (align === 'top-right') {
-    startX = paperW - marginX - gridW;
-    startY = marginY;
-  } else if (align === 'center-left') {
-    startX = marginX;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'center-right') {
-    startX = paperW - marginX - gridW;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'bottom-left') {
-    startX = marginX;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-center') {
-    startX = (paperW - gridW) / 2;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-right') {
-    startX = paperW - marginX - gridW;
-    startY = paperH - marginY - gridH;
-  }
+  const { startX, startY } = resolveAlignedGridOrigin(
+    paperW,
+    paperH,
+    gridW,
+    gridH,
+    marginX,
+    marginY,
+    align,
+  );
 
   const cells = [];
 
@@ -346,34 +322,15 @@ function getTravelerCells(
   const gridW = Math.max(finalTopW, finalBottomW);
   const gridH = finalTopH + finalGap + finalBottomH;
 
-  let startX = (paperW - gridW) / 2;
-  let startY = (paperH - gridH) / 2;
-
-  if (align === 'top-left') {
-    startX = marginX;
-    startY = marginY;
-  } else if (align === 'top-center') {
-    startX = (paperW - gridW) / 2;
-    startY = marginY;
-  } else if (align === 'top-right') {
-    startX = paperW - marginX - gridW;
-    startY = marginY;
-  } else if (align === 'center-left') {
-    startX = marginX;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'center-right') {
-    startX = paperW - marginX - gridW;
-    startY = (paperH - gridH) / 2;
-  } else if (align === 'bottom-left') {
-    startX = marginX;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-center') {
-    startX = (paperW - gridW) / 2;
-    startY = paperH - marginY - gridH;
-  } else if (align === 'bottom-right') {
-    startX = paperW - marginX - gridW;
-    startY = paperH - marginY - gridH;
-  }
+  const { startX, startY } = resolveAlignedGridOrigin(
+    paperW,
+    paperH,
+    gridW,
+    gridH,
+    marginX,
+    marginY,
+    align,
+  );
 
   const cells = [];
 

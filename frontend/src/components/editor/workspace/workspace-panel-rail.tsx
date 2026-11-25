@@ -176,11 +176,17 @@ const RailToolButton = React.memo(function RailToolButton({
           {/* حبة النشط — محايدة مثل ويندوز 11: بطاقة فاتحة بحد رقيق بلا أي لون،
               فالأزرق محجوز للأوامر التعبوية لا لحالة التبويب */}
           {isActive && (
-            <motion.span
-              layoutId={pillLayoutId}
-              className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
-              transition={{ duration: 0.12, ease: 'easeOut' }}
-            />
+            <>
+              <motion.span
+                layoutId={pillLayoutId}
+                className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
+                transition={{ duration: 0.12, ease: 'easeOut' }}
+              />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute start-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-full bg-primary z-20"
+              />
+            </>
           )}
 
           {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة.

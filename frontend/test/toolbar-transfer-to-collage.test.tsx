@@ -22,10 +22,6 @@ vi.mock('../src/lib/canvas/stage-context', () => ({
   useStageRef: () => ({ current: { width: () => 2480 } }),
 }));
 
-vi.mock('../src/components/editor/toolbar/toolbar-ai-tools', () => ({
-  AiToolsToolbarGroup: () => null,
-}));
-
 vi.mock('../src/components/editor/toolbar/toolbar-image-filters', () => ({
   ImageFiltersPopover: () => null,
 }));

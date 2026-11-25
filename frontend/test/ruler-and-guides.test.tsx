@@ -293,4 +293,28 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(hBar.firstElementChild?.className).toContain(railClassH);
     expect(vScroll.firstElementChild?.className).toContain(railClassW);
   });
+
+  it('hides edge-clipped ruler text near the unit corner and viewport bottom while keeping tick lines', () => {
+    const { container: hEdge } = render(
+      <HorizontalRuler viewportWidth={400} originX={102} displayW={300} mmWidth={100} unit="mm" />,
+    );
+    // -20mm lands at x = 102 - 60 = 42 (visible), while -30mm lands at x = 12 (visible),
+    // and originX = 102 places -34mm? Better: with originX = 100 and displayW = 500 (5px/mm),
+    // -20mm is at x = 0 (< 6) so "-20" text must be omitted to avoid overlapping MM corner.
+    const { container: hClipped } = render(
+      <HorizontalRuler viewportWidth={400} originX={100} displayW={500} mmWidth={100} unit="mm" />,
+    );
+    const hTexts = Array.from(hClipped.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    expect(hTexts).not.toContain('-20');
+    expect(hEdge.querySelectorAll('line').length).toBeGreaterThan(0);
+
+    // VerticalRuler: originY = 34, displayH = 300, height = 100mm (3px/mm) => -10mm is at y = 4 (< 12) so "-10" is omitted,
+    // while 90mm at y = 304 (> viewportHeight) is omitted and 80mm at y = 274 remains visible.
+    const { container: vClipped } = render(
+      <VerticalRuler viewportHeight={300} originY={34} displayH={300} mmHeight={100} unit="mm" />,
+    );
+    const vTexts = Array.from(vClipped.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    expect(vTexts).not.toContain('-10');
+    expect(vTexts).not.toContain('90');
+  });
 });

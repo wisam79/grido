@@ -1,82 +1,55 @@
 # Grido Studio — دستور وقواعد الوكلاء (Master Project Constitution)
 
-> **دستور المشروع الأعلى للمساعدين الذكيين (AI Agents & Pair Programmers):**
-> هذا الملف هو الوثيقة الحاكمة الدائمة لكافة جلسات العمل والتطوير في استوديو Grido.
-> تُقسّم القواعد التخصصية تفصيلياً عبر مجلد القواعد `.agents/rules/` وفق معايير Google Antigravity وتُحمّل ديناميكياً بحسب نطاق الملفات المستهدفة، بينما تُفصَّل المهارات المعمارية في `.agents/skills/`.
+> وثيقة حاكمة مختصرة للعمل في Grido Studio. القواعد التخصصية في `.agents/rules/`، والتفاصيل العملية في 8 مهارات مركّزة تحت `.agents/skills/`.
 
 ---
 
-## 1. هوية المشروع والتقنيات الأساسية (Project Stack)
-- **المنصة:** تطبيق سطح مكتب احترافي متعدد المنصات لأنظمة Windows و macOS و Linux مخصص لاستوديوهات التصوير والمطابع ومصممي الهوية.
-- **الواجهة الأمامية (Frontend):** React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand v5 + Microsoft Fluent 2 Design System.
-- **محرك الكانفاس (Canvas Engine):** Konva + React-Konva مع معالجة رياضية فائقة الدقة للطباعة (300+ DPI).
-- **الباك إند وسطح المكتب (Backend & Desktop Runtime):** Go 1.26 + Wails v3 (`v3.0.0`) + SQLite (عبر CGO).
-- **الذكاء الاصطناعي السحابي (Cloud AI):** Modal CPU فقط (YuNet + CodeFormer ONNX مع تكبير خلفية Lanczos4 فائق السرعة، ناتج 2x وسقف 3 وجوه) مقترن مع Supabase Auth & RPC بحجز ذري وتحرير تلقائي (`cancel_ai_quota_reservation`) عند الفشل ومفتاح تكرار من العميل لمنع التكرار (409)؛ إعداد `cpu=(2,2)` يعادل 4 vCPU وفق تعريف Modal. ميزانية الخلفية 180 ثانية (`context.WithTimeout`) ومهلة الواجهة 200 ثانية أطول منها عمداً، ولا إعادة محاولة تلقائية للاستدلال. النتائج تُطبَّق مباشرةً على الكانفاس بحارس طزاثة وتراجع موحد (Ctrl+Z)، وحصة الاستدلال الناجح تُسجَّل ذرياً دون حجب الصورة حال تعثر الاتصال النهائي. تفاصيل المسار والهندسة في مهارة `opencv-mediapipe-ai-tuner` و`docs/AI_ARCHITECTURE.md`.
-- **لوحة الإدارة وصفحة الهبوط (Web & Admin):** React 19 + TypeScript + Vite + Tailwind CSS v4 منشور على GitHub Pages (`grido.cloud-ip.cc`).
+## 1. هوية المشروع والتقنيات
+- **التطبيق:** تطبيق سطح مكتب للطباعة والاستوديوهات (Windows / macOS / Linux).
+- **الواجهة:** React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand v5 + Fluent 2 (`frontend/src`).
+- **الكانفاس:** Konva + React-Konva للعرض التفاعلي والتصدير 300+ DPI.
+- **الباك إند:** Go 1.26 + Wails v3 (`v3.0.0`) + SQLite (`CGO_ENABLED=1`).
+- **السحابة وAI:** Modal CPU فقط (`modal_ai/upscaler.py` — YuNet + Real-ESRGAN 2x + CodeFormer ONNX؛ 180s Go / 200s واجهة بلا إعادة محاولة تلقائية) + Supabase Auth & RPC (تفاصيل: `.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md` و`docs/AI_ARCHITECTURE.md`).
+- **الويب والإدارة:** React 19 + TypeScript + Vite + Tailwind CSS v4 (`admin-web/src`).
 
 ---
 
-## 2. الثوابت الأمنية والمعمارية المطلقة (Absolute Safety Invariants)
-1. **حظر تشغيل أو اقتراح أمر `cd` مطلقاً:** يُمنع استخدام `cd` للتنقل بين المجلدات في أي صدفة (Shell)؛ حدد مسار العمل دائماً عبر المعامل `Cwd` أو المسارات الكاملة (محمي آلياً ومرفوض فورياً عبر خطاف Antigravity في [`.agents/hooks.json`](file:///c:/projects/grido/.agents/hooks.json)).
-2. **الاعتماد الكلي على GitHub Actions ومنع إجهاد الجهاز المحلي مع إتاحة الاختبارات المستهدفة (Targeted Local Testing Protocol):** يُمنع إجبارياً على أي وكيل تشغيل اختبارات E2E (Playwright) أو الحزم الشاملة الكاملة لاختبارات الوحدة (Full Suite 1700+ tests أو أوامر التغطية --coverage) أو محاكيات البناء محلياً (محمي آلياً بحظر Playwright والحزم الثقيلة وتجاوز الـ hooks عبر [`.agents/hooks.json`](file:///c:/projects/grido/.agents/hooks.json)). التحقق الشامل يتم بدفع الكود (`git push origin main`) ومراقبة دورة الـ CI السحابية فورياً عبر `gh run list` و `gh run watch`. الفحوصات المصرح بها محلياً: الفحص السريع الخفيف (`npm run lint` و `npm run typecheck` و `node scripts/docs-gate.mjs`)، بالإضافة إلى التصريح بتشغيل **الاختبار المستهدف الفردي الخفيف (Targeted Single-File Unit Test)** للملف المتأثر مباشرة بالتعديل فقط (مثال: `npx vitest run path/to/specific.test.ts` أو `go test -run TestX ./internal/...`) لضبط السلوك واكتشاف الانحدارات قبل الدفع بأقل استهلاك للموارد.
-3. **الكتابة الذرية للملفات وتفريغ القرص (Atomic Writes & fsync):** أي كتابة لملفات التكوين أو المشاريع أو تصدير الطباعة في Go يجب أن تمر عبر ملف مؤقت `.tmp` مع `defer os.Remove(tmp)` واستدعاء `f.Sync()` قبل استبدال الملف بـ `os.Rename`.
-4. **حظر تسريب أو تخزين أسرار في الثنائي (No Shared Secrets):** يُمنع تشفير أي مفاتيح API أو أسرار مشتركة داخل الكود أو الثنائي؛ التوثيق للخدمات السحابية يعتمد حصراً على توكن المستخدم الفردي (`Authorization: Bearer <JWT>`).
-5. **حظر إعادة البناء من الصفر (Zero-Rewrite Invariant):** يُمنع اقتراح أو بدء إعادة كتابة التطبيق بأطر عمل أخرى (Flutter/C#/Electron)؛ الحفاظ التام على محرك الكانفاس والرياضيات في React+Konva وترقية المنظومة تراكمياً.
-6. **حظر ازدواجية الميزات والمنطق (No Unjustified Duplication):** أي قدرة مكررة مرتين في موضعين بلا مبرر منصة أو بيئة تشغيل تُعد عيباً تصميمياً يجب دمجه فورياً.
-7. **المسار الخطي الأحادي وحظر الفروع المهملة (Single Developer & Linear Branching Invariant):** نظراً لأن المشروع يُدار ويُطوَّر بمطور فردي واحد (Single Developer)، يُمنع إجبارياً على أي وكيل اعتماد أو تشعيب أي فرع جديد إلا بعد تصفية وإكمال ودمج/إلغاء الفرع الحالي بالكامل والعودة للفرع الرئيسي `main`. يُحظر تماماً ترك فروع معلقة أو مهملة، والعمل الافتراضي يستقر دائماً على `main` بمسار تطوير مباشر ومستمر.
+## 2. الثوابت الأمنية والمعمارية المطلقة
+1. **حظر `cd` قطعياً:** لا تستخدم `cd` في الصدفة؛ استخدم `Cwd` أو المسارات الكاملة (محمي في `.agents/hooks.json`).
+2. **CI أولاً + اختبارات مستهدفة محلياً:** يُمنع تشغيل Playwright E2E أو الحزم الشاملة أو `--coverage` أو محاكيات البناء محلياً. المسموح محلياً: `lint` و`typecheck` و`format:check` و`docs-gate` والاختبارات المستهدفة لملف واحد فقط (`npx vitest run <file>` أو `go test -run <Test> ./internal/...`). التحقق الشامل يتم في GitHub Actions (`gh run list` / `gh run watch`).
+3. **الكتابة الذرية في Go:** أي حفظ تكوين/مشروع/تصدير يمر بملف `.tmp` + `defer os.Remove(tmp)` + `f.Sync()` قبل `os.Rename`.
+4. **لا أسرار مشتركة في الثنائي:** التوثيق السحابي يعتمد حصراً على توكن المستخدم (`Authorization: Bearer <JWT>`).
+5. **لا إعادة كتابة من الصفر:** التطوير تراكمي فوق محرك React + Konva + Go الحالي.
+6. **لا ازدواجية بلا مبرر:** وحّد المنطق المشترك في مصدر حقيقة واحد واحذف الكود الميت بلا مستوردين.
+7. **مسار خطي على `main`:** لا فروع معلقة؛ التطوير الافتراضي مباشر ومستمر على `main`.
 
 ---
 
-## 3. خريطة القواعد المعيارية (Rules Taxonomy & Dynamic Triggers)
-تتوزع قواعد التطوير التخصصية في المجلد `.agents/rules/` وتُفعّل تلقائياً عبر مفسر Antigravity:
-
-| ملف القاعدة | نطاق التفعيل (Trigger & Globs) | الموضوع والتركيز |
+## 3. خريطة القواعد التخصصية (`.agents/rules/`)
+| القاعدة | التفعيل | التركيز |
 |---|---|---|
-| [`.agents/rules/architecture-governance.md`](file:///c:/projects/grido/.agents/rules/architecture-governance.md) | `always_on` (دائم) | الاستراتيجية المعمارية، عزل الفروع، حظر الازدواجية، وسيادة المصدر الواحد وبوابة التوثيق |
-| [`.agents/rules/ui-ux-fluent.md`](file:///c:/projects/grido/.agents/rules/ui-ux-fluent.md) | `glob`: `frontend/src/**/*.{ts,tsx,css}`, `admin-web/...` | نظام Fluent 2، الأيقونات، المساطر، ألوان ونوافذ الحوار، اختصارات لوحة الأدوات، وحارس تقليل النصوص (Text Minimalism Gate) |
-| [`.agents/rules/konva-canvas-engine.md`](file:///c:/projects/grido/.agents/rules/konva-canvas-engine.md) | `glob`: `frontend/src/**/{konva,canvas,stickers}/**` | ثوابت Konva، طبقة السحب الرسمية، كاش الفلاتر، تحجيم الكولاج، وتصدير الطباعة 300+ DPI |
-| [`.agents/rules/backend-wails-runtime.md`](file:///c:/projects/grido/.agents/rules/backend-wails-runtime.md) | `glob`: `internal/**/*.go`, `modal_ai/**`, `main.go` | معمارية JS ↔ Go، جسور Wails v3 IPC، مسارات Modal AI، تقييد الحصص، وأمان الملفات |
-| [`.agents/rules/database-security-authz.md`](file:///c:/projects/grido/.agents/rules/database-security-authz.md) | `glob`: `supabase/**`, `internal/service/*auth*` | سياسات RLS، دوال `SECURITY DEFINER`، فحص `IS NOT TRUE`، أمان المصادقة والجلسة الواحدة |
-| [`.agents/rules/quality-cicd-release.md`](file:///c:/projects/grido/.agents/rules/quality-cicd-release.md) | `glob`: `.github/**`, `scripts/**`, `build/**`, `Taskfile.yml` | أتمتة مثبت NSIS، حزم Wails v3، ترفيع الإصدارات، التوقيع الرقمي، ومراقبة CI الإلزامية |
+| [`.agents/rules/architecture-governance.md`](file:///c:/projects/grido/.agents/rules/architecture-governance.md) | `always_on` | الحوكمة، الحدود الطبقية، عدم الازدواجية، استئناف الصقل |
+| [`.agents/rules/ui-ux-fluent.md`](file:///c:/projects/grido/.agents/rules/ui-ux-fluent.md) | `glob` (الواجهة والويب) | Fluent 2، التوكنز، الحوارات، الاختصارات، الوصولية |
+| [`.agents/rules/konva-canvas-engine.md`](file:///c:/projects/grido/.agents/rules/konva-canvas-engine.md) | `glob` (Konva والتصدير) | الكاش وVRAM، طبقة السحب، النصوص، التصدير 300+ DPI |
+| [`.agents/rules/backend-wails-runtime.md`](file:///c:/projects/grido/.agents/rules/backend-wails-runtime.md) | `glob` (Go / Wails / AI) | عقود Wails v3، مسارات `/api`، الأمان، مسار AI |
+| [`.agents/rules/database-security-authz.md`](file:///c:/projects/grido/.agents/rules/database-security-authz.md) | `glob` (Supabase والمصادقة) | RLS، `SECURITY DEFINER`، `IS NOT TRUE`، الجلسة الواحدة |
+| [`.agents/rules/quality-cicd-release.md`](file:///c:/projects/grido/.agents/rules/quality-cicd-release.md) | `glob` (CI والبناء) | مثبت NSIS، الترفيع، بوابات الجودة ومراقبة CI |
 
 ---
 
-## 4. فهرس المهارات المعمارية الموحدة (Consolidated Architectural Skills Index)
-للحصول على توجيهات تفصيلية، استعن بالمهارات المرجعية المتخصصة في `.agents/skills/`:
-
-### أ. الواجهة ونظام التصميم (Frontend & Fluent Design)
-- [`fluent2-design-system`](file:///c:/projects/grido/.agents/skills/fluent2-design-system/SKILL.md): معايير وتوكنات Microsoft Fluent 2 لـ Grido Studio.
-- [`grido-ui-designer-guide`](file:///c:/projects/grido/.agents/skills/grido-ui-designer-guide/SKILL.md): دليل الواجهات وتجربة المستخدم والأيقونات والاختصارات والـ Portals.
-- [`tailwind-v4-theme-engine`](file:///c:/projects/grido/.agents/skills/tailwind-v4-theme-engine/SKILL.md): هندسة سمات ومتغيرات محرك Tailwind CSS v4.
-- [`radix-ui-accessibility-ux`](file:///c:/projects/grido/.agents/skills/radix-ui-accessibility-ux/SKILL.md): أصول إمكانية الوصول ونوافذ وقوائم Radix UI.
-
-### ب. محرك الكانفاس وتصدير الطباعة (Canvas Engine & Hi-Res Print)
-- [`konva-rendering-invariants`](file:///c:/projects/grido/.agents/skills/konva-rendering-invariants/SKILL.md): ثوابت الرسم والأداء ومجموعات Konva وطبقة السحب الرسمية.
-- [`konva-text-typography-fx`](file:///c:/projects/grido/.agents/skills/konva-text-typography-fx/SKILL.md): تصيير النصوص ودورة الارتفاع وجاهزية الخط وفلتر التمدد الشكلي للحدود (`dilate`).
-- [`wails-konva-hi-res-export`](file:///c:/projects/grido/.agents/skills/wails-konva-hi-res-export/SKILL.md): تصدير الطباعة فائق الدقة (300+ DPI) ومطابقة الهندسة والقص والنزيف.
-- [`canvas-export-qa`](file:///c:/projects/grido/.agents/skills/canvas-export-qa/SKILL.md): فحص محرك الرسم وجودة التصدير فائق الدقة والقص والنزيف (`/canvas-export-qa`).
-
-### ج. الباك إند ورنتايم سطح المكتب (Backend & Desktop Runtime)
-- [`wails-v3-runtime-mastery`](file:///c:/projects/grido/.agents/skills/wails-v3-runtime-mastery/SKILL.md): المرجع الشامل لرنتايم Wails v3 (دورة الحياة، النوافذ المتعددة، تدفق AssetServer، وتكامل Windows 11).
-- [`wails-cross-compiler`](file:///c:/projects/grido/.agents/skills/wails-cross-compiler/SKILL.md): بناء وحزم التطبيق مع مثبت NSIS وتصغير الحجم.
-
-### د. السحابة والبيانات والذكاء الاصطناعي (Cloud, Data & AI)
-- [`supabase-security-and-migrations`](file:///c:/projects/grido/.agents/skills/supabase-security-and-migrations/SKILL.md): تأمين RLS ودوال SECURITY DEFINER وهندسة هجرات Supabase (`/database-migration`).
-- [`opencv-mediapipe-ai-tuner`](file:///c:/projects/grido/.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md): تكامل نماذج الذكاء الاصطناعي وكاشف المستندات وترميم صور الهوية.
-
-### هـ. إدارة الحالة والمعمارية (State & Architecture)
-- [`zustand-state-patterns`](file:///c:/projects/grido/.agents/skills/zustand-state-patterns/SKILL.md): أنماط Zustand v5 وتفادي Stale Closures وعزل الشرائح.
-- [`grido-architecture-navigator`](file:///c:/projects/grido/.agents/skills/grido-architecture-navigator/SKILL.md): خريطة الكود ومعمارية تدفق البيانات بين Go و React.
-
-### و. الجودة والتوثيق والإصدارات (Quality, Governance & Release)
-- [`grido-docs-sync-guard`](file:///c:/projects/grido/.agents/skills/grido-docs-sync-guard/SKILL.md): بوابات التوثيق الإلزامية والتحقق الآلي ومصفوفة المزامنة.
-- [`grido-qa-security-auditor`](file:///c:/projects/grido/.agents/skills/grido-qa-security-auditor/SKILL.md): الجودة والأمان وهندسة الإصدارات والجولة الأمنية الدورية (`/security-audit`).
-- [`release-deployment`](file:///c:/projects/grido/.agents/skills/release-deployment/SKILL.md): ترفيع وإطلاق الإصدارات ونشرها على GitHub (`/release-deployment`).
-- [`grido-performance-checklist`](file:///c:/projects/grido/.agents/skills/grido-performance-checklist/SKILL.md): قائمة فحص الأداء السريعة لمكونات الواجهة والخلفية.
+## 4. فهرس المهارات الموحّد (8 مهارات في `.agents/skills/`)
+- [`grido-ui-system`](file:///c:/projects/grido/.agents/skills/grido-ui-system/SKILL.md): Fluent 2، Tailwind v4 `@theme`، Radix UI، الاختصارات، والحوارات.
+- [`konva-canvas-and-export`](file:///c:/projects/grido/.agents/skills/konva-canvas-and-export/SKILL.md): ثوابت Konva، النصوص العربية، والتصدير والطباعة 300+ DPI (`/canvas-export-qa`).
+- [`wails-desktop-build`](file:///c:/projects/grido/.agents/skills/wails-desktop-build/SKILL.md): رنتايم Wails v3، الربطات، البناء، ومثبت NSIS.
+- [`grido-qa-and-release`](file:///c:/projects/grido/.agents/skills/grido-qa-and-release/SKILL.md): الجولة الأمنية (`/security-audit`) وإطلاق الإصدارات (`/release-deployment`).
+- [`zustand-state-patterns`](file:///c:/projects/grido/.agents/skills/zustand-state-patterns/SKILL.md): شرائح Zustand v5، `useShallow`، وتفادي `Stale Closures`.
+- [`supabase-security-and-migrations`](file:///c:/projects/grido/.agents/skills/supabase-security-and-migrations/SKILL.md): تأمين RLS و`SECURITY DEFINER` والهجرات (`/database-migration`).
+- [`opencv-mediapipe-ai-tuner`](file:///c:/projects/grido/.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md): مسار Modal AI، MediaPipe، وكاشف المستندات.
+- [`grido-architecture-navigator`](file:///c:/projects/grido/.agents/skills/grido-architecture-navigator/SKILL.md): خريطة الملفات وتدفق البيانات بين Go وReact.
 
 ---
 
-## 5. بروتوكول بوابات التوثيق والتحقق (Mandatory Gate Protocol)
-1. **قبل بدء أي عمل:** راجع مؤشر الاستئناف الحي والتوجه المعتمد في `docs/development-plan/POLISH_ROADMAP.md` وفق بروتوكول الصقل والتثبيت في `.agents/rules/architecture-governance.md` ومسار `.agents/workflows/polish-sprint.md`، مع `docs/DOCUMENTATION_MAP.md` و`changelog/README.md` وشغّل `node scripts/changelog-collect.mjs`، ثم أعلن آخر إنجاز وحالة النطاق المعتمد وأي عوائق والمستندات المطلوبة في أول رد.
-2. **قبل الكومت (Pre-Commit):** حدّث حالة المهمة والأدلة ومؤشر الاستئناف في `docs/development-plan/POLISH_ROADMAP.md` إن كان العمل ضمن الخارطة دون تفعيل بند مؤجل تلقائياً، وشغّل الفحص الآلي `node scripts/docs-gate.mjs --strict-refs` وأنشئ fragment واحد في `changelog/fragments/YYYYMMDD-<scope>-<slug>.md` (انظر `changelog/README.md` — يُمنع تعديل `CHANGELOG.md` يدوياً، يُبنى تلقائياً عند `scripts/release.mjs`). قبل ذلك: `npm --prefix frontend run format:check` و`npm --prefix frontend run lint` و`gofmt -l` على ملفات Go — الثلاثة مفروضة في CI. **رسائل الالتزام تخضع لـ Conventional Commits** عبر `.husky/commit-msg` (`scripts/commit-msg-lint.mjs`)، ويُمنع تجاوز الخطافات بـ`--no-verify`.
-3. **بعد الدفع (Post-Push):** راقب خط سير العمل السحابي بـ `gh run list --limit 3` و `gh run watch` حتى تمام النجاح 100%.
+## 5. بروتوكول التوثيق المختصر (Lean Gate Protocol)
+1. **عند بدء مهمة تطويرية:** راجع التوجه الحي ومؤشر الاستئناف في `docs/development-plan/POLISH_ROADMAP.md` وشغّل `node scripts/changelog-collect.mjs` عند الحاجة؛ لا تفتح بنوداً مؤجلة (`deferred`) أو فحصاً ملغىً تلقائياً دون طلب صريح. (للأسئلة النظرية البحتة أجب مباشرة دون حشو.)
+2. **قبل الالتزام (Pre-Commit):** لأي تعديل كود، أنشئ **fragment واحداً** في `changelog/fragments/YYYYMMDD-<scope>-<slug>.md` (راجع `changelog/README.md` — لا تعدّل `CHANGELOG.md` يدوياً)، وحدّث المستند المعني **فقط** عند تغيّر نطاقه الفعلي وفق `docs/DOCUMENTATION_MAP.md`. مرّر `node scripts/docs-gate.mjs --strict-refs` + `format:check` + `lint` + `gofmt -l` + Conventional Commits (`.husky/commit-msg`). لا `--no-verify`.
+3. **بعد الدفع (Post-Push):** راقب `gh run list --limit 3` و`gh run watch` حتى نجاح 100%.

@@ -3,10 +3,12 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
-import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from '@/components/ui/icons';
+import { Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { AccountErrorAlert } from './account-error-alert';
 
 import { ExportSupportLogs } from '../../../../../wailsjs/go/main/App';
 import { BrowserOpenURL } from '../../../../../wailsjs/runtime/runtime';
@@ -103,12 +105,7 @@ export function LicenseTabContent({
         </div>
       ) : (
         <form onSubmit={handleActivate} className="space-y-3.5">
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-              <Warning className="w-4 h-4 shrink-0" weight="duotone" />
-              <span>{error}</span>
-            </div>
-          )}
+          <AccountErrorAlert error={error} />
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <Label htmlFor="license-key-input" className="text-xs font-bold text-foreground/90">

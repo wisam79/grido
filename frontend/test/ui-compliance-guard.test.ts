@@ -25,12 +25,7 @@ function rel(file: string): string {
 }
 
 const FILES = walk(SRC);
-const POLICY_FILES = [
-  '.agents/rules/ui-ux-fluent.md',
-  '.agents/skills/fluent2-design-system/SKILL.md',
-  '.agents/skills/grido-ui-designer-guide/SKILL.md',
-  '.agents/skills/radix-ui-accessibility-ux/SKILL.md',
-];
+const POLICY_FILES = ['.agents/rules/ui-ux-fluent.md', '.agents/skills/grido-ui-system/SKILL.md'];
 
 describe('UI Compliance Guard (R-series enforcement)', () => {
   it('لا يوجد z-index سحري z-[N] — يُستعمل مقياس --z-*', () => {

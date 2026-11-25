@@ -205,6 +205,32 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
   });
 
+  it('requires stretch photoType to treat a cell-only grid as applied', () => {
+    const { rerender } = render(
+      <CollageCustomGridTab
+        {...defaultProps}
+        rows={6}
+        cols={5}
+        photoType="iq-national-id"
+        isCustomActive
+        appliedGrid={{ rows: 6, cols: 5, source: 'cells' }}
+      />,
+    );
+    expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
+
+    rerender(
+      <CollageCustomGridTab
+        {...defaultProps}
+        rows={6}
+        cols={5}
+        photoType="stretch"
+        isCustomActive
+        appliedGrid={{ rows: 6, cols: 5, source: 'cells' }}
+      />,
+    );
+    expect(screen.getByTitle('إعادة تطبيق الشبكة على الكانفس')).toBeInTheDocument();
+  });
+
   it('marks the form as pending when the photo type diverges from the applied physical grid', () => {
     render(
       <CollageCustomGridTab

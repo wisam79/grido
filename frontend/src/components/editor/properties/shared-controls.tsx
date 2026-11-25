@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 
+import { FluentSettingRow } from '@/components/ui/blocks';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
@@ -204,50 +205,51 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
   };
 
   return (
-    <ColorPanel
-      wheelPosition="bottom"
-      className={cn('w-full font-cairo', compact && 'space-y-1.5', className)}
-    >
-      <ColorField
-        color={color}
-        onChange={onChange}
-        onCommit={() => useEditorStore.getState().pushHistory()}
-        className={cn('w-full', compact && 'h-7')}
-        ariaLabel="لون خلفية الورقة"
-      />
+    <ColorPanel wheelPosition="bottom">
+      <div className={cn('w-full space-y-2.5 font-cairo', compact && 'space-y-1.5', className)}>
+        <ColorField
+          color={color}
+          onChange={onChange}
+          onCommit={() => useEditorStore.getState().pushHistory()}
+          className={cn('w-full', compact && 'h-7')}
+          ariaLabel="لون خلفية الورقة"
+        />
 
-      {/* تدرج خلفية الورقة — محرر اللونين والزاوية من GradientPicker الموحّد،
-          بلا مبدّل نوع التعبئة (الورقة خطية دائماً) وبلا معرض التدرجات الجاهزة
-          (المعرض الوحيد يعيش في تبويب الخلفيات) — فلا تتكرر أداة واحدة. */}
-      {hasGradientProps && (
-        <div className="pt-2 border-t border-border/30">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-foreground/90 font-semibold">تعبئة متدرجة</span>
-            <Switch
-              checked={isGradientActive}
-              onCheckedChange={toggleGradient}
-              aria-label="تعبئة متدرجة"
+        {/* تدرج خلفية الورقة — محرر اللونين والزاوية من GradientPicker الموحّد،
+            بلا مبدّل نوع التعبئة (الورقة خطية دائماً) وبلا معرض التدرجات الجاهزة
+            (المعرض الوحيد يعيش في تبويب الخلفيات) — فلا تتكرر أداة واحدة. */}
+        {hasGradientProps && (
+          <div className="space-y-2.5">
+            <FluentSettingRow
+              label="تعبئة متدرجة"
+              control={
+                <Switch
+                  checked={isGradientActive}
+                  onCheckedChange={toggleGradient}
+                  aria-label="تعبئة متدرجة"
+                />
+              }
             />
+
+            {isGradientActive && (
+              <GradientPicker
+                fillType="linear"
+                color={color === 'transparent' ? previewWhite() : color}
+                colorStops={gradientStops}
+                onChangeType={() => {}}
+                onChangeSolidColor={onChange}
+                onChangeColorStops={handleGradientStops}
+                onCommitColor={() => useEditorStore.getState().pushHistory()}
+                angle={gradientAngle ?? 135}
+                onChangeAngle={(deg) => onChangeGradientAngle?.(deg)}
+                onCommitAngle={() => useEditorStore.getState().pushHistory()}
+                showFillType={false}
+                showPresets={false}
+              />
+            )}
           </div>
-
-          {isGradientActive && (
-            <GradientPicker
-              fillType="linear"
-              color={color === 'transparent' ? previewWhite() : color}
-              colorStops={gradientStops}
-              onChangeType={() => {}}
-              onChangeSolidColor={onChange}
-              onChangeColorStops={handleGradientStops}
-              onCommitColor={() => useEditorStore.getState().pushHistory()}
-              angle={gradientAngle ?? 135}
-              onChangeAngle={(deg) => onChangeGradientAngle?.(deg)}
-              onCommitAngle={() => useEditorStore.getState().pushHistory()}
-              showFillType={false}
-              showPresets={false}
-            />
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </ColorPanel>
   );
 });

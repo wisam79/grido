@@ -306,6 +306,12 @@ export function useWorkspacePanels() {
     [breakpoint, setActivePanel, setIsInspectorPinned, setIsTemplatesDrawerOpen],
   );
 
+  useEffect(() => {
+    const handleOpenProperties = () => openPanel('properties');
+    window.addEventListener('grido:open-properties-panel', handleOpenProperties);
+    return () => window.removeEventListener('grido:open-properties-panel', handleOpenProperties);
+  }, [openPanel]);
+
   const closeActivePanel = useCallback(() => {
     setIsTemplatesDrawerOpen(false);
     setIsInspectorPinned(false);

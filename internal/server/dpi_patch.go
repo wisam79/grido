@@ -81,26 +81,21 @@ func setPNGDPI(data []byte, dpi int) []byte {
 		return data
 	}
 
-	ppm := pixelsPerMeter(dpi)
-	ppmBuf := make([]byte, 4)
-	binary.BigEndian.PutUint32(ppmBuf, ppm)
-
-	// الكتلة: الطول(4) + النوع(4) + البيانات(9) + CRC(4)
-	chunk := make([]byte, 0, 21)
-	chunk = append(chunk, 0, 0, 0, 9) // length = 9
-	chunk = append(chunk, "pHYs"...)
-	chunk = append(chunk, ppmBuf...) // X
-	chunk = append(chunk, ppmBuf...) // Y
-	chunk = append(chunk, 1)         // unit = meter
-	crcBuf := make([]byte, 4)
-	binary.BigEndian.PutUint32(crcBuf, crc32.ChecksumIEEE(chunk[4:]))
-	chunk = append(chunk, crcBuf...)
+	chunk := pngPhysChunk(dpi)
 
 	out := make([]byte, 0, len(data)+len(chunk))
 	out = append(out, data[:pos]...)
 	out = append(out, chunk...)
 	out = append(out, data[pos:]...)
 	return out
+}
+
+// writeJFIFDensity يكتب حقول الكثافة (units=1, Xdensity, Ydensity) داخل مقطع JFIF APP0.
+func writeJFIFDensity(buf []byte, dpi int) {
+	const unitsPos = 13 // بعد SOI(2) + marker(2) + طول(2) + JFIF(5) + major/minor(2)
+	buf[unitsPos] = 1   // units = pixels per inch
+	binary.BigEndian.PutUint16(buf[unitsPos+1:unitsPos+3], uint16(dpi))
+	binary.BigEndian.PutUint16(buf[unitsPos+3:unitsPos+5], uint16(dpi))
 }
 
 // setJPEGDPI يعدّل حقلَي الكثافة في مقطع JFIF APP0 إن وُجد بعد SOI مباشرةً.
@@ -131,12 +126,7 @@ func setJPEGDPI(data []byte, dpi int) []byte {
 
 	out := make([]byte, len(data))
 	copy(out, data)
-	density := make([]byte, 2)
-	binary.BigEndian.PutUint16(density, uint16(dpi))
-	const unitsPos = 13 // بعد SOI(2) + marker(2) + طول(2) + JFIF(5) + major/minor(2)
-	out[unitsPos] = 1   // units = pixels per inch
-	copy(out[unitsPos+1:unitsPos+3], density)
-	copy(out[unitsPos+3:unitsPos+5], density)
+	writeJFIFDensity(out, dpi)
 	return out
 }
 
@@ -328,11 +318,7 @@ func (s *jpegDPIStreamWriter) scan() error {
 			// المقطع موجود كاملاً في الملف — أعد كتابة units+densities فقط.
 			out := make([]byte, len(s.buf))
 			copy(out, s.buf)
-			density := []byte{uint8(s.dpi >> 8), uint8(s.dpi)}
-			const unitsPos = 13
-			out[unitsPos] = 1 // units = pixels per inch
-			copy(out[unitsPos+1:unitsPos+3], density)
-			copy(out[unitsPos+3:unitsPos+5], density)
+			writeJFIFDensity(out, s.dpi)
 			return s.emitRewritten(out)
 		}
 	}

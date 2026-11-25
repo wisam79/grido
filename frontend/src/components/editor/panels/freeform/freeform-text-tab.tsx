@@ -35,12 +35,15 @@ function PresetRow({
   const isTypography = preset.group === 'typography';
   const canApply = hasSelection && isTypography;
   const curveId = useId();
+  const previewRotation = preset.config.rotation
+    ? Math.max(-6, Math.min(6, preset.config.rotation / 5))
+    : undefined;
   const labelStyle: React.CSSProperties = {
     fontFamily: preset.config.fontFamily,
     fontWeight: preset.config.fontWeight,
     fontSize: textPresetPreviewSize(preset.config),
     lineHeight: 1.25,
-    ...(preset.config.rotation && { transform: `rotate(${preset.config.rotation / 3}deg)` }),
+    ...(previewRotation !== undefined && { transform: `rotate(${previewRotation}deg)` }),
     ...(preset.config.textBgColor && {
       borderRadius: preset.config.textBgRadius,
       padding: '4px 10px',
@@ -61,11 +64,26 @@ function PresetRow({
         )}
       >
         {preset.config.curve ? (
-          <svg viewBox="0 0 104 44" className="h-11 w-26 text-foreground" aria-hidden="true">
+          <svg
+            viewBox="0 0 104 44"
+            className="h-10 w-28 overflow-visible text-destructive"
+            aria-hidden="true"
+          >
             <defs>
-              {/* قوس منخفض بما يكفي ليبقى صعود الحروف داخل إطار المعاينة */}
-              <path id={curveId} d={`M 4 38 Q 52 ${38 - preset.config.curve / 2} 100 38`} />
+              {/* قوس متوازن ومتمركز عمودياً يحافظ على اتصال الأحرف العربية داخل إطار المعاينة */}
+              <path
+                id={curveId}
+                d={`M 10 30 Q 52 ${Math.round(30 - Math.min(12, preset.config.curve * 0.18))} 94 30`}
+              />
             </defs>
+            <path
+              d={`M 10 30 Q 52 ${Math.round(30 - Math.min(12, preset.config.curve * 0.18))} 94 30`}
+              fill="none"
+              stroke="currentColor"
+              strokeOpacity="0.35"
+              strokeDasharray="2 2"
+              strokeWidth="1"
+            />
             <text fill="currentColor" style={labelStyle} textAnchor="middle">
               <textPath href={`#${curveId}`} startOffset="50%">
                 {preset.label}

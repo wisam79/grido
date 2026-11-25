@@ -124,5 +124,10 @@ describe('FreeformTextTab', () => {
     expect(state.elements).toHaveLength(2);
     expect(state.elements[1]).toMatchObject({ type: 'text', rotation: -35, opacity: 0.25 });
     expect(state.elements[0]).toMatchObject({ type: 'text', text: 'نصي الحالي' });
+    expect(screen.getByText('علامة مائية')).toHaveStyle({ transform: 'rotate(-6deg)' });
+    const stampSvg = screen.getByTestId('element-add-text-stamp-circle').querySelector('svg');
+    expect(stampSvg).toHaveAttribute('class', expect.stringContaining('overflow-visible'));
+    const stampPath = stampSvg?.querySelector('defs path');
+    expect(stampPath?.getAttribute('d')).toBe('M 10 30 Q 52 19 94 30');
   });
 });

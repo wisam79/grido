@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 
+export interface BridgeStatusSnapshot {
+  isRunning?: boolean;
+  pairedDevice?: string;
+  receivedCount?: number;
+  lastReceived?: string;
+}
+
 export interface PhoneBridgeState {
   isRunning: boolean;
   pairedDevice: string;
@@ -9,12 +16,7 @@ export interface PhoneBridgeState {
   setPairedDevice: (pairedDevice: string) => void;
   setReceivedCount: (count: number) => void;
   incrementReceivedCount: () => void;
-  updateStatus: (status: {
-    isRunning?: boolean;
-    pairedDevice?: string;
-    receivedCount?: number;
-    lastReceived?: string;
-  }) => void;
+  updateStatus: (status: BridgeStatusSnapshot) => void;
   reset: () => void;
 }
 
@@ -30,3 +32,18 @@ export const usePhoneBridgeStore = create<PhoneBridgeState>((set) => ({
   updateStatus: (patch) => set((state) => ({ ...state, ...patch })),
   reset: () => set({ isRunning: false, pairedDevice: '', receivedCount: 0, lastReceived: '' }),
 }));
+
+/** مزامنة لقطة حالة جسر الهاتف الواردة من الخلفية مع المتجر المركزي بمصدر واحد. */
+export function syncPhoneBridgeStatus(status: {
+  isRunning: boolean;
+  pairedDevice: string;
+  receivedCount: number;
+  lastReceived: string;
+}) {
+  usePhoneBridgeStore.getState().updateStatus({
+    isRunning: status.isRunning,
+    pairedDevice: status.pairedDevice,
+    receivedCount: status.receivedCount,
+    lastReceived: status.lastReceived,
+  });
+}

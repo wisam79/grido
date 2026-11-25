@@ -77,6 +77,22 @@ export interface ScannerDetectionApi {
   setDetectionCallbacks: (cbs: DetectionCallbacks) => void;
 }
 
+function applyDocumentToSetters(
+  doc: Pick<DetectedDocument, 'corners' | 'aspectType' | 'rotation' | 'filterMode'>,
+  cornersSetter: (c: Point[]) => void,
+  aspectSetter: (a: DocumentAspectType) => void,
+  previewResetter: () => void,
+  rotationSetter?: (r: number) => void,
+  filterSetter?: (f: ScannerFilterMode) => void,
+  aspectOverride?: DocumentAspectType,
+) {
+  cornersSetter(doc.corners);
+  aspectSetter(aspectOverride ?? (doc.aspectType || 'free'));
+  rotationSetter?.(doc.rotation || 0);
+  filterSetter?.(doc.filterMode || 'original');
+  previewResetter();
+}
+
 export interface DetectionCallbacks {
   onCorners: (corners: Point[]) => void;
   onAspect: (aspect: DocumentAspectType) => void;
@@ -211,12 +227,14 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     ) => {
       if (index < 0 || index >= detectedDocs.length) return;
       setActiveDocIndex(index);
-      const doc = detectedDocs[index];
-      cornersSetter(doc.corners);
-      aspectSetter(doc.aspectType || 'free');
-      rotationSetter(doc.rotation || 0);
-      filterSetter?.(doc.filterMode || 'original');
-      previewResetter();
+      applyDocumentToSetters(
+        detectedDocs[index],
+        cornersSetter,
+        aspectSetter,
+        previewResetter,
+        rotationSetter,
+        filterSetter,
+      );
     },
     [detectedDocs],
   );
@@ -252,11 +270,14 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setDetectedDocs(nextDocs);
       setSelectedDocIds((prev) => [...prev, newDoc.id]);
       setActiveDocIndex(nextDocs.length - 1);
-      cornersSetter(newDoc.corners);
-      aspectSetter(newDoc.aspectType);
-      rotationSetter?.(newDoc.rotation || 0);
-      filterSetter?.(newDoc.filterMode || 'original');
-      previewResetter();
+      applyDocumentToSetters(
+        newDoc,
+        cornersSetter,
+        aspectSetter,
+        previewResetter,
+        rotationSetter,
+        filterSetter,
+      );
       toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم`);
     },
     [detectedDocs, imgSize],
@@ -307,11 +328,14 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
         ),
       );
       setActiveDocIndex(newActiveIdx);
-      cornersSetter(nextDocs[newActiveIdx].corners);
-      aspectSetter(nextDocs[newActiveIdx].aspectType || 'free');
-      rotationSetter?.(nextDocs[newActiveIdx].rotation || 0);
-      filterSetter?.(nextDocs[newActiveIdx].filterMode || 'original');
-      previewResetter();
+      applyDocumentToSetters(
+        nextDocs[newActiveIdx],
+        cornersSetter,
+        aspectSetter,
+        previewResetter,
+        rotationSetter,
+        filterSetter,
+      );
       toast.info('تم حذف المستند');
     },
     [detectedDocs, selectedDocIds, activeDocIndex],
@@ -349,11 +373,15 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
         setDetectedDocs([...others, ...inheritedCards]);
         setSelectedDocIds(inheritedCards.map((c) => c.id));
         setActiveDocIndex(others.length);
-        cornersSetter(inheritedCards[0].corners);
-        aspectSetter('id_card');
-        rotationSetter?.(inheritedCards[0].rotation || 0);
-        filterSetter?.(inheritedCards[0].filterMode || 'original');
-        previewResetter();
+        applyDocumentToSetters(
+          inheritedCards[0],
+          cornersSetter,
+          aspectSetter,
+          previewResetter,
+          rotationSetter,
+          filterSetter,
+          'id_card',
+        );
         toast.success('تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)');
       }
     },

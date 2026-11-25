@@ -85,7 +85,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const [rows, setRows] = useState(1);
   const [cols, setCols] = useState(1);
-  const [photoType, setPhotoType] = useState<PhotoGridType>('iq-civil-id');
+  const [photoType, setPhotoType] = useState<PhotoGridType>(() =>
+    collageTemplate?.physicalLayout?.type
+      ? (collageTemplate.physicalLayout.type as PhotoGridType)
+      : collageTemplate
+        ? 'stretch'
+        : 'iq-civil-id',
+  );
   const [gridAlign, setGridAlign] = useState<GridAlignment>('top-left');
 
   const isCustomActive = activeTemplateId === 'collage-custom';
@@ -133,7 +139,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       setCols(appliedGrid.cols);
     }
     const pl = collageTemplate.physicalLayout;
-    if (pl?.type) setPhotoType(pl.type as PhotoGridType);
+    if (pl?.type) {
+      setPhotoType(pl.type as PhotoGridType);
+    } else if (appliedGrid?.source === 'cells') {
+      setPhotoType('stretch');
+    }
     if (pl?.align) setGridAlign(pl.align as GridAlignment);
   }, [collageTemplate, appliedGrid]);
 

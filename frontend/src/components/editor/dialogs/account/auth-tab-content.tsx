@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
-import { Warning, EnvelopeSimple, Key, Lock, User } from '@/components/ui/icons';
+import { EnvelopeSimple, Key, Lock, User } from '@/components/ui/icons';
 import { GoogleIcon } from '@/components/ui/image-icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import { AccountErrorAlert } from './account-error-alert';
 
 import type { useAuthForms } from './use-auth-forms';
 
@@ -48,12 +50,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
   return showRecoveryOtp ? (
     <form onSubmit={handleVerifyRecovery} className="space-y-3">
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-          <Warning className="w-4 h-4 shrink-0" weight="duotone" />
-          <span>{error}</span>
-        </div>
-      )}
+      <AccountErrorAlert error={error} />
       <div className="space-y-1">
         <Label htmlFor="recovery-email" className="text-xs font-bold text-foreground/90">
           البريد الإلكتروني
@@ -178,12 +175,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       </div>
 
       <form onSubmit={handleAuth} className="space-y-3">
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-            <Warning className="w-4 h-4 shrink-0" weight="duotone" />
-            <span>{error}</span>
-          </div>
-        )}
+        <AccountErrorAlert error={error} />
         {showOtp ? (
           <div className="space-y-2.5">
             <Label htmlFor="verify-otp" className="text-xs font-bold text-foreground/90">

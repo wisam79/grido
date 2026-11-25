@@ -108,54 +108,57 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     state.updateElement(id, patch);
   }, []);
 
+  const pinButton = onTogglePin ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onTogglePin}
+          aria-label={
+            isPinned
+              ? 'اللوحة مثبتة دائماً (انقر للإخفاء التلقائي عند عدم التحديد)'
+              : 'اللوحة تفاعلية مع التحديد (انقر للتثبيت الدائم)'
+          }
+          aria-pressed={isPinned}
+          className={cn(
+            'coarse-touch-target flex items-center justify-center border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+            selectedElement ? 'size-6 rounded-sm' : 'h-7 w-7 min-h-7 min-w-7 rounded-md',
+            isPinned
+              ? 'border-primary/25 bg-primary/10 text-primary dark:border-info/30 dark:bg-info/12 dark:text-info hover:bg-primary/15 dark:hover:bg-info/18'
+              : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+          )}
+        >
+          <PushPin
+            className="w-3.5 h-3.5"
+            weight={isPinned ? 'duotone' : 'regular'}
+            aria-hidden="true"
+          />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
+        {isPinned
+          ? 'اللوحة مثبتة دائماً — انقر للإخفاء التلقائي عند عدم التحديد'
+          : 'اللوحة تفاعلية — انقر لتثبيتها دائماً'}
+      </TooltipContent>
+    </Tooltip>
+  ) : null;
+
   return (
     <PanelShell
       title={panelTitle}
       subtitle={panelSubtitle}
       headerExtra={
-        selectedElement || onTogglePin ? (
+        selectedElement ? (
           <div className="inline-flex h-7 items-center gap-0.5 rounded-md border border-border/70 bg-muted p-0.5">
-            {selectedElement && (
-              <ElementHeaderActions element={selectedElement} onUpdate={handleUpdateElement} />
-            )}
-            {selectedElement && onTogglePin && (
+            <ElementHeaderActions element={selectedElement} onUpdate={handleUpdateElement} />
+            {onTogglePin && (
               <div className="mx-0.5 h-3.5 w-px shrink-0 bg-border/60" aria-hidden="true" />
             )}
-            {onTogglePin && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={onTogglePin}
-                    aria-label={
-                      isPinned
-                        ? 'اللوحة مثبتة دائماً (انقر للإخفاء التلقائي عند عدم التحديد)'
-                        : 'اللوحة تفاعلية مع التحديد (انقر للتثبيت الدائم)'
-                    }
-                    aria-pressed={isPinned}
-                    className={cn(
-                      'coarse-touch-target flex size-6 items-center justify-center rounded-sm border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      isPinned
-                        ? 'border-border/80 bg-card text-foreground shadow-2xs hover:bg-accent dark:border-white/10'
-                        : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-                    )}
-                  >
-                    <PushPin
-                      className="w-3.5 h-3.5"
-                      weight={isPinned ? 'duotone' : 'regular'}
-                      aria-hidden="true"
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
-                  {isPinned
-                    ? 'اللوحة مثبتة دائماً — انقر للإخفاء التلقائي عند عدم التحديد'
-                    : 'اللوحة تفاعلية — انقر لتثبيتها دائماً'}
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {pinButton}
           </div>
-        ) : undefined
+        ) : (
+          (pinButton ?? undefined)
+        )
       }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"

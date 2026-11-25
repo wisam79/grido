@@ -102,30 +102,34 @@ export const PanelShell = React.memo(function PanelShell({
             )}
           </div>
 
-          {headerExtra && <div className="shrink-0 flex items-center gap-1">{headerExtra}</div>}
+          {(headerExtra || onCollapse) && (
+            <div className="shrink-0 flex items-center gap-1">
+              {headerExtra && <div className="shrink-0 flex items-center gap-1">{headerExtra}</div>}
 
-          {headerExtra && onCollapse && (
-            <div className="h-3.5 w-px bg-border/60 shrink-0" aria-hidden="true" />
-          )}
+              {headerExtra && onCollapse && (
+                <div className="h-3.5 w-px bg-border/60 shrink-0" aria-hidden="true" />
+              )}
 
-          {onCollapse && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onCollapse}
-                  aria-label={collapseTitle}
-                  className="shrink-0 h-7 w-7 min-h-7 min-w-7 coarse-touch-target flex items-center justify-center rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:border-border/60 transition-colors motion-reduce:transition-none cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
-                >
-                  {collapseIcon || (
-                    <SidebarSimple className="w-4 h-4" weight="regular" aria-hidden="true" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
-                {collapseTitle}
-              </TooltipContent>
-            </Tooltip>
+              {onCollapse && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={onCollapse}
+                      aria-label={collapseTitle}
+                      className="shrink-0 h-7 w-7 min-h-7 min-w-7 coarse-touch-target flex items-center justify-center rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:border-border/60 transition-colors motion-reduce:transition-none cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
+                    >
+                      {collapseIcon || (
+                        <SidebarSimple className="w-4 h-4" weight="regular" aria-hidden="true" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
+                    {collapseTitle}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           )}
         </div>
       )}

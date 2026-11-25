@@ -23,7 +23,7 @@ import {
   XCircle,
 } from '@/components/ui/icons';
 import { createLogger } from '@/lib/logger';
-import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
+import { syncPhoneBridgeStatus, usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import {
@@ -89,12 +89,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       if (!status?.isRunning) throw new Error('جسر الهاتف متوقف');
       if (status) {
         setReceivedCount(status.receivedCount);
-        usePhoneBridgeStore.getState().updateStatus({
-          isRunning: status.isRunning,
-          pairedDevice: status.pairedDevice,
-          receivedCount: status.receivedCount,
-          lastReceived: status.lastReceived,
-        });
+        syncPhoneBridgeStatus(status);
       }
       return true;
     } catch (err) {
@@ -130,12 +125,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         const status = await GetPhoneBridgeStatus();
         if (isMountedRef.current && status) {
           setReceivedCount(status.receivedCount);
-          usePhoneBridgeStore.getState().updateStatus({
-            isRunning: status.isRunning,
-            pairedDevice: status.pairedDevice,
-            receivedCount: status.receivedCount,
-            lastReceived: status.lastReceived,
-          });
+          syncPhoneBridgeStatus(status);
         }
       } catch {
         // Silently ignore polling errors

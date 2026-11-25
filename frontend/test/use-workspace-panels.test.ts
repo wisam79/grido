@@ -279,4 +279,18 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
     });
     expect(result.current.isInspectorOpen).toBe(false);
   });
+
+  it('opens the properties inspector (and exits Zen) on grido:open-properties-panel', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    act(() => {
+      result.current.closeActivePanel();
+    });
+    expect(result.current.isInspectorOpen).toBe(false);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('grido:open-properties-panel'));
+    });
+    expect(result.current.isInspectorOpen).toBe(true);
+    expect(result.current.isInspectorPinned).toBe(true);
+  });
 });

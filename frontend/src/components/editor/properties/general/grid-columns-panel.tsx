@@ -7,7 +7,6 @@ import {
   FluentSettingRow,
   FluentSliderField,
 } from '@/components/ui/blocks';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -223,11 +222,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
       headerClassName="min-h-7"
       collapsible
       defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
-      action={
-        <span className="text-mini text-muted-foreground font-medium">
-          {showGrid || showColumns || showBleedGuides ? 'نشط' : 'مخفي'}
-        </span>
-      }
     >
       <div className="space-y-3 animate-in fade-in duration-100">
         {/* التبديل بين الشبكة والأعمدة وهامش النزيف */}
@@ -266,8 +260,13 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex min-w-0 flex-col gap-1.5"
                     title="حجم المربع"
                   >
-                    <span className="text-control font-medium text-muted-foreground">المربع</span>
-                    <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <span className="ps-0.5 text-mini font-medium text-muted-foreground">
+                      المربع
+                    </span>
+                    <div
+                      dir="ltr"
+                      className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+                    >
                       <DraftNumberField
                         id={`${fieldId}-grid-size`}
                         ariaLabel="حجم مربع الشبكة"
@@ -276,21 +275,23 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         min={5}
                         max={200}
                         onCommit={setGridSize}
-                        className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
+                        className="w-full min-w-0 bg-transparent border-0 p-0 text-start text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-mini text-muted-foreground shrink-0 font-mono">px</span>
                     </div>
                   </label>
 
                   <div className="flex min-w-0 flex-col gap-1.5" title="التقسيم الفرعي">
-                    <span className="text-control font-medium text-muted-foreground">التقسيم</span>
+                    <span className="ps-0.5 text-mini font-medium text-muted-foreground">
+                      التقسيم
+                    </span>
                     <Select
                       value={String(gridSubdivisions)}
                       onValueChange={(val) => setGridSubdivisions(Number(val))}
                     >
                       <SelectTrigger
                         aria-label="عدد تقسيمات الشبكة"
-                        className="w-full border-control-border text-control shadow-none"
+                        className="w-full border-control-border bg-input text-control shadow-none"
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -304,24 +305,24 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   </div>
                 </div>
 
-                {/* صف النمط — زر تبديل مفرد ينوب عن زرين نصيين */}
+                {/* صف النمط — مبدّل واضح بين الخطوط والنقاط */}
                 <FluentSettingRow
                   label="النمط"
                   control={
-                    <Button
-                      type="button"
-                      variant="outline"
+                    <FluentSegmentedControl<'lines' | 'dots'>
+                      layoutId="grid-line-style-toggle"
+                      variant="field"
                       size="sm"
-                      onClick={() => setGridType(gridType === 'lines' ? 'dots' : 'lines')}
-                      title={
-                        gridType === 'lines'
-                          ? 'النمط: خطوط متصلة (انقر للتبديل إلى نقاط)'
-                          : 'النمط: نقاط متقطعة (انقر للتبديل إلى خطوط)'
-                      }
-                      className="cursor-pointer"
-                    >
-                      {gridType === 'lines' ? 'خطوط متصلة' : 'نقاط متقطعة'}
-                    </Button>
+                      fullWidth={false}
+                      value={gridType}
+                      onChange={setGridType}
+                      ariaLabel="نمط الشبكة"
+                      className="w-32 border-control-border bg-input"
+                      options={[
+                        { id: 'lines', label: 'خطوط', tooltip: 'خطوط متصلة' },
+                        { id: 'dots', label: 'نقاط', tooltip: 'نقاط متقطعة' },
+                      ]}
+                    />
                   }
                 />
 
@@ -519,7 +520,10 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                       النزيف
                     </span>
-                    <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <div
+                      dir="ltr"
+                      className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+                    >
                       <DraftNumberField
                         id={`${fieldId}-bleed`}
                         isFloat
@@ -530,9 +534,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         max={20}
                         step={0.5}
                         onCommit={(val) => setBleedMarginMM(val)}
-                        className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
+                        className="w-full min-w-0 bg-transparent border-0 p-0 text-start text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-mini text-muted-foreground shrink-0">مم</span>
+                      <span className="text-mini text-muted-foreground shrink-0 font-mono">mm</span>
                     </div>
                   </label>
 
@@ -545,7 +549,10 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                       الأمان
                     </span>
-                    <div className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <div
+                      dir="ltr"
+                      className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-control-border bg-input px-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+                    >
                       <DraftNumberField
                         id={`${fieldId}-safe`}
                         isFloat
@@ -556,9 +563,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         max={20}
                         step={0.5}
                         onCommit={(val) => setSafeMarginMM(val)}
-                        className="w-full min-w-0 bg-transparent border-0 p-0 text-center text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
+                        className="w-full min-w-0 bg-transparent border-0 p-0 text-start text-control font-mono tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-mini text-muted-foreground shrink-0">مم</span>
+                      <span className="text-mini text-muted-foreground shrink-0 font-mono">mm</span>
                     </div>
                   </label>
                 </div>

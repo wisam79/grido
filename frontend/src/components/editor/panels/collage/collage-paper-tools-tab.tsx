@@ -6,7 +6,7 @@ import {
   FluentSliderField,
   FluentSegmentedControl,
 } from '@/components/ui/blocks';
-import { CaretLeft } from '@/components/ui/icons';
+import { CaretLeft, Minus, Plus } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
@@ -82,7 +82,7 @@ export function CollagePaperToolsTab() {
           min={0}
           max={10}
           step={0.5}
-          unit="مم"
+          unit="mm"
           disabled={!showBleedGuides}
           onChange={setBleedMarginMM}
         />
@@ -135,7 +135,7 @@ export function CollagePaperToolsTab() {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('grido:open-properties-panel'))}
           title="فتح لوحة الخصائص"
-          className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted/40 hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          className="flex h-8 w-full items-center gap-2 rounded-md border border-border/60 bg-card/45 px-2.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-accent/60 hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         >
           <span className="flex-1 text-start">الإطار وخطوط القص</span>
           <CaretLeft className="size-3.5 shrink-0" />
@@ -150,10 +150,11 @@ export function CollagePaperToolsTab() {
           control={
             <FluentSegmentedControl<(typeof REPEAT_MODES)[number]['id']>
               layoutId="paper-repeat-mode"
+              variant="field"
               value={repeatMode}
               onChange={(mode) => setPrintSettings({ repeatMode: mode })}
               size="sm"
-              className="p-0.5 border-0 h-8"
+              className="w-full h-8 border-control-border bg-input"
               options={REPEAT_MODES.map((mode) => ({
                 id: mode.id,
                 label: mode.label,
@@ -166,7 +167,7 @@ export function CollagePaperToolsTab() {
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-semibold text-foreground/90">عدد النسخ</span>
           <div
-            className="flex items-center rounded-md border border-border bg-background"
+            className="flex h-8 items-center rounded-md border border-control-border bg-input px-0.5"
             dir="ltr"
             role="group"
             aria-label="عدد النسخ"
@@ -177,12 +178,12 @@ export function CollagePaperToolsTab() {
               disabled={copiesPerSheet <= 1}
               title="تقليل النسخ"
               aria-label="تقليل عدد النسخ"
-              className="size-7 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="coarse-touch-target size-7 rounded-sm text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
-              −
+              <Minus className="size-3.5" weight="bold" aria-hidden="true" />
             </button>
             <span
-              className="w-6 text-center text-xs font-mono font-bold text-foreground tabular-nums"
+              className="min-w-8 text-center text-xs font-mono font-bold text-foreground tabular-nums"
               dir="ltr"
             >
               {copiesPerSheet}
@@ -193,9 +194,9 @@ export function CollagePaperToolsTab() {
               disabled={copiesPerSheet >= 48}
               title="إضافة نسخة"
               aria-label="زيادة عدد النسخ"
-              className="size-7 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="coarse-touch-target size-7 rounded-sm text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
-              +
+              <Plus className="size-3.5" weight="bold" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -206,7 +207,7 @@ export function CollagePaperToolsTab() {
           min={0}
           max={20}
           step={1}
-          unit="مم"
+          unit="mm"
           defaultValue={0}
           onChange={(value) => setPrintSettings({ gapMM: value })}
         />

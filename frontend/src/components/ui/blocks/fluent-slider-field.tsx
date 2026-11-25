@@ -329,7 +329,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       <span
         dir="ltr"
         title={editable ? `من ${min} إلى ${max}${unit ? ` ${unit}` : ''}` : undefined}
-        className="flex min-w-14 min-h-6 items-center justify-between gap-1 font-mono text-control tabular-nums bg-input ps-1.5 pe-1 py-0.5 rounded-md border border-control-border text-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
+        className="flex h-7 min-w-[54px] items-center justify-end gap-1 font-mono text-control tabular-nums bg-input px-2 rounded-md border border-control-border text-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
       >
         {editable ? (
           <input
@@ -345,12 +345,14 @@ export const FluentSliderField = React.memo(function FluentSliderField({
             onKeyDown={handleNumericKeyDown}
             onKeyUp={handleNumericKeyUp}
             disabled={disabled}
-            className="w-9 h-6 bg-transparent text-center outline-none font-mono text-control tabular-nums text-inherit"
+            className="w-8 h-full bg-transparent text-end outline-none font-mono text-control tabular-nums text-inherit"
           />
         ) : (
           <span className="text-center px-0.5">{displayVal}</span>
         )}
-        {editable && unit && <span className="text-muted-foreground/80">{unit}</span>}
+        {editable && unit && (
+          <span className="text-mini text-muted-foreground shrink-0">{unit}</span>
+        )}
       </span>
     </div>
   );

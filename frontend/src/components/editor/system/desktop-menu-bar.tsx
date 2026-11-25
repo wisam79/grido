@@ -75,6 +75,28 @@ import {
 
 const logger = createLogger('desktop-menu-bar');
 
+function MenuBarDropdown({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
+        >
+          {label}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      >
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function DesktopMenuBar() {
   const {
     mode,
@@ -263,535 +285,448 @@ export function DesktopMenuBar() {
   return (
     <div className="flex items-center gap-1 select-none font-cairo">
       {/* 1. قائمة ملف (File) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            ملف
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      <MenuBarDropdown label="ملف">
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Image className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">إدراج صورة</span>
-          </DropdownMenuItem>
+          <Image className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">إدراج صورة</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Images className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">إدراج دفعة</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Images className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">إدراج دفعة</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-phone-bridge'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <DeviceMobileCamera className="w-4 h-4 text-muted-foreground" weight="duotone" />
-            <span className="font-medium">كاميرا الهاتف</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-phone-bridge'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <DeviceMobileCamera className="w-4 h-4 text-muted-foreground" weight="duotone" />
+          <span className="font-medium">كاميرا الهاتف</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={handleOpenDirectory}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <FolderOpen className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">استيراد مجلد</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleOpenDirectory}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <FolderOpen className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">استيراد مجلد</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
-              )
-            }
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2.5">
-              <FloppyDisk className="w-4 h-4 text-muted-foreground" weight="duotone" />
-              <span className="font-medium">حفظ المشروع</span>
-            </div>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+            )
+          }
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2.5">
+            <FloppyDisk className="w-4 h-4 text-muted-foreground" weight="duotone" />
+            <span className="font-medium">حفظ المشروع</span>
+          </div>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
-              )
-            }
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Folders className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">مكتبة المشاريع</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
+            )
+          }
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Folders className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">مكتبة المشاريع</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Export className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تصدير</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Export className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تصدير</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Printer className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">طباعة</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Printer className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">طباعة</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={() =>
-              // 🛡️ نفس قناة الشريط (`grido:clear-canvas-request`): المسار القديم
-              // كان يستدعي reset() مباشرة فيتجاوز نافذة التأكيد ولا يمسح مسودة
-              // الحفظ التلقائي — قائمة الشريط تُملكها ToolbarFileOps وحدها.
-              window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
-            }
-            className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
-          >
-            <Broom className="w-4 h-4" />
-            <span className="font-medium">مسح مساحة العمل</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenuItem
+          onClick={() =>
+            // 🛡️ نفس قناة الشريط (`grido:clear-canvas-request`): المسار القديم
+            // كان يستدعي reset() مباشرة فيتجاوز نافذة التأكيد ولا يمسح مسودة
+            // الحفظ التلقائي — قائمة الشريط تُملكها ToolbarFileOps وحدها.
+            window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
+          }
+          className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
+        >
+          <Broom className="w-4 h-4" />
+          <span className="font-medium">مسح مساحة العمل</span>
+        </DropdownMenuItem>
+      </MenuBarDropdown>
 
       {/* 2. قائمة تحرير (Edit) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            تحرير
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      <MenuBarDropdown label="تحرير">
+        <DropdownMenuItem
+          disabled={!canUndo}
+          onClick={undo}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          <DropdownMenuItem
-            disabled={!canUndo}
-            onClick={undo}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <ArrowUUpLeft className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تراجع</span>
-          </DropdownMenuItem>
+          <ArrowUUpLeft className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تراجع</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            disabled={!canRedo}
-            onClick={redo}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <ArrowUUpRight className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">إعادة</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={!canRedo}
+          onClick={redo}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <ArrowUUpRight className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">إعادة</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            disabled={!hasSelection}
-            onClick={() => {
-              if (mode === 'collage') {
-                const state = useEditorStore.getState();
-                const emptySlots = state.slots.filter((s) => !s.imageSrc);
-                if (emptySlots.length === 0) {
-                  toast.info('لا توجد خانات فارغة متاحة لتكرار الصورة');
-                  return;
-                }
-                const sourceSlots = filledSelectedSlotIds
-                  .map((id) => state.slots.find((s) => s.id === id))
-                  .filter((s): s is NonNullable<typeof s> => Boolean(s?.imageSrc));
-                moveSlotContentsBatch(
-                  sourceSlots.slice(0, emptySlots.length).map((src, index) => ({
-                    slotId: emptySlots[index].id,
-                    sourceSlotId: src.id,
-                  })),
-                );
+        <DropdownMenuItem
+          disabled={!hasSelection}
+          onClick={() => {
+            if (mode === 'collage') {
+              const state = useEditorStore.getState();
+              const emptySlots = state.slots.filter((s) => !s.imageSrc);
+              if (emptySlots.length === 0) {
+                toast.info('لا توجد خانات فارغة متاحة لتكرار الصورة');
                 return;
               }
-              if (selectedIds.length > 0) {
-                if (selectedIds.length === 1) duplicateElement(selectedIds[0]);
-                else duplicateElements(selectedIds);
-              } else if (selectedId) {
-                duplicateElement(selectedId);
-              }
-            }}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Copy className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تكرار</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            disabled={!hasSelection}
-            onClick={() => {
-              if (mode === 'collage') {
-                if (filledSelectedSlotIds.length === 0) return;
-                updateSlotsBatch(filledSelectedSlotIds, {
-                  imageSrc: undefined,
-                  originalImageSrc: undefined,
-                });
-                pushHistory();
-                return;
-              }
-              const { elements } = useEditorStore.getState();
-              const targetIds =
-                selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
-              const lockedCount = targetIds.filter(
-                (id) => elements.find((el) => el.id === id)?.locked,
-              ).length;
-              const removableIds = targetIds.filter(
-                (id) => !elements.find((el) => el.id === id)?.locked,
+              const sourceSlots = filledSelectedSlotIds
+                .map((id) => state.slots.find((s) => s.id === id))
+                .filter((s): s is NonNullable<typeof s> => Boolean(s?.imageSrc));
+              moveSlotContentsBatch(
+                sourceSlots.slice(0, emptySlots.length).map((src, index) => ({
+                  slotId: emptySlots[index].id,
+                  sourceSlotId: src.id,
+                })),
               );
+              return;
+            }
+            if (selectedIds.length > 0) {
+              if (selectedIds.length === 1) duplicateElement(selectedIds[0]);
+              else duplicateElements(selectedIds);
+            } else if (selectedId) {
+              duplicateElement(selectedId);
+            }
+          }}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Copy className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تكرار</span>
+        </DropdownMenuItem>
 
-              if (removableIds.length === 0 && lockedCount > 0) {
-                toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
-                return;
+        <DropdownMenuItem
+          disabled={!hasSelection}
+          onClick={() => {
+            if (mode === 'collage') {
+              if (filledSelectedSlotIds.length === 0) return;
+              updateSlotsBatch(filledSelectedSlotIds, {
+                imageSrc: undefined,
+                originalImageSrc: undefined,
+              });
+              pushHistory();
+              return;
+            }
+            const { elements } = useEditorStore.getState();
+            const targetIds = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
+            const lockedCount = targetIds.filter(
+              (id) => elements.find((el) => el.id === id)?.locked,
+            ).length;
+            const removableIds = targetIds.filter(
+              (id) => !elements.find((el) => el.id === id)?.locked,
+            );
+
+            if (removableIds.length === 0 && lockedCount > 0) {
+              toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
+              return;
+            }
+            if (lockedCount > 0) {
+              toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
+            }
+            if (removableIds.length === 1) {
+              removeElement(removableIds[0]);
+            } else if (removableIds.length > 1) {
+              removeElements(removableIds);
+            }
+          }}
+          className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
+        >
+          <Trash className="w-4 h-4" />
+          <span className="font-medium">حذف</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => {
+            if (mode === 'collage') {
+              const { slots: latestSlots } = useEditorStore.getState();
+              if (latestSlots.length > 0) {
+                setSelectedIds(latestSlots.map((slot) => slot.id));
               }
-              if (lockedCount > 0) {
-                toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
-              }
-              if (removableIds.length === 1) {
-                removeElement(removableIds[0]);
-              } else if (removableIds.length > 1) {
-                removeElements(removableIds);
-              }
-            }}
+              return;
+            }
+            selectAllElements();
+          }}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <SelectionAll className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تحديد الكل</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => selectElement(null)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <span className="font-medium">إلغاء التحديد</span>
+        </DropdownMenuItem>
+      </MenuBarDropdown>
+
+      {/* 3. قائمة عرض (View) */}
+      <MenuBarDropdown label="عرض">
+        {/* مدخل لوحة الأدوات — نفس الحدث والاختصار والمصدر الوحيد (Ctrl+K) */}
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <MagnifyingGlass className="w-4 h-4 text-muted-foreground" weight="duotone" />
+          <span className="font-medium">لوحة الأدوات</span>
+          <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+K</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={zoomInStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تكبير</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={zoomOutStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تصغير</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={resetZoomStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <span className="font-medium">إعادة الملاءمة إلى 100%</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={fitZoomStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <span className="font-medium">ملاءمة الكل</span>
+          <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+0</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={fitWidthZoomStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <span className="font-medium">ملاءمة العرض</span>
+          <span className="ms-auto text-micro font-mono text-muted-foreground/70">
+            Ctrl+Shift+0
+          </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={autoFitZoomStore}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <span className="font-medium">ملاءمة تلقائية</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => setShowRuler(!showRuler)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Ruler className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium flex-1">المساطر</span>
+          {showRuler && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => setShowGrid(!showGrid)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <SquaresFour className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium flex-1">الشبكة</span>
+          {showGrid && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => setShowUserGuides(!showUserGuides)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Eye className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium flex-1">الخطوط الإرشادية</span>
+          {showUserGuides && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
+        </DropdownMenuItem>
+
+        {userGuides.length > 0 && (
+          <DropdownMenuItem
+            onClick={clearUserGuides}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
             <Trash className="w-4 h-4" />
-            <span className="font-medium">حذف</span>
+            <span className="font-medium">مسح الخطوط</span>
           </DropdownMenuItem>
+        )}
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={() => {
-              if (mode === 'collage') {
-                const { slots: latestSlots } = useEditorStore.getState();
-                if (latestSlots.length > 0) {
-                  setSelectedIds(latestSlots.map((slot) => slot.id));
-                }
-                return;
-              }
-              selectAllElements();
-            }}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SelectionAll className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تحديد الكل</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={() => selectElement(null)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <span className="font-medium">إلغاء التحديد</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* 3. قائمة عرض (View) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            عرض
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          {/* مدخل لوحة الأدوات — نفس الحدث والاختصار والمصدر الوحيد (Ctrl+K) */}
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <MagnifyingGlass className="w-4 h-4 text-muted-foreground" weight="duotone" />
-            <span className="font-medium">لوحة الأدوات</span>
-            <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+K</span>
-          </DropdownMenuItem>
+          <SidebarSimple className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">القوالب</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={zoomInStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تكبير</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={zoomOutStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تصغير</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={resetZoomStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <span className="font-medium">إعادة الملاءمة إلى 100%</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={fitZoomStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <span className="font-medium">ملاءمة الكل</span>
-            <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+0</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={fitWidthZoomStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <span className="font-medium">ملاءمة العرض</span>
-            <span className="ms-auto text-micro font-mono text-muted-foreground/70">
-              Ctrl+Shift+0
-            </span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={autoFitZoomStore}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <span className="font-medium">ملاءمة تلقائية</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={() => setShowRuler(!showRuler)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Ruler className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium flex-1">المساطر</span>
-            {showRuler && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={() => setShowGrid(!showGrid)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SquaresFour className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium flex-1">الشبكة</span>
-            {showGrid && <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />}
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={() => setShowUserGuides(!showUserGuides)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Eye className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium flex-1">الخطوط الإرشادية</span>
-            {showUserGuides && (
-              <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />
-            )}
-          </DropdownMenuItem>
-
-          {userGuides.length > 0 && (
-            <DropdownMenuItem
-              onClick={clearUserGuides}
-              className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
-            >
-              <Trash className="w-4 h-4" />
-              <span className="font-medium">مسح الخطوط</span>
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SidebarSimple className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">القوالب</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">الخصائص</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">الخصائص</span>
+        </DropdownMenuItem>
+      </MenuBarDropdown>
 
       {/* 4. قائمة كولاج (Collage) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            كولاج
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      <MenuBarDropdown label="كولاج">
+        <DropdownMenuItem
+          onClick={() => setMode('collage')}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          <DropdownMenuItem
-            onClick={() => setMode('collage')}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SquaresFour weight={mode === 'collage' ? 'fill' : 'regular'} />
-            <span className="font-medium flex-1">كولاج شبكي</span>
-            {mode === 'collage' && <Check weight="bold" className="w-4 h-4" />}
-          </DropdownMenuItem>
+          <SquaresFour weight={mode === 'collage' ? 'fill' : 'regular'} />
+          <span className="font-medium flex-1">كولاج شبكي</span>
+          {mode === 'collage' && <Check weight="bold" className="w-4 h-4" />}
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => setMode('single')}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Image weight={mode === 'single' ? 'fill' : 'regular'} />
-            <span className="font-medium flex-1">وضع حر</span>
-            {mode === 'single' && <Check weight="bold" className="w-4 h-4" />}
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setMode('single')}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Image weight={mode === 'single' ? 'fill' : 'regular'} />
+          <span className="font-medium flex-1">وضع حر</span>
+          {mode === 'single' && <Check weight="bold" className="w-4 h-4" />}
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={handleToggleOrientation}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <ArrowClockwise className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">تدوير الورقة</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleToggleOrientation}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <ArrowClockwise className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">تدوير الورقة</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => setCollageShowCutLines(!collageShowCutLines)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Scissors className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium flex-1">علامات القص</span>
-            {collageShowCutLines && (
-              <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />
-            )}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenuItem
+          onClick={() => setCollageShowCutLines(!collageShowCutLines)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Scissors className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium flex-1">علامات القص</span>
+          {collageShowCutLines && (
+            <Check weight="bold" className="w-3.5 h-3.5 text-primary shrink-0" />
+          )}
+        </DropdownMenuItem>
+      </MenuBarDropdown>
 
       {/* 5. قائمة أدوات (Tools) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            أدوات
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      <MenuBarDropdown label="أدوات">
+        <DropdownMenuItem
+          onClick={() => setAccountModalOpen(true)}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          <DropdownMenuItem
-            onClick={() => setAccountModalOpen(true)}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <ShieldCheck className="w-4 h-4 text-success" weight="duotone" />
-            <span className="font-medium flex-1">الترخيص</span>
-          </DropdownMenuItem>
+          <ShieldCheck className="w-4 h-4 text-success" weight="duotone" />
+          <span className="font-medium flex-1">الترخيص</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Sparkle className="w-4 h-4" weight="duotone" />
-            <span className="font-medium flex-1">معالجة الدفعات</span>
-            <span className="text-micro font-mono text-muted-foreground/80">Pro</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Sparkle className="w-4 h-4" weight="duotone" />
+          <span className="font-medium flex-1">معالجة الدفعات</span>
+          <span className="text-micro font-mono text-muted-foreground/80">Pro</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <SealCheck className="w-4 h-4" weight="duotone" />
-            <span className="font-medium flex-1">استوديو الملصقات</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <SealCheck className="w-4 h-4" weight="duotone" />
+          <span className="font-medium flex-1">استوديو الملصقات</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+        <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={handleCleanMediaCache}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-muted-foreground hover:text-foreground"
-          >
-            <Broom className="w-4 h-4" />
-            <span className="font-medium flex-1">تنظيف كاش الوسائط</span>
-          </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleCleanMediaCache}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <Broom className="w-4 h-4" />
+          <span className="font-medium flex-1">تنظيف كاش الوسائط</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={handleRequestEmptyMediaTrash}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-destructive hover:text-destructive"
-          >
-            <Trash className="w-4 h-4" />
-            <span className="font-medium flex-1">إفراغ سلة وسائط التطبيق</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenuItem
+          onClick={handleRequestEmptyMediaTrash}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-destructive hover:text-destructive"
+        >
+          <Trash className="w-4 h-4" />
+          <span className="font-medium flex-1">إفراغ سلة وسائط التطبيق</span>
+        </DropdownMenuItem>
+      </MenuBarDropdown>
 
       {/* 6. قائمة مساعدة (Help) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2.5 text-xs font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/80 data-[state=open]:bg-muted data-[state=open]:text-foreground rounded-md transition-colors cursor-pointer"
-          >
-            مساعدة
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
+      <MenuBarDropdown label="مساعدة">
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
         >
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Question className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">الاختصارات</span>
-          </DropdownMenuItem>
+          <Question className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">الاختصارات</span>
+        </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent('grido:check-updates'))}
-            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
-          >
-            <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">التحديثات</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenuItem
+          onClick={() => window.dispatchEvent(new CustomEvent('grido:check-updates'))}
+          className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+        >
+          <Info className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">التحديثات</span>
+        </DropdownMenuItem>
+      </MenuBarDropdown>
 
       {/* حوار تأكيد إفراغ سلة الوسائط الأصيل وفق Fluent 2 */}
       <AlertDialog

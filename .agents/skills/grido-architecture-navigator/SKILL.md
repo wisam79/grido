@@ -38,14 +38,15 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
 ### 🔹 React Frontend (`/frontend/src`)
 - **`src/lib/`**: المكتبات والخدمات المنطقية المنظمة حسب الاختصاص:
   - **`store/`**: إدارة الحالة المركزية عبر Zustand (`useEditorStore`):
-    - [index.ts](file:///c:/projects/grido/frontend/src/lib/store/index.ts): المتجر الرئيسي التجميعي للـ Slices السبعة.
+    - [index.ts](file:///c:/projects/grido/frontend/src/lib/store/index.ts): المتجر الرئيسي التجميعي للـ Slices الثمانية.
     - `slices/core-slice.ts`: الأبعاد، الورق المعياري، DPI، النمط (`mode`: `single` | `collage`)، الألوان، والحفظ والتحميل.
-    - `slices/element-slice.ts`: إدارة وإضافة وتعديل وحذف وتأمين العناصر الحرة (صور، نصوص، أشكال) والتحويلات.
+    - `slices/element/`: إدارة وإضافة وتعديل وحذف وتأمين العناصر الحرة (صور، نصوص، أشكال) والتحويلات (`crud.ts`, `merge.ts`, ...).
     - `slices/collage-slice.ts`: قوالب الكولاج، تعيين الصور في الخانات، التحويلات (`dragX`, `dragY`, `zoom`, `flip`, `rotation`)، والفواصل.
     - `slices/grid-slice.ts`: إعدادات الشبكة الإرشادية والأعمدة والمحاذاة المغناطيسية (`snapToGrid`).
     - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز وسقف 30 لقطة.
     - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، الحصص اليومية، والدخول عبر جوجل.
-    - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص — إجمالي الشِرائح سبع تُدمج في `useEditorStore` (عبر `src/lib/store/index.ts`).
+    - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص.
+    - `slices/workflow-slice.ts`: وضع سير العمل (`quick` / `studio`).
 
   - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts` + اختباراته، `single-print-composition.ts`).
   - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`, `text-stroke-filter.ts` لفلتر التمدد الشكلي، `zoom.ts`...).

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -39,6 +40,7 @@ import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
+import { usePanelFooterPortal } from '../panel-footer-portal';
 import { AUTOFILL_IMAGE_LIMIT, buildFillPlan, moveListItem } from './collage-autofill-plan';
 
 import type { FillMode, FillOrder } from './collage-autofill-plan';
@@ -106,6 +108,7 @@ export function CollageAutofillTab() {
     })),
   );
 
+  const footerPortal = usePanelFooterPortal();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const mode = autofillSettings.mode;
   const order = autofillSettings.order;
@@ -401,7 +404,7 @@ export function CollageAutofillTab() {
           <Button
             type="button"
             variant="outline"
-            className="h-8 w-full justify-center gap-1.5 rounded-md border-dashed border-primary/40 bg-primary/8 text-xs font-medium text-primary hover:bg-primary/15"
+            className="h-8 w-full justify-center gap-1.5 rounded-md border-dashed border-primary/45 bg-primary/10 text-xs font-medium text-primary dark:text-info hover:bg-primary/15"
             onClick={absorbPendingCollageImages}
             disabled={atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : undefined}
@@ -687,72 +690,82 @@ export function CollageAutofillTab() {
               </div>
             </div>
           </FluentSection>
-          <div className="sticky bottom-0 z-10 -mx-3 space-y-2 border-t border-border/60 bg-sidebar/95 px-3 py-2.5 backdrop-blur-xs">
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                className="h-8 min-w-0 flex-1 gap-1.5 text-xs font-semibold shadow-2xs"
-                onClick={distribute}
-                disabled={!canApply}
-                title={applyBlockedReason}
-                aria-label="توزيع الصور على الخانات"
-              >
-                {shuffle ? (
-                  <Shuffle className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                ) : (
-                  <GridFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                )}
-                <span>{canApply ? `وزّع ${imageCountLabel(fillCount)}` : 'وزّع الصور'}</span>
-              </Button>
-              {filledCount > 0 && (
-                <>
+          {(() => {
+            const footerBar = (
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
                   <Button
                     type="button"
-                    variant="secondary"
-                    size="icon-sm"
-                    className="h-8 w-8 rounded-md border border-border/80 bg-card text-muted-foreground shadow-2xs hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive dark:border-white/10"
-                    onClick={() => setConfirmClearOpen(true)}
-                    title="إفراغ الخانات"
-                    aria-label="إفراغ كل الخانات"
+                    className="h-8 min-w-0 flex-1 gap-1.5 text-xs font-semibold shadow-2xs"
+                    onClick={distribute}
+                    disabled={!canApply}
+                    title={applyBlockedReason}
+                    aria-label="توزيع الصور على الخانات"
                   >
-                    <ArrowsClockwise className="w-3.5 h-3.5" />
+                    {shuffle ? (
+                      <Shuffle className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    ) : (
+                      <GridFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    )}
+                    <span>{canApply ? `وزّع ${imageCountLabel(fillCount)}` : 'وزّع الصور'}</span>
                   </Button>
-                  {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
-                  <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-                    <AlertDialogContent dir="rtl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>إفراغ كل الخانات؟</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          ستُزال كل الصور من شبكة الكولاج. يمكن التراجع بـ Ctrl+Z.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>تراجع</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            clearSlots();
-                          }}
-                        >
-                          إفراغ
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </div>
+                  {filledCount > 0 && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon-sm"
+                        className="h-8 w-8 rounded-md border border-border/80 bg-card text-muted-foreground shadow-2xs hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive dark:border-white/10"
+                        onClick={() => setConfirmClearOpen(true)}
+                        title="إفراغ الخانات"
+                        aria-label="إفراغ كل الخانات"
+                      >
+                        <ArrowsClockwise className="w-3.5 h-3.5" />
+                      </Button>
+                      {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
+                      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                        <AlertDialogContent dir="rtl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>إفراغ كل الخانات؟</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              ستُزال كل الصور من شبكة الكولاج. يمكن التراجع بـ Ctrl+Z.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>تراجع</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                clearSlots();
+                              }}
+                            >
+                              إفراغ
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
+                </div>
 
-            {applyHint && (
-              <p className="rounded-md border border-warning/25 bg-warning/10 px-2 py-1 text-micro text-warning leading-tight">
-                {applyHint}
-              </p>
-            )}
-            {!canApply && applyBlockedReason && (
-              <p className="text-micro text-muted-foreground/85 leading-tight px-0.5">
-                {applyBlockedReason}
-              </p>
-            )}
-          </div>
+                {applyHint && (
+                  <p className="rounded-md border border-warning/25 bg-warning/10 px-2 py-1 text-micro text-warning leading-tight">
+                    {applyHint}
+                  </p>
+                )}
+                {!canApply && applyBlockedReason && (
+                  <p className="text-mini text-muted-foreground text-center leading-4 px-0.5">
+                    {applyBlockedReason}
+                  </p>
+                )}
+              </div>
+            );
+
+            return footerPortal ? (
+              createPortal(footerBar, footerPortal)
+            ) : (
+              <div className="border-t border-border/60 pt-2.5 mt-2">{footerBar}</div>
+            );
+          })()}
         </>
       )}
 

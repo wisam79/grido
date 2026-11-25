@@ -34,7 +34,6 @@ import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { commitImageElementCrop } from '@/lib/canvas/image-crop-commit';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { buildMaskPath, MASK_SHAPES, maskPathToSvg } from '@/lib/canvas/mask-geometry';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { isSvgImageSource, sanitizeSvgTintColor } from '@/lib/canvas/svg-logo';
 import { useEditorStore } from '@/lib/editor-store';
 import { hasCustomImageCrop } from '@/lib/export/export-primitives';
@@ -46,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { ColorField, ColorPanel } from '../color-panel';
+import { ButtonProgressBar, ImageFilterSliders } from '../element/shared/image-filter-sliders';
 import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
 
 import type { ImageElement, CanvasElement } from '@/lib/editor-store';
@@ -123,72 +123,12 @@ export function ImageAdjustProperties({
           </div>
         </div>
 
-        <div className="space-y-2.5 pt-1">
-          <FluentSliderField
-            label="السطوع"
-            value={element.brightness ?? 100}
-            min={0}
-            max={200}
-            step={1}
-            unit="%"
-            defaultValue={100}
-            onChange={(v) => onUpdate(element.id, { brightness: v })}
-            onCommit={() => {
-              useRenderQuality.getState().setIsDraggingFilter(false);
-              useEditorStore.getState().pushHistory();
-            }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-          />
-          <FluentSliderField
-            label="التباين"
-            value={element.contrast ?? 100}
-            min={0}
-            max={200}
-            step={1}
-            unit="%"
-            defaultValue={100}
-            onChange={(v) => onUpdate(element.id, { contrast: v })}
-            onCommit={() => {
-              useRenderQuality.getState().setIsDraggingFilter(false);
-              useEditorStore.getState().pushHistory();
-            }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-          />
-          <FluentSliderField
-            label="التشبع"
-            value={element.saturation ?? 100}
-            min={0}
-            max={200}
-            step={1}
-            unit="%"
-            defaultValue={100}
-            onChange={(v) => onUpdate(element.id, { saturation: v })}
-            onCommit={() => {
-              useRenderQuality.getState().setIsDraggingFilter(false);
-              useEditorStore.getState().pushHistory();
-            }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-          />
-          <FluentSliderField
-            label="الضبابية"
-            value={element.blur ?? 0}
-            min={0}
-            max={20}
-            step={1}
-            unit="px"
-            defaultValue={0}
-            onChange={(v) => onUpdate(element.id, { blur: v })}
-            onCommit={() => {
-              useRenderQuality.getState().setIsDraggingFilter(false);
-              useEditorStore.getState().pushHistory();
-            }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-          />
-        </div>
+        <ImageFilterSliders
+          targetId={element.id}
+          values={element}
+          includeBlur
+          onPatch={(patch) => onUpdate(element.id, patch)}
+        />
 
         {showReset && (
           <Button
@@ -568,17 +508,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       : 'إلغاء'
                     : 'عزل الخلفية'}
                 </span>
-                {isRemovingBg && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
-                  >
-                    <span
-                      className="block h-full bg-destructive-foreground transition-[width] duration-300"
-                      style={{ width: `${Math.round(bgProgress)}%` }}
-                    />
-                  </span>
-                )}
+                {isRemovingBg && <ButtonProgressBar progress={bgProgress} />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -612,17 +542,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       : 'جاري الترميم…'
                     : 'ترميم الوجه'}
                 </span>
-                {isEnhancing && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20"
-                  >
-                    <span
-                      className="block h-full bg-primary transition-[width] duration-300"
-                      style={{ width: `${Math.round(enhanceProgress)}%` }}
-                    />
-                  </span>
-                )}
+                {isEnhancing && <ButtonProgressBar progress={enhanceProgress} tone="primary" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -657,17 +577,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       : 'إلغاء'
                     : 'تأطير الوجه'}
                 </span>
-                {isFraming && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
-                  >
-                    <span
-                      className="block h-full bg-destructive-foreground transition-[width] duration-300"
-                      style={{ width: `${Math.round(frameProgress)}%` }}
-                    />
-                  </span>
-                )}
+                {isFraming && <ButtonProgressBar progress={frameProgress} />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">

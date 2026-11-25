@@ -165,13 +165,13 @@ export function FluentSegmentedControl<T extends string = string>({
                 : variant === 'panel'
                   ? cn('gap-1.5 rounded-md h-7 px-2.5 text-xs', !isActive && 'hover:bg-accent/50')
                   : cn(
-                      'gap-1.5 rounded-none',
+                      'gap-1.5 rounded-t-sm',
                       size === 'sm'
                         ? 'h-7 px-2 text-xs'
                         : size === 'lg'
                           ? 'h-9 px-3 text-xs font-bold'
                           : 'h-8 px-2.5 text-xs',
-                      isActive ? 'bg-accent/40' : 'hover:bg-accent/50',
+                      !isActive && 'hover:bg-accent/40',
                     ),
               isActive
                 ? 'text-foreground font-semibold'

@@ -1,14 +1,10 @@
 # خطة وإجراءات ترفيع وإطلاق الإصدارات (Release Deployment Workflow)
 
-> **مصدر الحقيقة الوحيد:** [مهارة `release-deployment`](../skills/release-deployment/SKILL.md).
-> هذا الملف غلاف إجرائي يُحيل إلى المهارة لا نسخة ثانية من محتواها — قاعدة حظر ازدواجية الميزات في `.agents/AGENTS.md` §2.6. أي تحديث للخطوات يُكتب في المهارة فقط.
+> **مصدر الحقيقة الوحيد:** [مهارة `grido-qa-and-release`](../skills/grido-qa-and-release/SKILL.md) (القسم 2).
 
 ## متى يُشغَّل هذا المسار
-
-- عند اعتماد المالك إصداراً جديداً (مثال: `node scripts/release.mjs patch`).
-- عند الطلب الصريح بأمر `/release-deployment`.
+- عند اعتماد المالك إصداراً جديداً (`node scripts/release.mjs patch`) أو بأمر `/release-deployment`.
 
 ## التنفيذ
-
-1. افتح المهارة المرجعية أعلاه وتابع خطواتها بالترتيب: تحقق مسبق من CI أخضر → فحوص محلية خفيفة → الترفيع → مراقبة `release.yml` وتوقيع SignPath → نشر صفحة الهبوط.
-2. مراقبة ما بعد الدفع إلزامية (`gh run watch`) حتى تمام النجاح 100% وفق البوابة 3 في `docs/DOCUMENTATION_MAP.md`.
+1. تأكد من نجاح آخر دورة CI على `main` (`gh run list --limit 3`) ثم مرّر الفحوص المحلية الخفيفة (`docs-gate --strict-refs`, `format:check`, `lint`, `typecheck`, `gofmt -l`).
+2. نفّذ `node scripts/release.mjs <bump>` ثم ادفع مع الوسوم (`git push origin main --tags`) وراقب `gh run watch` حتى نجاح 100%.

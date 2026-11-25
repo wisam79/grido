@@ -227,7 +227,7 @@ npm run format          # Prettier (كتابة)
 | [docs/features-tracker.md](docs/features-tracker.md) | حالة الميزات والفجوات المتبقية وسجل الجلسات |
 | [docs/reviews/](docs/reviews/) | تقارير التدقيق المؤرَّخة ومتابعة إصلاح بنودها |
 
-> 🔒 **بوابة التوثيق مُلزمة:** أي تعديل كود بلا تحديث توثيق مرافق يُوقف الكومت والدفع — `node scripts/docs-gate.mjs` (التفاصيل: `.agents/skills/grido-docs-sync-guard/SKILL.md`).
+> 🔒 **بوابة التوثيق مُلزمة:** أي تعديل كود بلا fragment مرافق يُوقف الكومت والدفع — `node scripts/docs-gate.mjs` (التفاصيل: [`docs/DOCUMENTATION_MAP.md`](docs/DOCUMENTATION_MAP.md) و[`changelog/README.md`](changelog/README.md)).
 
 ---
 

@@ -3,7 +3,7 @@
  * docs-gate.mjs — بوابة التوثيق الإلزامية (Grido Studio Documentation Sync Gate)
  *
  * المرجع الحاكم: docs/DOCUMENTATION_MAP.md · القاعدة: .agents/AGENTS.md
- * المهارة: .agents/skills/grido-docs-sync-guard/SKILL.md
+ * السجل والسكيمة: changelog/README.md
  *
  * الفحوص:
  *   1) انحراف الأرقام المرجعية (بلوك docs-metrics في الخريطة) مقابل الواقع الفعلي.

@@ -142,8 +142,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
     appliedGrid != null &&
     appliedGrid.rows === rows &&
     appliedGrid.cols === cols &&
-    (appliedGrid.source !== 'physical' ||
-      (appliedGrid.photoType === photoType && appliedGrid.align === gridAlign));
+    (appliedGrid.source === 'physical'
+      ? appliedGrid.photoType === photoType && appliedGrid.align === gridAlign
+      : photoType === 'stretch');
   const coverage = (() => {
     if (photoType === 'stretch') return 100;
     const { wMM, hMM } = getPhotoDimensions(photoType);
@@ -440,11 +441,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         >
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">{quickLayouts}</div>
-            <div className="relative size-[80px] shrink-0 rounded-md border border-border/40 bg-muted/20 p-1 select-none">
+            <div className="relative size-[92px] shrink-0 rounded-md border border-border/40 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"
-                className="grid grid-cols-3 grid-rows-3 gap-0.5 w-full h-full relative z-1"
+                className="grid grid-cols-3 grid-rows-3 gap-0 w-full h-full relative z-1"
                 dir="ltr"
               >
                 {ALIGNMENT_ORDER.map((align) => (
@@ -459,7 +460,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     onKeyDown={(event) => handleAlignKeyDown(event, align)}
                     title={ALIGNMENT_LABELS[align]}
                     className={cn(
-                      'relative min-w-6 min-h-6 flex items-center justify-center rounded-xs transition-colors cursor-pointer hover:bg-muted/50',
+                      'relative coarse-touch-target size-7 flex items-center justify-center rounded-xs transition-colors cursor-pointer hover:bg-muted/50',
                       FOCUS_RING,
                     )}
                   >
@@ -468,8 +469,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                       className={cn(
                         'rounded-full transition-all duration-150',
                         gridAlign === align
-                          ? 'w-2 h-2 bg-primary ring-2 ring-primary/30'
-                          : 'w-1.5 h-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70',
+                          ? 'w-2.5 h-2.5 bg-primary ring-2 ring-primary/35'
+                          : 'w-2 h-2 bg-muted-foreground/55 hover:bg-muted-foreground/85',
                       )}
                     />
                   </button>

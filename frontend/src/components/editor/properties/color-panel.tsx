@@ -106,42 +106,39 @@ export function ColorField({
       ) : (
         <div
           className={cn(
-            'flex h-8 items-center gap-2 rounded-md border border-border/80 bg-card px-1.5 shadow-2xs transition-colors',
-            open && 'border-primary/50 bg-muted/40',
+            'flex h-8 items-center gap-2 rounded-md border border-control-border bg-input px-2 transition-colors',
+            open && 'border-primary/60',
             disabled && 'opacity-50',
             className,
           )}
         >
           {label ? (
-            <span className="shrink-0 ps-0.5 text-xs font-semibold text-foreground/90">
+            <span className="shrink-0 ps-0.5 text-control font-normal text-foreground/85">
               {label}
             </span>
           ) : null}
 
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
             <PopoverTrigger asChild>
               <button
                 type="button"
                 disabled={disabled}
                 aria-label={name}
-                className={cn(
-                  'relative h-6 w-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-black/20 shadow-2xs transition-[border-color,box-shadow] hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed dark:border-white/25',
-                  open && 'border-primary/70',
-                )}
+                className="group/swatch flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm py-0.5 text-start focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed"
               >
-                {swatchFace}
+                <span className="size-5 shrink-0">{swatchFace}</span>
                 <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute bottom-0.5 end-0.5 flex size-3 items-center justify-center rounded-xs bg-background/85 text-foreground/85 shadow-2xs"
+                  dir="ltr"
+                  className="truncate font-mono text-mini font-medium tabular-nums text-muted-foreground transition-colors group-hover/swatch:text-foreground"
                 >
-                  <Palette className="size-2.5" />
+                  {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
                 </span>
               </button>
             </PopoverTrigger>
 
             <span aria-hidden className="h-4 w-px shrink-0 bg-border/70" />
 
-            <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {QUICK_COLORS.map((quick) => {
                 const isActive = color.toLowerCase() === quick.hex.toLowerCase();
                 const isLightSwatch = quick.hex.toUpperCase() === '#FFFFFF';
@@ -161,10 +158,10 @@ export function ColorField({
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'flex h-4 w-4 items-center justify-center rounded-full border shadow-2xs transition-transform group-hover:scale-110',
+                        'flex size-4 items-center justify-center rounded-full border shadow-2xs transition-transform group-hover:scale-110',
                         isActive
-                          ? 'border-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-card'
-                          : 'border-black/25 dark:border-white/35 hover:border-foreground/60',
+                          ? 'border-primary ring-2 ring-primary/40 ring-offset-1 ring-offset-input'
+                          : 'border-black/25 dark:border-white/45 hover:border-foreground/60',
                       )}
                       style={{ backgroundColor: quick.hex }}
                     >

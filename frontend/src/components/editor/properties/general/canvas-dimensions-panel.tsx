@@ -283,7 +283,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       : `${widthMM}×${heightMM} مم`;
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-100 font-cairo">
+    <div className="space-y-3 animate-in fade-in duration-100 font-cairo" dir="rtl">
       {/* 1. المقاس: قائمة الأوراق والكروت القياسية + الاتجاه */}
       <div className="flex w-full min-w-0 flex-col gap-2" dir="rtl">
         <DropdownMenu>
@@ -418,27 +418,27 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         />
       </div>
 
-      {/* 2. الأبعاد: تسميات عربية وحقول متساوية، وقفل النسبة بمحاذاة القيم */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+      {/* 2. الأبعاد: تسميات مدمجة داخل الحقول في صف أفقي واحد متزن مع قفل النسبة */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
         {/* الوحدة تتبع المسطرة، فلا تتكرر داخل الحقول. */}
-        <label className="flex min-w-0 flex-col gap-1.5">
-          <span className="text-control font-medium text-muted-foreground">العرض</span>
-          <div className={FIELD_SHELL} dir="ltr">
-            <input
-              type="text"
-              inputMode="decimal"
-              aria-label="العرض"
-              value={widthVal}
-              onChange={(e) => handleWidthChange(e.target.value)}
-              onBlur={handleWidthCommit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleWidthCommit();
-                revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
-              }}
-              className="w-full min-w-0 bg-transparent border-0 p-0 text-center font-mono text-control tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none select-all"
-              dir="ltr"
-            />
-          </div>
+        <label className={cn(FIELD_SHELL, 'gap-1.5 cursor-text')} dir="rtl">
+          <span className="text-mini font-medium text-muted-foreground shrink-0 select-none">
+            العرض
+          </span>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label="العرض"
+            value={widthVal}
+            onChange={(e) => handleWidthChange(e.target.value)}
+            onBlur={handleWidthCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleWidthCommit();
+              revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
+            }}
+            className="w-full min-w-0 bg-transparent border-0 p-0 text-end font-mono text-control tabular-nums font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+            dir="ltr"
+          />
         </label>
 
         {/* قفل نسبة الأبعاد — يحفظ التناسب عند تعديل أي بُعد */}
@@ -450,29 +450,29 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           aria-pressed={lockAspect}
           aria-label={lockAspect ? 'إلغاء قفل نسبة الأبعاد' : 'قفل نسبة الأبعاد'}
           title={lockAspect ? 'نسبة الأبعاد مقفلة' : 'قفل نسبة الأبعاد'}
-          className="cursor-pointer aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
+          className="cursor-pointer border-control-border bg-input shadow-none aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
         >
           {lockAspect ? <Link className="w-4 h-4" /> : <LinkBreak className="w-4 h-4" />}
         </Button>
 
-        <label className="flex min-w-0 flex-col gap-1.5">
-          <span className="text-control font-medium text-muted-foreground">الارتفاع</span>
-          <div className={FIELD_SHELL} dir="ltr">
-            <input
-              type="text"
-              inputMode="decimal"
-              aria-label="الارتفاع"
-              value={heightVal}
-              onChange={(e) => handleHeightChange(e.target.value)}
-              onBlur={handleHeightCommit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleHeightCommit();
-                revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
-              }}
-              className="w-full min-w-0 bg-transparent border-0 p-0 text-center font-mono text-control tabular-nums font-medium text-foreground focus:ring-0 focus:outline-none select-all"
-              dir="ltr"
-            />
-          </div>
+        <label className={cn(FIELD_SHELL, 'gap-1.5 cursor-text')} dir="rtl">
+          <span className="text-mini font-medium text-muted-foreground shrink-0 select-none">
+            الارتفاع
+          </span>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label="الارتفاع"
+            value={heightVal}
+            onChange={(e) => handleHeightChange(e.target.value)}
+            onBlur={handleHeightCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleHeightCommit();
+              revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
+            }}
+            className="w-full min-w-0 bg-transparent border-0 p-0 text-end font-mono text-control tabular-nums font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+            dir="ltr"
+          />
         </label>
       </div>
     </div>

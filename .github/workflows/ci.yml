@@ -106,7 +106,7 @@ jobs:
   # ───────────────────────────────────────────────
   # Job 0: Documentation Gate (mandatory)
   #   → يفشل عند انحراف الأرقام المرجعية أو وجود مستند غير مُسجَّل في الجرد.
-  #   المرجع: docs/DOCUMENTATION_MAP.md · المهارة: .agents/skills/grido-docs-sync-guard
+  #   المرجع: docs/DOCUMENTATION_MAP.md · السجل: changelog/README.md
   # ───────────────────────────────────────────────
   docs-gate:
     name: Documentation Gate

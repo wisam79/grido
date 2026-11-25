@@ -51,6 +51,48 @@ const ARC_ANGLE_PRESETS = [90, 180, 270, 360];
  * تبويب التنسيق للأشكال (Shape Style Properties):
  * يركز على استدارة الزوايا، سماكة الحد، وعينة سريعة للون متوافقة مع معايير Fluent 2
  */
+interface PresetOption {
+  label: string;
+  value: number;
+}
+
+function PresetButtonGroup({
+  options,
+  isSelected,
+  onSelect,
+  columnsClass = 'grid-cols-4',
+}: {
+  options: PresetOption[];
+  isSelected: (value: number) => boolean;
+  onSelect: (value: number) => void;
+  columnsClass?: string;
+}) {
+  return (
+    <div
+      className={cn('grid gap-1 p-0.5 rounded-md bg-muted border border-border/60', columnsClass)}
+    >
+      {options.map((option) => {
+        const active = isSelected(option.value);
+        return (
+          <button
+            key={option.label}
+            type="button"
+            className={cn(
+              'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
+              active
+                ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
+            )}
+            onClick={() => onSelect(option.value)}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: ShapePropertiesProps) {
   const currentFill = element.fill || '#6366f1';
   const isLine = element.shape === 'line';
@@ -153,41 +195,24 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             />
 
             {/* أزرار سماكة سريعة في مسار مجوف Fluent 2 */}
-            <div
-              className={cn(
-                'grid gap-1 p-0.5 rounded-md bg-muted border border-border/60',
-                isLinearShape ? 'grid-cols-4' : 'grid-cols-5',
-              )}
-            >
-              {STROKE_WIDTH_PRESETS.filter((preset) => !isLinearShape || preset.val > 0).map(
-                (preset) => {
-                  const currVal = isLinearShape
-                    ? element.strokeWidth && element.strokeWidth > 0
-                      ? element.strokeWidth
-                      : 4
-                    : (element.strokeWidth ?? 0);
-                  const isActive = Math.round(currVal) === preset.val;
-                  return (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      className={cn(
-                        'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                        isActive
-                          ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                      )}
-                      onClick={() => {
-                        onUpdate(element.id, { strokeWidth: preset.val });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                },
-              )}
-            </div>
+            <PresetButtonGroup
+              columnsClass={isLinearShape ? 'grid-cols-4' : 'grid-cols-5'}
+              options={STROKE_WIDTH_PRESETS.filter(
+                (preset) => !isLinearShape || preset.val > 0,
+              ).map((preset) => ({ label: preset.label, value: preset.val }))}
+              isSelected={(val) => {
+                const currVal = isLinearShape
+                  ? element.strokeWidth && element.strokeWidth > 0
+                    ? element.strokeWidth
+                    : 4
+                  : (element.strokeWidth ?? 0);
+                return Math.round(currVal) === val;
+              }}
+              onSelect={(val) => {
+                onUpdate(element.id, { strokeWidth: val });
+                useEditorStore.getState().pushHistory();
+              }}
+            />
           </div>
 
           {/* اختيار لون الحد عند تفعيل سماكة أكبر من الصفر للأشكال المغلقة */}
@@ -282,29 +307,17 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   />
 
                   {/* أزرار استدارة سريعة في مسار مجوف Fluent 2 */}
-                  <div className="grid grid-cols-4 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
-                    {CORNER_RADIUS_PRESETS.map((preset) => {
-                      const isActive = uniformRadius === preset.val;
-                      return (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          className={cn(
-                            'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                            isActive
-                              ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                          )}
-                          onClick={() => {
-                            applyUniformRadius(preset.val);
-                            useEditorStore.getState().pushHistory();
-                          }}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <PresetButtonGroup
+                    options={CORNER_RADIUS_PRESETS.map((preset) => ({
+                      label: preset.label,
+                      value: preset.val,
+                    }))}
+                    isSelected={(val) => uniformRadius === val}
+                    onSelect={(val) => {
+                      applyUniformRadius(val);
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  />
 
                   {/* زوايا مستقلة: أربع قيم منفصلة [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار]
                   (Konva.cornerRadius يقبل مصفوفة) — وإلغاء التفعيل يعيد الاستدارة الموحدة */}
@@ -405,30 +418,16 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                 onChange={(v) => onUpdate(element.id, { arcAngle: v })}
                 onCommit={() => useEditorStore.getState().pushHistory()}
               />
-              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
-                {ARC_ANGLE_PRESETS.map((deg) => {
-                  const defaultAngle = element.shape === 'wedge' ? 90 : 270;
-                  const isActive = Math.round(element.arcAngle ?? defaultAngle) === deg;
-                  return (
-                    <button
-                      key={deg}
-                      type="button"
-                      className={cn(
-                        'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                        isActive
-                          ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                      )}
-                      onClick={() => {
-                        onUpdate(element.id, { arcAngle: deg });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      {deg}°
-                    </button>
-                  );
-                })}
-              </div>
+              <PresetButtonGroup
+                options={ARC_ANGLE_PRESETS.map((deg) => ({ label: `${deg}°`, value: deg }))}
+                isSelected={(deg) =>
+                  Math.round(element.arcAngle ?? (element.shape === 'wedge' ? 90 : 270)) === deg
+                }
+                onSelect={(deg) => {
+                  onUpdate(element.id, { arcAngle: deg });
+                  useEditorStore.getState().pushHistory();
+                }}
+              />
             </div>
           )}
 
@@ -606,26 +605,14 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           />
 
           {/* أزرار الشفافية السريعة في مسار مجوف Fluent 2 */}
-          <div className="grid grid-cols-4 gap-1 p-0.5 rounded-md bg-muted border border-border/60">
-            {OPACITY_PRESETS.map((pct) => (
-              <button
-                key={pct}
-                type="button"
-                className={cn(
-                  'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                  currentOpacity === pct
-                    ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                )}
-                onClick={() => {
-                  onUpdate(element.id, { opacity: pct / 100 });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                {pct}%
-              </button>
-            ))}
-          </div>
+          <PresetButtonGroup
+            options={OPACITY_PRESETS.map((pct) => ({ label: `${pct}%`, value: pct }))}
+            isSelected={(pct) => currentOpacity === pct}
+            onSelect={(pct) => {
+              onUpdate(element.id, { opacity: pct / 100 });
+              useEditorStore.getState().pushHistory();
+            }}
+          />
         </FluentSection>
       </div>
     </ColorPanel>

@@ -49,7 +49,7 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
             'disabled:opacity-45 disabled:cursor-not-allowed',
             active
-              ? 'bg-card text-foreground border border-border/80 dark:border-white/10 shadow-2xs hover:bg-accent'
+              ? 'bg-card text-primary dark:text-info border border-primary/35 dark:border-info/35 shadow-2xs hover:bg-accent'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60 border border-transparent',
             className,
           )}
